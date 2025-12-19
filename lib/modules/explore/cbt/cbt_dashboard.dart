@@ -19,11 +19,12 @@ import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class CBTDashboard extends StatefulWidget {
   final bool showAppBar;
   final bool fromELibrary;
-  
+
   const CBTDashboard({
     super.key,
     this.showAppBar = true,
@@ -34,15 +35,15 @@ class CBTDashboard extends StatefulWidget {
   State<CBTDashboard> createState() => _CBTDashboardState();
 }
 
-class _CBTDashboardState extends State<CBTDashboard> 
+class _CBTDashboardState extends State<CBTDashboard>
     with AutomaticKeepAliveClientMixin {
   final _subscriptionService = CbtSubscriptionService();
   final _authService = FirebaseAuthService();
-  
+
   // 🚀 Cache subscription status to avoid repeated checks
   bool? _cachedCanTakeTest;
   bool _isCheckingSubscription = false;
-  
+
   @override
   bool get wantKeepAlive => true;
 
@@ -59,7 +60,8 @@ class _CBTDashboardState extends State<CBTDashboard>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Always refresh user data when dashboard is shown
-    final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
     cbtUserProvider.refreshCurrentUser();
 
     // Listen for payment reference changes to update state
@@ -72,13 +74,13 @@ class _CBTDashboardState extends State<CBTDashboard>
       }
     });
   }
-  
+
   /// 🔥 PRE-LOAD subscription status to avoid UI blocking
   Future<void> _preloadSubscriptionStatus() async {
     try {
       final hasPaid = await _subscriptionService.hasPaid();
       final canTakeTest = await _subscriptionService.canTakeTest();
-      
+
       if (mounted) {
         setState(() {
           _cachedCanTakeTest = hasPaid || canTakeTest;
@@ -88,12 +90,13 @@ class _CBTDashboardState extends State<CBTDashboard>
       print('❌ Error preloading subscription: $e');
     }
   }
-  
+
   /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
   Future<bool> _checkSubscriptionBeforeTest() async {
     if (_isCheckingSubscription) return false;
 
-    final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
     // Use user data to check if user has paid
     if (cbtUserProvider.hasPaid == true) {
       _cachedCanTakeTest = true;
@@ -110,7 +113,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     try {
       final hasPaid = cbtUserProvider.hasPaid;
       final canTakeTest = await _subscriptionService.canTakeTest();
-      final remainingTests = await _subscriptionService.getRemainingFreeTests();
+      final remainingDays = await _subscriptionService.getRemainingFreeTests();
 
       // Update cache
       _cachedCanTakeTest = hasPaid || canTakeTest;
@@ -120,6 +123,7 @@ class _CBTDashboardState extends State<CBTDashboard>
       }
 
       // User must pay - show enforcement dialog
+      final settings = await CbtSettingsHelper.getSettings();
       if (!mounted) return false;
 
       await showDialog(
@@ -127,8 +131,9 @@ class _CBTDashboardState extends State<CBTDashboard>
         barrierDismissible: false,
         builder: (context) => SubscriptionEnforcementDialog(
           isHardBlock: true,
-          remainingTests: remainingTests,
-          amount: 400,
+          remainingTests: remainingDays,
+          amount: settings.amount,
+          discountRate: settings.discountRate,
           onSubscribed: () {
             print('✅ User subscribed from CBT Dashboard');
             _cachedCanTakeTest = true; // Update cache
@@ -153,7 +158,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     return Scaffold(
       appBar: widget.showAppBar
           ? Constants.customAppBar(
@@ -168,7 +173,7 @@ class _CBTDashboardState extends State<CBTDashboard>
             enabled: provider.isLoading,
             child: Container(
               color: AppColors.backgroundLight,
-             // decoration: Constants.customBoxDecoration(context),
+              // decoration: Constants.customBoxDecoration(context),
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: _buildSlivers(provider),
@@ -222,311 +227,370 @@ class _CBTDashboardState extends State<CBTDashboard>
     return slivers;
   }
 
- Widget _buildCBTCategories(CBTProvider provider) {
-  if (provider.isLoading) {
+  Widget _buildCBTCategories(CBTProvider provider) {
+    if (provider.isLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: List.generate(3, (index) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16.0),
+              height: 145,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(12),
+              ),
+            );
+          }),
+        ),
+      );
+    }
+
+    if (provider.boards.isEmpty) {
+      return _buildEmptyBoardsState(provider);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
-        children: List.generate(3, (index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16.0),
-            height: 145,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(12),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text(
+              'Exam Boards',
+              style: AppTextStyles.normal600(
+                fontSize: 22.0,
+                color: AppColors.text4Light,
+              ),
             ),
-          );
-        }),
+          ),
+          ...provider.boards.map((board) {
+            return _buildBoardCard(
+              board: board,
+              backgroundColor: Colors.transparent, // Not used anymore
+              provider: provider,
+            );
+          }).toList(),
+        ],
       ),
     );
   }
 
-  if (provider.boards.isEmpty) {
-    return _buildEmptyBoardsState(provider);
-  }
+  Widget _buildBoardCard({
+    required dynamic board,
+    required Color backgroundColor,
+    required CBTProvider provider,
+  }) {
+    // Get unique color for this board based on its code
+    final boardColor = _getBoardColor(board.boardCode);
+    final shortName = board.shortName ?? board.boardCode;
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Text(
-            'Exam Boards',
-            style: AppTextStyles.normal600(
-              fontSize: 22.0,
-              color: AppColors.text4Light,
-            ),
+    return GestureDetector(
+      onTap: () => _handleBoardTap(board, provider),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Container(
+          height: 150,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.transparent,
           ),
-        ),
-        ...provider.boards.map((board) {
-          return _buildBoardCard(
-            board: board,
-            backgroundColor: Colors.transparent, // Not used anymore
-            provider: provider,
-          );
-        }).toList(),
-      ],
-    ),
-  );
-}
-Widget _buildBoardCard({
-  required dynamic board,
-  required Color backgroundColor,
-  required CBTProvider provider,
-}) {
-  // Get unique color for this board based on its code
-  final boardColor = _getBoardColor(board.boardCode);
-  final shortName = board.shortName ?? board.boardCode;
-  
-  return GestureDetector(
-    onTap: () => _handleBoardTap(board, provider),
-    child: Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Container(
-        height: 150,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.transparent,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              height: double.infinity,
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: double.infinity,
                 decoration: BoxDecoration(
-                color: boardColor.withOpacity(0.15),
-                boxShadow: [
-                  BoxShadow(
-                  color: boardColor.withOpacity(0.18),
-                  blurRadius: 18,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 8),
-                  ),
-                ],
+                  color: boardColor.withOpacity(0.15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: boardColor.withOpacity(0.18),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            
-                children: [
-                  // Icon and Badge Row
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: boardColor,
-                          borderRadius: BorderRadius.circular(8),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Icon and Badge Row
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: boardColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.school,
+                            size: 24,
+                            color: Colors.white,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.school,
-                          size: 24,
-                          color: Colors.white,
+                        const SizedBox(width: 12),
+                        // Short name badge
+                        Text(
+                          shortName,
+                          style: AppTextStyles.normal700P(
+                            fontSize: 16.0,
+                            color: boardColor,
+                            height: 1.0,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Short name badge
-                      Text(
-                        shortName,
-                        style: AppTextStyles.normal700P(
-                          fontSize: 16.0,
-                          color: boardColor,
-                          height: 1.0,
+                      ],
+                    ),
+
+                    // Title and Start Button
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          board.title,
+                          style: AppTextStyles.normal700P(
+                            fontSize: 16.0,
+                            color: AppColors.text4Light,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                  
-                  // Title and Start Button
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        board.title,
-                        style: AppTextStyles.normal700P(
-                          fontSize: 16.0,
-                          color: AppColors.text4Light,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: boardColor,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: boardColor.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: TextButton(
-                              onPressed: () => _handleBoardTap(board, provider),
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 8,
-                                ),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Start',
-                                    style: AppTextStyles.normal700P(
-                                      fontSize: 14,
-                                      color: Colors.white,
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 16,
-                                    color: Colors.white,
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: boardColor,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: boardColor.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
+                              child: TextButton(
+                                onPressed: () =>
+                                    _handleBoardTap(board, provider),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Start',
+                                      style: AppTextStyles.normal700P(
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            
-            // Loading overlay when checking subscription
-            if (_isCheckingSubscription)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withOpacity(0.3),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
+
+              // Loading overlay when checking subscription
+              if (_isCheckingSubscription)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
-
-
-Color _getBoardColor(String boardCode) {
-  final Map<String, Color> boardColors = {
-    // 'JAMB': const Color(0xFF6366F1),      // Indigo
-    // 'WAEC': const Color(0xFF10B981),      // Emerald
-    // 'BECE': const Color(0xFFEC4899),      // Pink
-    // 'Million': const Color(0xFFF59E0B),   // Amber
-    // 'PSTE': const Color(0xFF8B5CF6),      // Violet
-    // 'ESUT': const Color(0xFF06B6D4),      // Cyan
-    // 'PSLC': const Color(0xFFEF4444),      // Red
-    // 'SCE': const Color(0xFF14B8A6),       // Teal
-    // 'NCEE': const Color(0xFFF97316),      // Orange
-  };
-
-  // List of random fallback colors
-  final List<Color> fallbackColors = [
-    const Color(0xFF6366F1), // Indigo
-    const Color(0xFF10B981), // Emerald
-    const Color(0xFFF59E0B), // Amber
-    const Color(0xFF8B5CF6), // Violet
-    const Color(0xFF06B6D4), // Cyan
-    const Color(0xFFEC4899), // Pink
-    const Color(0xFFEF4444), // Red
-    const Color(0xFF14B8A6), // Teal
-    const Color(0xFFF97316), // Orange
-  ];
-
-  if (boardColors.containsKey(boardCode)) {
-    return boardColors[boardCode]!;
-  } else {
-    // Pick a random color from the fallback list
-    final random = Random(boardCode.hashCode);
-    return fallbackColors[random.nextInt(fallbackColors.length)];
+    );
   }
-}
+
+  Color _getBoardColor(String boardCode) {
+    final Map<String, Color> boardColors = {
+      // 'JAMB': const Color(0xFF6366F1),      // Indigo
+      // 'WAEC': const Color(0xFF10B981),      // Emerald
+      // 'BECE': const Color(0xFFEC4899),      // Pink
+      // 'Million': const Color(0xFFF59E0B),   // Amber
+      // 'PSTE': const Color(0xFF8B5CF6),      // Violet
+      // 'ESUT': const Color(0xFF06B6D4),      // Cyan
+      // 'PSLC': const Color(0xFFEF4444),      // Red
+      // 'SCE': const Color(0xFF14B8A6),       // Teal
+      // 'NCEE': const Color(0xFFF97316),      // Orange
+    };
+
+    // List of random fallback colors
+    final List<Color> fallbackColors = [
+      const Color(0xFF6366F1), // Indigo
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFFF59E0B), // Amber
+      const Color(0xFF8B5CF6), // Violet
+      const Color(0xFF06B6D4), // Cyan
+      const Color(0xFFEC4899), // Pink
+      const Color(0xFFEF4444), // Red
+      const Color(0xFF14B8A6), // Teal
+      const Color(0xFFF97316), // Orange
+    ];
+
+    if (boardColors.containsKey(boardCode)) {
+      return boardColors[boardCode]!;
+    } else {
+      // Pick a random color from the fallback list
+      final random = Random(boardCode.hashCode);
+      return fallbackColors[random.nextInt(fallbackColors.length)];
+    }
+  }
 
   /// ⚡ OPTIMIZED: Non-blocking board tap handler
   Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {
-  // Check subscription asynchronously
-  final canProceed = await _checkSubscriptionBeforeTest();
-  if (!canProceed || !mounted) return;
-  
-  provider.selectBoard(board.boardCode);
-  
-  // Show board options modal
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => _BoardOptionsModal(
-      boardName: board.title,
-      onPractice: () {
-        Navigator.pop(context);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SubjectSelectionScreen(),
-          ),
-        );
-      },
-      onStudy: () {
-        Navigator.pop(context);
-        // Show study subject selection modal using current board subjects
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => StudySubjectSelectionModal(
-            subjects: provider.currentBoardSubjects,
-          ),
-        );
-      },
-      onGamify: () {
-        Navigator.pop(context);
-       Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const GameDashboardScreen(),
-          ),
-        );
+    // Check subscription asynchronously
+    final canProceed = await _checkSubscriptionBeforeTest();
+    if (!canProceed || !mounted) return;
 
-      },
-      onChallenge: () {
-        Navigator.pop(context);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ModernChallengeScreen(),
-          ),
-        );
-      },
-    ),
-  );
-}
+    provider.selectBoard(board.boardCode);
+
+    // Show board options modal
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _BoardOptionsModal(
+        boardName: board.title,
+        onPractice: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SubjectSelectionScreen(),
+            ),
+          );
+        },
+        onStudy: () {
+          Navigator.pop(context);
+          // Show study subject selection modal using current board subjects
+          final examTypeId =
+              int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => StudySubjectSelectionModal(
+              subjects: provider.currentBoardSubjects,
+              examTypeId: examTypeId,
+            ),
+          );
+        },
+        onGamify: () {
+          Navigator.pop(context);
+          final examTypeId = int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GameDashboardScreen(
+                subjects: provider.currentBoardSubjects,
+                examTypeId: examTypeId,
+              ),
+            ),
+          );
+        },
+        onChallenge: () async {
+          Navigator.pop(context);
+
+          // ⚡ Challenge Module: Check if user is signed in and has paid
+          // Does NOT check free trial limits - only checks active subscription
+          final cbtuserProvider =
+              Provider.of<CbtUserProvider>(context, listen: false);
+          final isSignedIn = await _authService.isUserSignedUp();
+          final hasPaid = cbtuserProvider.hasPaid;
+
+          print('\n🎯 Challenge Module Access Check:');
+          print('   - User signed in: $isSignedIn');
+          print('   - Has paid: $hasPaid');
+
+          // If not signed in or not paid, show enforcement dialog
+          if (!isSignedIn || !hasPaid) {
+            print('   ❌ Challenge access denied - showing enforcement dialog');
+
+            final settings = await CbtSettingsHelper.getSettings();
+            if (!mounted) return;
+
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => SubscriptionEnforcementDialog(
+                isHardBlock: true,
+                remainingTests: 0, // Challenge doesn't use free trials
+                amount: settings.amount,
+                discountRate: settings.discountRate,
+                onSubscribed: () {
+                  print('✅ User subscribed for Challenge module');
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+              ),
+            );
+            return;
+          }
+
+          // User is signed in and has paid, proceed to challenge
+          print('   ✅ Challenge access granted - proceeding');
+          final cbtProvider = Provider.of<CBTProvider>(context, listen: false);
+          final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
+
+          String userName = cbtuserProvider.currentUser?.name ?? 'User';
+          int userId = cbtuserProvider.currentUser?.id ?? 0;
+          print(
+              'userName: $userName, userId: $userId , examTypeId: $CurrentexamTypeId');
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ModernChallengeScreen(
+                userName: userName,
+                userId: userId,
+                examTypeId: CurrentexamTypeId.toString(),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildEmptyBoardsState(CBTProvider provider) {
     return Padding(
@@ -639,7 +703,7 @@ Color _getBoardColor(String boardCode) {
         if (provider.recentHistory.isEmpty) {
           return const SizedBox.shrink();
         }
-        
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
@@ -679,7 +743,7 @@ Color _getBoardColor(String boardCode) {
     return Consumer<CBTProvider>(
       builder: (context, provider, child) {
         final incompleteTest = provider.incompleteTest;
-        
+
         if (incompleteTest == null) {
           return const SizedBox.shrink();
         }
@@ -794,7 +858,7 @@ Color _getBoardColor(String boardCode) {
   ) async {
     final canProceed = await _checkSubscriptionBeforeTest();
     if (!canProceed || !mounted) return;
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -845,7 +909,7 @@ Color _getBoardColor(String boardCode) {
                     AppColors.cbtColor4,
                     AppColors.cbtColor1,
                   ];
-                  
+
                   return _buildHistoryCard(
                     context: context,
                     history: history,
@@ -1024,7 +1088,7 @@ class _BoardOptionsModal extends StatelessWidget {
   final VoidCallback onStudy;
   final VoidCallback onGamify;
   final VoidCallback onChallenge;
-  
+
   const _BoardOptionsModal({
     required this.boardName,
     required this.onPractice,
@@ -1054,7 +1118,7 @@ class _BoardOptionsModal extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            
+
             // Header
             Padding(
               padding: const EdgeInsets.all(16),
@@ -1118,7 +1182,7 @@ class _BoardOptionsModal extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 32),
           ],
         ),
@@ -1126,13 +1190,14 @@ class _BoardOptionsModal extends StatelessWidget {
     );
   }
 }
+
 class _OptionTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
-  
+
   const _OptionTile({
     required this.icon,
     required this.title,
@@ -1151,7 +1216,6 @@ class _OptionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
-          
         ),
         child: Row(
           children: [

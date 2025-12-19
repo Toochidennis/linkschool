@@ -9,18 +9,19 @@ import 'dart:convert';
 
 class CbtUserProvider with ChangeNotifier {
   final CbtUserService _userService = CbtUserService();
-  
+
   // User state
   CbtUserModel? _currentUser;
   CbtUserModel? get currentUser => _currentUser;
-  
+
   // Payment reference notifier
-  final ValueNotifier<String?> paymentReferenceNotifier = ValueNotifier<String?>(null);
-  
+  final ValueNotifier<String?> paymentReferenceNotifier =
+      ValueNotifier<String?>(null);
+
   // Loading states
   bool _isLoading = false;
   bool get isLoading => _isLoading;
-  
+
   // SharedPreferences keys
   static const String _keyCurrentUser = 'cbt_current_user';
   static const String _keyPaymentReference = 'cbt_payment_reference';
@@ -28,47 +29,49 @@ class CbtUserProvider with ChangeNotifier {
   // =========================================================================
   // 🔄 INITIALIZE - Load user from SharedPreferences on app start
   // =========================================================================
- Future<void> initialize() async {
-  print('🚀 Initializing CbtUserProvider...');
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Load user from SharedPreferences
-    final userJson = prefs.getString(_keyCurrentUser);
-    if (userJson != null && userJson.isNotEmpty) {
-      final userData = json.decode(userJson);
-      _currentUser = CbtUserModel.fromJson(userData);
-      print('✅ User loaded from SharedPreferences: ${_currentUser?.email}');
-      
-      // ✨ SYNC SUBSCRIPTION SERVICE WITH USER PAYMENT STATUS
-      await syncSubscriptionService();
-      
-      notifyListeners();
-    }
-    
-    // Load payment reference
-    final savedReference = prefs.getString(_keyPaymentReference);
-    if (savedReference != null && savedReference.isNotEmpty) {
-      paymentReferenceNotifier.value = savedReference;
-      print('✅ Payment reference loaded: $savedReference');
-    }
-  } catch (e) {
-    print('⚠️ Error initializing provider: $e');
-  }
-}
+  Future<void> initialize() async {
+    print('🚀 Initializing CbtUserProvider...');
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-Future<void> syncSubscriptionService() async {
-  if (_currentUser == null) return;
-  
-  final subscriptionService = CbtSubscriptionService();
-  await subscriptionService.syncPaymentStatus(
-    userEmail: _currentUser!.email,
-    hasReference: _currentUser!.reference != null && _currentUser!.reference!.isNotEmpty,
-    subscribed: _currentUser!.subscribed,
-  );
-  
-  print('✅ Subscription service synced with user payment status');
-}
+      // Load user from SharedPreferences
+      final userJson = prefs.getString(_keyCurrentUser);
+      if (userJson != null && userJson.isNotEmpty) {
+        final userData = json.decode(userJson);
+        _currentUser = CbtUserModel.fromJson(userData);
+        print('✅ User loaded from SharedPreferences: ${_currentUser?.email}');
+
+        // ✨ SYNC SUBSCRIPTION SERVICE WITH USER PAYMENT STATUS
+        await syncSubscriptionService();
+
+        notifyListeners();
+      }
+
+      // Load payment reference
+      final savedReference = prefs.getString(_keyPaymentReference);
+      if (savedReference != null && savedReference.isNotEmpty) {
+        paymentReferenceNotifier.value = savedReference;
+        print('✅ Payment reference loaded: $savedReference');
+      }
+    } catch (e) {
+      print('⚠️ Error initializing provider: $e');
+    }
+  }
+
+  Future<void> syncSubscriptionService() async {
+    if (_currentUser == null) return;
+
+    final subscriptionService = CbtSubscriptionService();
+    await subscriptionService.syncPaymentStatus(
+      userEmail: _currentUser!.email,
+      hasReference: _currentUser!.reference != null &&
+          _currentUser!.reference!.isNotEmpty,
+      subscribed: _currentUser!.subscribed,
+    );
+
+    print('✅ Subscription service synced with user payment status');
+  }
+
   // =========================================================================
   // 💾 SAVE USER TO SHARED PREFERENCES
   // =========================================================================
@@ -89,11 +92,36 @@ Future<void> syncSubscriptionService() async {
   Future<void> _clearUserFromPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_keyCurrentUser);
-      await prefs.remove(_keyPaymentReference);
+
+      // Check if keys exist before removing
+      final userExists = prefs.containsKey(_keyCurrentUser);
+      final refExists = prefs.containsKey(_keyPaymentReference);
+
+      print('🗑️ Clearing user data from SharedPreferences...');
+      print('   - User key exists: $userExists');
+      print('   - Payment reference key exists: $refExists');
+
+      if (userExists) {
+        final removed = await prefs.remove(_keyCurrentUser);
+        print('   - User key removed: $removed');
+      }
+
+      if (refExists) {
+        final removed = await prefs.remove(_keyPaymentReference);
+        print('   - Payment reference removed: $removed');
+      }
+
+      // Verify removal
+      final stillExists = prefs.containsKey(_keyCurrentUser) ||
+          prefs.containsKey(_keyPaymentReference);
+      if (stillExists) {
+        throw Exception('Failed to remove user data from SharedPreferences');
+      }
+
       print('✅ User data cleared from SharedPreferences');
     } catch (e) {
       print('❌ Error clearing user data: $e');
+      rethrow;
     }
   }
 
@@ -112,28 +140,28 @@ Future<void> syncSubscriptionService() async {
 
     try {
       final user = await _userService.fetchUserByEmail(email);
-      
+
       if (user != null) {
         print('✅ [FETCH USER] User found');
         print('   - Subscribed: ${user.subscribed}');
         print('   - Reference: ${user.reference}');
-        
+
         // Save to state
         _currentUser = user;
-        
+
         // Save to SharedPreferences
         await _saveUserToPreferences(user);
-        
+
         // Update payment reference if user has paid
         if (user.reference != null && user.reference!.isNotEmpty) {
           await _savePaymentReference(user.reference!);
         }
-        
+
         print('✅ [FETCH USER] User saved to SharedPreferences');
       } else {
         print('⚠️ [FETCH USER] User not found in database');
       }
-      
+
       _isLoading = false;
       notifyListeners();
       return user;
@@ -157,7 +185,7 @@ Future<void> syncSubscriptionService() async {
   }) async {
     print('🔐 Handling Firebase sign-up for: $email');
     print('📋 Flow: GET → Check → (POST if needed) → Save');
-    
+
     _isLoading = true;
     notifyListeners();
 
@@ -176,63 +204,64 @@ Future<void> syncSubscriptionService() async {
         print('   - Email: ${existingUser.email}');
         print('   - Subscribed: ${existingUser.subscribed}');
         print('   - Reference: ${existingUser.reference}');
-        
+
         // Update user info (name, profile picture may have changed)
-        if (existingUser.name != name || existingUser.profilePicture != profilePicture) {
+        if (existingUser.name != name ||
+            existingUser.profilePicture != profilePicture) {
           print('🔄 Updating user profile info...');
           existingUser = existingUser.copyWith(
             name: name,
             profilePicture: profilePicture,
           );
-          
+
           // Update in backend
           existingUser = await _userService.createOrUpdateUser(existingUser);
           print('✅ User profile updated');
         }
-        
+
         // Save to state and SharedPreferences
         _currentUser = existingUser;
         await _saveUserToPreferences(existingUser);
-        
+
         // Update payment reference if exists
-        if (existingUser.reference != null && existingUser.reference!.isNotEmpty) {
+        if (existingUser.reference != null &&
+            existingUser.reference!.isNotEmpty) {
           await _savePaymentReference(existingUser.reference!);
         }
-        
+
         print('✅ User saved to SharedPreferences. Ready to proceed.');
-        
+
         _isLoading = false;
         notifyListeners();
         return existingUser;
       }
 
-
       void loadUserOnStartup() {
-  final user = FirebaseAuthService().getCurrentUser();
-  if (user != null) {
-    // Set user as logged in, load profile info, etc.
-    _currentUser = CbtUserModel(
-      id: null, // or assign an appropriate id if available
-      name: user.displayName ?? '',
-      email: user.email ?? '',
-      profilePicture: user.photoURL,
-      attempt: 0,
-      subscribed: 0,
-      reference: null,
-    );
-    notifyListeners();
-  } else {
-    _currentUser = null;
-    notifyListeners();
-  }
-}
+        final user = FirebaseAuthService().getCurrentUser();
+        if (user != null) {
+          // Set user as logged in, load profile info, etc.
+          _currentUser = CbtUserModel(
+            id: null, // or assign an appropriate id if available
+            name: user.displayName ?? '',
+            email: user.email ?? '',
+            profilePicture: user.photoURL,
+            attempt: 0,
+            subscribed: 0,
+            reference: null,
+          );
+          notifyListeners();
+        } else {
+          _currentUser = null;
+          notifyListeners();
+        }
+      }
 
       // =======================================================================
       // User DOESN'T EXIST → Create new user (POST) → GET again → Save
       // =======================================================================
       print('⚠️ [STEP 1] User NOT found in database');
       print('🆕 [STEP 2] Creating new user via POST...');
-      
+
       // Create new user model
       final newUser = CbtUserModel(
         name: name,
@@ -259,7 +288,7 @@ Future<void> syncSubscriptionService() async {
         // Fallback to created user data
         _currentUser = createdUser;
         await _saveUserToPreferences(createdUser);
-        
+
         _isLoading = false;
         notifyListeners();
         return createdUser;
@@ -276,18 +305,18 @@ Future<void> syncSubscriptionService() async {
       print('💾 [STEP 4] Saving user to SharedPreferences...');
       _currentUser = verifiedUser;
       await _saveUserToPreferences(verifiedUser);
-      
-      if (verifiedUser.reference != null && verifiedUser.reference!.isNotEmpty) {
+
+      if (verifiedUser.reference != null &&
+          verifiedUser.reference!.isNotEmpty) {
         await _savePaymentReference(verifiedUser.reference!);
       }
       await syncSubscriptionService();
 
       print('✅ Sign-up flow completed successfully');
-      
+
       _isLoading = false;
       notifyListeners();
       return verifiedUser;
-
     } catch (e) {
       print('❌ Error in sign-up flow: $e');
       _isLoading = false;
@@ -300,57 +329,58 @@ Future<void> syncSubscriptionService() async {
   // 💳 UPDATE USER AFTER PAYMENT (PUT + Fetch + Persist)
   // =========================================================================
   Future<void> updateUserAfterPayment({required String reference}) async {
-  if (_currentUser == null) {
-    print('⚠️ Cannot update: currentUser is null');
-    throw Exception('No current user to update');
+    if (_currentUser == null) {
+      print('⚠️ Cannot update: currentUser is null');
+      throw Exception('No current user to update');
+    }
+
+    print('💳 Updating user after payment...');
+    print('   - Email: ${_currentUser!.email}');
+    print('   - Reference: $reference');
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Step 1: Make PUT request to update user
+      print('📡 Making PUT request to update user...');
+      final updatedUser = await _userService.updateUserAfterPayment(
+        email: _currentUser!.email,
+        name: _currentUser!.name,
+        profilePicture: _currentUser!.profilePicture ?? '',
+        reference: reference,
+      );
+
+      // Step 2: Update current user
+      _currentUser = updatedUser;
+
+      // Step 3: Save to SharedPreferences
+      await _saveUserToPreferences(updatedUser);
+
+      // Step 4: Save payment reference and trigger notifier
+      await _savePaymentReference(reference);
+
+      // ✨ Step 5: Mark as paid in subscription service
+      final subscriptionService = CbtSubscriptionService();
+      await subscriptionService.markAsPaid(_currentUser!.email);
+
+      // ✨ Step 6: Sync subscription service
+      await syncSubscriptionService();
+
+      print('✅ User updated and persisted after payment');
+      print('   - Subscribed: ${updatedUser.subscribed}');
+      print('   - Reference: ${updatedUser.reference}');
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('❌ Error updating user after payment: $e');
+      _isLoading = false;
+      notifyListeners();
+      throw Exception('Failed to update user: $e');
+    }
   }
 
-  print('💳 Updating user after payment...');
-  print('   - Email: ${_currentUser!.email}');
-  print('   - Reference: $reference');
-
-  _isLoading = true;
-  notifyListeners();
-
-  try {
-    // Step 1: Make PUT request to update user
-    print('📡 Making PUT request to update user...');
-    final updatedUser = await _userService.updateUserAfterPayment(
-      email: _currentUser!.email,
-      name: _currentUser!.name,
-      profilePicture: _currentUser!.profilePicture ?? '',
-      reference: reference,
-    );
-
-    // Step 2: Update current user
-    _currentUser = updatedUser;
-    
-    // Step 3: Save to SharedPreferences
-    await _saveUserToPreferences(updatedUser);
-    
-    // Step 4: Save payment reference and trigger notifier
-    await _savePaymentReference(reference);
-
-    // ✨ Step 5: Mark as paid in subscription service
-    final subscriptionService = CbtSubscriptionService();
-    await subscriptionService.markAsPaid(_currentUser!.email);
-    
-    // ✨ Step 6: Sync subscription service
-    await syncSubscriptionService();
-
-    print('✅ User updated and persisted after payment');
-    print('   - Subscribed: ${updatedUser.subscribed}');
-    print('   - Reference: ${updatedUser.reference}');
-
-    _isLoading = false;
-    notifyListeners();
-  } catch (e) {
-    print('❌ Error updating user after payment: $e');
-    _isLoading = false;
-    notifyListeners();
-    throw Exception('Failed to update user: $e');
-  }
-}
   // =========================================================================
   // 💾 SAVE PAYMENT REFERENCE
   // =========================================================================
@@ -381,36 +411,51 @@ Future<void> syncSubscriptionService() async {
   // =========================================================================
   // 🚪 LOGOUT
   // =========================================================================
- Future<void> logout() async {
-  print('🚪 Logging out user...');
-  _currentUser = null;
-  paymentReferenceNotifier.value = null;
-  await _clearUserFromPreferences();
+  Future<void> logout() async {
+    print('🚪 Logging out user...');
 
-  // ✨ Clear subscription service data
-  final subscriptionService = CbtSubscriptionService();
-  await subscriptionService.clearUserData();
+    // Clear state
+    _currentUser = null;
+    paymentReferenceNotifier.value = null;
 
-  // ✨ Clear CBT test history data
-  try {
-    final historyService = CbtHistoryService();
-    await historyService.clearHistory();
-    print('✅ CBT test history cleared on logout');
-  } catch (e) {
-    print('❌ Error clearing CBT test history on logout: $e');
+    // Clear SharedPreferences
+    try {
+      await _clearUserFromPreferences();
+      print('✅ User data cleared from SharedPreferences');
+    } catch (e) {
+      print('❌ Error clearing user from preferences: $e');
+      rethrow; // Re-throw to let caller handle
+    }
+
+    // ✨ Clear subscription service data
+    try {
+      final subscriptionService = CbtSubscriptionService();
+      await subscriptionService.clearUserData();
+      print('✅ Subscription service data cleared');
+    } catch (e) {
+      print('❌ Error clearing subscription service data: $e');
+    }
+
+    // ✨ Clear CBT test history data
+    try {
+      final historyService = CbtHistoryService();
+      await historyService.clearHistory();
+      print('✅ CBT test history cleared on logout');
+    } catch (e) {
+      print('❌ Error clearing CBT test history on logout: $e');
+    }
+
+    notifyListeners();
+    print('✅ User logged out successfully');
   }
-
-  notifyListeners();
-  print('✅ User logged out successfully');
-}
 
   // =========================================================================
   // ✅ CHECK IF USER HAS PAID
   // =========================================================================
   bool get hasPaid {
     if (_currentUser == null) return false;
-    final hasReference = _currentUser!.reference != null && 
-                        _currentUser!.reference!.isNotEmpty;
+    final hasReference =
+        _currentUser!.reference != null && _currentUser!.reference!.isNotEmpty;
     final isSubscribed = _currentUser!.subscribed == 1;
     return hasReference || isSubscribed;
   }

@@ -4,7 +4,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
-import 'package:linkschool/modules/providers/explore/challange/challange_provider.dart';
+import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/explore/manage_storage.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_instruction.dart';
@@ -12,7 +13,13 @@ import 'package:linkschool/modules/explore/cbt/cbt_challange/start_challenge.dar
 import 'package:provider/provider.dart';
 
 class CreateChallengeScreen extends StatefulWidget {
-  const CreateChallengeScreen({super.key});
+  final String userName;
+  final int userId;
+  final String examTypeId;
+   final ChallengeModel? challengeToEdit; // Add this
+  final bool isEditing;
+
+  const CreateChallengeScreen({super.key, required this.userName, required this.userId, required this.examTypeId, this.challengeToEdit, this.isEditing = false,});
 
   @override
   State<CreateChallengeScreen> createState() => _CreateChallengeScreenState();
@@ -29,6 +36,7 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _pointsController = TextEditingController();
   String _challengeStatus = 'draft';
+  String?  _challengeId;
   
   DateTime? _startDate;
   DateTime? _endDate;
@@ -37,10 +45,11 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
   // Challenge settings
   int timeInMinutes = 60; // Default 60 minutes
   int? questionLimit = 40; // Default 40 questions
-  
+
+
   // Dropdown options
-  final List<int> timeOptions = [90, 60, 40, 30, 20, 10]; // minutes (biggest to lowest)
-  final List<int> questionOptions = [60, 50, 45, 40]; // questions (biggest to lowest)
+  final List<int> timeOptions =  [60,45,40, 35, 30, 25, 20,10]; // minutes (biggest to lowest)
+  final List<int> questionOptions =[60, 55, 50, 45,40,35,30,25,10]; // questions (biggest to lowest)
   
   // Subject selection variables
   final List<Map<String, dynamic>> _staticSubjects = [
@@ -65,6 +74,10 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
     );
     _pageController = PageController();
     _animationController.forward();
+
+   if (widget.isEditing && widget.challengeToEdit != null) {
+    Future.microtask(() => _initializeWithExistingChallenge());
+  }
   }
 
   @override
@@ -77,6 +90,37 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
     super.dispose();
   }
 
+
+  void _initializeWithExistingChallenge() {
+  final challenge = widget.challengeToEdit!;
+
+  setState(() {
+    _challengeId = challenge.id;
+    _titleController.text = challenge.title;
+    _descriptionController.text = challenge.description;
+    _pointsController.text = challenge.xp.toString();
+    _startDate = challenge.startDate;
+    _endDate = challenge.endDate;
+    _challengeStatus = challenge.status ?? 'draft';
+    timeInMinutes = challenge.timeInMinutes ?? 60;
+    questionLimit = challenge.questionLimit ?? 40;
+
+    // Fix: Properly copy subjects
+    if (challenge.subjects != null && challenge.subjects!.isNotEmpty) {
+      _selectedSubjects = challenge.subjects!.map((s) {
+        return SelectedSubject(
+          subjectName: s.subjectName,
+          subjectId: s.subjectId ?? '',
+          year: s.year,
+          examId: s.examId,
+          icon: s.icon ?? 'default',
+        );
+      }).toList();
+    }
+  });
+
+  print("Initialized with ${_selectedSubjects.length} subjects");
+}
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -355,41 +399,52 @@ void _submitChallenge() async {
   final apiPayload = {
     'title': _titleController.text,
     'description': _descriptionController.text,
-    'points': int.tryParse(_pointsController.text) ?? 0,
+    'score': int.tryParse(_pointsController.text) ?? 0,
     'start_date': _startDate!.toIso8601String(),
     'end_date': _endDate!.toIso8601String(),
     'time_limit': timeInMinutes,
-    'question_limit': questionLimit,
-    'exam_ids': _selectedSubjects.map((subject) => subject.examId).toList(),
-    'course_names': _selectedSubjects.map((subject) => subject.subjectName).toList(),
-    'course_ids': _selectedSubjects.map((subject) => subject.subjectId).toList(),
+    'count_per_exam': questionLimit,
+    // 'exam_ids': _selectedSubjects.map((subject) => subject.examId).toList(),
+    // 'course_names': _selectedSubjects.map((subject) => subject.subjectName).toList(),
+    // 'course_ids': _selectedSubjects.map((subject) => subject.subjectId).toList(),
+    'details': _selectedSubjects.map((subject) => {
+  'exam_id': subject.examId is int ? subject.examId : int.tryParse(subject.examId) ?? 0,
+  'course_name': subject.subjectName,
+  'course_id': subject.subjectId is int ? subject.subjectId : int.tryParse(subject.subjectId) ?? 0,
+  'year': subject.year is int ? subject.year : int.tryParse(subject.year) ?? 0,
+}).toList(),
       'status': _challengeStatus,
-  };
+    'author_id': widget.userId.toString(), // Replace with actual user ID
+    'author_name': widget.userName, // Replace with actual user name
+    'exam_type_id': int.tryParse(widget.examTypeId) ?? 0, // Replace with actual exam type ID
 
-  // Create local storage data
-  final challengeData = {
-    'id': 'challenge_${DateTime.now().millisecondsSinceEpoch}',
-    'title': _titleController.text,
-    'description': _descriptionController.text,
-    'points': int.tryParse(_pointsController.text) ?? 0,
-    'startDate': _startDate!.toIso8601String(),
-    'endDate': _endDate!.toIso8601String(),
-    'timeInMinutes': timeInMinutes,
-    'questionLimit': questionLimit,
-    'subjects': _selectedSubjects.map((subject) => {
-      'subjectName': subject.subjectName,
-      'subjectId': subject.subjectId,
-      'year': subject.year,
-      'examId': subject.examId,
-      'icon': subject.icon,
-    }).toList(),
-    'createdAt': DateTime.now().toIso8601String(),
-    'participants': 0,
-    'difficulty': 'Medium',
-    'status': 'active',
-    'synced': false,
-      'status': _challengeStatus,
   };
+print('\n🚀 Submitting Challenge with Payloadddd:');
+print(apiPayload);
+  // Create local storage data
+  // final challengeData = {
+  //   'id': 'challenge_${DateTime.now().millisecondsSinceEpoch}',
+  //   'title': _titleController.text,
+  //   'description': _descriptionController.text,
+  //   'points': int.tryParse(_pointsController.text) ?? 0,
+  //   'startDate': _startDate!.toIso8601String(),
+  //   'endDate': _endDate!.toIso8601String(),
+  //   'timeInMinutes': timeInMinutes,
+  //   'questionLimit': questionLimit,
+  //   'subjects': _selectedSubjects.map((subject) => {
+  //     'subjectName': subject.subjectName,
+  //     'subjectId': subject.subjectId,
+  //     'year': subject.year,
+  //     'examId': subject.examId,
+  //     'icon': subject.icon,
+  //   }).toList(),
+  //   'createdAt': DateTime.now().toIso8601String(),
+  //   'participants': 0,
+  //   'difficulty': 'Medium',
+  //   'status': 'active',
+  //   'synced': false,
+  //     'status': _challengeStatus,
+  // };
 
   // Show loading dialog
   showDialog(
@@ -400,31 +455,35 @@ void _submitChallenge() async {
         children: [
           CircularProgressIndicator(),
           SizedBox(width: 20),
-          Text('Creating challenge...'),
+          Text(widget.isEditing ? 'Updating Challenge...' : 'Creating Challenge...'),
         ],
       ),
     ),
   );
 
   try {
-    // First: Call API endpoint
-    await provider.createChallenge(apiPayload);
+     
+     if (widget.isEditing && _challengeId != null) {
+      // Update existing challenge
+        final int challengeIdInt = int.tryParse(_challengeId.toString()) ?? 0;
+        print('Updating Challenge ID: $challengeIdInt');
+      await provider.updateChallenges(
+        authorId: widget.userId,
+        payload: apiPayload,
+        challengeId: challengeIdInt,
+      );
+    } else {
+      // Create new challenge
+       await provider.createChallenge(apiPayload);
     
-    // Check if there's an error from the provider
-    if (provider.error != null && provider.error!.isNotEmpty) {
-      // API call failed
+    }
+
+     if (provider.error != null && provider.error!.isNotEmpty) {
       Navigator.of(context).pop(); // Close loading dialog
-      _showErrorSnackBar('Failed to create challenge: ${provider.error}');
+      _showErrorSnackBar('Failed: ${provider.error}');
       return;
     }
-    
-    // Second: If API call succeeds, save to SharedPreferences
-    await ChallengeService.saveChallenge(challengeData);
-    
-    // Close loading dialog
-    Navigator.of(context).pop();
-    
-    // Show success dialog with challenge details
+     Navigator.of(context).pop();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -435,6 +494,8 @@ void _submitChallenge() async {
         points: int.tryParse(_pointsController.text) ?? 0,
         startDate: _startDate,
         endDate: _endDate,
+         isEditing: widget.isEditing,
+
       ),
     );
   } catch (e) {
@@ -445,61 +506,52 @@ void _submitChallenge() async {
   }
 }
 
-  void _previewChallenge() {
-    // Create a temporary challenge model for preview
-    final previewChallenge = ChallengeModel(
-      title: _titleController.text.isNotEmpty ? _titleController.text : 'Preview Challenge',
-      description: _descriptionController.text,
-      icon: Icons.preview,
-      xp: int.tryParse(_pointsController.text) ?? 0,
-      gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-      participants: 0,
-      difficulty: 'Medium',
-      startDate: _startDate ?? DateTime.now(),
-      endDate: _endDate ?? DateTime.now().add(Duration(days: 1)),
-      subjects: _selectedSubjects,
-      isCustomChallenge: true,
-      timeInMinutes: timeInMinutes,
-      questionLimit: questionLimit,
-    );
+ void _previewChallenge() {
+  final previewChallenge = ChallengeModel(
+    id: widget.isEditing && _challengeId != null ? _challengeId : null, // optional, for display
+    title: _titleController.text.isNotEmpty ? _titleController.text : 'Preview Challenge',
+    description: _descriptionController.text,
+    icon: Icons.preview,
+    xp: int.tryParse(_pointsController.text) ?? 0,
+    gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+    participants: 0,
+    difficulty: 'Medium',
+    startDate: _startDate ?? DateTime.now(),
+    endDate: _endDate ?? DateTime.now().add(Duration(days: 1)),
+    subjects: _selectedSubjects,
+    isCustomChallenge: true,
+    timeInMinutes: timeInMinutes,
+    questionLimit: questionLimit,
+  );
 
-    // Extract exam IDs, subject names, and years from selected subjects
-    final examIds = _selectedSubjects.map((subject) => subject.examId).toList();
-    final subjectNames = _selectedSubjects.map((subject) => subject.subjectName).toList();
-    final years = _selectedSubjects.map((subject) => subject.year).toList();
+  final examIds = _selectedSubjects.map((s) => s.examId).toList();
+  final subjectNames = _selectedSubjects.map((s) => s.subjectName).toList();
+  final years = _selectedSubjects.map((s) => s.year).toList();
 
-    print('\n👁️ Previewing Challenge:');
-    print('   Title: ${previewChallenge.title}');
-    print('   Subjects: ${subjectNames.length}');
-    print('   Exam IDs: $examIds');
+  // THIS IS THE IMPORTANT LINE
+  final int? previewChallengeId = widget.isEditing && _challengeId != null
+      ? int.tryParse(_challengeId!) // _challengeId is String?
+      : null;
 
-    // Navigate to instructions screen (same as join challenge flow)
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChallengeInstructionsScreen(
-          challenge: previewChallenge,
-          onContinue: () {
-            // Navigate to StartChallenge with exam data
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StartChallenge(
-                  challenge: previewChallenge,
-                  examIds: examIds,
-                  subjectNames: subjectNames,
-                  years: years,
-                  totalDurationInSeconds: timeInMinutes * 60,
-                  questionLimit: questionLimit,
-                ),
-              ),
-            );
-          },
-        ),
+  print('\nPreviewing Challenge');
+  print(' Challenge ID for questions: $previewChallengeId');
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => StartChallenge(
+        challenge: previewChallenge,
+        challengeId: previewChallengeId,           // ← pass it here
+        examIds: examIds,
+        subjectNames: subjectNames,
+        years: [...years],
+        totalDurationInSeconds: timeInMinutes * 60,
+        questionLimit: questionLimit,
+        isPreview: true,
       ),
-    );
-  }
-
+    ),
+  );
+}
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1417,15 +1469,15 @@ void _showStatusSelectionModal() {
                   child: InkWell(
                     onTap: _submitChallenge,
                     borderRadius: BorderRadius.circular(16),
-                    child: const Center(
+                    child: Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle, color: Colors.white, size: 22),
-                          SizedBox(width: 10),
+                          const Icon(Icons.check_circle, color: Colors.white, size: 22),
+                          const SizedBox(width: 10),
                           Text(
-                            'Create',
-                            style: TextStyle(
+                            widget.isEditing ? 'Update' : 'Create',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -1577,6 +1629,7 @@ class _CreationSuccessDialog extends StatefulWidget {
   final int points;
   final DateTime? startDate;
   final DateTime? endDate;
+   final bool isEditing;
 
   const _CreationSuccessDialog({
     required this.title,
@@ -1585,6 +1638,7 @@ class _CreationSuccessDialog extends StatefulWidget {
     required this.points,
     this.startDate,
     this.endDate,
+    this.isEditing = false,
   });
 
   @override
@@ -1677,7 +1731,7 @@ class _CreationSuccessDialogState extends State<_CreationSuccessDialog>
                 SlideTransition(
                   position: _slideAnimation,
                   child: Text(
-                    'Challenge Created!',
+                   widget.isEditing ? 'Challenge Updated!' : 'Challenge Created!',
                     style: AppTextStyles.normal700(
                       fontSize: 28,
                       color: Colors.black87,
@@ -1927,6 +1981,15 @@ class SelectedSubject {
   }
 }
 
+// Convert a string to title case: capitalize first letter of every word
+String _titleCase(String input) {
+  if (input.isEmpty) return input;
+  return input.split(' ').map((word) {
+    if (word.isEmpty) return word;
+    return word[0].toUpperCase() + word.substring(1).toLowerCase();
+  }).join(' ');
+}
+
 class SubjectYearSelectionModal extends StatefulWidget {
   final List<SubjectModel> subjects;
   final Function(String subject, String subjectId, String year, String examId, String icon) onSubjectYearSelected;
@@ -2066,7 +2129,7 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
-                        subject.name,
+                        _titleCase(subject.name),
                         style: AppTextStyles.normal600(
                           fontSize: 16,
                           color: AppColors.text3Light,

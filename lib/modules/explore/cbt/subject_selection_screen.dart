@@ -11,12 +11,16 @@ import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 // Convert a string to sentence case: all lowercase then first letter uppercase
 String _sentenceCase(String input) {
   if (input.isEmpty) return input;
-  final lower = input.toLowerCase();
-  return lower[0].toUpperCase() + (lower.length > 1 ? lower.substring(1) : '');
+
+  return input.toLowerCase().split(' ').map((word) {
+    if (word.isEmpty) return word;
+    return word[0].toUpperCase() + (word.length > 1 ? word.substring(1) : '');
+  }).join(' ');
 }
 
 class SubjectSelectionScreen extends StatefulWidget {
@@ -34,8 +38,27 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   int? questionLimit = 40; // Default 40 questions
 
   // Dropdown options
-  final List<int> timeOptions = [90, 60, 40, 30, 20,10]; // minutes (biggest to lowest)
-  final List<int> questionOptions = [60, 50, 45, 40]; // questions (biggest to lowest)
+  final List<int> timeOptions = [
+    60,
+    45,
+    40,
+    35,
+    30,
+    25,
+    20,
+    10
+  ]; // minutes (biggest to lowest)
+  final List<int> questionOptions = [
+    60,
+    55,
+    50,
+    45,
+    40,
+    35,
+    30,
+    25,
+    10
+  ]; // questions (biggest to lowest)
 
   @override
   void initState() {
@@ -72,11 +95,11 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _startTest(),
                 style: ElevatedButton.styleFrom(
-                
-                  backgroundColor:Colors.white ,
+                  backgroundColor: Colors.white,
                   foregroundColor: AppColors.eLearningBtnColor1,
                   elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -268,7 +291,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           }
           final subject = selectedSubjects.removeAt(oldIndex);
           selectedSubjects.insert(newIndex, subject);
-          
+
           // Print reorder info
           print('\n🔄 Subject Reordered:');
           print('   Moved: ${subject.subjectName} (${subject.year})');
@@ -276,7 +299,8 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           print('\n📋 New Order:');
           for (int i = 0; i < selectedSubjects.length; i++) {
             final s = selectedSubjects[i];
-            print('   ${i + 1}. ${s.subjectName} (${s.year}) - ID: ${s.examId}');
+            print(
+                '   ${i + 1}. ${s.subjectName} (${s.year}) - ID: ${s.examId}');
           }
           print('─' * 50);
         });
@@ -315,7 +339,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
         setState(() {
           selectedSubjects.removeAt(index);
         });
-        
+
         // Print removal info
         print('\n🗑️ Subject Removed:');
         print('   Subject Name: ${removedSubject.subjectName}');
@@ -330,8 +354,6 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           print('      Exam ID: ${s.examId}');
         }
         print('─' * 50);
-        
-        
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16.0),
@@ -471,7 +493,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                 ),
               );
             });
-            
+
             // Print all IDs with subject names
             print('\n📚 Subject Added:');
             print('   Subject Name: $subject');
@@ -486,68 +508,71 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
               print('      Exam ID: ${s.examId}');
             }
             print('─' * 50);
-            
+
             Navigator.of(context).pop();
-           
           },
         );
       },
     );
   }
 
- Future<void> _startTest() async {
-  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-  
-  // ✨ PRIMARY CHECK: Use CbtUserProvider's payment status (from backend)
-  final hasUserPaid = userProvider.hasPaid;
-  
-  // ✨ SECONDARY CHECK: Use subscription service (local storage)
-  final canTakeTest = await _subscriptionService.canTakeTest();
-  final remainingTests = await _subscriptionService.getRemainingFreeTests();
-  
-  print('\n💳 Payment Check:');
-  print('   - Backend says paid: $hasUserPaid');
-  print('   - Local says can take test: $canTakeTest');
-  print('   - Remaining free tests: $remainingTests');
-  
-  // If backend confirms payment, allow test
-  if (hasUserPaid) {
-    print('✅ User has paid (verified from backend) - starting test');
-    _proceedWithTest();
-    return;
-  }
-  
-  // If not paid and can't take test (exceeded free limit)
-  if (!canTakeTest) {
-    print('❌ User must pay - showing enforcement dialog');
-    if (!mounted) return;
-    
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => SubscriptionEnforcementDialog(
-        isHardBlock: true,
-        remainingTests: remainingTests,
-        amount: 400,
-        onSubscribed: () async {
-          print('✅ User subscribed from Subject Selection');
-          // Refresh user data from backend
-          await userProvider.refreshCurrentUser();
-          if (mounted) {
-            setState(() {});
-          }
-        },
-      ),
-    );
-    return;
-  }
-  
-  // User can take test (within free limit)
-  print('✅ User can take test (within free limit) - starting test');
-  _proceedWithTest();
-}
+  Future<void> _startTest() async {
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
 
-void _proceedWithTest() {
+    // ✨ PRIMARY CHECK: Use CbtUserProvider's payment status (from backend)
+    final hasUserPaid = userProvider.hasPaid;
+
+    // ✨ SECONDARY CHECK: Use subscription service (local storage)
+    final canTakeTest = await _subscriptionService.canTakeTest();
+    final remainingTests = await _subscriptionService.getRemainingFreeTests();
+
+    print('\n💳 Payment Check:');
+    print('   - Backend says paid: $hasUserPaid');
+    print('   - Local says can take test: $canTakeTest');
+    print('   - Remaining free tests: $remainingTests');
+
+    // If backend confirms payment, allow test
+    if (hasUserPaid) {
+      print('✅ User has paid (verified from backend) - starting test');
+      _proceedWithTest();
+      return;
+    }
+
+    // If not paid and can't take test (exceeded free limit)
+    if (!canTakeTest) {
+      print('❌ User must pay - showing enforcement dialog');
+      if (!mounted) return;
+
+      final settings = await CbtSettingsHelper.getSettings();
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SubscriptionEnforcementDialog(
+          isHardBlock: true,
+          remainingTests: remainingTests,
+          amount: settings.amount,
+          discountRate: settings.discountRate,
+          onSubscribed: () async {
+            print('✅ User subscribed from Subject Selection');
+            // Refresh user data from backend
+            await userProvider.refreshCurrentUser();
+            if (mounted) {
+              setState(() {});
+            }
+          },
+        ),
+      );
+      return;
+    }
+
+    // User can take test (within free limit)
+    print('✅ User can take test (within free limit) - starting test');
+    _proceedWithTest();
+  }
+
+  void _proceedWithTest() {
     // Calculate total duration: time per subject × number of subjects
     final totalSeconds = timeInMinutes * 60 * selectedSubjects.length;
 
@@ -575,9 +600,10 @@ void _proceedWithTest() {
         ),
       ),
     );
-}
+  }
 
-  void _showStartTestCountdown(List<String> examIds, List<String> subjectNames, List<String> years, int totalSeconds) {
+  void _showStartTestCountdown(List<String> examIds, List<String> subjectNames,
+      List<String> years, int totalSeconds) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -585,7 +611,7 @@ void _proceedWithTest() {
         totalSubjects: selectedSubjects.length,
         onComplete: () {
           Navigator.of(context).pop(); // Close dialog
-          
+
           // Navigate to multi-subject test screen
           Navigator.push(
             context,
@@ -637,13 +663,13 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
   void initState() {
     super.initState();
     remainingSeconds = widget.totalDurationInSeconds;
-    
+
     // Initialize subject mappings
     for (int i = 0; i < widget.examIds.length; i++) {
       subjectNames[widget.examIds[i]] = widget.subjects[i];
       subjectYears[widget.examIds[i]] = widget.years[i];
     }
-    
+
     print('\n🎯 Multi-Subject Test Session Started:');
     print('   Total Subjects: ${widget.examIds.length}');
     print('   Total Duration: ${widget.totalDurationInSeconds ~/ 60} minutes');
@@ -673,7 +699,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
     print('\n🎉 All Exams Completed!');
     print('   Total Subjects Completed: ${widget.examIds.length}');
     print('   Total Answers Recorded: ${allAnswers.length}');
-    
+
     int totalQuestions = 0;
     int totalAnswered = 0;
     for (var entry in allAnswers.entries) {
@@ -684,12 +710,13 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
       totalAnswered += answers.length;
       final index = widget.examIds.indexOf(examId);
       if (index >= 0) {
-        print('   ${widget.subjects[index]}: ${answers.length}/${questions.length} answered');
+        print(
+            '   ${widget.subjects[index]}: ${answers.length}/${questions.length} answered');
       }
     }
     print('   Total: $totalAnswered/$totalQuestions answered');
     print('─' * 50);
-    
+
     // Navigate to result screen with all subject data
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -697,7 +724,8 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
           questions: allQuestions[widget.examIds[0]] ?? [],
           userAnswers: allAnswers[widget.examIds[0]] ?? {},
           subject: subjectNames[widget.examIds[0]] ?? '',
-          year: int.tryParse(subjectYears[widget.examIds[0]] ?? '') ?? DateTime.now().year,
+          year: int.tryParse(subjectYears[widget.examIds[0]] ?? '') ??
+              DateTime.now().year,
           examType: 'Multi-Subject Test',
           examId: widget.examIds[0],
           calledFrom: 'multi-subject',
@@ -708,7 +736,8 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
               'questions': allQuestions[examId] ?? [],
               'userAnswers': allAnswers[examId] ?? {},
               'subject': subjectNames[examId] ?? '',
-              'year': int.tryParse(subjectYears[examId] ?? '') ?? DateTime.now().year,
+              'year': int.tryParse(subjectYears[examId] ?? '') ??
+                  DateTime.now().year,
               'examId': examId,
             };
           }).toList(),
@@ -720,9 +749,10 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
   @override
   Widget build(BuildContext context) {
     final isLastSubject = currentExamIndex == widget.examIds.length - 1;
-    
+
     return TestScreen(
-      key: ValueKey(widget.examIds[currentExamIndex]), // Force rebuild on exam change
+      key: ValueKey(
+          widget.examIds[currentExamIndex]), // Force rebuild on exam change
       examTypeId: widget.examIds[currentExamIndex],
       subject: widget.subjects[currentExamIndex],
       year: int.tryParse(widget.years[currentExamIndex]),
@@ -738,25 +768,27 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
         // Save answers and questions for current exam
         final currentExamId = widget.examIds[currentExamIndex];
         allAnswers[currentExamId] = Map<int, int>.from(userAnswers);
-        
+
         // Get the current questions from provider before moving to next exam
         final provider = Provider.of<ExamProvider>(context, listen: false);
-        allQuestions[currentExamId] = List<QuestionModel>.from(provider.questions);
-        
+        allQuestions[currentExamId] =
+            List<QuestionModel>.from(provider.questions);
+
         remainingSeconds = remainingTime;
-        
+
         print('\n✅ Exam Completed:');
         print('   Subject: ${widget.subjects[currentExamIndex]}');
         print('   Questions: ${provider.questions.length}');
         print('   Questions Answered: ${userAnswers.length}');
         print('   Remaining Time: ${remainingTime ~/ 60} minutes');
-        print('   Saved Questions: ${allQuestions[currentExamId]?.length ?? 0}');
+        print(
+            '   Saved Questions: ${allQuestions[currentExamId]?.length ?? 0}');
         print('   Saved Answers: ${allAnswers[currentExamId]?.length ?? 0}');
         print('─' * 50);
-        
+
         // Reset provider for next exam
         provider.reset();
-        
+
         // Load next exam or show results
         _loadNextExam();
       },
@@ -766,7 +798,8 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
 
 class SubjectYearSelectionModal extends StatefulWidget {
   final List<SubjectModel> subjects;
-  final Function(String subject, String subjectId, String year, String examId, String icon) onSubjectYearSelected;
+  final Function(String subject, String subjectId, String year, String examId,
+      String icon) onSubjectYearSelected;
 
   const SubjectYearSelectionModal({
     super.key,
@@ -785,6 +818,11 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
   bool showYears = false;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
+
+  // Search state
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -805,7 +843,39 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
   @override
   void dispose() {
     _animationController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchQuery = '';
+        _searchController.clear();
+      }
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query.toLowerCase();
+    });
+  }
+
+  void _goBackToSubjects() {
+    if (_isSearching) {
+      _toggleSearch();
+      return;
+    }
+    setState(() {
+      showYears = false;
+      selectedSubject = null;
+      _searchQuery = '';
+      _searchController.clear();
+    });
+
+    _animationController.reverse();
   }
 
   @override
@@ -822,11 +892,53 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 24),
-            Text(
-              showYears ? 'Select Year' : 'Select Subject',
-              style: AppTextStyles.normal600(
-                fontSize: 22,
-                color: AppColors.text3Light,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  if (showYears)
+                    IconButton(
+                      onPressed: _goBackToSubjects,
+                      icon: const Icon(Icons.arrow_back_ios),
+                    ),
+                  Expanded(
+                    child: _isSearching
+                        ? TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            onChanged: _onSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: showYears
+                                  ? 'Search years...'
+                                  : 'Search subjects...',
+                              hintStyle: AppTextStyles.normal400(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: AppTextStyles.normal600(
+                              fontSize: 18,
+                              color: AppColors.text3Light,
+                            ),
+                          )
+                        : Text(
+                            showYears ? 'Select Year' : 'Select Subject',
+                            style: AppTextStyles.normal600(
+                              fontSize: 22,
+                              color: AppColors.text3Light,
+                            ),
+                          ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _isSearching ? Icons.close : Icons.search,
+                      color: AppColors.text3Light,
+                    ),
+                    onPressed: _toggleSearch,
+                  ),
+                ],
               ),
             ),
             if (showYears && selectedSubject != null)
@@ -858,8 +970,46 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
 
   Widget _buildSubjectList() {
     // Create a sorted copy of the subjects (A -> Z) and display sentence-case names
-    final sortedSubjects = List<SubjectModel>.from(widget.subjects)
+    var sortedSubjects = List<SubjectModel>.from(widget.subjects)
       ..sort((a, b) => _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      sortedSubjects = sortedSubjects
+          .where(
+              (s) => _sentenceCase(s.name).toLowerCase().contains(_searchQuery))
+          .toList();
+    }
+
+    if (sortedSubjects.isEmpty && _searchQuery.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              Text(
+                'No subjects found',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text3Light,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try a different search term',
+                style: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -878,7 +1028,7 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                //  border: Border.all(color: Colors.grey[300]!),
+                  //  border: Border.all(color: Colors.grey[300]!),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
@@ -938,13 +1088,49 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
     }
 
     // Sort years in descending order (most recent first)
-    final sortedYears = List.from(selectedSubject!.years!)
+    var sortedYears = List.from(selectedSubject!.years!)
       ..sort((a, b) => b.year.compareTo(a.year));
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      sortedYears = sortedYears
+          .where((y) => y.year.toLowerCase().contains(_searchQuery))
+          .toList();
+    }
+
+    if (sortedYears.isEmpty && _searchQuery.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              Text(
+                'No years found',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text3Light,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try a different search term',
+                style: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: sortedYears.length,
-    
       itemBuilder: (context, index) {
         final year = sortedYears[index];
         return Padding(
@@ -961,7 +1147,7 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                 // border: Border.all(color: Colors.grey[300]!),
+                  // border: Border.all(color: Colors.grey[300]!),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.1),
@@ -999,6 +1185,10 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
     setState(() {
       selectedSubject = subject;
       showYears = true;
+      // Clear search when subject is selected
+      _isSearching = false;
+      _searchQuery = '';
+      _searchController.clear();
     });
     _animationController.forward(from: 0.0);
   }
@@ -1027,7 +1217,8 @@ class _StartTestCountdownDialog extends StatefulWidget {
   });
 
   @override
-  State<_StartTestCountdownDialog> createState() => _StartTestCountdownDialogState();
+  State<_StartTestCountdownDialog> createState() =>
+      _StartTestCountdownDialogState();
 }
 
 class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
@@ -1040,7 +1231,7 @@ class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -1122,7 +1313,7 @@ class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Title
             const Text(
               'Starting Test!',
@@ -1134,7 +1325,7 @@ class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Message
             Text(
               widget.totalSubjects == 1
@@ -1148,7 +1339,7 @@ class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Countdown container
             Container(
               width: 100,
@@ -1183,7 +1374,7 @@ class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Progress indicator
             Text(
               'Get ready...',
@@ -1215,7 +1406,7 @@ class SelectedSubject {
     required this.examId,
     required this.icon,
   });
-  
+
   @override
   String toString() {
     return 'SelectedSubject{subject: $subjectName, subjectId: $subjectId, year: $year, examId: $examId}';

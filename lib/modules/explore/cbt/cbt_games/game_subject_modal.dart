@@ -2,11 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_screen.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_study_screen.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
+import 'package:linkschool/modules/model/explore/study/topic_model.dart';
+import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
 class GameSubjectModal extends StatefulWidget {
-  const GameSubjectModal({Key? key}) : super(key: key);
+  final List<SubjectModel> subjects;
+  final int examTypeId;
+
+  const GameSubjectModal({
+    Key? key,
+    required this.subjects,
+    required this.examTypeId,
+  }) : super(key: key);
 
   @override
   State<GameSubjectModal> createState() => _GameSubjectModalState();
@@ -15,12 +30,22 @@ class GameSubjectModal extends StatefulWidget {
 class _GameSubjectModalState extends State<GameSubjectModal>
     with TickerProviderStateMixin {
   String? _selectedSubject;
-  List<String> _selectedTopics = [];
+  List<int> _selectedTopicIds = [];
+  List<String> _selectedTopicNames = [];
   bool _showTopics = false;
   bool _isTransitioning = false;
+  Set<int> _expandedSyllabusIds = {};
   late AnimationController _pulseController;
   late AnimationController _sparkleController;
   late AnimationController _slideController;
+
+  // Search state
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  final _subscriptionService = CbtSubscriptionService();
+  final _authService = FirebaseAuthService();
 
   @override
   void initState() {
@@ -47,112 +72,87 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     _pulseController.dispose();
     _sparkleController.dispose();
     _slideController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  // Static subjects for study mode
-  final List<Map<String, dynamic>> _subjects = [
-    {
-      'id': 'chemistry',
-      'name': 'Chemistry',
-      'icon': Icons.science,
-      'color': Color(0xFF6366F1),
-      'emoji': '⚗️',
-    },
-    {
-      'id': 'physics',
-      'name': 'Physics',
-      'icon': Icons.bolt,
-      'color': Color(0xFF10B981),
-      'emoji': '⚡',
-    },
-    {
-      'id': 'biology',
-      'name': 'Biology',
-      'icon': Icons.biotech,
-      'color': Color(0xFFEC4899),
-      'emoji': '🧬',
-    },
-    {
-      'id': 'mathematics',
-      'name': 'Mathematics',
-      'icon': Icons.calculate,
-      'color': Color(0xFFF59E0B),
-      'emoji': '🔢',
-    },
-    {
-      'id': 'english',
-      'name': 'English',
-      'icon': Icons.menu_book,
-      'color': Color(0xFF8B5CF6),
-      'emoji': '📚',
-    },
-    {
-      'id': 'geography',
-      'name': 'Geography',
-      'icon': Icons.public,
-      'color': Color(0xFF06B6D4),
-      'emoji': '🌍',
-    },
-  ];
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchQuery = '';
+        _searchController.clear();
+      }
+    });
+  }
 
-  // Topics for each subject
-  final Map<String, List<String>> _topicsBySubject = {
-    'chemistry': [
-      'Organic Chemistry',
-      'Inorganic Chemistry',
-      'Physical Chemistry',
-      'Chemical Bonding',
-      'Acids and Bases',
-      'Redox Reactions',
-    ],
-    'physics': [
-      'Mechanics',
-      'Electricity',
-      'Magnetism',
-      'Optics',
-      'Thermodynamics',
-      'Waves',
-    ],
-    'biology': [
-      'Cell Biology',
-      'Genetics',
-      'Ecology',
-      'Human Anatomy',
-      'Evolution',
-      'Plant Biology',
-    ],
-    'mathematics': [
-      'Algebra',
-      'Calculus',
-      'Geometry',
-      'Trigonometry',
-      'Statistics',
-      'Probability',
-    ],
-    'english': [
-      'Grammar',
-      'Literature',
-      'Comprehension',
-      'Essay Writing',
-      'Poetry',
-      'Drama',
-    ],
-    'geography': [
-      'Physical Geography',
-      'Human Geography',
-      'Map Reading',
-      'Climate',
-      'Resources',
-      'Population',
-    ],
-  };
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query.toLowerCase();
+    });
+  }
 
-  void _onSubjectSelected(String subjectId) {
+  // Deterministic color selection for subject ids (same as study modal)
+  Color _colorForId(String id) {
+    final List<Color> fallbackColors = [
+      const Color(0xFF6366F1), // Indigo
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFFF59E0B), // Amber
+      const Color(0xFF8B5CF6), // Violet
+      const Color(0xFF06B6D4), // Cyan
+      const Color(0xFFEC4899), // Pink
+      const Color(0xFFEF4444), // Red
+      const Color(0xFF14B8A6), // Teal
+      const Color(0xFFF97316), // Orange
+    ];
+
+    final rand = id.hashCode.abs();
+    return fallbackColors[rand % fallbackColors.length];
+  }
+
+  // Get emoji based on subject name (fallback for missing emojis)
+  String _emojiForSubject(String subjectName) {
+    final name = subjectName.toLowerCase();
+    if (name.contains('chem')) return '⚗️';
+    if (name.contains('phys')) return '⚡';
+    if (name.contains('bio')) return '🧬';
+    if (name.contains('math')) return '🔢';
+    if (name.contains('english')) return '📚';
+    if (name.contains('geo')) return '🌍';
+    if (name.contains('history')) return '📜';
+    if (name.contains('art')) return '🎨';
+    if (name.contains('music')) return '🎵';
+    if (name.contains('computer')) return '💻';
+    if (name.contains('science')) return '🔬';
+    if (name.contains('french') ||
+        name.contains('spanish') ||
+        name.contains('language')) return '🗣️';
+    return '📚'; // Default emoji
+  }
+
+  Future<void> _onSubjectSelected(String subjectId) async {
     setState(() {
       _selectedSubject = subjectId;
       _isTransitioning = true;
+      // Clear search when subject is selected
+      _isSearching = false;
+      _searchQuery = '';
+      _searchController.clear();
     });
+
+    // Fetch topics from API
+    final topicsProvider =
+        Provider.of<SubjectTopicsProvider>(context, listen: false);
+
+    // Get courseId from subject
+    final subject = widget.subjects.firstWhere((s) => s.id == subjectId);
+    final courseId = int.tryParse(subject.id) ?? 0;
+
+    // Use the exam type ID passed from the dashboard
+    await topicsProvider.loadTopics(
+      courseId: courseId,
+      examTypeId: widget.examTypeId,
+    );
 
     _slideController.reset();
     Future.delayed(const Duration(milliseconds: 300), () {
@@ -166,36 +166,153 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     });
   }
 
-  void _onTopicSelected(String topic) {
+  void _onTopicSelected(Topic topic) {
     setState(() {
-      if (_selectedTopics.contains(topic)) {
-        _selectedTopics.remove(topic);
+      if (_selectedTopicIds.contains(topic.topicId)) {
+        _selectedTopicIds.remove(topic.topicId);
+        _selectedTopicNames.remove(topic.topicName);
       } else {
-        _selectedTopics.add(topic);
+        _selectedTopicIds.add(topic.topicId);
+        _selectedTopicNames.add(topic.topicName);
       }
     });
   }
 
-  void _onContinue() {
-    if (_selectedTopics.isNotEmpty) {
-      Navigator.pop(context);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GameTestScreen(
-            subject: _subjects
-                .firstWhere((s) => s['id'] == _selectedSubject)['name'],
-            topics: _selectedTopics,
-          ),
+  void _toggleSyllabus(int syllabusId) {
+    setState(() {
+      if (_expandedSyllabusIds.contains(syllabusId)) {
+        _expandedSyllabusIds.remove(syllabusId);
+      } else {
+        _expandedSyllabusIds.add(syllabusId);
+      }
+    });
+  }
+
+  // Check if all topics in a syllabus are selected
+  bool _areAllTopicsSelected(List<Topic> topics) {
+    if (topics.isEmpty) return false;
+    return topics.every((topic) => _selectedTopicIds.contains(topic.topicId));
+  }
+
+  // Check if some (but not all) topics in a syllabus are selected
+  bool _areSomeTopicsSelected(List<Topic> topics) {
+    if (topics.isEmpty) return false;
+    final selectedCount = topics
+        .where((topic) => _selectedTopicIds.contains(topic.topicId))
+        .length;
+    return selectedCount > 0 && selectedCount < topics.length;
+  }
+
+  // Toggle all topics in a syllabus
+  void _toggleAllTopicsInSyllabus(List<Topic> topics) {
+    setState(() {
+      final allSelected = _areAllTopicsSelected(topics);
+      if (allSelected) {
+        // Deselect all topics in this syllabus
+        for (final topic in topics) {
+          _selectedTopicIds.remove(topic.topicId);
+          _selectedTopicNames.remove(topic.topicName);
+        }
+      } else {
+        // Select all topics in this syllabus
+        for (final topic in topics) {
+          if (!_selectedTopicIds.contains(topic.topicId)) {
+            _selectedTopicIds.add(topic.topicId);
+            _selectedTopicNames.add(topic.topicName);
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> _onContinue() async {
+    if (_selectedTopicIds.isEmpty) return;
+
+    // ⚡ Gamify Module: Check subscription with free trial tracking
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final hasUserPaid = userProvider.hasPaid;
+    final canTakeTest = await _subscriptionService.canTakeTest();
+    final remainingTests = await _subscriptionService.getRemainingFreeTests();
+
+    print('\n🎮 Gamify Module Access Check:');
+    print('   - Backend says paid: $hasUserPaid');
+    print('   - Local says can take test: $canTakeTest');
+    print('   - Remaining free tests: $remainingTests');
+
+    // If backend confirms payment, allow access
+    if (hasUserPaid) {
+      print('   ✅ User has paid (verified from backend) - starting game');
+      _proceedWithGame();
+      return;
+    }
+
+    // If not paid and can't take test (exceeded free limit)
+    if (!canTakeTest) {
+      print('   ❌ Gamify access denied - showing enforcement dialog');
+      if (!mounted) return;
+
+      final settings = await CbtSettingsHelper.getSettings();
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SubscriptionEnforcementDialog(
+          isHardBlock: true,
+          remainingTests: remainingTests,
+          amount: settings.amount,
+          discountRate: settings.discountRate,
+          onSubscribed: () async {
+            print('✅ User subscribed from Gamify module');
+            await userProvider.refreshCurrentUser();
+            if (mounted) {
+              setState(() {});
+            }
+          },
         ),
       );
+      return;
     }
+
+    // User can access game (within free limit)
+    print('   ✅ User can access game (within free limit)');
+    _proceedWithGame();
+  }
+
+  void _proceedWithGame() {
+    final subject = widget.subjects.firstWhere(
+      (s) => s.id == _selectedSubject,
+      orElse: () => SubjectModel(
+          id: _selectedSubject ?? '', name: _selectedSubject ?? '', years: []),
+    );
+
+    final courseId = int.tryParse(subject.id) ?? 0;
+
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GameTestScreen(
+          subject: subject.name,
+          topics: _selectedTopicNames,
+          topicIds: _selectedTopicIds,
+          courseId: courseId,
+          examTypeId: widget.examTypeId,
+        ),
+      ),
+    );
   }
 
   void _goBack() {
+    if (_isSearching) {
+      _toggleSearch();
+      return;
+    }
     if (_showTopics) {
       setState(() {
         _isTransitioning = true;
+        _searchQuery = '';
+        _searchController.clear();
       });
 
       Future.delayed(const Duration(milliseconds: 300), () {
@@ -203,7 +320,9 @@ class _GameSubjectModalState extends State<GameSubjectModal>
           setState(() {
             _showTopics = false;
             _selectedSubject = null;
-            _selectedTopics = [];
+            _selectedTopicIds = [];
+            _selectedTopicNames = [];
+            _expandedSyllabusIds.clear();
             _isTransitioning = false;
           });
         }
@@ -211,6 +330,15 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     } else {
       Navigator.pop(context);
     }
+  }
+
+  // Convert a string to title case: capitalize first letter of every word
+  String _titleCase(String input) {
+    if (input.isEmpty) return input;
+    return input.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
   }
 
   @override
@@ -232,14 +360,11 @@ class _GameSubjectModalState extends State<GameSubjectModal>
             colors: [
               Colors.white,
               _showTopics
-                  ? (_subjects
-                          .firstWhere((s) => s['id'] == _selectedSubject)['color']
-                      as Color)
-                      .withOpacity(0.08)
+                  ? _colorForId(_selectedSubject ?? '').withOpacity(0.08)
                   : Colors.grey.shade50,
             ],
           ),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Stack(
           children: [
@@ -292,29 +417,62 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _showTopics ? 'Choose Your Topics' : 'Pick a Subject',
-                              style: AppTextStyles.normal600(
-                                fontSize: 20,
-                                color: AppColors.text4Light,
+                        child: _isSearching
+                            ? TextField(
+                                controller: _searchController,
+                                autofocus: true,
+                                onChanged: _onSearchChanged,
+                                decoration: InputDecoration(
+                                  hintText: _showTopics
+                                      ? 'Search topics...'
+                                      : 'Search subjects...',
+                                  hintStyle: AppTextStyles.normal400(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                style: AppTextStyles.normal600(
+                                  fontSize: 18,
+                                  color: AppColors.text4Light,
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _showTopics
+                                        ? 'Choose Your Topics'
+                                        : 'Pick a Subject',
+                                    style: AppTextStyles.normal600(
+                                      fontSize: 20,
+                                      color: AppColors.text4Light,
+                                    ),
+                                  ),
+                                  Text(
+                                    _showTopics
+                                        ? '${_selectedTopicIds.length} selected'
+                                        : 'Start your learning adventure',
+                                    style: AppTextStyles.normal400(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            Text(
-                              _showTopics
-                                  ? '${_selectedTopics.length} selected'
-                                  : 'Start your learning adventure',
-                              style: AppTextStyles.normal400(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                      if (_showTopics)
+                      IconButton(
+                        icon: Icon(
+                          _isSearching ? Icons.close : Icons.search,
+                          color: AppColors.text4Light,
+                        ),
+                        onPressed: _toggleSearch,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 8),
+                      if (_showTopics && _selectedSubject != null)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -323,36 +481,30 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                (_subjects.firstWhere((s) =>
-                                    s['id'] == _selectedSubject)['color'] as Color),
-                                (_subjects.firstWhere((s) =>
-                                        s['id'] == _selectedSubject)['color']
-                                    as Color)
-                                    .withOpacity(0.7),
+                                _colorForId(_selectedSubject!),
+                                _colorForId(_selectedSubject!).withOpacity(0.7),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: (_subjects.firstWhere((s) =>
-                                        s['id'] == _selectedSubject)['color']
-                                    as Color)
+                                color: _colorForId(_selectedSubject!)
                                     .withOpacity(0.3),
                                 blurRadius: 8,
-                                offset: Offset(0, 2),
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
+                              const Text(
                                 '⭐',
                                 style: TextStyle(fontSize: 14),
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
-                                '${_selectedTopics.length * 10}',
+                                '${_selectedTopicIds.length * 10}',
                                 style: AppTextStyles.normal600(
                                   fontSize: 14,
                                   color: Colors.white,
@@ -374,14 +526,15 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                         opacity: animation,
                         child: SlideTransition(
                           position: Tween<Offset>(
-                            begin: Offset(0.1, 0),
+                            begin: const Offset(0.1, 0),
                             end: Offset.zero,
                           ).animate(animation),
                           child: child,
                         ),
                       );
                     },
-                    child: _showTopics ? _buildTopicsList() : _buildSubjectsList(),
+                    child:
+                        _showTopics ? _buildTopicsList() : _buildSubjectsList(),
                   ),
                 ),
               ],
@@ -393,11 +546,56 @@ class _GameSubjectModalState extends State<GameSubjectModal>
   }
 
   Widget _buildSubjectsList() {
+    // Create a sorted copy of the provided subjects (A -> Z) with title-case names
+    var sortedSubjects = List<SubjectModel>.from(widget.subjects)
+      ..sort((a, b) => _titleCase(a.name).compareTo(_titleCase(b.name)));
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      sortedSubjects = sortedSubjects
+          .where((s) => _titleCase(s.name).toLowerCase().contains(_searchQuery))
+          .toList();
+    }
+
+    if (sortedSubjects.isEmpty && _searchQuery.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              Text(
+                'No subjects found',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text4Light,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try a different search term',
+                style: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _subjects.length,
+      itemCount: sortedSubjects.length,
       itemBuilder: (context, index) {
-        final subject = _subjects[index];
+        final subject = sortedSubjects[index];
+        final subjectColor = _colorForId(subject.id);
+        final displayName = _titleCase(subject.name);
+        final emoji = _emojiForSubject(subject.name);
+
         return TweenAnimationBuilder(
           duration: Duration(milliseconds: 300 + (index * 100)),
           tween: Tween<double>(begin: 0, end: 1),
@@ -411,7 +609,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
             );
           },
           child: GestureDetector(
-            onTap: () => _onSubjectSelected(subject['id']),
+            onTap: () => _onSubjectSelected(subject.id),
             child: AnimatedBuilder(
               animation: _pulseController,
               builder: (context, child) {
@@ -420,14 +618,14 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        (subject['color'] as Color).withOpacity(0.15),
-                        (subject['color'] as Color).withOpacity(0.05),
+                        subjectColor.withOpacity(0.15),
+                        subjectColor.withOpacity(0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: (subject['color'] as Color).withOpacity(0.3),
+                        color: subjectColor.withOpacity(0.3),
                         blurRadius: 12 + (_pulseController.value * 4),
                         offset: Offset(0, 4 + (_pulseController.value * 2)),
                       ),
@@ -441,28 +639,28 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                 child: Row(
                   children: [
                     Hero(
-                      tag: 'subject_${subject['id']}',
+                      tag: 'game_subject_${subject.id}',
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              subject['color'] as Color,
-                              (subject['color'] as Color).withOpacity(0.7),
+                              subjectColor,
+                              subjectColor.withOpacity(0.7),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: (subject['color'] as Color).withOpacity(0.4),
+                              color: subjectColor.withOpacity(0.4),
                               blurRadius: 8,
-                              offset: Offset(0, 4),
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
                         child: Text(
-                          subject['emoji'],
-                          style: TextStyle(fontSize: 32),
+                          emoji,
+                          style: const TextStyle(fontSize: 32),
                         ),
                       ),
                     ),
@@ -472,13 +670,13 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            subject['name'],
+                            displayName,
                             style: AppTextStyles.normal600(
                               fontSize: 18,
                               color: AppColors.text4Light,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             'Tap to explore',
                             style: AppTextStyles.normal400(
@@ -490,14 +688,14 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (subject['color'] as Color).withOpacity(0.2),
+                        color: subjectColor.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.arrow_forward_ios,
-                        color: subject['color'] as Color,
+                        color: subjectColor,
                         size: 18,
                       ),
                     ),
@@ -512,202 +710,625 @@ class _GameSubjectModalState extends State<GameSubjectModal>
   }
 
   Widget _buildTopicsList() {
-    final topics = _topicsBySubject[_selectedSubject] ?? [];
-    final subject = _subjects.firstWhere((s) => s['id'] == _selectedSubject);
-    final subjectColor = subject['color'] as Color;
+    final subject = widget.subjects.firstWhere((s) => s.id == _selectedSubject,
+        orElse: () => SubjectModel(
+            id: _selectedSubject ?? '',
+            name: _selectedSubject ?? '',
+            years: []));
+    final subjectColor = _colorForId(subject.id);
+    final displayName = _titleCase(subject.name);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            subjectColor.withOpacity(0.05),
-            Colors.white,
-          ],
-        ),
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: topics.length,
-              itemBuilder: (context, index) {
-                final topic = topics[index];
-                final isSelected = _selectedTopics.contains(topic);
-
-                return SlideTransition(
-                  position: Tween<Offset>(
-                    begin: Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: _slideController,
-                    curve: Interval(
-                      index * 0.1,
-                      (index + 1) * 0.1,
-                      curve: Curves.easeOut,
-                    ),
-                  )),
-                  child: GestureDetector(
-                    onTap: () => _onTopicSelected(topic),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: isSelected
-                            ? LinearGradient(
-                                colors: [
-                                  subjectColor.withOpacity(0.2),
-                                  subjectColor.withOpacity(0.1),
-                                ],
-                              )
-                            : null,
-                        color: isSelected ? null : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected
-                              ? subjectColor
-                              : Colors.grey.shade200,
-                          width: isSelected ? 2.5 : 1.5,
-                        ),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: subjectColor.withOpacity(0.3),
-                                  blurRadius: 12,
-                                  offset: Offset(0, 4),
-                                ),
-                              ]
-                            : [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                      ),
-                      child: Row(
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            padding: EdgeInsets.all(isSelected ? 4 : 0),
-                            decoration: BoxDecoration(
-                              gradient: isSelected
-                                  ? LinearGradient(
-                                      colors: [
-                                        subjectColor,
-                                        subjectColor.withOpacity(0.7),
-                                      ],
-                                    )
-                                  : null,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isSelected
-                                  ? Icons.check_circle
-                                  : Icons.circle_outlined,
-                              color: isSelected ? Colors.white : Colors.grey,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              topic,
-                              style: AppTextStyles.normal600(
-                                fontSize: 16,
-                                color: isSelected
-                                    ? subjectColor
-                                    : AppColors.text4Light,
-                              ),
-                            ),
-                          ),
-                          if (isSelected)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: subjectColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '+10 ⭐',
-                                style: AppTextStyles.normal600(
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16),
+    return Consumer<SubjectTopicsProvider>(
+      builder: (context, topicsProvider, child) {
+        // Loading state
+        if (topicsProvider.loading) {
+          return Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, -4),
-                ),
-              ],
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  subjectColor.withOpacity(0.05),
+                  Colors.white,
+                ],
+              ),
             ),
-            child: AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _selectedTopics.isNotEmpty
-                      ? 1.0 + (_pulseController.value * 0.02)
-                      : 1.0,
-                  child: child,
-                );
-              },
-              child: ElevatedButton(
-                onPressed: _selectedTopics.isNotEmpty ? _onContinue : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: subjectColor,
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: subjectColor),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading game topics...',
+                    style: AppTextStyles.normal600(
+                      fontSize: 16,
+                      color: AppColors.text4Light,
+                    ),
                   ),
-                  elevation: _selectedTopics.isNotEmpty ? 8 : 0,
-                  shadowColor: subjectColor.withOpacity(0.5),
-                ),
-                child: Row(
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Error state
+        if (topicsProvider.error != null) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  subjectColor.withOpacity(0.05),
+                  Colors.white,
+                ],
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Icon(Icons.error_outline,
+                        size: 64, color: Colors.red.shade400),
+                    const SizedBox(height: 16),
                     Text(
-                      _selectedTopics.isEmpty
-                          ? 'Select topics to continue'
-                          : 'Start Learning',
+                      'Failed to load topics',
                       style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: Colors.white,
+                        fontSize: 18,
+                        color: AppColors.text4Light,
                       ),
                     ),
-                    if (_selectedTopics.isNotEmpty) ...[
-                      SizedBox(width: 8),
-                      Icon(Icons.rocket_launch, color: Colors.white, size: 20),
-                    ],
+                    const SizedBox(height: 8),
+                    Text(
+                      topicsProvider.error ?? '',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.normal400(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => _onSubjectSelected(_selectedSubject!),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: subjectColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Retry',
+                        style: AppTextStyles.normal600(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
+          );
+        }
+
+        // No data
+        var syllabuses = topicsProvider.topicsData?.data ?? [];
+        if (syllabuses.isEmpty) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  subjectColor.withOpacity(0.05),
+                  Colors.white,
+                ],
+              ),
+            ),
+            child: Center(
+              child: Text(
+                'No topics available',
+                style: AppTextStyles.normal600(
+                  fontSize: 25,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Filter syllabuses and topics by search query
+        if (_searchQuery.isNotEmpty) {
+          syllabuses = syllabuses.where((syllabus) {
+            final syllabusMatches =
+                syllabus.syllabusName.toLowerCase().contains(_searchQuery);
+            final hasMatchingTopics = syllabus.topics.any(
+              (topic) => topic.topicName.toLowerCase().contains(_searchQuery),
+            );
+            return syllabusMatches || hasMatchingTopics;
+          }).toList();
+        }
+
+        // Show empty state if no results after filtering
+        if (syllabuses.isEmpty && _searchQuery.isNotEmpty) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  subjectColor.withOpacity(0.05),
+                  Colors.white,
+                ],
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.search_off,
+                        size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No topics found',
+                      style: AppTextStyles.normal600(
+                        fontSize: 18,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Try a different search term',
+                      style: AppTextStyles.normal400(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Success - Display hierarchical syllabus/topics with game UI
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                subjectColor.withOpacity(0.05),
+                Colors.white,
+              ],
+            ),
           ),
-        ],
-      ),
+          child: Column(
+            children: [
+              // Subject header in topics view
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: subjectColor.withOpacity(0.1),
+                  border: Border(
+                    bottom: BorderSide(color: subjectColor.withOpacity(0.2)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: subjectColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _emojiForSubject(displayName),
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      displayName,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.normal600(
+                        fontSize: 16,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Syllabus list with expandable topics
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: syllabuses.length,
+                  itemBuilder: (context, index) {
+                    final syllabus = syllabuses[index];
+                    final isExpanded =
+                        _expandedSyllabusIds.contains(syllabus.syllabusId);
+
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(1, 0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: _slideController,
+                        curve: Interval(
+                          (index * 0.1).clamp(0.0, 1.0),
+                          ((index + 1) * 0.1).clamp(0.0, 1.0),
+                          curve: Curves.easeOut,
+                        ),
+                      )),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: subjectColor.withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            // Syllabus header (clickable to expand)
+                            InkWell(
+                              onTap: () => _toggleSyllabus(syllabus.syllabusId),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      subjectColor.withOpacity(0.1),
+                                      subjectColor.withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: isExpanded
+                                      ? const BorderRadius.only(
+                                          topLeft: Radius.circular(16),
+                                          topRight: Radius.circular(16),
+                                        )
+                                      : BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Select all checkbox for syllabus (when expanded)
+                                    if (isExpanded)
+                                      GestureDetector(
+                                        onTap: () => _toggleAllTopicsInSyllabus(
+                                            syllabus.topics),
+                                        child: AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 200),
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: _areAllTopicsSelected(
+                                                      syllabus.topics)
+                                                  ? [
+                                                      Colors.green,
+                                                      Colors.green.shade600
+                                                    ]
+                                                  : [
+                                                      subjectColor,
+                                                      subjectColor
+                                                          .withOpacity(0.7)
+                                                    ],
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: (_areAllTopicsSelected(
+                                                            syllabus.topics)
+                                                        ? Colors.green
+                                                        : subjectColor)
+                                                    .withOpacity(0.4),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Icon(
+                                            _areAllTopicsSelected(
+                                                    syllabus.topics)
+                                                ? Icons.check_box
+                                                : _areSomeTopicsSelected(
+                                                        syllabus.topics)
+                                                    ? Icons
+                                                        .indeterminate_check_box
+                                                    : Icons
+                                                        .check_box_outline_blank,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              subjectColor,
+                                              subjectColor.withOpacity(0.7),
+                                            ],
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.library_books,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            syllabus.syllabusName,
+                                            style: AppTextStyles.normal600(
+                                              fontSize: 15,
+                                              color: AppColors.text4Light,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                '${syllabus.topics.length} topics',
+                                                style: AppTextStyles.normal400(
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              if (isExpanded)
+                                                Text(
+                                                  _areAllTopicsSelected(
+                                                          syllabus.topics)
+                                                      ? 'Tap to deselect all'
+                                                      : 'Tap to select all',
+                                                  style:
+                                                      AppTextStyles.normal400(
+                                                    fontSize: 10,
+                                                    color: subjectColor,
+                                                  ),
+                                                )
+                                              else
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: subjectColor
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  child: Text(
+                                                    '+${syllabus.topics.length * 10} ⭐',
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: subjectColor,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    AnimatedRotation(
+                                      turns: isExpanded ? 0.5 : 0,
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      child: Icon(
+                                        Icons.expand_more,
+                                        color: subjectColor,
+                                        size: 28,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Expanded topics list
+                            if (isExpanded)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: subjectColor.withOpacity(0.03),
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(16),
+                                    bottomRight: Radius.circular(16),
+                                  ),
+                                ),
+                                child: Column(
+                                  children: syllabus.topics.map((topic) {
+                                    final isSelected = _selectedTopicIds
+                                        .contains(topic.topicId);
+                                    return InkWell(
+                                      onTap: () => _onTopicSelected(topic),
+                                      child: AnimatedContainer(
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 14,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? subjectColor.withOpacity(0.1)
+                                              : null,
+                                          border: Border(
+                                            top: BorderSide(
+                                              color: Colors.grey.shade200,
+                                              width: 1,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            AnimatedContainer(
+                                              duration: const Duration(
+                                                  milliseconds: 200),
+                                              padding: EdgeInsets.all(
+                                                  isSelected ? 2 : 0),
+                                              decoration: BoxDecoration(
+                                                gradient: isSelected
+                                                    ? LinearGradient(
+                                                        colors: [
+                                                          subjectColor,
+                                                          subjectColor
+                                                              .withOpacity(0.7),
+                                                        ],
+                                                      )
+                                                    : null,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                isSelected
+                                                    ? Icons.check_circle
+                                                    : Icons
+                                                        .radio_button_unchecked,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : Colors.grey.shade400,
+                                                size: 22,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                topic.topicName,
+                                                style: AppTextStyles.normal500(
+                                                  fontSize: 14,
+                                                  color: isSelected
+                                                      ? subjectColor
+                                                      : AppColors.text4Light,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isSelected)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: subjectColor,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: Text(
+                                                  '+10 ⭐',
+                                                  style:
+                                                      AppTextStyles.normal600(
+                                                    fontSize: 10,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Continue button
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _selectedTopicIds.isNotEmpty
+                          ? 1.0 + (_pulseController.value * 0.02)
+                          : 1.0,
+                      child: child,
+                    );
+                  },
+                  child: ElevatedButton(
+                    onPressed:
+                        _selectedTopicIds.isNotEmpty ? _onContinue : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: subjectColor,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: _selectedTopicIds.isNotEmpty ? 8 : 0,
+                      shadowColor: subjectColor.withOpacity(0.5),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _selectedTopicIds.isEmpty
+                              ? 'Select topics to continue'
+                              : 'Start Game (${_selectedTopicIds.length} topics)',
+                          style: AppTextStyles.normal600(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (_selectedTopicIds.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.rocket_launch,
+                              color: Colors.white, size: 20),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -720,8 +1341,7 @@ class ParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
+    final paint = Paint()..style = PaintingStyle.fill;
 
     final random = math.Random(42);
 
@@ -729,10 +1349,10 @@ class ParticlePainter extends CustomPainter {
       final x = random.nextDouble() * size.width;
       final baseY = random.nextDouble() * size.height;
       final y = baseY + (animationValue * 50) % size.height;
-      
+
       final opacity = (math.sin(animationValue * math.pi * 2 + i) + 1) / 2;
       paint.color = Colors.blue.withOpacity(opacity * 0.15);
-      
+
       canvas.drawCircle(
         Offset(x, y % size.height),
         2 + (random.nextDouble() * 2),

@@ -42,14 +42,17 @@ import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
-import 'package:linkschool/modules/providers/explore/challange/challange_provider.dart';
+import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
+import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/admission_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/providers/login/schools_provider.dart';
 import 'package:linkschool/modules/providers/staff/overview.dart';
 import 'package:linkschool/modules/providers/staff/staff_dashboard_provider.dart';
@@ -66,6 +69,10 @@ import 'package:linkschool/modules/providers/student/student_comment_provider.da
 import 'package:linkschool/modules/providers/student/student_result_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
+import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
+import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
+import 'package:linkschool/modules/services/explore/studies_question_service.dart';
+import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
@@ -76,6 +83,10 @@ import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/student/dashboard_provider.dart';
 import 'modules/providers/app_settings_provider.dart';
+import 'modules/common/cbt_settings_helper.dart';
+import 'modules/services/cbt_subscription_service.dart';
+// import challangeleader provider and service
+import 'modules/providers/explore/challenge/challenge_leader_provider.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -101,6 +112,16 @@ Future<void> main() async {
   // Initialize app settings
   final appSettings = AppSettingsProvider();
   await appSettings.initializeSettings();
+  
+  // Pre-load CBT settings and update subscription service
+  try {
+    final settings = await CbtSettingsHelper.getSettings();
+    final subscriptionService = CbtSubscriptionService();
+    subscriptionService.setMaxFreeTests(settings.freeTrialDays);
+    print('✅ CBT settings pre-loaded: amount=${settings.amount}, discount=${settings.discountRate}, trial=${settings.freeTrialDays}');
+  } catch (e) {
+    print('⚠️ Failed to pre-load CBT settings: $e');
+  }
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -121,8 +142,8 @@ Future<void> main() async {
         // Explore
         ChangeNotifierProvider(create: (_) => AdmissionProvider()),
         ChangeNotifierProvider<NewsProvider>(create: (_) => NewsProvider()),
-        ChangeNotifierProvider(create: (_) => ChallengeProvider()),
-
+        ChangeNotifierProvider(create: (_) => ChallengeProvider(ChallengeService())),
+        ChangeNotifierProvider(create: (_) => SubjectTopicsProvider(SubjectTopicsService())),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CbtUserProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
@@ -131,8 +152,12 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
         ChangeNotifierProvider(create: (_) => locator<BookProvider>()),
         ChangeNotifierProvider(create: (_) => locator<EbookProvider>()),
-
+        ChangeNotifierProvider(create: (_) => ChallengeQuestionProvider()),
+        ChangeNotifierProvider(create: (_) => LeaderboardProvider(LeaderboardService())),
+        ChangeNotifierProvider(create: (_) => QuestionsProvider(QuestionsService())),
+        
         // Admin HomeScreen
+         
 
         // student metrics
         ChangeNotifierProvider(

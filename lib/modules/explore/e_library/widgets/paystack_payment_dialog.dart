@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 /// Dialog to show subscription plans and handle Paystack payment
 class PaystackPaymentDialog extends StatefulWidget {
@@ -31,15 +32,32 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
   final _authService = FirebaseAuthService();
   
   bool _isProcessing = false;
+  int _subscriptionPrice = 400; // Default, will be updated from API
+  double _discountRate = 0.0;
   
   static const String _paystackPublicKey = 'pk_test_YOUR_PUBLIC_KEY_HERE'; // Replace with your public key
-
-  static const int _subscriptionPrice = 400; // ₦400
 
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _setupPaymentReferenceListener();
+  }
+  
+  Future<void> _loadSettings() async {
+    try {
+      final settings = await CbtSettingsHelper.getSettings();
+      if (mounted) {
+        setState(() {
+          _subscriptionPrice = settings.discountRate > 0 
+              ? (settings.amount * (1 - settings.discountRate)).round()
+              : settings.amount;
+          _discountRate = settings.discountRate;
+        });
+      }
+    } catch (e) {
+      print('Error loading settings: $e');
+    }
   }
 
   void _setupPaymentReferenceListener() {

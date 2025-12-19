@@ -5,7 +5,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 
-
 class StudentProfileScreen extends StatefulWidget {
   final VoidCallback logout;
   const StudentProfileScreen({super.key, required this.logout});

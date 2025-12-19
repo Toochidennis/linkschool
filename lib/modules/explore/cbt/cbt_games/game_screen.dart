@@ -1,21 +1,31 @@
 // ignore_for_file: deprecated_member_use
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'dart:math' as math;
 
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
+import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
+import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
+import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
 
 class GameTestScreen extends StatefulWidget {
   final String subject;
   final List<String> topics;
+  final List<int> topicIds;
+  final int courseId;
+  final int examTypeId;
 
   const GameTestScreen({
     Key? key,
     required this.subject,
     required this.topics,
+    required this.topicIds,
+    required this.courseId,
+    required this.examTypeId,
   }) : super(key: key);
 
   @override
@@ -24,29 +34,32 @@ class GameTestScreen extends StatefulWidget {
 
 class _GameTestScreenState extends State<GameTestScreen>
     with TickerProviderStateMixin {
-  int _currentQuestionIndex = 0;
   Map<int, int> _userAnswers = {};
   int _score = 0;
   int _streak = 0;
   int _highestStreak = 0;
+  int _correctAnswers = 0; // Track correct answers for accuracy
   late AnimationController _pulseController;
   late AnimationController _progressController;
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
 
-    late AudioPlayer _correctSoundPlayer;
+  late AudioPlayer _correctSoundPlayer;
   late AudioPlayer _wrongSoundPlayer;
   late AudioPlayer _buttonSoundPlayer;
 
-
-   final int _correctVibrationDuration = 200;
+  final int _correctVibrationDuration = 200;
   final int _wrongVibrationDuration = 500;
   final List<int> _streakVibrationPattern = [100, 200, 100];
 
+  // Points per question for gamification
+  final int _pointsPerQuestion = 10;
 
-    void _initializeAudio() async {
+  void _initializeAudio() async {
     _correctSoundPlayer = AudioPlayer();
     _wrongSoundPlayer = AudioPlayer();
     _buttonSoundPlayer = AudioPlayer();
-    
+
     // Preload sounds (optional - for better performance)
     try {
       await _correctSoundPlayer.setSource(AssetSource('sounds/correct.wav'));
@@ -56,68 +69,6 @@ class _GameTestScreenState extends State<GameTestScreen>
       print('Error loading sounds: $e');
     }
   }
-
-  // Static quiz data
-  final List<Map<String, dynamic>> _questions = [
-    {
-      'question': 'What is the powerhouse of the cell?',
-      'options': ['Nucleus', 'Mitochondria', 'Ribosome', 'Chloroplast'],
-      'correctAnswer': 1,
-      'points': 2,
-    },
-    {
-      'question': 'Which planet is known as the Red Planet?',
-      'options': ['Venus', 'Mars', 'Jupiter', 'Saturn'],
-      'correctAnswer': 1,
-      'points': 10,
-    },
-    {
-      'question': 'What is the chemical symbol for gold?',
-      'options': ['Go', 'Gd', 'Au', 'Ag'],
-      'correctAnswer': 2,
-      'points': 6,
-    },
-    {
-      'question': 'Who wrote "Romeo and Juliet"?',
-      'options': [
-        'Charles Dickens',
-        'William Shakespeare',
-        'Jane Austen',
-        'Mark Twain'
-      ],
-      'correctAnswer': 1,
-      'points': 8,
-    },
-    {
-      'question': 'What is the largest ocean on Earth?',
-      'options': [
-        'Atlantic Ocean',
-        'Indian Ocean',
-        'Arctic Ocean',
-        'Pacific Ocean'
-      ],
-      'correctAnswer': 3,
-      'points': 10,
-    },
-    {
-      'question': 'What is the square root of 144?',
-      'options': ['10', '11', '12', '13'],
-      'correctAnswer': 2,
-      'points': 5,
-    },
-    {
-      'question': 'Which gas do plants absorb from the atmosphere?',
-      'options': ['Oxygen', 'Nitrogen', 'Carbon Dioxide', 'Hydrogen'],
-      'correctAnswer': 2,
-      'points': 10,
-    },
-    {
-      'question': 'What is the capital of France?',
-      'options': ['London', 'Berlin', 'Paris', 'Madrid'],
-      'correctAnswer': 2,
-      'points': 10,
-    },
-  ];
 
   int _remainingTime = 600; // 10 minutes
   bool _isAnswered = false;
@@ -137,23 +88,63 @@ class _GameTestScreenState extends State<GameTestScreen>
       duration: const Duration(milliseconds: 500),
     );
 
+    // Bounce animation for "Read More" arrow
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+
+    _bounceAnimation = Tween<double>(begin: 0, end: 4).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
+    );
+
     _initializeAudio();
-    
-    // Show countdown dialog before starting the game
+
+    // Show countdown immediately and load questions during countdown
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showGameCountdown();
+      _showLoadingCountdown();
     });
+  }
+
+  void _showLoadingCountdown() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _LoadingCountdownDialog(
+        onComplete: () {
+          if (!mounted) return;
+          Navigator.of(context).pop();
+          setState(() {
+            _isCountdownComplete = true;
+          });
+          _startTimer(); // Start the timer after countdown
+        },
+      ),
+    );
+
+    // Start fetching questions immediately when countdown begins
+    _initializeGameSession();
+  }
+
+  Future<void> _initializeGameSession() async {
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    await provider.initializeStudySession(
+      topicIds: widget.topicIds,
+      courseId: widget.courseId,
+      examTypeId: widget.examTypeId,
+    );
+
+    print('📚 Loaded ${provider.allQuestions.length} questions');
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
     _progressController.dispose();
-    _pulseController.dispose();
-  _progressController.dispose();
-  _correctSoundPlayer.dispose();
-  _wrongSoundPlayer.dispose();
-  _buttonSoundPlayer.dispose();
+    _bounceController.dispose();
+    _correctSoundPlayer.dispose();
+    _wrongSoundPlayer.dispose();
+    _buttonSoundPlayer.dispose();
     super.dispose();
   }
 
@@ -170,167 +161,206 @@ class _GameTestScreenState extends State<GameTestScreen>
     });
   }
 
-  void _showGameCountdown() {
+  void _selectAnswer(int optionIndex, Question question) {
+    if (_isAnswered) return;
+
+    _playButtonSound();
+    _vibrateButton();
+
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    final questionIndex = provider.currentQuestionIndex;
+
+    setState(() {
+      _userAnswers[questionIndex] = optionIndex;
+      _isAnswered = true;
+
+      // Check if answer is correct (compare with correct option order)
+      if (optionIndex == question.correct.order) {
+        _score += _pointsPerQuestion;
+        _streak++;
+        _correctAnswers++; // Increment correct answers
+
+        // Play correct sound and vibration
+        _playCorrectSound();
+        _vibrateCorrect();
+
+        // Special vibration for high streaks
+        if (_streak >= 3) {
+          _vibrateStreak();
+        }
+
+        if (_streak > _highestStreak) {
+          _highestStreak = _streak;
+        }
+        _showAnswerPopup = true;
+      } else {
+        _streak = 0;
+
+        // Play wrong sound and vibration
+        _playWrongSound();
+        _vibrateWrong();
+
+        _showAnswerPopup = true;
+      }
+    });
+
+    // Note: User can now close popup manually
+    // The popup will handle the advancement when closed
+  }
+
+  void _closeAnswerPopup() async {
+    setState(() {
+      _showAnswerPopup = false;
+    });
+
+    // Auto-advance after popup is closed
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+
+    await _moveToNextQuestion();
+  }
+
+  Future<void> _moveToNextQuestion() async {
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+
+    // Check if we're at the last question of current batch and there are more topics
+    final isAtEndOfCurrentBatch =
+        provider.currentQuestionIndex >= provider.allQuestions.length - 1;
+    final hasMoreTopicsToLoad = provider.hasMoreTopics;
+
+    if (isAtEndOfCurrentBatch && hasMoreTopicsToLoad) {
+      // Show countdown while loading next topic's questions
+      _showNextTopicCountdown();
+      return;
+    }
+
+    // Try to move to next question
+    final hasMore = await provider.nextQuestion();
+
+    if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
+      // Game complete - no more questions from any topic
+      _finishQuiz();
+    } else {
+      // Reset state for next question
+      setState(() {
+        _isAnswered = false;
+        _showAnswerPopup = false;
+      });
+      _progressController.forward(from: 0);
+    }
+  }
+
+  void _showNextTopicCountdown() {
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _GameCountdownDialog(
-        onComplete: () {
+      builder: (context) => _NextTopicCountdownDialog(
+        currentTopicIndex: provider.currentTopicIndex,
+        totalTopics: provider.totalTopics,
+        onComplete: () async {
+          if (!mounted) return;
           Navigator.of(context).pop();
-          setState(() {
-            _isCountdownComplete = true;
-          });
-          _startTimer(); // Start the timer after countdown
+
+          // Now fetch the next topic's questions
+          final hasMore = await provider.nextQuestion();
+
+          if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
+            _finishQuiz();
+          } else {
+            setState(() {
+              _isAnswered = false;
+              _showAnswerPopup = false;
+            });
+            _progressController.forward(from: 0);
+          }
         },
       ),
     );
   }
 
-  void _selectAnswer(int optionIndex) {
-    if (_isAnswered) return;
-
-     _playButtonSound();
-  _vibrateButton();
-
-    setState(() {
-      _userAnswers[_currentQuestionIndex] = optionIndex;
-      _isAnswered = true;
-
-      // Check if answer is correct
-       if (optionIndex == _questions[_currentQuestionIndex]['correctAnswer']) {
-      _score += _questions[_currentQuestionIndex]['points'] as int;
-      _streak++;
-      
-      // Play correct sound and vibration
-      _playCorrectSound();
-      _vibrateCorrect();
-      
-      // Special vibration for high streaks
-      if (_streak >= 3) {
-        _vibrateStreak();
-      }
-      
-      if (_streak > _highestStreak) {
-        _highestStreak = _streak;
-      }
-      _showAnswerPopup = true;
-    } else {
-      _streak = 0;
-      
-      // Play wrong sound and vibration
-      _playWrongSound();
-      _vibrateWrong();
-      
-      _showAnswerPopup = true;
-    }
-  });
-
-    // Note: User can now close popup manually
-    // The popup will handle the advancement when closed
-  }
-  
-  void _closeAnswerPopup() {
-    setState(() {
-      _showAnswerPopup = false;
-    });
-    
-    // Auto-advance after popup is closed
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        if (_currentQuestionIndex < _questions.length - 1) {
-          _nextQuestion();
-        } else {
-          _finishQuiz();
-        }
-      }
-    });
-  }
-
   void _playCorrectSound() async {
-  try {
-    await _correctSoundPlayer.stop(); // Stop any ongoing playback
-    await _correctSoundPlayer.play(AssetSource('sounds/correct.wav'));
-  } catch (e) {
-    print('Error playing correct sound: $e');
+    try {
+      await _correctSoundPlayer.stop(); // Stop any ongoing playback
+      await _correctSoundPlayer.play(AssetSource('sounds/correct.wav'));
+    } catch (e) {
+      print('Error playing correct sound: $e');
+    }
   }
-}
 
-void _playWrongSound() async {
-  try {
-    await _wrongSoundPlayer.stop();
-    await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
-  } catch (e) {
-    print('Error playing wrong sound: $e');
+  void _playWrongSound() async {
+    try {
+      await _wrongSoundPlayer.stop();
+      await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
+    } catch (e) {
+      print('Error playing wrong sound: $e');
+    }
   }
-}
 
-void _playButtonSound() async {
-  try {
-    await _buttonSoundPlayer.stop();
-    await _buttonSoundPlayer.play(AssetSource('sounds/completed.wav'));
-  } catch (e) {
-    print('Error playing button sound: $e');
+  void _playButtonSound() async {
+    try {
+      await _buttonSoundPlayer.stop();
+      await _buttonSoundPlayer.play(AssetSource('sounds/completed.wav'));
+    } catch (e) {
+      print('Error playing button sound: $e');
+    }
   }
-}
 
-void _vibrateCorrect() async {
-  if (await Vibration.hasVibrator() ?? false) {
-    Vibration.vibrate(duration: _correctVibrationDuration);
+  void _vibrateCorrect() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(duration: _correctVibrationDuration);
+    }
   }
-}
 
-void _vibrateWrong() async {
-  if (await Vibration.hasVibrator() ?? false) {
-    Vibration.vibrate(duration: _wrongVibrationDuration);
+  void _vibrateWrong() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(duration: _wrongVibrationDuration);
+    }
   }
-}
 
-void _vibrateStreak() async {
-  if (await Vibration.hasVibrator() ?? false) {
-    Vibration.vibrate(pattern: _streakVibrationPattern);
+  void _vibrateStreak() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(pattern: _streakVibrationPattern);
+    }
   }
-}
 
-void _vibrateButton() async {
-  if (await Vibration.hasVibrator() ?? false) {
-    Vibration.vibrate(duration: 50);
+  void _vibrateButton() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(duration: 50);
+    }
   }
-}
 
- void _nextQuestion() {
-  _playButtonSound();
-  _vibrateButton();
-  
-  if (_currentQuestionIndex < _questions.length - 1) {
+  Future<void> _nextQuestion() async {
+    _playButtonSound();
+    _vibrateButton();
+
+    await _moveToNextQuestion();
+  }
+
+  void _previousQuestion() {
+    _playButtonSound();
+    _vibrateButton();
+
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    provider.previousQuestion();
+
     setState(() {
-      _currentQuestionIndex++;
-      _isAnswered = false;
-      _showAnswerPopup = false;
-    });
-    _progressController.forward(from: 0);
-  }
-}
-
-void _previousQuestion() {
-  _playButtonSound();
-  _vibrateButton();
-  
-  if (_currentQuestionIndex > 0) {
-    setState(() {
-      _currentQuestionIndex--;
-      _isAnswered = _userAnswers.containsKey(_currentQuestionIndex);
+      _isAnswered = _userAnswers.containsKey(provider.currentQuestionIndex);
     });
   }
-}
 
   void _finishQuiz() {
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => _ResultDialog(
         score: _score,
-        totalQuestions: _questions.length,
+        totalQuestions: provider.allQuestions.length,
         answeredQuestions: _userAnswers.length,
+        correctAnswers: _correctAnswers,
         highestStreak: _highestStreak,
       ),
     );
@@ -338,79 +368,201 @@ void _previousQuestion() {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isCountdownComplete) {
-      return Scaffold(
-        backgroundColor: AppColors.eLearningBtnColor1,
-        body: Container(),
-      );
-    }
-    
-    final question = _questions[_currentQuestionIndex];
-    final selectedAnswer = _userAnswers[_currentQuestionIndex];
-    final isCorrect = selectedAnswer == question['correctAnswer'];
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.eLearningBtnColor1,
-                  AppColors.eLearningBtnColor1.withOpacity(0.8),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Game Header
-                  _buildGameHeader(),
-
-                  // Main Content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          // Question Card
-                          _buildQuestionCard(question),
-                          const SizedBox(height: 20),
-
-                          // Options
-                          _buildOptionsGrid(question, selectedAnswer, isCorrect),
-                        ],
+    return Consumer<QuestionsProvider>(
+      builder: (context, provider, child) {
+        // Loading state
+        if (provider.loading) {
+          return Scaffold(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            body: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.white),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading questions...',
+                      style: AppTextStyles.normal600(
+                        fontSize: 16,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
-
-                  // Navigation Buttons
-                 // _buildNavigationBar(),
-                ],
-              ),
-            ),
-          ),
-
-          // Answer Popup Overlay
-          if (_showAnswerPopup && _isAnswered)
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              child: Center(
-                child: _AnswerPopup(
-                  isCorrect: isCorrect,
-                  points: _questions[_currentQuestionIndex]['points'] as int,
-                  onClose: _closeAnswerPopup,
+                  ],
                 ),
               ),
             ),
-              ]),
-            );
-     
+          );
+        }
+
+        // Error state
+        if (provider.error != null) {
+          return Scaffold(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 64, color: Colors.white),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load questions',
+                        style: AppTextStyles.normal600(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        provider.error!,
+                        style: AppTextStyles.normal400(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => _initializeGameSession(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.eLearningBtnColor1,
+                        ),
+                        child: Text('Try Again'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Go Back',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // No questions available
+        if (provider.allQuestions.isEmpty) {
+          return Scaffold(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            body: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.quiz_outlined, size: 64, color: Colors.white),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No questions available',
+                      style: AppTextStyles.normal600(
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.eLearningBtnColor1,
+                      ),
+                      child: Text('Go Back'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Countdown not complete - show empty container
+        if (!_isCountdownComplete) {
+          return Scaffold(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            body: Container(),
+          );
+        }
+
+        // Sync local index with provider
+        final questionIndex = provider.currentQuestionIndex;
+        final question = provider.allQuestions[questionIndex];
+        final selectedAnswer = _userAnswers[questionIndex];
+        final isCorrect = selectedAnswer == question.correct.order;
+
+        return Scaffold(
+          body: Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.eLearningBtnColor1,
+                      AppColors.eLearningBtnColor1.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      // Game Header
+                      _buildGameHeader(provider),
+
+                      // Main Content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              // Instruction/Passage Preview
+                              _buildInstructionPassagePreviewCard(question),
+
+                              // Question Card
+                              _buildQuestionCard(question),
+                              const SizedBox(height: 20),
+
+                              // Options
+                              _buildOptionsGrid(
+                                  question, selectedAnswer, isCorrect),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Navigation Buttons
+                      // _buildNavigationBar(),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Answer Popup Overlay
+              if (_showAnswerPopup && _isAnswered)
+                Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: _AnswerPopup(
+                      isCorrect: isCorrect,
+                      points: _pointsPerQuestion,
+                      onClose: _closeAnswerPopup,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
-  Widget _buildGameHeader() {
+  Widget _buildGameHeader(QuestionsProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -429,7 +581,11 @@ void _previousQuestion() {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  // Reset provider when leaving
+                  provider.reset();
+                  Navigator.pop(context);
+                },
                 icon: Icon(Icons.arrow_back, color: Colors.white),
               ),
               Expanded(
@@ -442,14 +598,11 @@ void _previousQuestion() {
                         color: Colors.white,
                       ),
                     ),
-                   
                   ],
                 ),
               ),
-            
             ],
           ),
-          //SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -484,7 +637,8 @@ void _previousQuestion() {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: (_currentQuestionIndex + 1) / _questions.length,
+              value: (provider.currentQuestionIndex + 1) /
+                  provider.allQuestions.length,
               backgroundColor: Colors.white.withOpacity(0.2),
               valueColor: AlwaysStoppedAnimation<Color>(Colors.greenAccent),
               minHeight: 8,
@@ -513,17 +667,16 @@ void _previousQuestion() {
       ),
       child: Column(
         children: [
-        
           SizedBox(height: 2),
           Row(
             children: [
-               Text(
-            label,
-            style: AppTextStyles.normal400(
-              fontSize: 10,
-              color: Colors.white.withOpacity(0.8),
-            ),
-          ),
+              Text(
+                label,
+                style: AppTextStyles.normal400(
+                  fontSize: 10,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
               SizedBox(width: 4),
               Text(
                 value,
@@ -533,16 +686,329 @@ void _previousQuestion() {
                 ),
               ),
               SizedBox(width: 4),
-                Icon(icon, color: color, size: 20),
+              Icon(icon, color: color, size: 20),
             ],
           ),
-         
         ],
       ),
     );
   }
 
-  Widget _buildQuestionCard(Map<String, dynamic> question) {
+  /// Build instruction/passage preview card
+  Widget _buildInstructionPassagePreviewCard(Question question) {
+    final hasInstruction = question.instruction.isNotEmpty;
+    final hasPassage = question.passage.isNotEmpty;
+
+    String title = '';
+    String content = '';
+
+    if (hasInstruction && hasPassage) {
+      title = 'Instruction & Passage';
+      content = '${question.instruction}\n\n${question.passage}';
+    } else if (hasInstruction) {
+      title = 'Instruction';
+      content = question.instruction;
+    } else if (hasPassage) {
+      title = 'Passage';
+      content = question.passage;
+    }
+
+    if (content.isEmpty) return const SizedBox.shrink();
+
+    // Define max characters for preview
+    const int maxPreviewLength = 150;
+    final bool isLongText = content.length > maxPreviewLength;
+    final String previewText =
+        isLongText ? '${content.substring(0, maxPreviewLength)}...' : content;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row with icon and title
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.eLearningBtnColor1.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  hasInstruction && hasPassage
+                      ? Icons.menu_book_rounded
+                      : (hasInstruction
+                          ? Icons.info_outline
+                          : Icons.article_outlined),
+                  color: AppColors.eLearningBtnColor1,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.normal700(
+                    fontSize: 14,
+                    color: AppColors.eLearningBtnColor1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Preview text with gradient fade overlay for long text
+          Stack(
+            children: [
+              Html(
+                data: previewText,
+                style: {
+                  "body": Style(
+                    fontSize: FontSize(14),
+                    margin: Margins.zero,
+                    padding: HtmlPaddings.zero,
+                    lineHeight: LineHeight(1.5),
+                    color: AppColors.text4Light,
+                    maxLines: 4,
+                    textOverflow: TextOverflow.ellipsis,
+                  ),
+                },
+              ),
+              // White gradient fade overlay at bottom (only if text is long)
+              if (isLongText)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withOpacity(0),
+                          Colors.white.withOpacity(0.7),
+                          Colors.white,
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          // Read More (only if text is long)
+          if (isLongText) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: () => _showInstructionOrPassageModal(title, content),
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Read More',
+                        style: AppTextStyles.normal600(
+                          fontSize: 13,
+                          color: AppColors.eLearningBtnColor1,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      AnimatedBuilder(
+                        animation: _bounceAnimation,
+                        builder: (context, child) {
+                          return Transform.translate(
+                            offset: Offset(_bounceAnimation.value, 0),
+                            child: child,
+                          );
+                        },
+                        child: Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: AppColors.eLearningBtnColor1,
+                          size: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Show instruction or passage modal dialog
+  void _showInstructionOrPassageModal(String title, String content) {
+    if (!mounted || content.isEmpty) return;
+
+    // Parse if both instruction and passage are combined (separated by \n\n)
+    bool hasBothSections = title == 'Instruction & Passage';
+    List<String> sections = [];
+    List<String> sectionTitles = [];
+
+    if (hasBothSections && content.contains('\n\n')) {
+      final parts = content.split('\n\n');
+      if (parts.length >= 2) {
+        sections = [parts[0], parts.sublist(1).join('\n\n')];
+        sectionTitles = ['Instruction', 'Passage'];
+      } else {
+        sections = [content];
+        sectionTitles = [title];
+      }
+    } else {
+      sections = [content];
+      sectionTitles = [title];
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Scrollable content
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Show question number at top
+                          Builder(builder: (context) {
+                            final provider = Provider.of<QuestionsProvider>(
+                                context,
+                                listen: false);
+                            final qIndex = provider.currentQuestionIndex;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                'Question ${qIndex + 1}',
+                                style: AppTextStyles.normal700(
+                                  fontSize: 14,
+                                  color: AppColors.text4Light,
+                                ),
+                              ),
+                            );
+                          }),
+
+                          // Render sections
+                          ...sections.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final sectionContent = entry.value.trim();
+                            final sectionTitle = sectionTitles[index];
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Section title
+                                Text(
+                                  sectionTitle,
+                                  style: AppTextStyles.normal700(
+                                    fontSize: 16,
+                                    color: AppColors.eLearningBtnColor1,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+
+                                // Section content (HTML)
+                                Html(
+                                  data: sectionContent,
+                                  style: {
+                                    "body": Style(
+                                      fontSize: FontSize(16),
+                                      margin: Margins.zero,
+                                      padding: HtmlPaddings.zero,
+                                      lineHeight: LineHeight(1.6),
+                                      color: AppColors.text3Light,
+                                    ),
+                                  },
+                                ),
+
+                                // Add spacing between sections
+                                if (index < sections.length - 1)
+                                  const SizedBox(height: 24),
+                              ],
+                            );
+                          }).toList(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Fixed "Got it" button at bottom
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.eLearningBtnColor1,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Got it',
+                        style: AppTextStyles.normal600(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(Question question) {
     return Stack(
       children: [
         Container(
@@ -565,7 +1031,7 @@ void _previousQuestion() {
             children: [
               SizedBox(height: 20),
               Text(
-                question['question'],
+                question.questionText,
                 style: AppTextStyles.normal600(
                   fontSize: 18,
                   color: AppColors.text4Light,
@@ -599,7 +1065,7 @@ void _previousQuestion() {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${question['points']}',
+                  '$_pointsPerQuestion',
                   style: AppTextStyles.normal600(
                     fontSize: 14,
                     color: Colors.white,
@@ -619,9 +1085,9 @@ void _previousQuestion() {
   }
 
   Widget _buildOptionsGrid(
-      Map<String, dynamic> question, int? selectedAnswer, bool isCorrect) {
-    final options = question['options'] as List<String>;
-    final correctAnswer = question['correctAnswer'] as int;
+      Question question, int? selectedAnswer, bool isCorrect) {
+    final options = question.options;
+    final correctAnswer = question.correct.order;
 
     return Column(
       children: options.asMap().entries.map((entry) {
@@ -659,7 +1125,7 @@ void _previousQuestion() {
             );
           },
           child: GestureDetector(
-            onTap: () => _selectAnswer(index),
+            onTap: () => _selectAnswer(index, question),
             child: AnimatedContainer(
               duration: Duration(milliseconds: 300),
               margin: EdgeInsets.only(bottom: 12),
@@ -720,7 +1186,7 @@ void _previousQuestion() {
                   SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      option,
+                      option.text,
                       style: AppTextStyles.normal600(
                         fontSize: 16,
                         color: textColor,
@@ -735,7 +1201,7 @@ void _previousQuestion() {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '+${question['points']} ⭐',
+                        '+$_pointsPerQuestion ⭐',
                         style: AppTextStyles.normal600(
                           fontSize: 12,
                           color: Colors.white,
@@ -752,6 +1218,10 @@ void _previousQuestion() {
   }
 
   Widget _buildNavigationBar() {
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    final currentIndex = provider.currentQuestionIndex;
+    final totalQuestions = provider.allQuestions.length;
+
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -768,11 +1238,10 @@ void _previousQuestion() {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed:
-                  _currentQuestionIndex > 0 ? _previousQuestion : null,
+              onPressed: currentIndex > 0 ? _previousQuestion : null,
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: _currentQuestionIndex > 0
+                  color: currentIndex > 0
                       ? Colors.white
                       : Colors.white.withOpacity(0.3),
                 ),
@@ -785,7 +1254,7 @@ void _previousQuestion() {
                 'Previous',
                 style: AppTextStyles.normal600(
                   fontSize: 14,
-                  color: _currentQuestionIndex > 0
+                  color: currentIndex > 0
                       ? Colors.white
                       : Colors.white.withOpacity(0.3),
                 ),
@@ -824,14 +1293,12 @@ void _previousQuestion() {
           SizedBox(width: 12),
           Expanded(
             child: OutlinedButton(
-              onPressed: _currentQuestionIndex < _questions.length - 1 &&
-                      !_isAnswered
+              onPressed: currentIndex < totalQuestions - 1 && !_isAnswered
                   ? _nextQuestion
                   : null,
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: _currentQuestionIndex < _questions.length - 1 &&
-                          !_isAnswered
+                  color: currentIndex < totalQuestions - 1 && !_isAnswered
                       ? Colors.white
                       : Colors.white.withOpacity(0.3),
                 ),
@@ -844,8 +1311,7 @@ void _previousQuestion() {
                 'Skip',
                 style: AppTextStyles.normal600(
                   fontSize: 14,
-                  color: _currentQuestionIndex < _questions.length - 1 &&
-                          !_isAnswered
+                  color: currentIndex < totalQuestions - 1 && !_isAnswered
                       ? Colors.white
                       : Colors.white.withOpacity(0.3),
                 ),
@@ -862,18 +1328,23 @@ class _ResultDialog extends StatelessWidget {
   final int score;
   final int totalQuestions;
   final int answeredQuestions;
+  final int correctAnswers;
   final int highestStreak;
 
   const _ResultDialog({
     required this.score,
     required this.totalQuestions,
     required this.answeredQuestions,
+    required this.correctAnswers,
     required this.highestStreak,
   });
 
   @override
   Widget build(BuildContext context) {
-    final percentage = (answeredQuestions / totalQuestions * 100).round();
+    // Calculate accuracy based on correct answers out of answered questions
+    final accuracy = answeredQuestions > 0
+        ? (correctAnswers / answeredQuestions * 100).round()
+        : 0;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -935,7 +1406,9 @@ class _ResultDialog extends StatelessWidget {
                     children: [
                       _buildStatItem('Score', '$score ⭐', Colors.amber),
                       _buildStatItem(
-                          'Answered', '$answeredQuestions/$totalQuestions', Colors.greenAccent),
+                          'Answered',
+                          '$answeredQuestions/$totalQuestions',
+                          Colors.greenAccent),
                     ],
                   ),
                   SizedBox(height: 16),
@@ -943,8 +1416,9 @@ class _ResultDialog extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildStatItem(
-                          'Accuracy', '$percentage%', Colors.lightBlueAccent),
-                      _buildStatItem('Best Streak', '$highestStreak 🔥', Colors.orange),
+                          'Accuracy', '$accuracy%', Colors.lightBlueAccent),
+                      _buildStatItem(
+                          'Best Streak', '$highestStreak 🔥', Colors.orange),
                     ],
                   ),
                 ],
@@ -953,8 +1427,10 @@ class _ResultDialog extends StatelessWidget {
             SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-               Navigator.pushReplacement(context,
-               MaterialPageRoute(builder: (context) => LeaderboardScreen()));
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LeaderboardScreen()));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -1105,7 +1581,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
     Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) _slideController.forward();
     });
-    
+
     if (widget.isCorrect) {
       Future.delayed(Duration(milliseconds: 300), () {
         if (mounted) {
@@ -1129,6 +1605,13 @@ class _AnswerPopupState extends State<_AnswerPopup>
         }
       });
     }
+
+    // Auto-dismiss after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        widget.onClose();
+      }
+    });
   }
 
   @override
@@ -1181,8 +1664,8 @@ class _AnswerPopupState extends State<_AnswerPopup>
                   ),
                   borderRadius: BorderRadius.circular(32),
                   border: Border.all(
-                    color: widget.isCorrect 
-                        ? Colors.green.shade300 
+                    color: widget.isCorrect
+                        ? Colors.green.shade300
                         : Colors.red.shade300,
                     width: 3,
                   ),
@@ -1200,7 +1683,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
                   children: [
                     // Confetti overlay for correct answers
                     if (widget.isCorrect) _buildConfettiOverlay(),
-                    
+
                     // Particle burst overlay
                     if (widget.isCorrect) _buildParticleBurstOverlay(),
 
@@ -1252,7 +1735,9 @@ class _AnswerPopupState extends State<_AnswerPopup>
                           ),
                           child: Icon(
                             Icons.close,
-                            color: widget.isCorrect ? Colors.green.shade700 : Colors.red.shade700,
+                            color: widget.isCorrect
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
                             size: 24,
                           ),
                         ),
@@ -1492,11 +1977,11 @@ class _ConfettiPainter extends CustomPainter {
 
       if (y > -30 && y < size.height + 30) {
         paint.color = colors[i % colors.length].withOpacity(0.8);
-        
+
         canvas.save();
         canvas.translate(x, y);
         canvas.rotate(rotation);
-        
+
         // Draw different shapes
         if (i % 3 == 0) {
           // Rectangle
@@ -1516,7 +2001,7 @@ class _ConfettiPainter extends CustomPainter {
           path.close();
           canvas.drawPath(path, paint);
         }
-        
+
         canvas.restore();
       }
     }
@@ -1602,6 +2087,7 @@ class _FloatingStarsPainter extends CustomPainter {
   @override
   bool shouldRepaint(_FloatingStarsPainter oldDelegate) => true;
 }
+
 class _GameCountdownDialog extends StatefulWidget {
   final VoidCallback onComplete;
 
@@ -1623,7 +2109,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -1705,7 +2191,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Title
             const Text(
               'Starting Game',
@@ -1717,7 +2203,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Message
             const Text(
               'Get ready to play!',
@@ -1729,7 +2215,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Countdown container
             Container(
               width: 100,
@@ -1766,7 +2252,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Progress indicator
             Text(
               'Get ready...',
@@ -1775,6 +2261,384 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
                 color: Colors.white.withOpacity(0.8),
                 fontStyle: FontStyle.italic,
                 fontFamily: 'Urbanist',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingCountdownDialog extends StatefulWidget {
+  final VoidCallback onComplete;
+
+  const _LoadingCountdownDialog({
+    required this.onComplete,
+  });
+
+  @override
+  State<_LoadingCountdownDialog> createState() =>
+      _LoadingCountdownDialogState();
+}
+
+class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  int _countdown = 3;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        if (_countdown > 1) {
+          setState(() {
+            _countdown--;
+          });
+          _controller.reset();
+          _controller.forward();
+          _startCountdown();
+        } else {
+          widget.onComplete();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.eLearningBtnColor1,
+              AppColors.eLearningBtnColor1.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.gamepad_rounded,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Title
+            const Text(
+              'Starting Game',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Message
+            const Text(
+              'Loading questions...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Countdown container
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      '$_countdown',
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.eLearningBtnColor1,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Progress indicator
+            Text(
+              'Get ready...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.8),
+                fontFamily: 'Urbanist',
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NextTopicCountdownDialog extends StatefulWidget {
+  final int currentTopicIndex;
+  final int totalTopics;
+  final VoidCallback onComplete;
+
+  const _NextTopicCountdownDialog({
+    required this.currentTopicIndex,
+    required this.totalTopics,
+    required this.onComplete,
+  });
+
+  @override
+  State<_NextTopicCountdownDialog> createState() =>
+      _NextTopicCountdownDialogState();
+}
+
+class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  int _countdown = 3;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        if (_countdown > 1) {
+          setState(() {
+            _countdown--;
+          });
+          _controller.reset();
+          _controller.forward();
+          _startCountdown();
+        } else {
+          widget.onComplete();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.eLearningBtnColor1,
+              AppColors.eLearningBtnColor1.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                size: 48,
+                color: Colors.amber,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Title
+            const Text(
+              'Next Topic',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Progress indicator
+            Text(
+              'Topic ${widget.currentTopicIndex + 1} of ${widget.totalTopics}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.9),
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Message
+            const Text(
+              'Loading more questions...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Countdown container
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      '$_countdown',
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.eLearningBtnColor1,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Get ready text
+            Text(
+              'Get ready for more! 🚀',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.8),
+                fontFamily: 'Urbanist',
+                fontStyle: FontStyle.italic,
               ),
             ),
           ],

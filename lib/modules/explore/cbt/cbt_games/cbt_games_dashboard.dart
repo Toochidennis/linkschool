@@ -3,9 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_modal.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 
 class GameDashboardScreen extends StatefulWidget {
-  const GameDashboardScreen({super.key});
+  final List<SubjectModel> subjects;
+  final int examTypeId;
+  const GameDashboardScreen({
+    super.key,
+    required this.subjects,
+    required this.examTypeId,
+  });
 
   @override
   State<GameDashboardScreen> createState() => _GameDashboardScreenState();
@@ -13,7 +20,6 @@ class GameDashboardScreen extends StatefulWidget {
 
 class _GameDashboardScreenState extends State<GameDashboardScreen>
     with SingleTickerProviderStateMixin {
-
   late AnimationController _controller;
   late Animation<double> _rotation;
   late PageController _pageController;
@@ -74,11 +80,10 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     super.initState();
 
     // Lanyard swing animation
-  _controller = AnimationController(
-  vsync: this,
-  duration: const Duration(milliseconds: 300), // fast swing
-)..repeat(reverse: true);
-
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300), // fast swing
+    )..repeat(reverse: true);
 
     _rotation = Tween<double>(begin: -0.10, end: 0.10).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
@@ -108,11 +113,18 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 // ---------------- HEADER ----------------
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // morden back button
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new,
+                          size: 30, color: Colors.black87),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
                     _buildCoinCard(),
                     _buildLanyardStreak(),
                   ],
@@ -275,9 +287,10 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
             },
             children: [
               _buildStartBanner(),
-              ..._subjectLeaderboards.map((subjectData) => 
-                _buildSubjectLeaderboardCard(subjectData)
-              ).toList(),
+              ..._subjectLeaderboards
+                  .map((subjectData) =>
+                      _buildSubjectLeaderboardCard(subjectData))
+                  .toList(),
             ],
           ),
         ),
@@ -303,94 +316,95 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     );
   }
 
-Widget _buildStartBanner() {
-  return Container(
-    height: 180,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-
-          /// --- GIF BACKGROUND ---
-          GifView.asset(
-    'assets/images/Gaming.gif',
-  fit: BoxFit.cover,
-   imageRepeat: ImageRepeat.noRepeat,
-    frameRate: 30, 
-    loop: false,
-  ),
-          // Image.asset(
-          //   "assets/images/Gaming.gif",
-          //   fit: BoxFit.cover,
-          // ),
-
-          /// --- DARK OVERLAY (optional for readability) ---
-          Container(
-            color: Colors.blue.withOpacity(0.35),
-          ),
-
-          /// --- CONTENT ---
-      
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Start Your Daily Game!",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Spacer(),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.deepPurple,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => const GameSubjectModal(),
-                        );
-                      },
-                      child: const Text(
-                        " Start",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                           color: Colors.blue,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+  Widget _buildStartBanner() {
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
       ),
-    ),
-  );
-}
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            /// --- GIF BACKGROUND ---
+            GifView.asset(
+              'assets/images/Gaming.gif',
+              fit: BoxFit.cover,
+              imageRepeat: ImageRepeat.noRepeat,
+              frameRate: 30,
+              loop: false,
+            ),
+            // Image.asset(
+            //   "assets/images/Gaming.gif",
+            //   fit: BoxFit.cover,
+            // ),
 
+            /// --- DARK OVERLAY (optional for readability) ---
+            Container(
+              color: Colors.blue.withOpacity(0.35),
+            ),
+
+            /// --- CONTENT ---
+
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Start Your Daily Game!",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Spacer(),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.deepPurple,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => GameSubjectModal(
+                              subjects: widget.subjects,
+                              examTypeId: widget.examTypeId,
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          " Start",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // ---------------- MISSION TILE ----------------
 
@@ -458,8 +472,7 @@ Widget _buildStartBanner() {
 
           // XP Label
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: missionColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
@@ -548,14 +561,14 @@ Widget _buildStartBanner() {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LeaderboardScreen(
-                         fromGameDashboard: true
-                        ),
+                        builder: (context) =>
+                            const LeaderboardScreen(fromGameDashboard: true),
                       ),
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -573,17 +586,18 @@ Widget _buildStartBanner() {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Top 3 leaders
             Expanded(
               child: ListView.builder(
-               // physics: FixedExtentScrollPhysics(),
+                // physics: FixedExtentScrollPhysics(),
                 itemCount: min(3, (subjectData['leaders'] as List).length),
                 itemBuilder: (context, index) {
                   final leader = (subjectData['leaders'] as List)[index];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -610,13 +624,16 @@ Widget _buildStartBanner() {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        
+
                         // Avatar
                         CircleAvatar(
                           radius: 16,
                           backgroundColor: Colors.white.withOpacity(0.3),
                           child: Text(
-                            (leader['name'] as String).split(' ').map((e) => e[0]).join(),
+                            (leader['name'] as String)
+                                .split(' ')
+                                .map((e) => e[0])
+                                .join(),
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -625,7 +642,7 @@ Widget _buildStartBanner() {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        
+
                         // Name
                         Expanded(
                           child: Text(
@@ -637,10 +654,11 @@ Widget _buildStartBanner() {
                             ),
                           ),
                         ),
-                        
+
                         // Points
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(8),

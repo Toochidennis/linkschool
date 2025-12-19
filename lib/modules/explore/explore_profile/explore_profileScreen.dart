@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Add this import for the payment dialog
 import 'package:linkschool/modules/explore/e_library/widgets/paystack_payment_dialog.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -57,7 +58,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       final user = userCredential?.user;
       if (user != null) {
         // Register user in backend via CbtUserProvider
-        final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+        final userProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
         await userProvider.handleFirebaseSignUp(
           email: user.email ?? '',
           name: user.displayName ?? '',
@@ -82,7 +84,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error signing in: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Error signing in: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -108,25 +112,27 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
     if (confirm == true) {
       try {
-        await _authService.signOut();
+        // Clear app-specific user data FIRST before Firebase signout
+        final cbtUserProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
 
-        // Clear app-specific user data immediately
-        final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-        try {
-          // Clear provider state and persisted CBT user data
-          await cbtUserProvider.logout();
-        } catch (e) {
-          // Non-fatal: log and continue
-          print('Warning: Error while logging out CbtUserProvider: $e');
-        }
+        // Clear provider state and persisted CBT user data
+        await cbtUserProvider.logout();
+        print('✅ CbtUserProvider logout completed');
 
-        // Also clear commonly used auth/shared keys immediately
+        // Clear commonly used auth/shared keys
         await _clearAllUserSharedPrefs();
+        print('✅ SharedPreferences cleared');
+
+        // Sign out from Firebase LAST
+        await _authService.signOut();
+        print('✅ Firebase signout completed');
 
         setState(() {
           _currentUser = null;
           _isSignedIn = false;
         });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -136,6 +142,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           );
         }
       } catch (e) {
+        print('❌ Error during logout: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -174,7 +181,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   // Add this method to handle the payment flow
   Future<void> _handleSubscribeNow() async {
     // Directly launch Paystack payment page using the same logic as _chargeWithPaystack
-    final _subscriptionPrice = 400;
+    final settings = await CbtSettingsHelper.getSettings();
+    final _subscriptionPrice = settings.discountRate > 0
+        ? (settings.amount * (1 - settings.discountRate)).round()
+        : settings.amount;
     final _authService = FirebaseAuthService();
     final userEmail = await _authService.getCurrentUserEmail();
     if (userEmail == null || userEmail.isEmpty) {
@@ -210,7 +220,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       onSuccess: (paystackCallback) async {
         print('✅ Payment successful: "+paystackCallback.reference+"');
         // Optionally verify and update payment here
-        final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+        final cbtUserProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
         await cbtUserProvider.updateUserAfterPayment(reference: reference);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -240,11 +251,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<AppSettingsProvider>(context);
-    
+
     final cbtUserProvider = Provider.of<CbtUserProvider>(context);
     final subscriptionStatus = cbtUserProvider.subscriptionStatus;
     return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaleFactor: settings.textScaleFactor),
+      data: MediaQuery.of(context)
+          .copyWith(textScaleFactor: settings.textScaleFactor),
       child: Scaffold(
         backgroundColor: settings.backgroundColor,
         body: SingleChildScrollView(
@@ -267,7 +279,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           Expanded(
                             child: Text(
                               'Sign in to access your profile and subscription features.',
-                              style: AppTextStyles.normal600(fontSize: 15, color: Colors.orange[900]),
+                              style: AppTextStyles.normal600(
+                                  fontSize: 15, color: Colors.orange[900]),
                             ),
                           ),
                           TextButton(
@@ -279,117 +292,119 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ),
                   ),
                 // Profile Header Section
-                if (_isSignedIn) _buildProfileHeader(settings, subscriptionStatus),
+                if (_isSignedIn)
+                  _buildProfileHeader(settings, subscriptionStatus),
                 if (_isSignedIn) const SizedBox(height: 24),
-              
-              // App Preferences Section
-              _buildSectionHeader('App Preferences', settings),
-              const SizedBox(height: 12),
-              _buildSettingsCard([
-                _buildSettingsTile(
-                  icon: Icons.dark_mode_outlined,
-                  title: 'Dark Mode',
-                  subtitle: 'Switch to dark theme',
-                  settings: settings,
-                  trailing: Switch(
-                    value: settings.isDarkMode,
-                    onChanged: (value) {
-                      settings.setDarkMode(value);
-                    },
-                    activeColor: AppColors.text2Light,
-                  ),
-                ),
-                _buildDivider(),
-              ], settings),
 
-              const SizedBox(height: 24),
-
-              // Support & Legal Section
-              _buildSectionHeader('Support & Legal', settings),
-              const SizedBox(height: 12),
-              _buildSettingsCard([
-                _buildSettingsTile(
-                  icon: Icons.help_outline,
-                  title: 'Help & Support',
-                  subtitle: 'Get help and contact support',
-                  settings: settings,
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showHelpDialog(),
-                ),
-                _buildDivider(),
-                _buildSettingsTile(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Privacy Policy',
-                  subtitle: 'Learn about our privacy practices',
-                  settings: settings,
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showPrivacyDialog(),
-                ),
-                _buildDivider(),
-                _buildSettingsTile(
-                  icon: Icons.description_outlined,
-                  title: 'Terms & Conditions',
-                  subtitle: 'Read our terms of service',
-                  settings: settings,
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showTermsDialog(),
-                ),
-              ], settings),
-
-              const SizedBox(height: 24),
-
-              // About Section
-              _buildSectionHeader('About', settings),
-              const SizedBox(height: 12),
-              _buildSettingsCard([
-                _buildSettingsTile(
-                  icon: Icons.info_outline,
-                  title: 'About LinkSchool',
-                  subtitle: 'Version 1.0.0',
-                  settings: settings,
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showAboutDialog(),
-                ),
-                _buildDivider(),
-                _buildSettingsTile(
-                  icon: Icons.star_outline,
-                  title: 'Rate App',
-                  subtitle: 'Share your feedback',
-                  settings: settings,
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showRatingDialog(),
-                ),
-              ], settings),
-
-              const SizedBox(height: 24),
-
-              // Logout Section (only if signed in)
-              if (_isSignedIn) ...[
-                _buildSectionHeader('Account', settings),
+                // App Preferences Section
+                _buildSectionHeader('App Preferences', settings),
                 const SizedBox(height: 12),
                 _buildSettingsCard([
                   _buildSettingsTile(
-                    icon: Icons.logout,
-                    title: 'Logout',
-                    subtitle: 'Sign out of your account',
+                    icon: Icons.dark_mode_outlined,
+                    title: 'Dark Mode',
+                    subtitle: 'Switch to dark theme',
+                    settings: settings,
+                    trailing: Switch(
+                      value: settings.isDarkMode,
+                      onChanged: (value) {
+                        settings.setDarkMode(value);
+                      },
+                      activeColor: AppColors.text2Light,
+                    ),
+                  ),
+                  _buildDivider(),
+                ], settings),
+
+                const SizedBox(height: 24),
+
+                // Support & Legal Section
+                _buildSectionHeader('Support & Legal', settings),
+                const SizedBox(height: 12),
+                _buildSettingsCard([
+                  _buildSettingsTile(
+                    icon: Icons.help_outline,
+                    title: 'Help & Support',
+                    subtitle: 'Get help and contact support',
                     settings: settings,
                     trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                    onTap: _handleLogout,
+                    onTap: () => _showHelpDialog(),
+                  ),
+                  _buildDivider(),
+                  _buildSettingsTile(
+                    icon: Icons.privacy_tip_outlined,
+                    title: 'Privacy Policy',
+                    subtitle: 'Learn about our privacy practices',
+                    settings: settings,
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: () => _showPrivacyDialog(),
+                  ),
+                  _buildDivider(),
+                  _buildSettingsTile(
+                    icon: Icons.description_outlined,
+                    title: 'Terms & Conditions',
+                    subtitle: 'Read our terms of service',
+                    settings: settings,
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: () => _showTermsDialog(),
                   ),
                 ], settings),
-                const SizedBox(height: 24),
-              ],
 
-              const SizedBox(height: 100),
-            ],
+                const SizedBox(height: 24),
+
+                // About Section
+                _buildSectionHeader('About', settings),
+                const SizedBox(height: 12),
+                _buildSettingsCard([
+                  _buildSettingsTile(
+                    icon: Icons.info_outline,
+                    title: 'About LinkSchool',
+                    subtitle: 'Version 1.0.0',
+                    settings: settings,
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: () => _showAboutDialog(),
+                  ),
+                  _buildDivider(),
+                  _buildSettingsTile(
+                    icon: Icons.star_outline,
+                    title: 'Rate App',
+                    subtitle: 'Share your feedback',
+                    settings: settings,
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: () => _showRatingDialog(),
+                  ),
+                ], settings),
+
+                const SizedBox(height: 24),
+
+                // Logout Section (only if signed in)
+                if (_isSignedIn) ...[
+                  _buildSectionHeader('Account', settings),
+                  const SizedBox(height: 12),
+                  _buildSettingsCard([
+                    _buildSettingsTile(
+                      icon: Icons.logout,
+                      title: 'Logout',
+                      subtitle: 'Sign out of your account',
+                      settings: settings,
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: _handleLogout,
+                    ),
+                  ], settings),
+                  const SizedBox(height: 24),
+                ],
+
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
 
-  Widget _buildProfileHeader(AppSettingsProvider settings, Map<String, dynamic> subscriptionStatus) {
+  Widget _buildProfileHeader(
+      AppSettingsProvider settings, Map<String, dynamic> subscriptionStatus) {
     final user = _currentUser;
     if (user == null) return const SizedBox.shrink();
 
@@ -406,8 +421,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: settings.isDarkMode 
-                ? Colors.black.withOpacity(0.3) 
+            color: settings.isDarkMode
+                ? Colors.black.withOpacity(0.3)
                 : Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 10,
@@ -423,10 +438,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               CircleAvatar(
                 radius: 40,
                 backgroundColor: AppColors.text2Light.withOpacity(0.2),
-                backgroundImage: user.photoURL != null 
-                    ? NetworkImage(user.photoURL!) 
-                    : null,
-                child: user.photoURL == null 
+                backgroundImage:
+                    user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                child: user.photoURL == null
                     ? Icon(
                         Icons.person,
                         size: 40,
@@ -444,7 +458,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       user.displayName ?? 'User',
                       style: AppTextStyles.normal600(
                         fontSize: 18,
-                        color: settings.isDarkMode ? Colors.white : AppColors.text2Light,
+                        color: settings.isDarkMode
+                            ? Colors.white
+                            : AppColors.text2Light,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -452,8 +468,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       user.email ?? '',
                       style: AppTextStyles.normal400(
                         fontSize: 14,
-                        color: settings.isDarkMode 
-                            ? Colors.grey[300]! 
+                        color: settings.isDarkMode
+                            ? Colors.grey[300]!
                             : Colors.grey[600]!,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -462,8 +478,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     Row(
                       children: [
                         Icon(
-                          subscriptionStatus['hasPaid'] == true ? Icons.verified : Icons.warning,
-                          color: subscriptionStatus['hasPaid'] == true ? Colors.green : Colors.orange,
+                          subscriptionStatus['hasPaid'] == true
+                              ? Icons.verified
+                              : Icons.warning,
+                          color: subscriptionStatus['hasPaid'] == true
+                              ? Colors.green
+                              : Colors.orange,
                           size: 20,
                         ),
                         const SizedBox(width: 6),
@@ -473,7 +493,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                               : 'Not Subscribed',
                           style: AppTextStyles.normal500(
                             fontSize: 14,
-                            color: subscriptionStatus['hasPaid'] == true ? Colors.green : Colors.orange,
+                            color: subscriptionStatus['hasPaid'] == true
+                                ? Colors.green
+                                : Colors.orange,
                           ),
                         ),
                       ],
@@ -494,7 +516,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
             ],
           ),
-          
+
           // Payment Button (only show if not subscribed)
           if (subscriptionStatus['hasPaid'] != true) ...[
             const SizedBox(height: 20),
@@ -542,7 +564,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         color: Colors.white,
                       ),
                     ),
-                    
                   ],
                 ),
               ),
@@ -563,16 +584,19 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
   }
 
-  Widget _buildSettingsCard(List<Widget> children, AppSettingsProvider settings) {
+  Widget _buildSettingsCard(
+      List<Widget> children, AppSettingsProvider settings) {
     final cardColor = settings.isDarkMode ? Colors.grey[800] : Colors.white;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: settings.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+            color: settings.isDarkMode
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: Offset(0, 2),
@@ -640,7 +664,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Help & Support'),
-          content: Text('Need help? Contact our support team at support@linkschool.com'),
+          content: Text(
+              'Need help? Contact our support team at support@linkschool.com'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -658,7 +683,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Privacy Policy'),
-          content: Text('Your privacy is important to us. We collect and use your data responsibly.'),
+          content: Text(
+              'Your privacy is important to us. We collect and use your data responsibly.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -676,7 +702,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Terms & Conditions'),
-          content: Text('By using LinkSchool, you agree to our terms and conditions.'),
+          content: Text(
+              'By using LinkSchool, you agree to our terms and conditions.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -694,7 +721,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('About LinkSchool'),
-          content: Text('LinkSchool v1.0.0\n\nYour comprehensive educational platform for learning and growth.'),
+          content: Text(
+              'LinkSchool v1.0.0\n\nYour comprehensive educational platform for learning and growth.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -712,7 +740,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Rate LinkSchool'),
-          content: Text('Enjoying LinkSchool? Please rate us on the app store!'),
+          content:
+              Text('Enjoying LinkSchool? Please rate us on the app store!'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

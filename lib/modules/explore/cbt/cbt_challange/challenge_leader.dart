@@ -2,23 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_leader_provider.dart';
 import 'package:provider/provider.dart';
 
-class LeaderboardScreen extends StatefulWidget {
+class ChallengeLeader extends StatefulWidget {
   final bool? fromChallenge;
   final bool? fromGameDashboard;
   final int? challengeId;
+  final bool? fromChallengeCompletion; // New parameter to track if coming from challenge completion
 
-  const LeaderboardScreen({
+  const ChallengeLeader({
     Key? key,
     this.fromChallenge,
     this.fromGameDashboard,
     this.challengeId,
+    this.fromChallengeCompletion,
   }) : super(key: key);
 
   @override
-  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+  State<ChallengeLeader> createState() => _ChallengeLeaderState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
+class _ChallengeLeaderState extends State<ChallengeLeader> {
   @override
   void initState() {
     super.initState();
@@ -42,18 +44,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            if (widget.fromChallenge == true) {
-              // Just pop without returning any value - no refresh needed
+            if (widget.fromChallengeCompletion == true) {
+              // Coming from StartChallenge after completing challenge - pop 3 times to reach join_challange
               Navigator.of(context).pop();
               Navigator.of(context).pop();
-             
-            } else if (widget.fromGameDashboard == true) {
+              Navigator.of(context).pop();
+            } else if (widget.fromChallenge == true) {
+              // Coming directly from join_challange (viewing leaderboard) - pop once
               Navigator.of(context).pop();
             } else {
+              // Other cases - pop 3 times
               Navigator.of(context).pop();
-             
               Navigator.of(context).pop();
-
+              Navigator.of(context).pop();
             }
           },
         ),

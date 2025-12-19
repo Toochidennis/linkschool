@@ -10,6 +10,7 @@ import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 /// Dialog to enforce subscription after free trial ends
 class SubscriptionEnforcementDialog extends StatefulWidget {
@@ -17,13 +18,15 @@ class SubscriptionEnforcementDialog extends StatefulWidget {
   final int remainingTests;
   final bool isHardBlock;
   final int amount;
+  final double discountRate;
 
   const SubscriptionEnforcementDialog({
     super.key,
     required this.onSubscribed,
     this.remainingTests = 0,
     this.isHardBlock = false,
-    this.amount = 400,
+    required this.amount,
+    this.discountRate = 0.0,
   });
 
   @override
@@ -112,37 +115,36 @@ class _SubscriptionEnforcementDialogState
         builder: (context, orientation) {
           final isLandscape = orientation == Orientation.landscape;
           final screenWidth = MediaQuery.of(context).size.width;
-         final dialogWidth = isLandscape
-            ? screenWidth * 0.50  // 50% width in landscape
-            : screenWidth * 0.85; // 85% width in portrait
-
-
+          final dialogWidth = isLandscape
+              ? screenWidth * 0.60 // 60% width in landscape
+              : screenWidth * 0.92; // 92% width in portrait
 
           return Dialog(
-            backgroundColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: ScaleTransition(
               scale: _scaleAnimation,
               child: FadeTransition(
                 opacity: _fadeAnimation,
-                child: Container(
-                  width: 400,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isLandscape ? 600 : 450,
+                    maxHeight: MediaQuery.of(context).size.height * 0.9,
                   ),
-                  child: Stack(
-                    children: [
-                      SingleChildScrollView(
-                        child: Column(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Stack(
+                      children: [
+                        Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Close button at top
                             if (!_isProcessing)
                               Align(
                                 alignment: Alignment.topRight,
@@ -151,37 +153,42 @@ class _SubscriptionEnforcementDialogState
                                   onPressed: () => Navigator.of(context).pop(),
                                 ),
                               ),
-                            _buildContent(),
+                            // Scrollable content
+                            Flexible(
+                              child: SingleChildScrollView(
+                                child: _buildContent(),
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                      // ⏳ Processing overlay
-                      if (_isProcessing)
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.95),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Processing...',
-                                    style: AppTextStyles.normal600(
-                                      fontSize: 16,
-                                      color: AppColors.text4Light,
+                        // ⏳ Processing overlay
+                        if (_isProcessing)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.95),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Processing...',
+                                      style: AppTextStyles.normal600(
+                                        fontSize: 16,
+                                        color: AppColors.text4Light,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -207,7 +214,7 @@ class _SubscriptionEnforcementDialogState
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-          padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.eLearningRedBtnColor.withOpacity(0.1),
               shape: BoxShape.circle,
@@ -228,48 +235,86 @@ class _SubscriptionEnforcementDialogState
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-            Text.rich(
-            TextSpan(
-              children: [
-              const TextSpan(
-                text: "You've used all ",
-              ),
-              TextSpan(
-                text: '${widget.remainingTests + 3}',
-                style: AppTextStyles.normal700(
-                fontSize: 15,
-                color: AppColors.text4Light,
+          FutureBuilder<int>(
+            future: CbtSettingsHelper.getFreeTrialDays(),
+            builder: (context, snapshot) {
+              final freeTrialDays = snapshot.data ?? 3;
+              final hasDiscount = widget.discountRate > 0;
+              final discountedAmount = hasDiscount
+                  ? (widget.amount * (1 - widget.discountRate)).round()
+                  : widget.amount;
+
+              return Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: "Your ",
+                    ),
+                    TextSpan(
+                      text: '$freeTrialDays-day',
+                      style: AppTextStyles.normal700(
+                        fontSize: 15,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: ' free trial has ended. Pay ',
+                    ),
+                    if (hasDiscount) ...[
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: NairaSvgIcon(
+                          color: Colors.grey,
+                          width: 12,
+                          height: 12,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '${widget.amount}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                      const TextSpan(text: ' '),
+                    ],
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: NairaSvgIcon(
+                        color: Colors.black,
+                        width: 15,
+                        height: 15,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '$discountedAmount',
+                      style: AppTextStyles.normal700(
+                          fontSize: 15, color: Colors.black),
+                    ),
+                    if (hasDiscount)
+                      TextSpan(
+                        text: ' (${(widget.discountRate * 100).toInt()}% off)',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    const TextSpan(
+                      text:
+                          ' to continue your learning journey with unlimited access.',
+                    ),
+                  ],
                 ),
-              ),
-              const TextSpan(
-                text: ' free tests. Pay ',
-              ),
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: NairaSvgIcon(
-                  color:Colors.black,
-                width: 15,
-                height: 15,
+                style: AppTextStyles.normal400(
+                  fontSize: 15,
+                  color: AppColors.text7Light,
                 ),
-              ),
-              TextSpan(
-                text: '${widget.amount}',
-                style: AppTextStyles.normal700(
-                fontSize: 15,
-                color:Colors.black
-                ),
-              ),
-              const TextSpan(
-                text: ' to continue your learning journey with unlimited access.',
-              ),
-              ],
-            ),
-            style: AppTextStyles.normal400(
-              fontSize: 15,
-              color: AppColors.text7Light,
-            ),
-            textAlign: TextAlign.center,
-            ),
+                textAlign: TextAlign.center,
+              );
+            },
+          ),
           const SizedBox(height: 10),
           _buildPriceDisplay(36),
           const SizedBox(height: 10),
@@ -278,7 +323,9 @@ class _SubscriptionEnforcementDialogState
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: (_isCheckingSignin || _isProcessing) ? null : _handleSubscribe,
+              onPressed: (_isCheckingSignin || _isProcessing)
+                  ? null
+                  : _handleSubscribe,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.eLearningBtnColor1,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -306,7 +353,9 @@ class _SubscriptionEnforcementDialogState
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _isUserSignedIn ? 'Subscribe Now' : 'Sign Up & Subscribe',
+                          _isUserSignedIn
+                              ? 'Subscribe Now'
+                              : 'Sign Up & Subscribe',
                           style: AppTextStyles.normal600(
                             fontSize: 16,
                             color: Colors.white,
@@ -350,7 +399,7 @@ class _SubscriptionEnforcementDialogState
           ),
           const SizedBox(height: 12),
           Text(
-            'You have ${widget.remainingTests} free test${widget.remainingTests == 1 ? '' : 's'} remaining. Pay ₦${widget.amount} now for unlimited access!',
+            'You have ${widget.remainingTests} day${widget.remainingTests == 1 ? '' : 's'} remaining in your free trial. Pay ₦${widget.amount} now for unlimited access!',
             style: AppTextStyles.normal400(
               fontSize: 14,
               color: AppColors.text7Light,
@@ -365,7 +414,9 @@ class _SubscriptionEnforcementDialogState
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: (_isCheckingSignin || _isProcessing) ? null : _handleSubscribe,
+              onPressed: (_isCheckingSignin || _isProcessing)
+                  ? null
+                  : _handleSubscribe,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.eLearningBtnColor1,
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -393,7 +444,9 @@ class _SubscriptionEnforcementDialogState
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _isUserSignedIn ? 'Pay ${widget.amount}' : 'Sign Up & Pay ${widget.amount}',
+                          _isUserSignedIn
+                              ? 'Pay ${widget.amount}'
+                              : 'Sign Up & Pay ${widget.amount}',
                           style: AppTextStyles.normal600(
                             fontSize: 15,
                             color: Colors.white,
@@ -420,28 +473,71 @@ class _SubscriptionEnforcementDialogState
   }
 
   Widget _buildPriceDisplay(double fontSize) {
+    final hasDiscount = widget.discountRate > 0;
+    final originalPrice = widget.amount;
+    final discountedPrice = hasDiscount
+        ? (originalPrice * (1 - widget.discountRate)).round()
+        : originalPrice;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 24),
       decoration: BoxDecoration(
         color: AppColors.eLearningBtnColor1.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          NairaSvgIcon(
-            color: AppColors.eLearningBtnColor1,
-            width: fontSize,
-            height: fontSize ,
-          ),
-          Text(
-            '${widget.amount}',
-            style: AppTextStyles.normal700(
-              fontSize: fontSize,
-              color: AppColors.eLearningBtnColor1,
+          if (hasDiscount)
+            // Padding(
+            //   padding: const EdgeInsets.only(bottom: 4),
+            //   child: Text(
+            //     '${(widget.discountRate * 100).toInt()}% discount applied!',
+            //     style: TextStyle(
+            //       color: Colors.green,
+            //       fontSize: fontSize * 0.65,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //   ),
+            // ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NairaSvgIcon(
+                  color: AppColors.eLearningBtnColor1,
+                  width: fontSize,
+                  height: fontSize,
+                ),
+                Text(
+                  '${discountedPrice}',
+                  style: AppTextStyles.normal400(
+                    fontSize: fontSize,
+                    color: AppColors.eLearningBtnColor1,
+                  ),
+                ),
+                if (hasDiscount)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Row(
+                      children: [
+                        NairaSvgIcon(
+                          color: Colors.grey,
+                          width: fontSize * 0.7,
+                          height: fontSize * 0.7,
+                        ),
+                        Text(
+                          originalPrice.toString(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-          ),
         ],
       ),
     );
@@ -496,101 +592,129 @@ class _SubscriptionEnforcementDialogState
   // =========================================================================
 // ⚡ OPTIMIZED SUBSCRIPTION HANDLER - NO NESTED DIALOGS
 // =========================================================================
- Future<void> _handleSubscribe() async {
-  if (!mounted || _isProcessing) return;
+  Future<void> _handleSubscribe() async {
+    if (!mounted || _isProcessing) return;
 
-  setState(() => _isProcessing = true);
+    setState(() => _isProcessing = true);
 
-  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
 
-  try {
-    // Step 1: Ensure user is signed in
-    if (!_isUserSignedIn) {
-      final userCredential = await _authService.signInWithGoogle();
-      if (userCredential == null || userCredential.user == null) {
-        _showError('Sign-in was cancelled or failed');
-        return;
+    try {
+      // Step 1: Ensure user is signed in
+      if (!_isUserSignedIn) {
+        final userCredential = await _authService.signInWithGoogle();
+        if (userCredential == null || userCredential.user == null) {
+          _showError('Sign-in was cancelled or failed');
+          return;
+        }
+        final user = userCredential.user!;
+        await userProvider.handleFirebaseSignUp(
+          email: user.email ?? '',
+          name: user.displayName ?? '',
+          profilePicture: user.photoURL ?? '',
+        );
+        setState(() => _isUserSignedIn = true);
+
+        // Check if user has already paid after sign-in
+        if (userProvider.hasPaid) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ You already have an active subscription!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+            widget.onSubscribed();
+            //Navigator.of(context).pop(); // Dismiss dialog if already paid
+          }
+          return;
+        }
       }
-      final user = userCredential.user!;
-      await userProvider.handleFirebaseSignUp(
-        email: user.email ?? '',
-        name: user.displayName ?? '',
-        profilePicture: user.photoURL ?? '',
+
+      // Step 2: Get email & generate reference
+      final email = await _authService.getCurrentUserEmail();
+      if (email == null || email.isEmpty) {
+        throw Exception('Unable to retrieve user email');
+      }
+      final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Calculate discounted amount
+      final hasDiscount = widget.discountRate > 0;
+      final finalAmount = hasDiscount
+          ? (widget.amount * (1 - widget.discountRate)).round()
+          : widget.amount;
+      final amountInKobo = finalAmount * 100;
+
+      print('💳 Initiating PaystackFlutter payment...');
+      print(' Original Amount: ₦${widget.amount}');
+      print(' Discount Rate: ${widget.discountRate}');
+      print(' Final Amount: ₦$finalAmount');
+      print(' Email: $email');
+      print(' Reference: $reference');
+      final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+      // Step 3: Call PaystackFlutter payment
+      PaystackFlutter().pay(
+        context: context,
+        secretKey: paystackSecretKey,
+        // secretKey: 'sk_test_96d9c3448796ac0b090dfc18a818c67a292faeea', // Your secret key
+        amount: amountInKobo.toDouble(),
+        email: email,
+
+        callbackUrl: 'https://callback.com',
+        showProgressBar: true,
+        paymentOptions: [
+          PaymentOption.card,
+          PaymentOption.bankTransfer,
+          PaymentOption.mobileMoney,
+        ],
+        currency: Currency.NGN,
+        metaData: {
+          'subscription_type': 'CBT Premium Access',
+          'original_price': widget.amount,
+          'discount_rate': widget.discountRate,
+          'final_price': finalAmount,
+        },
+        onSuccess: (callback) async {
+          print('✅ Payment successful: ${callback.reference}');
+
+          // Update user after payment
+          await userProvider.updateUserAfterPayment(
+              reference: callback.reference);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Payment Successful! Subscription activated.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+
+            widget.onSubscribed();
+            Navigator.of(context)
+                .pop(); // Dismiss dialog after successful payment
+          }
+        },
+        onCancelled: (callback) {
+          print('❌ Payment cancelled or failed: ${callback.reference}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Payment cancelled'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
       );
-      setState(() => _isUserSignedIn = true);
+    } catch (e) {
+      print('❌ Subscription payment error: $e');
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
-
-    // Step 2: Get email & generate reference
-    final email = await _authService.getCurrentUserEmail();
-    if (email == null || email.isEmpty) {
-      throw Exception('Unable to retrieve user email');
-    }
-    final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
-    final amountInKobo = widget.amount * 100;
-
-    print('💳 Initiating PaystackFlutter payment...');
-    print(' Amount: ₦${widget.amount}');
-    print(' Email: $email');
-    print(' Reference: $reference');
-final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
-    // Step 3: Call PaystackFlutter payment
-    PaystackFlutter().pay(
-      context: context,
-      secretKey: paystackSecretKey,
-     // secretKey: 'sk_test_96d9c3448796ac0b090dfc18a818c67a292faeea', // Your secret key
-      amount: amountInKobo.toDouble(),
-      email: email,
-    
-      callbackUrl: 'https://callback.com',
-      showProgressBar: true,
-      paymentOptions: [
-        PaymentOption.card,
-        PaymentOption.bankTransfer,
-        PaymentOption.mobileMoney,
-      ],
-      currency: Currency.NGN,
-      metaData: {
-        'subscription_type': 'CBT Premium Access',
-        'price': widget.amount,
-      },
-      onSuccess: (callback) async {
-        print('✅ Payment successful: ${callback.reference}');
-
-        // Update user after payment
-        await userProvider.updateUserAfterPayment(reference: callback.reference);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Payment Successful! Subscription activated.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-
-          widget.onSubscribed();
-         // Navigator.of(context).pop();
-        }
-      },
-      onCancelled: (callback) {
-        print('❌ Payment cancelled or failed: ${callback.reference}');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Payment cancelled'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-    );
-  } catch (e) {
-    print('❌ Subscription payment error: $e');
-    _showError(e.toString());
-  } finally {
-    if (mounted) setState(() => _isProcessing = false);
   }
-}
 
   // =========================================================================
   // 💳 PAYMENT INITIALIZATION (NON-BLOCKING)
@@ -620,7 +744,8 @@ final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
           )
           .timeout(
             const Duration(seconds: 15),
-            onTimeout: () => throw Exception('Payment initialization timed out'),
+            onTimeout: () =>
+                throw Exception('Payment initialization timed out'),
           );
 
       if (response.statusCode == 200) {
