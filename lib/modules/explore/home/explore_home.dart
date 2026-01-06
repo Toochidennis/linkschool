@@ -108,14 +108,14 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     destination: const CBTDashboard(),
     subtitle: 'Practice tests',
   ),
-  ExploreItem(
-    backgroundColor: AppColors.exploreButton3Light,
-    borderColor: AppColors.exploreButton3BorderLight,
-    label: 'E-Books',
-    iconPath: 'assets/icons/e-books.svg',
-    destination: const EbooksDashboard(),
-    subtitle: 'Read & learn',
-  ),
+  // ExploreItem(
+  //   backgroundColor: AppColors.exploreButton3Light,
+  //   borderColor: AppColors.exploreButton3BorderLight,
+  //   label: 'E-Books',
+  //   iconPath: 'assets/icons/e-books.svg',
+  //   destination: const EbooksDashboard(),
+  //   subtitle: 'Read & learn',
+  // ),
   ExploreItem(
     backgroundColor: AppColors.exploreButton2Light,
     borderColor: AppColors.exploreButton2BorderLight,
@@ -124,14 +124,14 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     destination: const VideosDashboard(),
     subtitle: 'Watch tutorials',
   ),
-  ExploreItem(
-    backgroundColor: AppColors.exploreButton4Light,
-    borderColor: AppColors.exploreButton4BorderLight,
-    label: 'Games',
-    iconPath: 'assets/icons/games.svg',
-    destination: const GamesDashboard(),
-    subtitle: 'Fun learning',
-  ),
+  // ExploreItem(
+  //   backgroundColor: AppColors.exploreButton4Light,
+  //   borderColor: AppColors.exploreButton4BorderLight,
+  //   label: 'Games',
+  //   iconPath: 'assets/icons/games.svg',
+  //   destination: const GamesDashboard(),
+  //   subtitle: 'Fun learning',
+  // ),
 ];
 
     return Container(

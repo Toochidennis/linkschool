@@ -413,22 +413,28 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                         child: NotificationListener<ScrollNotification>(
                           onNotification: (scrollNotification) {
                             if (!_isSheetFullyExpanded) {
-                              // When user tries to scroll content, expand the sheet first
+                              // Expand on any scroll activity - but don't consume the event
                               if (scrollNotification is ScrollStartNotification) {
-                                _sheetController.animateTo(
-                                  0.73,
-                                  duration: const Duration(milliseconds: 200),
-                                  curve: Curves.easeOut,
-                                );
-                                return true;
+                                Future.microtask(() {
+                                  setState(() {
+                                    _isSheetFullyExpanded = true;
+                                  });
+                                  _sheetController.animateTo(
+                                    0.73,
+                                    duration: const Duration(milliseconds: 150),
+                                    curve: Curves.easeOut,
+                                  );
+                                });
                               }
+                              return false; // Don't consume - allow scroll to proceed
                             } else {
                               // When expanded, monitor scroll position
                               if (scrollNotification is ScrollUpdateNotification) {
                                 final scrollPosition = scrollNotification.metrics.pixels;
+                                final scrollDelta = scrollNotification.scrollDelta ?? 0;
                                 
-                                // Collapse when scrolling up to top (title section)
-                                if (scrollPosition <= 0 && scrollNotification.scrollDelta! < 0) {
+                                // Collapse when at top and trying to scroll up
+                                if (scrollPosition <= 0 && scrollDelta < 0) {
                                   setState(() {
                                     _isSheetFullyExpanded = false;
                                   });
@@ -439,9 +445,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                   );
                                   return true;
                                 }
-                                
-                                // Also collapse when user scrolls back up and reaches near the top
-                                if (scrollPosition < 50 && scrollNotification.scrollDelta! < 0) {
+                              }
+                              
+                              // Handle overscroll at the top
+                              if (scrollNotification is OverscrollNotification) {
+                                if (scrollNotification.overscroll < 0) {
                                   setState(() {
                                     _isSheetFullyExpanded = false;
                                   });
@@ -456,17 +464,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                             }
                             return false;
                           },
-                          child: _isSheetFullyExpanded
-                              ? ListView(
-                                  padding: EdgeInsets.zero,
-                                  children: _buildSheetContent(currentVideo),
-                                )
-                              : ListView(
-                                  controller: scrollController,
-                                  padding: EdgeInsets.zero,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  children: _buildSheetContent(currentVideo),
-                                ),
+                          child: ListView(
+                            padding: EdgeInsets.zero,
+                            children: _buildSheetContent(currentVideo),
+                          ),
                         ),
                       ),
                     ],
@@ -496,64 +497,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.provider[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.provider,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Text(
-                        '${_courseVideos.length} lectures • ${_calculateTotalDuration()}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.bookmark_border),
-                  color: const Color(0xFF6366F1),
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.share_outlined),
-                  color: const Color(0xFF6366F1),
-                ),
-              ],
-            ),
+           
             const SizedBox(height: 16),
             Text(
               currentVideo['description'] as String,
@@ -767,25 +711,25 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                     ),
                                     const SizedBox(width: 12),
                                     // Speed button
-                                    InkWell(
-                                      onTap: _showSpeedOptions,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          '${_playbackSpeed}x',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                    // InkWell(
+                                    //   onTap: _showSpeedOptions,
+                                    //   child: Container(
+                                    //     padding: const EdgeInsets.symmetric(
+                                    //         horizontal: 8, vertical: 4),
+                                    //     decoration: BoxDecoration(
+                                    //       color: Colors.white.withOpacity(0.2),
+                                    //       borderRadius: BorderRadius.circular(6),
+                                    //     ),
+                                    //     child: Text(
+                                    //       '${_playbackSpeed}x',
+                                    //       style: const TextStyle(
+                                    //         color: Colors.white,
+                                    //         fontSize: 12,
+                                    //         fontWeight: FontWeight.w600,
+                                    //       ),
+                                    //     ),
+                                    //   ),
+                                    // ),
                                     const SizedBox(width: 12),
                                     // Fullscreen button
                                     IconButton(

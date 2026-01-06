@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/services/study_history_service.dart';
 import 'dart:math' as math;
 
 /// Model to track study progress per topic
@@ -113,6 +114,14 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
     );
 
     _animationController.forward();
+
+    // Save study session to history
+    _saveStudySession();
+  }
+
+  Future<void> _saveStudySession() async {
+    final studyHistoryService = StudyHistoryService();
+    await studyHistoryService.saveStudySession(widget.sessionStats);
   }
 
   @override
@@ -181,7 +190,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header with celebration
-                 // _buildCelebrationHeader(),
+                  // _buildCelebrationHeader(),
                   const SizedBox(height: 24),
 
                   // Overall Stats Card
@@ -189,8 +198,8 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
                   const SizedBox(height: 24),
 
                   // Performance Overview
-                 // _buildPerformanceOverview(),
-                 // const SizedBox(height: 24),
+                  // _buildPerformanceOverview(),
+                  // const SizedBox(height: 24),
 
                   // Topics Progress Section
                   _buildTopicsProgressSection(),
