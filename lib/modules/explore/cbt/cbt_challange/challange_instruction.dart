@@ -201,7 +201,8 @@ class _ChallengeInstructionsScreenState
 
   Widget _buildChallengeInfoCard() {
     return Container(
-      width: double.infinity,
+      //width: double.infinity,
+      width: math.min(MediaQuery.of(context).size.width, 500),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -231,7 +232,7 @@ class _ChallengeInstructionsScreenState
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(5),
+            padding: EdgeInsets.all(15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -286,7 +287,7 @@ class _ChallengeInstructionsScreenState
                     _buildInfoChip(
                       icon: Icons.timer,
                       label: '${widget.challenge.timeInMinutes ?? 60}',
-                      subtitle: 'Minutes',
+                      subtitle: 'Mins',
                     ),
                   ],
                 ),

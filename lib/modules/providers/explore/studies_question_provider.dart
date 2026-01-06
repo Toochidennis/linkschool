@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
+import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 
 class QuestionsProvider extends ChangeNotifier {
   final QuestionsService _service;
@@ -17,6 +18,15 @@ class QuestionsProvider extends ChangeNotifier {
   int _currentTopicIndex = 0;
   int? _courseId;
   int? _examTypeId;
+
+  // Study session tracking
+  final Map<int, Map<String, dynamic>> _topicStats = {};
+  final Map<int, DateTime> _topicStartTimes = {};
+  final Map<int, int> _correctAnswersPerTopic = {};
+  final Map<int, int> _wrongAnswersPerTopic = {};
+  final Map<int, int> _questionsAnsweredPerTopic = {};
+  DateTime? _sessionStartTime;
+  List<String> _topicNames = [];
 
   QuestionsProvider(this._service);
 
@@ -38,14 +48,32 @@ class QuestionsProvider extends ChangeNotifier {
     required List<int> topicIds,
     required int? courseId,
     required int? examTypeId,
+    List<String>? topicNames,
   }) async {
     _topicIds = topicIds;
     _currentTopicIndex = 0;
     _courseId = courseId;
     _examTypeId = examTypeId;
+    _topicNames = topicNames ?? [];
     allQuestions = [];
     currentQuestionIndex = 0;
     error = null;
+
+    // Initialize session tracking
+    _sessionStartTime = DateTime.now();
+    _topicStats.clear();
+    _topicStartTimes.clear();
+    _correctAnswersPerTopic.clear();
+    _wrongAnswersPerTopic.clear();
+    _questionsAnsweredPerTopic.clear();
+
+    // Initialize stats for all topics
+    for (int topicId in topicIds) {
+      _topicStartTimes[topicId] = DateTime.now();
+      _correctAnswersPerTopic[topicId] = 0;
+      _wrongAnswersPerTopic[topicId] = 0;
+      _questionsAnsweredPerTopic[topicId] = 0;
+    }
 
     // Load questions for the first topic
     await _loadNextTopicQuestions();
@@ -145,6 +173,95 @@ class QuestionsProvider extends ChangeNotifier {
     }
   }
 
+  /// Record an answer for the current question
+  void recordAnswer({
+    required int questionId,
+    required bool isCorrect,
+  }) {
+    if (currentQuestion == null) return;
+
+    // Find which topic this question belongs to
+    int? topicId = _findTopicForQuestion(currentQuestionIndex);
+    if (topicId == null) return;
+
+    // Update stats for this topic
+    _questionsAnsweredPerTopic[topicId] =
+        (_questionsAnsweredPerTopic[topicId] ?? 0) + 1;
+
+    if (isCorrect) {
+      _correctAnswersPerTopic[topicId] =
+          (_correctAnswersPerTopic[topicId] ?? 0) + 1;
+    } else {
+      _wrongAnswersPerTopic[topicId] =
+          (_wrongAnswersPerTopic[topicId] ?? 0) + 1;
+    }
+
+    print(
+        '📊 Answer recorded for topic $topicId: ${isCorrect ? "Correct" : "Wrong"}');
+  }
+
+  /// Find which topic a question belongs to
+  int? _findTopicForQuestion(int questionIndex) {
+    if (_topicIds.isEmpty ||
+        questionIndex < 0 ||
+        questionIndex >= allQuestions.length) {
+      return null;
+    }
+
+    // Calculate which topic based on question distribution
+    // For now, we'll use a simple approach based on current topic index
+    if (_currentTopicIndex > 0 && _currentTopicIndex <= _topicIds.length) {
+      return _topicIds[_currentTopicIndex - 1];
+    }
+
+    return _topicIds.isNotEmpty ? _topicIds[0] : null;
+  }
+
+  /// Generate study session statistics
+  StudySessionStats generateSessionStats(String subject) {
+    final List<TopicProgress> topicProgressList = [];
+
+    for (int i = 0; i < _topicIds.length; i++) {
+      final topicId = _topicIds[i];
+      final topicName =
+          i < _topicNames.length ? _topicNames[i] : 'Topic ${i + 1}';
+
+      final questionsAnswered = _questionsAnsweredPerTopic[topicId] ?? 0;
+      final correctAnswers = _correctAnswersPerTopic[topicId] ?? 0;
+      final wrongAnswers = _wrongAnswersPerTopic[topicId] ?? 0;
+
+      // Calculate time spent on this topic
+      final startTime = _topicStartTimes[topicId];
+      final timeSpent = startTime != null
+          ? DateTime.now().difference(startTime)
+          : Duration.zero;
+
+      if (questionsAnswered > 0) {
+        topicProgressList.add(
+          TopicProgress(
+            topicName: topicName,
+            topicId: topicId,
+            questionsAnswered: questionsAnswered,
+            correctAnswers: correctAnswers,
+            wrongAnswers: wrongAnswers,
+            timeSpent: timeSpent,
+          ),
+        );
+      }
+    }
+
+    final totalTimeSpent = _sessionStartTime != null
+        ? DateTime.now().difference(_sessionStartTime!)
+        : Duration.zero;
+
+    return StudySessionStats(
+      subject: subject,
+      topicProgressList: topicProgressList,
+      totalTimeSpent: totalTimeSpent,
+      sessionDate: DateTime.now(),
+    );
+  }
+
   /// Reset the provider state
   void reset() {
     questionsData = null;
@@ -157,6 +274,16 @@ class QuestionsProvider extends ChangeNotifier {
     loading = false;
     loadingMore = false;
     error = null;
+
+    // Reset tracking
+    _topicStats.clear();
+    _topicStartTimes.clear();
+    _correctAnswersPerTopic.clear();
+    _wrongAnswersPerTopic.clear();
+    _questionsAnsweredPerTopic.clear();
+    _sessionStartTime = null;
+    _topicNames.clear();
+
     notifyListeners();
   }
 }

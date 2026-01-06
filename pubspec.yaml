@@ -87,6 +87,8 @@ dependencies:
   vibration: ^3.1.4
   flutter_html: ^3.0.0
   markdown: ^7.3.0
+  google_mobile_ads: ^5.2.0
+  flutter_launcher_icons: ^0.14.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -95,6 +97,11 @@ dev_dependencies:
   json_serializable: ^6.8.0
   build_runner: ^2.4.11
 dependency_overrides:
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/linkschool.jpeg"
 
 
 flutter:

@@ -2,9 +2,12 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'dart:math' as math;
+import 'dart:convert';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
@@ -39,10 +42,21 @@ class _GameTestScreenState extends State<GameTestScreen>
   int _streak = 0;
   int _highestStreak = 0;
   int _correctAnswers = 0; // Track correct answers for accuracy
+  int _userCoins =
+      50; // User's available coins (initialize with default or fetch from provider)
   late AnimationController _pulseController;
   late AnimationController _progressController;
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
+
+  // Lifeline states
+  bool _fiftyFiftyUsed = false;
+  bool _askComputerUsed = false;
+  bool _shuffleUsed = false;
+  Map<int, Set<int>> _hiddenOptionsPerQuestion =
+      {}; // For 50:50 lifeline - stores hidden options per question index
+  int? _computerSuggestion; // For Ask Computer lifeline
+  List<int>? _shuffledIndices; // For Shuffle lifeline
 
   late AudioPlayer _correctSoundPlayer;
   late AudioPlayer _wrongSoundPlayer;
@@ -54,6 +68,14 @@ class _GameTestScreenState extends State<GameTestScreen>
 
   // Points per question for gamification
   final int _pointsPerQuestion = 10;
+
+  // Ad and lives system
+  RewardedAd? _rewardedAd;
+  RewardedAd? _shuffleRewardedAd; // Separate ad for shuffle
+  bool _isAdLoaded = false;
+  bool _isShuffleAdLoaded = false;
+  bool _isPendingFinish =
+      false; // Track if quiz should finish after failed last question
 
   void _initializeAudio() async {
     _correctSoundPlayer = AudioPlayer();
@@ -73,6 +95,7 @@ class _GameTestScreenState extends State<GameTestScreen>
   int _remainingTime = 600; // 10 minutes
   bool _isAnswered = false;
   bool _showAnswerPopup = false;
+  bool _showExplanationModal = false;
   bool _isCountdownComplete = false;
 
   @override
@@ -99,6 +122,8 @@ class _GameTestScreenState extends State<GameTestScreen>
     );
 
     _initializeAudio();
+    _loadRewardedAd();
+    _loadShuffleRewardedAd();
 
     // Show countdown immediately and load questions during countdown
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -145,6 +170,8 @@ class _GameTestScreenState extends State<GameTestScreen>
     _correctSoundPlayer.dispose();
     _wrongSoundPlayer.dispose();
     _buttonSoundPlayer.dispose();
+    _rewardedAd?.dispose();
+    _shuffleRewardedAd?.dispose();
     super.dispose();
   }
 
@@ -173,6 +200,8 @@ class _GameTestScreenState extends State<GameTestScreen>
     setState(() {
       _userAnswers[questionIndex] = optionIndex;
       _isAnswered = true;
+      // Clear computer suggestion icon when user selects an option
+      _computerSuggestion = null;
 
       // Check if answer is correct (compare with correct option order)
       if (optionIndex == question.correct.order) {
@@ -201,6 +230,17 @@ class _GameTestScreenState extends State<GameTestScreen>
         _vibrateWrong();
 
         _showAnswerPopup = true;
+
+        // Check if this is the last question
+        final provider = Provider.of<QuestionsProvider>(context, listen: false);
+        final isLastQuestion =
+            provider.currentQuestionIndex >= provider.allQuestions.length - 1 &&
+                !provider.hasMoreTopics;
+
+        if (isLastQuestion) {
+          // Set flag to prevent auto-finish and show revive dialog first
+          _isPendingFinish = true;
+        }
       }
     });
 
@@ -213,11 +253,28 @@ class _GameTestScreenState extends State<GameTestScreen>
       _showAnswerPopup = false;
     });
 
-    // Auto-advance after popup is closed
+    // Wait a bit for animation
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
 
-    await _moveToNextQuestion();
+    // Check if the answer was wrong (not in correct answers)
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    final questionIndex = provider.currentQuestionIndex;
+    final question = provider.allQuestions[questionIndex];
+    final selectedAnswer = _userAnswers[questionIndex];
+    final isCorrect = selectedAnswer == question.correct.order;
+
+    if (!isCorrect) {
+      // Show explanation modal first, then fail modal if needed
+      setState(() {
+        _showExplanationModal = true;
+      });
+    } else {
+      // Show explanation modal for correct answer too
+      setState(() {
+        _showExplanationModal = true;
+      });
+    }
   }
 
   Future<void> _moveToNextQuestion() async {
@@ -239,12 +296,20 @@ class _GameTestScreenState extends State<GameTestScreen>
 
     if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
       // Game complete - no more questions from any topic
-      _finishQuiz();
+      // Only finish if not pending (meaning user didn't fail on last question)
+      if (!_isPendingFinish) {
+        _finishQuiz();
+      }
     } else {
-      // Reset state for next question
+      // Reset state for next question (but keep lifeline usage state)
       setState(() {
         _isAnswered = false;
         _showAnswerPopup = false;
+        // Note: Lifelines (_fiftyFiftyUsed, _askComputerUsed, _shuffleUsed) are NOT reset
+        // They remain used for the entire game session
+        // Hidden options per question are preserved in _hiddenOptionsPerQuestion map
+        _computerSuggestion = null;
+        _shuffledIndices = null;
       });
       _progressController.forward(from: 0);
     }
@@ -331,6 +396,403 @@ class _GameTestScreenState extends State<GameTestScreen>
     }
   }
 
+  void _loadRewardedAd() {
+    RewardedAd.load(
+      adUnitId: EnvConfig.googleAdsApiKey,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _rewardedAd = ad;
+          _isAdLoaded = true;
+          print('✅ Rewarded ad loaded successfully');
+
+          // Set full screen content callback
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _rewardedAd = null;
+              _isAdLoaded = false;
+              // Load next ad for future use
+              _loadRewardedAd();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              print('❌ Ad failed to show: $error');
+              ad.dispose();
+              _rewardedAd = null;
+              _isAdLoaded = false;
+              _loadRewardedAd();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) {
+          print('❌ Rewarded ad failed to load: $error');
+          _isAdLoaded = false;
+          // Retry loading after a delay
+          Future.delayed(const Duration(seconds: 5), () {
+            if (mounted) _loadRewardedAd();
+          });
+        },
+      ),
+    );
+  }
+
+  void _loadShuffleRewardedAd() {
+    RewardedAd.load(
+      adUnitId: EnvConfig.googleAdsApiKey,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _shuffleRewardedAd = ad;
+          _isShuffleAdLoaded = true;
+          print('✅ Shuffle rewarded ad loaded successfully');
+
+          // Set full screen content callback
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _shuffleRewardedAd = null;
+              _isShuffleAdLoaded = false;
+              // Load next ad for future use
+              _loadShuffleRewardedAd();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              print('❌ Shuffle ad failed to show: $error');
+              ad.dispose();
+              _shuffleRewardedAd = null;
+              _isShuffleAdLoaded = false;
+              _loadShuffleRewardedAd();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) {
+          print('❌ Shuffle rewarded ad failed to load: $error');
+          _isShuffleAdLoaded = false;
+          // Retry loading after a delay
+          Future.delayed(const Duration(seconds: 5), () {
+            if (mounted) _loadShuffleRewardedAd();
+          });
+        },
+      ),
+    );
+  }
+
+  void _showFailModal() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        final isLandscape =
+            MediaQuery.of(context).orientation == Orientation.landscape;
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = MediaQuery.of(context).size.height;
+
+        final dialogWidth =
+            isLandscape ? screenWidth * 0.7 : screenWidth * 0.90;
+        final maxHeight = screenHeight * 0.8;
+        final hasEnoughCoins = _userCoins >= 20;
+
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          insetPadding: EdgeInsets.symmetric(
+              horizontal: isLandscape ? 40 : 16, vertical: 24),
+          backgroundColor: Colors.white,
+          child: Stack(
+            children: [
+              Container(
+                width: dialogWidth,
+                constraints:
+                    BoxConstraints(maxWidth: 500, maxHeight: maxHeight),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.eLearningBtnColor1
+                                  .withOpacity(0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.error_outline,
+                                size: 48, color: AppColors.eLearningBtnColor1),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Revive?',
+                            style: AppTextStyles.normal600(
+                                fontSize: 20, color: Colors.black87),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'You answered incorrectly. Choose an option to continue playing.',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.normal400(
+                                fontSize: 14, color: Colors.black54),
+                          ),
+                          const SizedBox(height: 8),
+                          // Display user's current coins
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.amber.shade200, width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.monetization_on,
+                                    color: Colors.amber.shade700, size: 18),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Your coins: $_userCoins',
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 12,
+                                      color: Colors.amber.shade900),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                      child: Column(
+                        children: [
+                          // Revive with 20 coins button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: hasEnoughCoins
+                                  ? () {
+                                      _reviveWithCoins();
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amber.shade600,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.monetization_on,
+                                    color: hasEnoughCoins
+                                        ? Colors.white
+                                        : Colors.grey.shade500,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Revive with 20 Coins',
+                                    style: AppTextStyles.normal600(
+                                        color: hasEnoughCoins
+                                            ? Colors.white
+                                            : Colors.grey.shade500,
+                                        fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Watch ad button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isAdLoaded
+                                  ? () {
+                                      _showRewardedAd();
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.eLearningContColor3,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                      _isAdLoaded
+                                          ? Icons.play_circle_outline
+                                          : Icons.hourglass_empty,
+                                      color: _isAdLoaded
+                                          ? Colors.white
+                                          : Colors.grey.shade500),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                      _isAdLoaded
+                                          ? 'Watch Ad'
+                                          : 'Loading Ad...',
+                                      style: AppTextStyles.normal600(
+                                          color: _isAdLoaded
+                                              ? Colors.white
+                                              : Colors.grey.shade500,
+                                          fontSize: 14)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (!hasEnoughCoins)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Not enough coins. Watch an ad to continue!',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.normal400(
+                                    fontSize: 12, color: Colors.red.shade600),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Cancel button at top right
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: Icon(Icons.close, color: Colors.grey.shade600),
+                  onPressed: () {
+                    Navigator.pop(context); // close dialog
+                    if (_isPendingFinish) {
+                      _isPendingFinish = false;
+                      _finishQuiz();
+                    } else {
+                      Navigator.pop(context); // exit game
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _reviveWithCoins() {
+    if (_userCoins < 20) {
+      print('❌ Not enough coins to revive');
+      return;
+    }
+
+    setState(() {
+      _userCoins -= 20; // Deduct 20 coins
+    });
+
+    // Clear pending finish flag since user is continuing
+    _isPendingFinish = false;
+
+    // Close the fail modal
+    Navigator.pop(context);
+
+    // Show success message (without sound since this is a revive action)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Revived! 20 coins deducted. Continue playing! 🎮',
+                style: AppTextStyles.normal600(
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+
+    // Continue to next question after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _moveToNextQuestion();
+      }
+    });
+  }
+
+  void _showRewardedAd() {
+    if (_rewardedAd == null) {
+      print('❌ Rewarded ad is not ready yet');
+      return;
+    }
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (ad, reward) {
+        print('✅ User earned reward: ${reward.amount} ${reward.type}');
+
+        // Clear pending finish flag since user is continuing
+        _isPendingFinish = false;
+
+        // Close the fail modal
+        Navigator.pop(context);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Great! You can continue playing! 🎮',
+                    style: AppTextStyles.normal600(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+
+        // Continue to next question after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _moveToNextQuestion();
+          }
+        });
+      },
+    );
+  }
+
   Future<void> _nextQuestion() async {
     _playButtonSound();
     _vibrateButton();
@@ -347,7 +809,255 @@ class _GameTestScreenState extends State<GameTestScreen>
 
     setState(() {
       _isAnswered = _userAnswers.containsKey(provider.currentQuestionIndex);
+      // Clear visual effects when going back (lifeline usage flags remain)
+      // Hidden options per question are preserved in _hiddenOptionsPerQuestion map
+      _computerSuggestion = null;
+      _shuffledIndices = null;
     });
+  }
+
+  // Lifeline: 50:50 - Remove 2 random wrong answers
+  void _useFiftyFifty(Question question) {
+    if (_fiftyFiftyUsed || _isAnswered) return;
+
+    _playButtonSound();
+    _vibrateButton();
+
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    final questionIndex = provider.currentQuestionIndex;
+    final correctAnswer = question.correct.order;
+    final wrongOptions = List.generate(question.options.length, (i) => i)
+        .where((i) => i != correctAnswer)
+        .toList();
+
+    // Shuffle and take 2 random wrong answers to hide
+    wrongOptions.shuffle();
+    final toHide = wrongOptions.take(2).toSet();
+
+    setState(() {
+      _fiftyFiftyUsed = true;
+      _hiddenOptionsPerQuestion[questionIndex] = toHide;
+    });
+  }
+
+  // Lifeline: Ask Computer - Computer suggests the answer
+  void _useAskComputer(Question question) {
+    if (_askComputerUsed || _isAnswered) return;
+
+    _playButtonSound();
+    _vibrateButton();
+
+    final correctAnswer = question.correct.order;
+
+    setState(() {
+      _askComputerUsed = true;
+      _computerSuggestion = correctAnswer;
+    });
+
+    // Show dialog with computer suggestion
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.eLearningBtnColor1,
+                AppColors.eLearningBtnColor1.withOpacity(0.8),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.computer, size: 64, color: Colors.white),
+              SizedBox(height: 16),
+              Text(
+                'Computer Suggestion',
+                style: AppTextStyles.normal600(
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'I think the answer is Option ${String.fromCharCode(65 + correctAnswer)}',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.normal400(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                ),
+                child: Text(
+                  'Got it',
+                  style: AppTextStyles.normal600(
+                    fontSize: 16,
+                    color: AppColors.eLearningBtnColor1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Lifeline: Shuffle - Watch ad then shuffle to next question
+  void _useShuffle(Question question) {
+    _playButtonSound();
+    _vibrateButton();
+
+    // User can shuffle anytime - show ad immediately
+    _showShuffleRewardedAd();
+  }
+
+  void _showShuffleAdDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.eLearningBtnColor1,
+                AppColors.eLearningBtnColor1.withOpacity(0.8),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.shuffle, size: 64, color: Colors.white),
+              SizedBox(height: 16),
+              Text(
+                'Shuffle Question',
+                style: AppTextStyles.normal600(
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Watch a short ad to skip to the next question',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.normal400(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.white),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: AppTextStyles.normal600(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isShuffleAdLoaded
+                          ? () {
+                              Navigator.pop(context);
+                              _showShuffleRewardedAd();
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        _isShuffleAdLoaded ? 'Watch Ad' : 'Loading...',
+                        style: AppTextStyles.normal600(
+                          fontSize: 16,
+                          color: _isShuffleAdLoaded
+                              ? AppColors.eLearningBtnColor1
+                              : Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showShuffleRewardedAd() {
+    if (_shuffleRewardedAd == null) {
+      print('❌ Shuffle rewarded ad is not ready yet');
+      return;
+    }
+
+    _shuffleRewardedAd!.show(
+      onUserEarnedReward: (ad, reward) {
+        print('✅ User earned shuffle reward: ${reward.amount} ${reward.type}');
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Moving to next question! 🔀',
+                    style: AppTextStyles.normal600(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+
+        // Move to next question after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _moveToNextQuestion();
+          }
+        });
+      },
+    );
   }
 
   void _finishQuiz() {
@@ -364,6 +1074,107 @@ class _GameTestScreenState extends State<GameTestScreen>
         highestStreak: _highestStreak,
       ),
     );
+  }
+
+  /// Helper function to get image widget from URL or base64
+  Widget _getImageWidget(String url, {double? width, double? height}) {
+    if (_isBase64(url)) {
+      try {
+        final bytes = base64.decode(url.split(',').last);
+        return Image.memory(bytes,
+            width: width, height: height, fit: BoxFit.cover);
+      } catch (e) {
+        return Container(
+            width: width, height: height, color: Colors.grey.shade200);
+      }
+    }
+
+    // Prepend base URL if it's a relative path
+    String imageUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('data:')) {
+      imageUrl = 'https://linkskool.net/$url';
+    }
+
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          Container(width: width, height: height, color: Colors.grey.shade200),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return SizedBox(
+            width: width,
+            height: height,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+      },
+    );
+  }
+
+  /// Helper function to check if string is base64 encoded
+  bool _isBase64(String s) {
+    return s.startsWith('data:image') ||
+        (s.length > 100 && s.contains('base64'));
+  }
+
+  /// Show full screen image viewer
+  void _showFullScreenImage(String imageUrl) {
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black87,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text(
+              'Tap to zoom, pinch to zoom in/out',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: _getImageWidget(imageUrl,
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _closeExplanationModal() async {
+    setState(() {
+      _showExplanationModal = false;
+    });
+
+    // Wait a bit for animation
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+
+    // Check if the answer was wrong
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    final questionIndex = provider.currentQuestionIndex;
+    final question = provider.allQuestions[questionIndex];
+    final selectedAnswer = _userAnswers[questionIndex];
+    final isCorrect = selectedAnswer == question.correct.order;
+
+    if (!isCorrect) {
+      // Show revive modal for wrong answer
+      _showFailModal();
+    } else {
+      // Auto-advance for correct answer
+      await _moveToNextQuestion();
+    }
   }
 
   @override
@@ -528,6 +1339,9 @@ class _GameTestScreenState extends State<GameTestScreen>
                               _buildQuestionCard(question),
                               const SizedBox(height: 20),
 
+                              // Lifelines Section
+                              _buildLifelinesSection(question),
+
                               // Options
                               _buildOptionsGrid(
                                   question, selectedAnswer, isCorrect),
@@ -552,6 +1366,21 @@ class _GameTestScreenState extends State<GameTestScreen>
                       isCorrect: isCorrect,
                       points: _pointsPerQuestion,
                       onClose: _closeAnswerPopup,
+                      correctAnswerText:
+                          question.options[question.correct.order].text,
+                    ),
+                  ),
+                ),
+
+              // Explanation Modal Overlay
+              if (_showExplanationModal)
+                Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: _ExplanationModal(
+                      explanation: question.explanation,
+                      onContinue: _closeExplanationModal,
+                      onClose: _closeExplanationModal,
                     ),
                   ),
                 ),
@@ -1030,12 +1859,38 @@ class _GameTestScreenState extends State<GameTestScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 20),
-              Text(
-                question.questionText,
-                style: AppTextStyles.normal600(
-                  fontSize: 18,
-                  color: AppColors.text4Light,
-                ),
+              Html(
+                data: question.questionText,
+                style: {
+                  "body": Style(
+                    margin: Margins.zero,
+                    padding: HtmlPaddings.zero,
+                    fontSize: FontSize(18),
+                    color: AppColors.text4Light,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  "img": Style(
+                    width: Width.auto(),
+                    padding: HtmlPaddings.only(left: 4, right: 4),
+                  ),
+                },
+                extensions: [
+                  TagExtension(
+                    tagsToExtend: {"img"},
+                    builder: (extensionContext) {
+                      final attributes = extensionContext.attributes;
+                      final src = attributes['src'] ?? '';
+
+                      if (src.isEmpty) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        child: _getImageWidget(src, height: 30),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -1088,15 +1943,29 @@ class _GameTestScreenState extends State<GameTestScreen>
       Question question, int? selectedAnswer, bool isCorrect) {
     final options = question.options;
     final correctAnswer = question.correct.order;
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    final questionIndex = provider.currentQuestionIndex;
+    final hiddenOptions = _hiddenOptionsPerQuestion[questionIndex] ?? {};
+
+    // Get display order - no shuffle for options, only entire question can be shuffled
+    final displayOrder = List.generate(options.length, (i) => i);
 
     return Column(
-      children: options.asMap().entries.map((entry) {
-        final index = entry.key;
-        final option = entry.value;
+      children: displayOrder.map((index) {
+        final option = options[index];
         final isSelected = selectedAnswer == index;
         final isCorrectOption = index == correctAnswer;
         final showCorrect = _isAnswered && isCorrectOption;
         final showWrong = _isAnswered && isSelected && !isCorrect;
+        final isHidden = hiddenOptions.contains(index);
+        final isComputerSuggestion = _computerSuggestion == index;
+
+        // Keep empty space for removed options (even after answering)
+        if (isHidden) {
+          return SizedBox(
+            height: 77, // Match the height of normal option (65 + 12 margin)
+          );
+        }
 
         Color backgroundColor = Colors.white;
         Color borderColor = Colors.grey.shade300;
@@ -1113,6 +1982,9 @@ class _GameTestScreenState extends State<GameTestScreen>
         } else if (isSelected) {
           backgroundColor = AppColors.eLearningBtnColor1.withOpacity(0.1);
           borderColor = AppColors.eLearningBtnColor1;
+        } else if (isComputerSuggestion) {
+          backgroundColor = Colors.blue.shade50;
+          borderColor = Colors.blue;
         }
 
         return TweenAnimationBuilder(
@@ -1185,12 +2057,41 @@ class _GameTestScreenState extends State<GameTestScreen>
                   ),
                   SizedBox(width: 16),
                   Expanded(
-                    child: Text(
-                      option.text,
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: textColor,
-                      ),
+                    child: Html(
+                      data: option.text,
+                      style: {
+                        "body": Style(
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                          fontSize: FontSize(16),
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        "img": Style(
+                          width: Width.auto(),
+                          padding: HtmlPaddings.only(left: 4, right: 4),
+                        ),
+                      },
+                      extensions: [
+                        TagExtension(
+                          tagsToExtend: {"img"},
+                          builder: (extensionContext) {
+                            final attributes = extensionContext.attributes;
+                            final src = attributes['src'] ?? '';
+
+                            if (src.isEmpty) return const SizedBox.shrink();
+
+                            return GestureDetector(
+                              onTap: () => _showFullScreenImage(src),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
+                                child: _getImageWidget(src, height: 30),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   if (showCorrect)
@@ -1208,12 +2109,158 @@ class _GameTestScreenState extends State<GameTestScreen>
                         ),
                       ),
                     ),
+                  if (isComputerSuggestion && !_isAnswered)
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.computer,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildLifelinesSection(Question question) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildLifelineButton(
+            icon: Icons.exposure_neg_2, // -2 icon
+            label: '50:50',
+            isUsed: _fiftyFiftyUsed,
+            isDisabled: _isAnswered,
+            onTap: () => _useFiftyFifty(question),
+            showAdBadge: false,
+          ),
+          _buildLifelineButton(
+            icon: Icons.computer,
+            label: 'Ask PC',
+            isUsed: _askComputerUsed,
+            isDisabled: _isAnswered,
+            onTap: () => _useAskComputer(question),
+            showAdBadge: false,
+          ),
+          _buildLifelineButton(
+            icon: Icons.shuffle,
+            label: 'Shuffle',
+            isUsed: false, // Never mark as used - can shuffle anytime
+            isDisabled: false, // Never disabled - can shuffle anytime
+            onTap: () => _useShuffle(question),
+            showAdBadge: true, // Show ad badge on shuffle
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLifelineButton({
+    required IconData icon,
+    required String label,
+    required bool isUsed,
+    required bool isDisabled,
+    required VoidCallback onTap,
+    required bool showAdBadge,
+  }) {
+    final isActive = !isUsed && !isDisabled;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: isActive
+            ? onTap
+            : (showAdBadge
+                ? onTap
+                : null), // Allow shuffle anytime, block used lifelines
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon Container with Ad Badge
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: isActive ? Colors.white : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color:
+                                  AppColors.eLearningBtnColor1.withOpacity(0.2),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isActive
+                        ? AppColors.eLearningBtnColor1
+                        : Colors.grey.shade500,
+                    size: 28,
+                  ),
+                ),
+                // Ad Badge
+                if (showAdBadge)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red.shade400, Colors.red.shade600],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.4),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'AD',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Urbanist',
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 8),
+            // Label
+            Text(
+              label,
+              style: AppTextStyles.normal600(
+                fontSize: 12,
+                color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1483,11 +2530,13 @@ class _AnswerPopup extends StatefulWidget {
   final bool isCorrect;
   final int points;
   final VoidCallback onClose;
+  final String correctAnswerText;
 
   const _AnswerPopup({
     required this.isCorrect,
     required this.points,
     required this.onClose,
+    required this.correctAnswerText,
   });
 
   @override
@@ -1918,17 +2967,58 @@ class _AnswerPopupState extends State<_AnswerPopup>
       builder: (context, value, child) {
         return Opacity(
           opacity: value,
-          child: Text(
-            widget.isCorrect
-                ? 'Amazing! Keep the streak going! 🔥'
-                : 'Don\'t give up! Try the next one! 💪',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade700,
-              fontFamily: 'Urbanist',
-              fontWeight: FontWeight.w500,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.isCorrect
+                    ? 'Amazing! Keep the streak going! 🔥'
+                    : 'Don\'t give up! Try the next one! 💪',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                  fontFamily: 'Urbanist',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (!widget.isCorrect) SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.green.shade300,
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Correct Answer:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green.shade700,
+                        fontFamily: 'Urbanist',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      widget.correctAnswerText,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.green.shade900,
+                        fontFamily: 'Urbanist',
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -2642,6 +3732,163 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExplanationModal extends StatelessWidget {
+  final String explanation;
+  final VoidCallback onContinue;
+  final VoidCallback onClose;
+
+  const _ExplanationModal({
+    required this.explanation,
+    required this.onContinue,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Scrollable content
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Show question number at top
+                        Builder(builder: (context) {
+                          final provider = Provider.of<QuestionsProvider>(
+                              context,
+                              listen: false);
+                          final qIndex = (provider.allQuestions.isNotEmpty)
+                              ? provider.currentQuestionIndex
+                              : -1;
+                          if (qIndex >= 0) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                'Question ${qIndex + 1}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }),
+
+                        // Section title
+                        const Text(
+                          'Explanation',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.eLearningBtnColor1,
+                            fontFamily: 'Urbanist',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Explanation content (HTML)
+                        explanation.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        size: 64,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No explanation available',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade600,
+                                          fontFamily: 'Urbanist',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : Html(
+                                data: explanation,
+                                style: {
+                                  "body": Style(
+                                    fontSize: FontSize(19),
+                                    margin: Margins.zero,
+                                    padding: HtmlPaddings.zero,
+                                    lineHeight: LineHeight(1.6),
+                                    color: AppColors.text3Light,
+                                  ),
+                                },
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Fixed "Continue" button at bottom
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: onContinue,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.eLearningBtnColor1,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Continue',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

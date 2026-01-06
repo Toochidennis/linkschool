@@ -467,21 +467,41 @@ class _TestScreenState extends State<TestScreen>
                         children: [
                           Expanded(
                             child: Html(
-                              data: question.content.isNotEmpty
-                                  ? question.content[0].toUpperCase() +
-                                      question.content.substring(1)
-                                  : 'Question',
-                              style: {
-                                "body": Style(
-                                  fontSize: FontSize(18),
-                                  margin: Margins.zero,
-                                  padding: HtmlPaddings.zero,
-                                  lineHeight: LineHeight(1.6),
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.text3Light,
-                                ),
-                              },
-                            ),
+  data: question.content.isNotEmpty
+      ? question.content[0].toUpperCase() +
+          question.content.substring(1)
+      : 'Question',
+  style: {
+    "body": Style(
+      fontSize: FontSize(18),
+      margin: Margins.zero,
+      padding: HtmlPaddings.zero,
+      lineHeight: LineHeight(1.6),
+      fontWeight: FontWeight.w600,
+      color: AppColors.text3Light,
+    ),
+    "img": Style(
+      width: Width.auto(),
+      padding: HtmlPaddings.only(left: 4, right: 4),
+    ),
+  },
+  extensions: [
+    TagExtension(
+      tagsToExtend: {"img"},
+      builder: (extensionContext) {
+        final attributes = extensionContext.attributes;
+        final src = attributes['src'] ?? '';
+        
+        if (src.isEmpty) return const SizedBox.shrink();
+        
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: _getImageWidget(src, height: 30), // Adjust height here
+        );
+      },
+    ),
+  ],
+),
                           ),
                         ],
                       ),

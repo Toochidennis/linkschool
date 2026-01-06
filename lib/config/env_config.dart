@@ -15,6 +15,9 @@ class EnvConfig {
   static String get apiKey => dotenv.env['API_KEY'] ?? '';
   static String get apiBaseUrl =>
       dotenv.env['API_BASE_URL'] ?? 'https://linkskool.net/api/v3';
+  static String get googleAdsApiKey =>
+      dotenv.env['_googleadsApiKey'] ??
+      'ca-app-pub-3940256099942544/5224354917'; // Fallback to test ID
 
   // Dynamic database name - gets from current user session
   static String get dbName {

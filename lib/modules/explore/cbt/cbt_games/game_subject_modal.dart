@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_games/game_screen.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/game_instruction.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
@@ -292,7 +292,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GameTestScreen(
+        builder: (context) => GameInstructionsScreen(
           subject: subject.name,
           topics: _selectedTopicNames,
           topicIds: _selectedTopicIds,

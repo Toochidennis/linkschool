@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
@@ -65,6 +66,7 @@ class _StartChallengeState extends State<StartChallenge>
   // Answer popup handling
   bool _showAnswerPopup = false;
   bool _isCurrentAnswerCorrect = false;
+  String _correctAnswerText = '';
   late AudioPlayer _correctSoundPlayer;
   late AudioPlayer _wrongSoundPlayer;
 
@@ -270,11 +272,22 @@ class _StartChallengeState extends State<StartChallenge>
     final isCorrect =
         correctAnswerOrder != null && (optionIndex + 1) == correctAnswerOrder;
 
+    // Get correct answer text for display
+    String correctAnswerText = '';
+    if (correctAnswerOrder != null) {
+      final correctOptionIndex = correctAnswerOrder - 1; // Convert to 0-based
+      final options = provider.questions[currentIdx].getOptions();
+      if (correctOptionIndex >= 0 && correctOptionIndex < options.length) {
+        correctAnswerText = options[correctOptionIndex];
+      }
+    }
+
     print(
         'Answer Selected: ${isCorrect ? "Correct" : "Wrong"} (Selected index: $optionIndex, Order: ${optionIndex + 1}, Correct Order: $correctAnswerOrder)');
 
     setState(() {
       _isCurrentAnswerCorrect = isCorrect;
+      _correctAnswerText = correctAnswerText;
       _showAnswerPopup = true;
     });
 
@@ -580,6 +593,7 @@ class _StartChallengeState extends State<StartChallenge>
                     child: _AnswerPopup(
                       isCorrect: _isCurrentAnswerCorrect,
                       onClose: _closeAnswerPopup,
+                      correctAnswerText: _correctAnswerText,
                     ),
                   ),
                 ),
@@ -772,16 +786,18 @@ class _StartChallengeState extends State<StartChallenge>
             ],
           ),
           const SizedBox(height: 12),
-          // Preview text
-          Text(
-            previewText,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-              height: 1.5,
-            ),
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
+          // Preview text with HTML rendering
+          Html(
+            data: previewText,
+            style: {
+              "body": Style(
+                margin: Margins.zero,
+                padding: HtmlPaddings.zero,
+                fontSize: FontSize(14),
+                color: Colors.black87,
+                lineHeight: LineHeight(1.5),
+              ),
+            },
           ),
           // Read More with bouncing arrow animation (only if text is long)
           if (isLongText) ...[
@@ -886,14 +902,40 @@ class _StartChallengeState extends State<StartChallenge>
                   ),
                 ),
 
-              RichText(
-                text: TextSpan(
-                  text: q.content.isNotEmpty
-                      ? q.content[0].toUpperCase() + q.content.substring(1)
-                      : "Question",
-                  style: AppTextStyles.normal600(
-                      fontSize: 19, color: Colors.black87),
-                ),
+              Html(
+                data: q.content.isNotEmpty
+                    ? q.content[0].toUpperCase() + q.content.substring(1)
+                    : "Question",
+                style: {
+                  "body": Style(
+                    margin: Margins.zero,
+                    padding: HtmlPaddings.zero,
+                    fontSize: FontSize(19),
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  "img": Style(
+                    width: Width.auto(),
+                    padding: HtmlPaddings.only(left: 4, right: 4),
+                  ),
+                },
+                extensions: [
+                  TagExtension(
+                    tagsToExtend: {"img"},
+                    builder: (extensionContext) {
+                      final attributes = extensionContext.attributes;
+                      final src = attributes['src'] ?? '';
+
+                      if (src.isEmpty) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        child: _getImageWidget(src, height: 30),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -1032,12 +1074,41 @@ class _StartChallengeState extends State<StartChallenge>
                   ),
                 ),
               Expanded(
-                child: Text(
-                  optionText,
-                  style: TextStyle(
-                      fontSize: 16.2,
+                child: Html(
+                  data: optionText,
+                  style: {
+                    "body": Style(
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                      fontSize: FontSize(16.2),
                       color: isSelected ? Colors.white : Colors.black87,
-                      fontWeight: FontWeight.w500),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    "img": Style(
+                      width: Width.auto(),
+                      padding: HtmlPaddings.only(left: 4, right: 4),
+                    ),
+                  },
+                  extensions: [
+                    TagExtension(
+                      tagsToExtend: {"img"},
+                      builder: (extensionContext) {
+                        final attributes = extensionContext.attributes;
+                        final src = attributes['src'] ?? '';
+
+                        if (src.isEmpty) return const SizedBox.shrink();
+
+                        return GestureDetector(
+                          onTap: () => _showFullScreenImage(src),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 2),
+                            child: _getImageWidget(src, height: 30),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               if (isSelected)
@@ -1231,15 +1302,18 @@ class _StartChallengeState extends State<StartChallenge>
                                 ),
                                 const SizedBox(height: 12),
 
-                                // Section content
-                                Text(
-                                  sectionContent,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    height: 1.6,
-                                    color: AppColors.text3Light,
-                                    fontFamily: 'Urbanist',
-                                  ),
+                                // Section content with HTML rendering
+                                Html(
+                                  data: sectionContent,
+                                  style: {
+                                    "body": Style(
+                                      margin: Margins.zero,
+                                      padding: HtmlPaddings.zero,
+                                      fontSize: FontSize(14),
+                                      color: AppColors.text3Light,
+                                      lineHeight: LineHeight(1.6),
+                                    ),
+                                  },
                                 ),
 
                                 // Add spacing between sections
@@ -2328,10 +2402,12 @@ class ConfettiPainter extends CustomPainter {
 class _AnswerPopup extends StatefulWidget {
   final bool isCorrect;
   final VoidCallback onClose;
+  final String correctAnswerText;
 
   const _AnswerPopup({
     required this.isCorrect,
     required this.onClose,
+    required this.correctAnswerText,
   });
 
   @override
@@ -2762,17 +2838,60 @@ class _AnswerPopupState extends State<_AnswerPopup>
       builder: (context, value, child) {
         return Opacity(
           opacity: value,
-          child: Text(
-            widget.isCorrect
-                ? 'Amazing! Keep the streak going! 🔥'
-                : 'Don\'t give up! Try the next one! 💪',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade700,
-              fontFamily: 'Urbanist',
-              fontWeight: FontWeight.w500,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.isCorrect
+                    ? 'Amazing! Keep the streak going! 🔥'
+                    : 'Don\'t give up! Try the next one! 💪',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                  fontFamily: 'Urbanist',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (!widget.isCorrect && widget.correctAnswerText.isNotEmpty) ...[
+                SizedBox(height: 12),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.green.shade300,
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Correct Answer:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade700,
+                          fontFamily: 'Urbanist',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        widget.correctAnswerText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.green.shade900,
+                          fontFamily: 'Urbanist',
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
         );
       },

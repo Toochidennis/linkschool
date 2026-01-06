@@ -4,9 +4,11 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
+import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
+import 'dart:convert';
 
 class CBTStudyScreen extends StatefulWidget {
   final String subject;
@@ -93,6 +95,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       topicIds: widget.topicIds,
       courseId: widget.courseId,
       examTypeId: widget.examTypeId,
+      topicNames: widget.topics,
     );
     print('📚 Loaded ${provider.allQuestions.length} questions');
   }
@@ -101,6 +104,13 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     final isCorrect = index == question.correct.order;
     final selectedAnswer = question.options[index].text;
     final correctAnswer = question.correct.text;
+
+    // Record the answer in the provider for statistics
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    provider.recordAnswer(
+      questionId: question.questionId,
+      isCorrect: isCorrect,
+    );
 
     // Check if we already have explanation for this question (keyed by question ID)
     String? cachedExplanation = _explanationCache[question.questionId];
@@ -209,6 +219,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   }
 
   void _showStudyCompleteDialog() {
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+
+    // Generate session statistics
+    final sessionStats = provider.generateSessionStats(widget.subject);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -238,7 +253,16 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to previous screen
+
+              // Navigate to progress dashboard
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudyProgressDashboard(
+                    sessionStats: sessionStats,
+                  ),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.eLearningBtnColor1,
@@ -247,7 +271,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
               ),
             ),
             child: Text(
-              'Done',
+              'View Progress',
               style: AppTextStyles.normal600(
                 fontSize: 16,
                 color: Colors.white,
@@ -615,6 +639,82 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     );
   }
 
+  /// Helper function to get image widget from URL or base64
+  Widget _getImageWidget(String url, {double? width, double? height}) {
+    if (_isBase64(url)) {
+      try {
+        final bytes = base64.decode(url.split(',').last);
+        return Image.memory(bytes,
+            width: width, height: height, fit: BoxFit.cover);
+      } catch (e) {
+        return Container(
+            width: width, height: height, color: Colors.grey.shade200);
+      }
+    }
+
+    // Prepend base URL if it's a relative path
+    String imageUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('data:')) {
+      imageUrl = 'https://linkskool.net/$url';
+    }
+
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          Container(width: width, height: height, color: Colors.grey.shade200),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return SizedBox(
+            width: width,
+            height: height,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+      },
+    );
+  }
+
+  /// Helper function to check if string is base64 encoded
+  bool _isBase64(String s) {
+    return s.startsWith('data:image') ||
+        (s.length > 100 && s.contains('base64'));
+  }
+
+  /// Show full screen image viewer
+  void _showFullScreenImage(String imageUrl) {
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black87,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text(
+              'Tap to zoom, pinch to zoom in/out',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: _getImageWidget(imageUrl,
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<QuestionsProvider>(
@@ -851,7 +951,31 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                                     color: AppColors.text4Light,
                                     fontWeight: FontWeight.w600,
                                   ),
+                                  "img": Style(
+                                    width: Width.auto(),
+                                    padding:
+                                        HtmlPaddings.only(left: 4, right: 4),
+                                  ),
                                 },
+                                extensions: [
+                                  TagExtension(
+                                    tagsToExtend: {"img"},
+                                    builder: (extensionContext) {
+                                      final attributes =
+                                          extensionContext.attributes;
+                                      final src = attributes['src'] ?? '';
+
+                                      if (src.isEmpty)
+                                        return const SizedBox.shrink();
+
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 2),
+                                        child: _getImageWidget(src, height: 30),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -913,7 +1037,39 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                                             fontSize: FontSize(15),
                                             color: AppColors.text4Light,
                                           ),
+                                          "img": Style(
+                                            width: Width.auto(),
+                                            padding: HtmlPaddings.only(
+                                                left: 4, right: 4),
+                                          ),
                                         },
+                                        extensions: [
+                                          TagExtension(
+                                            tagsToExtend: {"img"},
+                                            builder: (extensionContext) {
+                                              final attributes =
+                                                  extensionContext.attributes;
+                                              final src =
+                                                  attributes['src'] ?? '';
+
+                                              if (src.isEmpty)
+                                                return const SizedBox.shrink();
+
+                                              return GestureDetector(
+                                                onTap: () =>
+                                                    _showFullScreenImage(src),
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 2),
+                                                  child: _getImageWidget(src,
+                                                      height: 30),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -1035,6 +1191,48 @@ class _ExplanationModalState extends State<ExplanationModal> {
   bool _isLoading = false;
   String? _error;
   bool _isApiExplanation = false;
+
+  /// Helper function to get image widget from URL or base64
+  Widget _getImageWidget(String url, {double? width, double? height}) {
+    if (_isBase64(url)) {
+      try {
+        final bytes = base64.decode(url.split(',').last);
+        return Image.memory(bytes,
+            width: width, height: height, fit: BoxFit.cover);
+      } catch (e) {
+        return Container(
+            width: width, height: height, color: Colors.grey.shade200);
+      }
+    }
+
+    // Prepend base URL if it's a relative path
+    String imageUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('data:')) {
+      imageUrl = 'https://linkskool.net/$url';
+    }
+
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          Container(width: width, height: height, color: Colors.grey.shade200),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return SizedBox(
+            width: width,
+            height: height,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+      },
+    );
+  }
+
+  /// Helper function to check if string is base64 encoded
+  bool _isBase64(String s) {
+    return s.startsWith('data:image') ||
+        (s.length > 100 && s.contains('base64'));
+  }
 
   @override
   void initState() {
@@ -1226,7 +1424,6 @@ class _ExplanationModalState extends State<ExplanationModal> {
                       children: [
                         Row(
                           children: [
-                            
                             const SizedBox(width: 8),
                             Text(
                               'Question',
@@ -1295,12 +1492,40 @@ class _ExplanationModalState extends State<ExplanationModal> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              widget.selectedAnswer,
-                              style: AppTextStyles.normal500(
-                                fontSize: 15,
-                                color: AppColors.text4Light,
-                              ),
+                            Html(
+                              data: widget.selectedAnswer,
+                              style: {
+                                "body": Style(
+                                  margin: Margins.zero,
+                                  padding: HtmlPaddings.zero,
+                                  fontSize: FontSize(15),
+                                  color: AppColors.text4Light,
+                                ),
+                                "img": Style(
+                                  width: Width.auto(),
+                                  padding: HtmlPaddings.only(left: 4, right: 4),
+                                ),
+                              },
+
+                              extensions: [
+                                TagExtension(
+                                  tagsToExtend: {"img"},
+                                  builder: (extensionContext) {
+                                    final attributes =
+                                        extensionContext.attributes;
+                                    final src = attributes['src'] ?? '';
+
+                                    if (src.isEmpty)
+                                      return const SizedBox.shrink();
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 2),
+                                      child: _getImageWidget(src, height: 30),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                             if (!widget.isCorrect) ...[
                               const SizedBox(height: 16),
@@ -1322,12 +1547,44 @@ class _ExplanationModalState extends State<ExplanationModal> {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                widget.correctAnswer,
-                                style: AppTextStyles.normal600(
-                                  fontSize: 15,
-                                  color: Colors.green,
-                                ),
+                              Html(
+                                data: widget.correctAnswer,
+                                style: {
+                                  "body": Style(
+                                    margin: Margins.zero,
+                                    padding: HtmlPaddings.zero,
+                                    fontSize: FontSize(15),
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  "img": Style(
+                                    width: Width.auto(),
+                                    padding:
+                                        HtmlPaddings.only(left: 4, right: 4),
+                                  ),
+                                  
+                                },
+
+
+                                extensions: [
+                                  TagExtension(
+                                    tagsToExtend: {"img"},
+                                    builder: (extensionContext) {
+                                      final attributes =
+                                          extensionContext.attributes;
+                                      final src = attributes['src'] ?? '';
+
+                                      if (src.isEmpty)
+                                        return const SizedBox.shrink();
+
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 2),
+                                        child: _getImageWidget(src, height: 30),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ],

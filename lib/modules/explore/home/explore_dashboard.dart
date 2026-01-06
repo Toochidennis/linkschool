@@ -2,6 +2,7 @@ import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/explore/courses/explore_courses.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
 import '../../common/bottom_navigation_bar.dart';
@@ -63,9 +64,11 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
       ExploreHome(
         onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged,
       ),
-      ExploreAdmission(
-        height: MediaQuery.of(context).size.height,
-      ),
+
+      ExploreCourses(),
+      // ExploreAdmission(
+      //   height: MediaQuery.of(context).size.height,
+      // ),
       ElibraryDashboard(
         height: MediaQuery.of(context).size.height,
       ),

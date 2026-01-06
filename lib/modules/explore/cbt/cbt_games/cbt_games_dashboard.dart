@@ -137,13 +137,26 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
                 const SizedBox(height: 25),
 
-                // ---------------- MISSIONS HEADER ----------------
+                // ---------------- GENERAL LEADERBOARD HEADER ----------------
                 Row(
-                  children: const [
-                    Icon(Icons.flag, color: Colors.deepPurple),
-                    SizedBox(width: 8),
-                    Text(
-                      "Missions",
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.emoji_events,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      "General Leaderboard",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -153,27 +166,29 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // ---------------- MISSIONS LIST ----------------
-                _buildMissionTile(
-                    title: "Complete 3 questions",
-                    xp: 20,
-                    progress: 0.33,
-                    icon: Icons.check_circle,
-                    missionColor: const Color(0xFF6366F1)),
-                _buildMissionTile(
-                    title: "Earn 10 XP today",
-                    xp: 10,
-                    progress: 0.5,
-                    icon: Icons.bolt,
-                    missionColor: const Color(0xFF10B981)),
-                _buildMissionTile(
-                    title: "Review one wrong answer",
-                    xp: 15,
-                    progress: 0.1,
-                    icon: Icons.refresh,
-                    missionColor: const Color(0xFFF59E0B)),
+                // ---------------- General Leaderboard Card ----------------
+                _buildGeneralLeaderboard(),
+
+                // _buildMissionTile(
+                //     title: "Complete 3 questions",
+                //     xp: 20,
+                //     progress: 0.33,
+                //     icon: Icons.check_circle,
+                //     missionColor: const Color(0xFF6366F1)),
+                // _buildMissionTile(
+                //     title: "Earn 10 XP today",
+                //     xp: 10,
+                //     progress: 0.5,
+                //     icon: Icons.bolt,
+                //     missionColor: const Color(0xFF10B981)),
+                // _buildMissionTile(
+                //     title: "Review one wrong answer",
+                //     xp: 15,
+                //     progress: 0.1,
+                //     icon: Icons.refresh,
+                //     missionColor: const Color(0xFFF59E0B)),
               ],
             ),
           ),
@@ -692,6 +707,358 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           ],
         ),
       ),
+    );
+  }
+
+  // ---------------- GENERAL LEADERBOARD (TOP 3 STYLE) ----------------
+
+  Widget _buildGeneralLeaderboard() {
+    // Sample general leaderboard data
+    final List<Map<String, dynamic>> topPlayers = [
+      {
+        'name': 'David Chen',
+        'points': 7200,
+        'avatar': '🏆',
+        'rank': 1,
+        'color': const Color(0xFFFFD700), // Gold
+      },
+      {
+        'name': 'Emma Wilson',
+        'points': 6800,
+        'avatar': '🥈',
+        'rank': 2,
+        'color': const Color(0xFFC0C0C0), // Silver
+      },
+      {
+        'name': 'Robert Kim',
+        'points': 6500,
+        'avatar': '🥉',
+        'rank': 3,
+        'color': const Color(0xFFCD7F32), // Bronze
+      },
+    ];
+
+    final List<Map<String, dynamic>> otherPlayers = [
+      {'name': 'Sarah Johnson', 'points': 6200, 'rank': 4},
+      {'name': 'Michael Brown', 'points': 5950, 'rank': 5},
+      {'name': 'Lisa Anderson', 'points': 5800, 'rank': 6},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top 3 Winners Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // 2nd Place
+              _buildTopWinner(
+                rank: 2,
+                name: topPlayers[1]['name'] as String,
+                points: '${topPlayers[1]['points']} pts',
+                avatar: topPlayers[1]['avatar'] as String,
+                borderColor: topPlayers[1]['color'] as Color,
+                isFirst: false,
+              ),
+              // 1st Place (larger)
+              _buildTopWinner(
+                rank: 1,
+                name: topPlayers[0]['name'] as String,
+                points: '${topPlayers[0]['points']} pts',
+                avatar: topPlayers[0]['avatar'] as String,
+                borderColor: topPlayers[0]['color'] as Color,
+                isFirst: true,
+              ),
+              // 3rd Place
+              _buildTopWinner(
+                rank: 3,
+                name: topPlayers[2]['name'] as String,
+                points: '${topPlayers[2]['points']} pts',
+                avatar: topPlayers[2]['avatar'] as String,
+                borderColor: topPlayers[2]['color'] as Color,
+                isFirst: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Divider
+          Divider(color: Colors.grey.shade200, thickness: 1),
+          const SizedBox(height: 16),
+
+          // Other Players Section
+          ...otherPlayers.map((player) {
+            return TweenAnimationBuilder(
+              duration:
+                  Duration(milliseconds: 400 + (player['rank'] as int) * 50),
+              tween: Tween<double>(begin: 0, end: 1),
+              builder: (context, double value, child) {
+                return Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: Opacity(
+                    opacity: value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Rank badge
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${player['rank']}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6366F1),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Avatar
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        (player['name'] as String)
+                            .split(' ')
+                            .map((e) => e[0])
+                            .join(),
+                        style: const TextStyle(
+                          color: Color(0xFF6366F1),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Name
+                    Expanded(
+                      child: Text(
+                        player['name'] as String,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    // Points with star icon
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${player['points']}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+
+          const SizedBox(height: 16),
+
+          // Small "View All" button at bottom right
+          Align(
+            alignment: Alignment.bottomRight,
+            child: SizedBox(
+              height: 36,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const LeaderboardScreen(fromGameDashboard: true),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6366F1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  minimumSize: const Size(0, 36),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 2,
+                ),
+                child: const Text(
+                  'View All',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopWinner({
+    required int rank,
+    required String name,
+    required String points,
+    required String avatar,
+    required Color borderColor,
+    required bool isFirst,
+  }) {
+    final double size = isFirst ? 80.0 : 70.0;
+    final double fontSize = isFirst ? 15.0 : 13.0;
+
+    return Column(
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            TweenAnimationBuilder(
+              duration: Duration(milliseconds: 600 + (rank * 150)),
+              tween: Tween<double>(begin: 0, end: 1),
+              builder: (context, double value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Opacity(
+                    opacity: value,
+                    child: child,
+                  ),
+                );
+              },
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: borderColor, width: 3),
+                  gradient: LinearGradient(
+                    colors: [
+                      borderColor,
+                      borderColor.withOpacity(0.7),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: borderColor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    avatar,
+                    style: TextStyle(fontSize: isFirst ? 32 : 28),
+                  ),
+                ),
+              ),
+            ),
+            if (isFirst)
+              Positioned(
+                top: -8,
+                right: size / 2 - 12,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: Colors.amber,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.star,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          name.split(' ')[0], // First name only
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          points,
+          style: TextStyle(
+            fontSize: fontSize - 2,
+            color: borderColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
