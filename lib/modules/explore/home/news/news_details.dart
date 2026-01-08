@@ -29,7 +29,7 @@ class _NewsDetailsState extends State<NewsDetails> {
   List<NewsModel> allNewsList = [];
   int currentIndex = 0;
   String selectedCategory = 'All';
-  List<String> categories = ['All', 'WAEC', 'JAMB', 'Admission', 'Scholarships', 'General'];
+  List<String> categories = ['All'];
 
   @override
   void initState() {
@@ -43,6 +43,8 @@ class _NewsDetailsState extends State<NewsDetails> {
       setState(() {
         allNewsList = provider.newsmodel;
         currentIndex = allNewsList.indexWhere((news) => news.id == currentNews.id);
+        // Load available categories from provider
+        categories = ['All', ...provider.availableCategories];
       });
     });
   }
@@ -58,7 +60,8 @@ class _NewsDetailsState extends State<NewsDetails> {
     if (selectedCategory == 'All') {
       return allNewsList;
     }
-    return allNewsList.where((news) => news.category == selectedCategory).toList();
+    final provider = Provider.of<NewsProvider>(context, listen: false);
+    return provider.getNewsByCategory(selectedCategory);
   }
 
   Color getCategoryColor(String category) {
@@ -103,8 +106,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
-    String category = currentNews.category;
-    Color categoryColor = getCategoryColor(category);
+    String? category = newsProvider.getCategoryForNews(currentNews.id);
+    Color categoryColor = getCategoryColor(category ?? 'General');
     
     List<NewsModel> recommendedNews = newsProvider.recommendedNews
         .where((news) => news.id != currentNews.id)
@@ -157,7 +160,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                   widget.news.title,
                   widget.news.content,
                   widget.time.toString(),
-                  widget.news.image_url,
+                  widget.news.imageUrl,
                 ),
               ),
               const SizedBox(width: 8),
@@ -168,7 +171,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 children: [
                   // Hero Image
                   Image.network(
-                    widget.news.image_url,
+                    widget.news.imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -232,7 +235,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  category,
+                                  category ?? "General",
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -428,7 +431,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
 
   Widget relatedCard(NewsModel news, BuildContext context) {
-  final categoryColor = getCategoryColor(news.category);
+  final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+  final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
+  final categoryColor = getCategoryColor(category);
   DateTime dop = DateTime.parse(news.date_posted);
   DateTime nowDateTime = DateTime.now();
   Duration difference = nowDateTime.difference(dop);
@@ -469,7 +474,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Image.network(
-              news.image_url,
+              news.imageUrl,
               width: double.infinity,
               height: 160,
               fit: BoxFit.cover,
@@ -514,7 +519,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  news.category,
+                  category,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -551,7 +556,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
 
   Widget _buildNewsCard(NewsModel news, BuildContext context) {
-    final categoryColor = getCategoryColor(news.category);
+    final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+    final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
+    final categoryColor = getCategoryColor(category);
     DateTime dop = DateTime.parse(news.date_posted);
     DateTime nowDateTime = DateTime.now();
     Duration difference = nowDateTime.difference(dop);
@@ -590,7 +597,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                news.image_url,
+                news.imageUrl,
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
@@ -632,7 +639,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          news.category,
+                          category,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,

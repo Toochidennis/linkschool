@@ -16,13 +16,18 @@ class AllnewsScreen extends StatefulWidget {
 
 class _AllnewsScreenState extends State<AllnewsScreen> {
   Set<String> selectedCategories = {};
-  final List<String> availableCategories = ['WAEC', 'JAMB', 'Admission', 'Scholarships', 'General'];
+  List<String> availableCategories = [];
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      Provider.of<NewsProvider>(context, listen: false).fetchNews();
+      final provider = Provider.of<NewsProvider>(context, listen: false);
+      provider.fetchNews();
+      // Load available categories after fetching news
+      setState(() {
+        availableCategories = provider.availableCategories;
+      });
     });
   }
 
@@ -42,11 +47,14 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
     }
   }
 
-  List<NewsModel> getFilteredNews(List<NewsModel> allNews) {
+  List<NewsModel> getFilteredNews(List<NewsModel> allNews, NewsProvider provider) {
     if (selectedCategories.isEmpty) {
       return allNews;
     }
-    return allNews.where((news) => selectedCategories.contains(news.category)).toList();
+    return allNews.where((news) {
+      final category = provider.getCategoryForNews(news.id);
+      return category != null && selectedCategories.contains(category);
+    }).toList();
   }
 
   void _showFilterBottomSheet() {
@@ -169,7 +177,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
   @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
-    final allNews = getFilteredNews(newsProvider.newsmodel);
+    final allNews = getFilteredNews(newsProvider.newsmodel, newsProvider);
     
     // Check if we have news items
     if (allNews.isEmpty) {
@@ -188,8 +196,16 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
     return Scaffold(
       appBar: Constants.customAppBar(
           context: context, title: 'All News', centerTitle: true),
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
+            Provider.of<NewsProvider>(context, listen: false).fetchNews();
+          }
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Headline News Card
@@ -311,6 +327,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -334,7 +351,9 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
   }
 
   Widget _buildHeadlineCard(NewsModel news, String timeAgo) {
-    final categoryColor = getCategoryColor(news.category);
+    final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+    final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
+    final categoryColor = getCategoryColor(category);
     
     return Container(
       margin: const EdgeInsets.all(16.0),
@@ -354,7 +373,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
           children: [
             // Background Image
             Image.network(
-              news.image_url,
+              news.imageUrl,
               width: double.infinity,
               height: 280,
               fit: BoxFit.cover,
@@ -411,7 +430,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            news.category,
+                            category,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -484,7 +503,9 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
   }
 
   Widget allNwesSections(NewsModel news, String timeAgo) {
-    final categoryColor = getCategoryColor(news.category);
+    final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+    final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
+    final categoryColor = getCategoryColor(category);
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -507,7 +528,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
-              news.image_url,
+              news.imageUrl,
               width: 80,
               height: 100,
               fit: BoxFit.cover,
@@ -566,7 +587,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        news.category,
+                        category,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,

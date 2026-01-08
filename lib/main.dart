@@ -45,12 +45,15 @@ import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
+import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/admission_provider.dart';
+import 'package:linkschool/modules/providers/explore/home/announcement_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
@@ -72,6 +75,7 @@ import 'package:linkschool/modules/services/admin/e_learning/activity_service.da
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
+import 'package:linkschool/modules/services/explore/courses/lessons_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
@@ -144,6 +148,7 @@ Future<void> main() async {
         // Explore
         ChangeNotifierProvider(create: (_) => AdmissionProvider()),
         ChangeNotifierProvider<NewsProvider>(create: (_) => NewsProvider()),
+        ChangeNotifierProvider(create: (_) => AnnouncementProvider()),
         ChangeNotifierProvider(create: (_) => ChallengeProvider(ChallengeService())),
         ChangeNotifierProvider(create: (_) => SubjectTopicsProvider(SubjectTopicsService())),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
@@ -155,6 +160,8 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<BookProvider>()),
         ChangeNotifierProvider(create: (_) => locator<EbookProvider>()),
         ChangeNotifierProvider(create: (_) => ChallengeQuestionProvider()),
+        ChangeNotifierProvider(create: (_) => ExploreCourseProvider()),
+        ChangeNotifierProvider(create: (_) => LessonProvider(LessonService())),
         ChangeNotifierProvider(create: (_) => LeaderboardProvider(LeaderboardService())),
         ChangeNotifierProvider(create: (_) => QuestionsProvider(QuestionsService())),
         
@@ -211,6 +218,7 @@ Future<void> main() async {
         // Payments
         ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
         ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
+     
 
         // Level, Class, Assessment, Term
         ChangeNotifierProvider(create: (_) => LevelProvider()),

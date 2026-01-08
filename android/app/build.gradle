@@ -71,8 +71,8 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            minifyEnabled false
-            shrinkResources false
+            minifyEnabled true
+            shrinkResources true
             // Add these flags to prevent UI rendering issues
             debuggable false
             jniDebuggable false

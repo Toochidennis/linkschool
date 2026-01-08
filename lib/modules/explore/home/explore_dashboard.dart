@@ -87,7 +87,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
       ),
       createBottomNavIcon(
         imagePath: 'assets/icons/admission.svg',
-        text: 'Admission',
+        text: 'Courses',
       ),
       createBottomNavIcon(
         imagePath: 'assets/icons/e-books.svg',
