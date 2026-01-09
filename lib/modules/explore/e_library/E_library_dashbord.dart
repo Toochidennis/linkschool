@@ -17,9 +17,13 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:linkschool/modules/explore/videos/level_subject_selector_modal.dart';
 
 import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart';
 import '../../model/explore/home/video_model.dart';
+import '../../model/explore/videos/dashboard_video_model.dart';
+import '../../explore/videos/watch_video.dart';
 import '../../providers/explore/for_you_provider.dart';
 import '../games/game_card.dart';
 
@@ -30,7 +34,8 @@ class QuickActionItem {
   final String iconPath;
   final Color backgroundColor;
   final Color borderColor;
-  final Widget destination;
+  final Widget? destination;
+  final VoidCallback? onTap;
 
   const QuickActionItem({
     required this.label,
@@ -38,7 +43,8 @@ class QuickActionItem {
     required this.iconPath,
     required this.backgroundColor,
     required this.borderColor,
-    required this.destination,
+    this.destination,
+    this.onTap,
   });
 }
 
@@ -70,30 +76,46 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
       destination: const CBTDashboard(),
     ),
     QuickActionItem(
-      label: 'E-Books',
-      subtitle: 'Read & learn',
-      iconPath: 'assets/icons/e-books.svg',
-      backgroundColor: const Color(0xFF00B894),
-      borderColor: const Color(0xFF00A383),
-      destination: const EbooksDashboard(),
-    ),
-    QuickActionItem(
       label: 'Videos',
       subtitle: 'Watch tutorials',
       iconPath: 'assets/icons/video.svg',
       backgroundColor: const Color(0xFFE17055),
       borderColor: const Color(0xFFD35843),
-      destination: const VideosDashboard(),
-    ),
-    QuickActionItem(
-      label: 'Games',
-      subtitle: 'Fun learning',
-      iconPath: 'assets/icons/games.svg',
-      backgroundColor: const Color(0xFF0984E3),
-      borderColor: const Color(0xFF0873C7),
-      destination: const GamesDashboard(),
+      onTap: () => _showLevelSubjectSelector(),
     ),
   ];
+
+  Future<void> _showLevelSubjectSelector() async {
+    // Check if there's a saved level in shared preferences
+    final prefs = await SharedPreferences.getInstance();
+    final savedLevelId = prefs.getInt('selected_level_id');
+    final savedLevelName = prefs.getString('selected_level_name');
+
+    if (savedLevelId != null && savedLevelName != null) {
+      // Navigate directly to VideosDashboard with saved level
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideosDashboard(
+              levelId: savedLevelId,
+              levelName: savedLevelName,
+            ),
+          ),
+        );
+      }
+    } else {
+      // Show modal for first-time users
+      if (mounted) {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (context) => const LevelSubjectSelectorModal(),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -123,14 +145,55 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
 
     if (!mounted) return;
 
-    Navigator.push(
+    // Convert current video to DashboardVideoModel format
+    final int videoIndex = _watchHistory.indexOf(video);
+    final DashboardVideoModel currentVideo = DashboardVideoModel(
+      id: videoIndex,
+      title: video.title,
+      videoUrl: video.url,
+      thumbnailUrl: video.thumbnail,
+      courseId: 0,
+      levelId: 0,
+      courseName: '',
+      levelName: '',
+      syllabusName: '',
+      syllabusId: 0,
+      description: video.description ?? '',
+      authorName: '',
+    );
+
+    // Convert all watch history videos to DashboardVideoModel
+    final List<DashboardVideoModel> allHistoryVideos = _watchHistory.map((v) {
+      final idx = _watchHistory.indexOf(v);
+      return DashboardVideoModel(
+        id: idx,
+        title: v.title,
+        videoUrl: v.url,
+        thumbnailUrl: v.thumbnail,
+        courseId: 0,
+        levelId: 0,
+        courseName: '',
+        levelName: '',
+        syllabusName: '',
+        syllabusId: 0,
+        description: v.description ?? '',
+        authorName: '',
+      );
+    }).toList();
+
+    // Navigate to video player
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => E_lib_vids(video: video),
+        builder: (context) => CourseDetailScreen(
+          initialVideo: currentVideo,
+          relatedVideos: allHistoryVideos,
+        ),
       ),
-    ).then((_) {
-      _loadWatchHistory();
-    });
+    );
+
+    // Reload watch history when returning
+    _loadWatchHistory();
   }
 
   void _navigateTo(Widget destination) {
@@ -218,25 +281,25 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                       ],
 
                       // Games Section
-                      _buildSectionHeader(
-                        icon: Icons.sports_esports_rounded,
-                        title: 'Popular Games',
-                        subtitle: 'Games everyone is playing',
-                        onSeeAll: () => _navigateTo(const GamesDashboard()),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildGamesSection(forYouProvider),
-                      const SizedBox(height: 24),
+                      // _buildSectionHeader(
+                      //   icon: Icons.sports_esports_rounded,
+                      //   title: 'Popular Games',
+                      //   subtitle: 'Games everyone is playing',
+                      //   onSeeAll: () => _navigateTo(const GamesDashboard()),
+                      // ),
+                      // const SizedBox(height: 12),
+                      // _buildGamesSection(forYouProvider),
+                      // const SizedBox(height: 24),
 
                       // E-Books Section
-                      _buildSectionHeader(
-                        icon: Icons.menu_book_rounded,
-                        title: 'Recommended Books',
-                        subtitle: 'Curated just for you',
-                        onSeeAll: () => _navigateTo(const EbooksDashboard()),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildBooksSection(forYouProvider),
+                      // _buildSectionHeader(
+                      //   icon: Icons.menu_book_rounded,
+                      //   title: 'Recommended Books',
+                      //   subtitle: 'Curated just for you',
+                      //   onSeeAll: () => _navigateTo(const EbooksDashboard()),
+                      // ),
+                      // const SizedBox(height: 12),
+                      // _buildBooksSection(forYouProvider),
 
                       const SizedBox(height: 100),
                     ],
@@ -285,7 +348,13 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
 
   Widget _buildQuickActionCard(QuickActionItem item) {
     return GestureDetector(
-      onTap: () => _navigateTo(item.destination),
+      onTap: () {
+        if (item.onTap != null) {
+          item.onTap!();
+        } else if (item.destination != null) {
+          _navigateTo(item.destination!);
+        }
+      },
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20.0),
@@ -401,20 +470,6 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
           imagePath: 'assets/images/millionaire.png',
           onTap: () => _navigateTo(const CBTDashboard()),
           gradient: [AppColors.exploreButton1Light, AppColors.gamesColor5],
-        ),
-        _buildFeaturedCard(
-          title: 'Video Lessons',
-          subtitle: 'Learn at your pace',
-          imagePath: 'assets/images/millionaire.png',
-          onTap: () => _navigateTo(const VideosDashboard()),
-          gradient: [AppColors.exploreButton2Light, AppColors.gamesColor8],
-        ),
-        _buildFeaturedCard(
-          title: 'E-Books Library',
-          subtitle: 'Read anywhere',
-          imagePath: 'assets/images/millionaire.png',
-          onTap: () => _navigateTo(const EbooksDashboard()),
-          gradient: [AppColors.exploreButton3Light, AppColors.gamesColor3],
         ),
       ],
       options: CarouselOptions(
@@ -624,16 +679,15 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
       );
     }
 
-    return SizedBox(
-      height: 180,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _watchHistory.length,
-        itemBuilder: (context, index) => _buildContinueWatchingCard(
-          video: _watchHistory[index],
-          onTap: () => _onVideoTap(_watchHistory[index]),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: _watchHistory
+            .map((video) => _buildContinueWatchingCard(
+                  video: video,
+                  onTap: () => _onVideoTap(video),
+                ))
+            .toList(),
       ),
     );
   }
@@ -645,75 +699,169 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
           children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
+            // Thumbnail section
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                bottomLeft: Radius.circular(12),
+              ),
+              child: Stack(
+                children: [
+                  // Thumbnail image
+                  Image.network(
                     video.thumbnail,
+                    height: 120,
+                    width: 140,
                     fit: BoxFit.cover,
-                    height: 100,
-                    width: 160,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        height: 100,
-                        width: 160,
+                        height: 120,
+                        width: 140,
                         decoration: BoxDecoration(
                           color: AppColors.videoColor9.withAlpha(50),
-                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          Icons.play_circle_outline_rounded,
-                          color: Colors.white.withOpacity(0.7),
+                          Icons.video_library_outlined,
+                          color: Colors.grey[600],
                           size: 40,
                         ),
                       );
                     },
                   ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                      size: 16,
+                  // Gradient overlay
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.3),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Progress indicator
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                value: 0.5,
-                minHeight: 4,
-                backgroundColor: AppColors.text6Light,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.text2Light),
+                  // Play button
+                  Positioned.fill(
+                    child: Center(
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: AppColors.text2Light,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              video.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.normal600(
-                fontSize: 14,
-                color: AppColors.backgroundDark,
+            // Video details section
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Title
+                    Text(
+                      video.title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // Description
+                    if (video.description != null &&
+                        video.description!.isNotEmpty)
+                      Text(
+                        video.description!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    const SizedBox(height: 8),
+                    // Continue watching badge with progress
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.text2Light.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.history,
+                                      size: 12,
+                                      color: AppColors.text2Light,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Continue',
+                                      style: TextStyle(
+                                        color: AppColors.text2Light,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -1,3 +1,4 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'quiz_screen.dart';
@@ -11,25 +12,36 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:convert';
 
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
+  final String courseName;
   final String courseDescription;
   final String provider;
   final String? videoUrl;
   final String? assignmentUrl;
   final String? assignmentDescription;
   final String? materialUrl;
+  final String? zoomUrl;
+  final String? recordedUrl;
+  final String? classDate;
 
   const CourseDetailScreen({
     super.key,
     required this.courseTitle,
+    required this.courseName,
     required this.courseDescription,
     required this.provider,
     this.videoUrl,
     this.assignmentUrl,
     this.assignmentDescription,
     this.materialUrl,
+    this.zoomUrl,
+    this.recordedUrl,
+    this.classDate,
   });
 
   @override
@@ -39,6 +51,7 @@ class CourseDetailScreen extends StatefulWidget {
 class _CourseDetailScreenState extends State<CourseDetailScreen>
     with SingleTickerProviderStateMixin {
   VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
   YoutubePlayerController? _youtubeController;
   bool _isVideoInitialized = false;
   bool _isYoutubeVideo = false;
@@ -48,16 +61,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   double _playbackSpeed = 1.0;
   bool _isLooping = false;
   bool _isFullscreen = false;
-  bool _isSheetFullyExpanded = false;
-  bool _isContentScrolling = false;
   bool _isDescriptionExpanded = false;
-  final DraggableScrollableController _sheetController =
-      DraggableScrollableController();
-  final ScrollController _mainScrollController = ScrollController();
 
   // Quiz state variables
   int _quizScore = 0;
   bool _quizTaken = false;
+  String? _pendingUsername;
+  String? _pendingAssignmentFileName;
+  String? _pendingAssignmentFileBase64;
 
   final List<Map<String, dynamic>> _courseVideos = [
     {
@@ -169,6 +180,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadCompletionStatus();
+    _loadPendingAssignmentData();
     // Use provided video URL or fallback to hardcoded videos
     final initialVideoUrl = widget.videoUrl?.isNotEmpty == true
         ? widget.videoUrl!
@@ -226,12 +238,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             duration: content['duration'] as String,
             currentIndex: index,
             courseContent: _courseVideos,
-            onNavigate: (newIndex) {
-              // Navigate to the new content when Previous/Next is clicked
-              Future.delayed(Duration.zero, () {
-                _navigateToContent(newIndex);
-              });
-            },
           ),
         ),
       );
@@ -262,14 +268,255 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       _quizScore = quizScore;
       _quizTaken = quizScore > 0;
     });
+  }
 
-    print(
-        '📊 Loaded quiz data for "$videoTitle": Score=$_quizScore, Taken=$_quizTaken');
+  Future<void> _loadPendingAssignmentData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentVideo = _courseVideos[_selectedVideoIndex];
+      final videoTitle = currentVideo['title'] as String;
+      final key = '${widget.courseTitle}_${videoTitle}_pending';
+
+      setState(() {
+        _pendingUsername = prefs.getString('${key}_username');
+        _pendingAssignmentFileName = prefs.getString('${key}_assignment_name');
+        _pendingAssignmentFileBase64 =
+            prefs.getString('${key}_assignment_base64');
+      });
+    } catch (e) {
+      debugPrint('Error loading pending assignment data: $e');
+    }
+  }
+
+  Future<void> _savePendingAssignmentData(String username,
+      String? assignmentFileName, String? assignmentBase64) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentVideo = _courseVideos[_selectedVideoIndex];
+      final videoTitle = currentVideo['title'] as String;
+      final key = '${widget.courseTitle}_${videoTitle}_pending';
+
+      await prefs.setString('${key}_username', username);
+      if (assignmentFileName != null) {
+        await prefs.setString('${key}_assignment_name', assignmentFileName);
+      }
+      if (assignmentBase64 != null) {
+        await prefs.setString('${key}_assignment_base64', assignmentBase64);
+      }
+
+      setState(() {
+        _pendingUsername = username;
+        _pendingAssignmentFileName = assignmentFileName;
+        _pendingAssignmentFileBase64 = assignmentBase64;
+      });
+    } catch (e) {
+      debugPrint('Error saving pending assignment data: $e');
+    }
+  }
+
+  Future<void> _clearPendingAssignmentData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentVideo = _courseVideos[_selectedVideoIndex];
+      final videoTitle = currentVideo['title'] as String;
+      final key = '${widget.courseTitle}_${videoTitle}_pending';
+
+      await prefs.remove('${key}_username');
+      await prefs.remove('${key}_assignment_name');
+      await prefs.remove('${key}_assignment_base64');
+
+      setState(() {
+        _pendingUsername = null;
+        _pendingAssignmentFileName = null;
+        _pendingAssignmentFileBase64 = null;
+      });
+    } catch (e) {
+      debugPrint('Error clearing pending assignment data: $e');
+    }
+  }
+
+  void _prepareAndPrintPayload({
+    required int score,
+    required String? assignmentFileName,
+    required String? assignmentBase64,
+    required String username,
+  }) {
+    final payload = {
+      'quiz_score': score.toString(),
+      'assignment': assignmentFileName != null && assignmentBase64 != null
+          ? {
+              'file_name': assignmentFileName,
+              'file': assignmentBase64,
+              "type": assignmentFileName.split('.').last,
+              "old_file_name": "",
+            }
+          : 'No file uploaded',
+      "email": "",
+      "phone": "",
+      'name': username,
+      'course_title': widget.courseTitle,
+      'lesson_title': _courseVideos[_selectedVideoIndex]['title'],
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    final jsonPayload = jsonEncode(payload);
+    debugPrint('=== ASSIGNMENT SUBMISSION PAYLOAD ===');
+    debugPrint(jsonPayload);
+    debugPrint('====================================');
+
+    // Show success message to user
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Assignment submitted successfully!\nScore: $score%'),
+        backgroundColor: const Color(0xFF4CAF50),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Extract YouTube video ID from various YouTube URL formats
+  String? extractYouTubeId(String url) {
+    final regExp = RegExp(
+      r'(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})',
+    );
+    final match = regExp.firstMatch(url);
+    return match?.group(1);
+  }
+
+  /// Check if URL is a YouTube video
+  bool isYouTubeUrl(String url) {
+    return url.contains('youtube.com') || url.contains('youtu.be');
+  }
+
+  /// Determine the zoom class status based on date and recorded URL
+  /// Priority: Check recorded_url first, then zoom_url
+  Map<String, dynamic> _getZoomStatus() {
+    final hasRecordedUrl =
+        widget.recordedUrl != null && widget.recordedUrl!.isNotEmpty;
+    final hasZoomUrl = widget.zoomUrl != null && widget.zoomUrl!.isNotEmpty;
+
+    // If neither URL exists, return unavailable
+    if (!hasRecordedUrl && !hasZoomUrl) {
+      return {
+        'status': 'unavailable',
+        'message': 'No Zoom class scheduled',
+        'buttonText': '',
+        'url': null,
+      };
+    }
+
+    // PRIORITY 1: If recorded URL exists, always show it first
+    if (hasRecordedUrl) {
+      return {
+        'status': 'recorded',
+        'message': 'Watch the recorded video.',
+        'buttonText': 'Watch Record video',
+        'url': widget.recordedUrl,
+      };
+    }
+
+    // PRIORITY 2: Check zoom URL with date logic
+    if (hasZoomUrl) {
+      // If no date provided, assume class is available
+      if (widget.classDate == null || widget.classDate!.isEmpty) {
+        return {
+          'status': 'available',
+          'message': 'Join the  class',
+          'buttonText': 'Join class',
+          'url': widget.zoomUrl,
+        };
+      }
+
+      try {
+        final classDateTime = DateTime.parse(widget.classDate!);
+        final now = DateTime.now();
+
+        // Assuming class duration is 2 hours (you can make this configurable)
+        final classEndTime = classDateTime.add(const Duration(hours: 3));
+
+        // Class hasn't started yet
+        if (now.isBefore(classDateTime)) {
+          final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
+          final dateStr = formatter.format(classDateTime);
+          return {
+            'status': 'scheduled',
+            'message': 'Class starts on $dateStr',
+            'buttonText': 'Scheduled',
+            'url': null,
+            'classDate': classDateTime,
+          };
+        }
+
+        // Class is ongoing
+        if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
+          return {
+            'status': 'ongoing',
+            'message': 'Class is ongoing. Join now!',
+            'buttonText': 'Join class',
+            'url': widget.zoomUrl,
+          };
+        }
+
+        // Class has ended but no recorded video
+        return {
+          'status': 'pending',
+          'message': 'Class has ended. Recorded video pending.',
+          'buttonText': 'Pending',
+          'url': null,
+        };
+      } catch (e) {
+        debugPrint('Error parsing class date: $e');
+        return {
+          'status': 'available',
+          'message': 'Join the class',
+          'buttonText': 'Join class',
+          'url': widget.zoomUrl,
+        };
+      }
+    }
+
+    // Fallback (should never reach here)
+    return {
+      'status': 'unavailable',
+      'message': 'No content available',
+      'buttonText': '',
+      'url': null,
+    };
+  }
+
+  /// Launch URL in browser
+  Future<void> _launchUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open the link'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening link: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _initializeVideo(String url) async {
     // Dispose previous controllers
     await _videoController?.dispose();
+    _chewieController?.dispose();
     _youtubeController?.dispose();
 
     setState(() {
@@ -278,52 +525,92 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     });
 
     try {
-      // Check if it's a YouTube URL
-      final videoId = YoutubePlayer.convertUrlToId(url);
+      print('Loading video URL: $url');
 
-      if (videoId != null) {
-        // It's a YouTube video
-        setState(() {
-          _isYoutubeVideo = true;
-        });
-
-        _youtubeController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            mute: false,
-            loop: false,
-            enableCaption: true,
-          ),
-        );
-
-        setState(() {
-          _isVideoInitialized = true;
-        });
+      // Check if it's a YouTube video
+      if (isYouTubeUrl(url)) {
+        await _initializeYouTubePlayer(url);
       } else {
-        // It's a regular video URL
-        setState(() {
-          _isYoutubeVideo = false;
-        });
-
-        _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
-        await _videoController!.initialize();
-        setState(() {
-          _isVideoInitialized = true;
-        });
-        _hideControlsAfterDelay();
-        _videoController!.addListener(() {
-          if (_videoController!.value.position ==
-              _videoController!.value.duration) {
-            setState(() {
-              _showControls = true;
-            });
-          }
-        });
+        await _initializeDirectVideoPlayer(url);
       }
     } catch (e) {
       debugPrint('Error initializing video: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load video: $e')),
+        );
+      }
     }
+  }
+
+  Future<void> _initializeYouTubePlayer(String url) async {
+    final videoId = extractYouTubeId(url);
+
+    if (videoId == null) {
+      throw Exception('Invalid YouTube URL');
+    }
+
+    _youtubeController = YoutubePlayerController(
+      initialVideoId: videoId,
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+        enableCaption: true,
+        controlsVisibleAtStart: true,
+        hideControls: false,
+      ),
+    );
+
+    setState(() {
+      _isYoutubeVideo = true;
+      _isVideoInitialized = true;
+    });
+  }
+
+  Future<void> _initializeDirectVideoPlayer(String url) async {
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+
+    await _videoController!.initialize();
+
+    _chewieController = ChewieController(
+      videoPlayerController: _videoController!,
+      autoPlay: false,
+      looping: false,
+      aspectRatio: 16 / 9,
+      placeholder: const Center(child: CircularProgressIndicator()),
+      errorBuilder: (context, errorMessage) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading video',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                errorMessage,
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      },
+      materialProgressColors: ChewieProgressColors(
+        playedColor: const Color(0xFF6366F1),
+        handleColor: const Color(0xFF6366F1),
+        backgroundColor: Colors.grey,
+        bufferedColor: Colors.grey.withOpacity(0.5),
+      ),
+    );
+
+    setState(() {
+      _isYoutubeVideo = false;
+      _isVideoInitialized = true;
+    });
   }
 
   void _hideControlsAfterDelay() {
@@ -520,15 +807,17 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   @override
   void dispose() {
     _videoController?.dispose();
+    _chewieController?.dispose();
     _youtubeController?.dispose();
     _tabController.dispose();
-    _sheetController.dispose();
-    _mainScrollController.dispose();
     super.dispose();
   }
 
   void _showSubmitAssignmentModal(BuildContext context) {
     final TextEditingController nameController = TextEditingController();
+    String? selectedFileName;
+    String? selectedFilePath;
+    String? selectedFileBase64;
 
     showGeneralDialog(
       context: context,
@@ -567,155 +856,396 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                 ),
                 child: Material(
                   color: Colors.transparent,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Submit Assignment',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Please enter your full name before submitting:',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          hintText: 'Your Full Name',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 14,
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF6366F1),
-                              width: 2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                            height: 1.5,
-                          ),
-                          children: [
-                            const TextSpan(
-                              text:
-                                  'After clicking "Send Email", your email app or browser will open. Please ',
-                            ),
-                            const TextSpan(
-                              text: 'remember to attach your assignment file',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const TextSpan(
-                              text: ' before sending.',
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Row(
+                  child: StatefulBuilder(
+                    builder: (BuildContext context, StateSetter setModalState) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.grey.shade700,
-                                side: BorderSide(
-                                    color: Colors.grey.shade400, width: 1.5),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                          const Text(
+                            'Submit Assignment',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Please enter your full name and upload your assignment:',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          TextField(
+                            controller: nameController,
+                            decoration: InputDecoration(
+                              hintText: 'Your Full Name',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 14,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF6366F1),
+                                  width: 2,
                                 ),
                               ),
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // PDF Upload Button
+                          InkWell(
+                            onTap: () async {
+                              try {
+                                FilePickerResult? result =
+                                    await FilePicker.platform.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: ['pdf'],
+                                );
+
+                                if (result != null) {
+                                  final filePath = result.files.single.path;
+                                  if (filePath != null) {
+                                    // Read file and convert to base64
+                                    final file = File(filePath);
+                                    final bytes = await file.readAsBytes();
+                                    final base64String = base64Encode(bytes);
+
+                                    setModalState(() {
+                                      selectedFileName =
+                                          result.files.single.name;
+                                      selectedFilePath = filePath;
+                                      selectedFileBase64 = base64String;
+                                    });
+                                  }
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error picking file: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: selectedFileName != null
+                                    ? const Color(0xFF6366F1).withOpacity(0.1)
+                                    : Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: selectedFileName != null
+                                      ? const Color(0xFF6366F1)
+                                      : Colors.grey.shade300,
+                                  width: selectedFileName != null ? 2 : 1,
                                 ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    selectedFileName != null
+                                        ? Icons.picture_as_pdf
+                                        : Icons.upload_file,
+                                    color: selectedFileName != null
+                                        ? const Color(0xFF6366F1)
+                                        : Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      selectedFileName ??
+                                          'Upload PDF Assignment',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: selectedFileName != null
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        color: selectedFileName != null
+                                            ? const Color(0xFF6366F1)
+                                            : Colors.grey.shade600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (selectedFileName != null)
+                                    IconButton(
+                                      icon: const Icon(Icons.close, size: 20),
+                                      onPressed: () {
+                                        setModalState(() {
+                                          selectedFileName = null;
+                                          selectedFilePath = null;
+                                          selectedFileBase64 = null;
+                                        });
+                                      },
+                                      color: Colors.grey.shade600,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                final name = nameController.text.trim();
-                                if (name.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Please enter your name'),
-                                      backgroundColor: Colors.red,
+                          const SizedBox(height: 16),
+                          RichText(
+                            textAlign: TextAlign.center,
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black87,
+                                height: 1.5,
+                              ),
+                              children: [
+                                const TextSpan(
+                                  text:
+                                      'After clicking "Send Email", your email app will open with the details. ',
+                                ),
+                                if (selectedFileName == null)
+                                  const TextSpan(
+                                    text:
+                                        'Please remember to attach your assignment file.',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
                                     ),
-                                  );
-                                  return;
-                                }
-                                Navigator.pop(context);
-                                _openEmailApp(name);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0066FF),
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: const Text(
-                                'Send Email',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                                  ),
+                              ],
                             ),
+                          ),
+                          const SizedBox(height: 32),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.grey.shade700,
+                                    side: BorderSide(
+                                        color: Colors.grey.shade400,
+                                        width: 1.5),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final name = nameController.text.trim();
+                                    if (name.isEmpty) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content:
+                                              Text('Please enter your name'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    // Check if quiz has been taken
+                                    if (!_quizTaken) {
+                                      // Save pending data
+                                      await _savePendingAssignmentData(name,
+                                          selectedFileName, selectedFileBase64);
+
+                                      Navigator.pop(context);
+
+                                      // Show dialog to take quiz
+                                      final shouldTakeQuiz =
+                                          await showDialog<bool>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                            title: const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.quiz,
+                                                  color: Color(0xFFFFA500),
+                                                  size: 28,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Text(
+                                                  'Take Quiz First',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            content: const Text(
+                                              'You need to take the quiz before submitting your assignment. Your assignment details have been saved.',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                height: 1.5,
+                                              ),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context, false);
+                                                },
+                                                child: Text(
+                                                  'Later',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context, true);
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      const Color(0xFFFFA500),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                ),
+                                                child: const Text(
+                                                  'Take Quiz Now',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+
+                                      if (shouldTakeQuiz == true) {
+                                        // Navigate to quiz screen
+                                        final currentVideo =
+                                            _courseVideos[_selectedVideoIndex];
+                                        final videoTitle =
+                                            currentVideo['title'] as String;
+
+                                        final result =
+                                            await Navigator.push<int>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => QuizScreen(
+                                              courseTitle: widget.courseTitle,
+                                              lessonTitle: videoTitle,
+                                            ),
+                                          ),
+                                        );
+
+                                        // Reload quiz data
+                                        await _loadQuizData();
+
+                                        // If quiz was completed and we have score
+                                        if (result != null && _quizTaken) {
+                                          // Prepare and print payload
+                                          _prepareAndPrintPayload(
+                                            score: result,
+                                            assignmentFileName:
+                                                selectedFileName,
+                                            assignmentBase64:
+                                                selectedFileBase64,
+                                            username: name,
+                                          );
+
+                                          // Clear pending data
+                                          await _clearPendingAssignmentData();
+
+                                          // Open email app
+                                          _openEmailApp(name);
+                                        }
+                                      }
+                                      return;
+                                    }
+
+                                    // Quiz already taken, proceed normally
+                                    Navigator.pop(context);
+
+                                    // Prepare and print payload
+                                    _prepareAndPrintPayload(
+                                      score: _quizScore,
+                                      assignmentFileName: selectedFileName,
+                                      assignmentBase64: selectedFileBase64,
+                                      username: name,
+                                    );
+
+                                    // Clear pending data if any
+                                    await _clearPendingAssignmentData();
+
+                                    _openEmailApp(name);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0066FF),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text(
+                                    'Send Email',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -773,6 +1303,83 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _downloadMaterial(String materialUrl) async {
+    try {
+      // Request storage permission
+      var status = await Permission.storage.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission denied')),
+          );
+        }
+        return;
+      }
+
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Downloading materials...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final response = await http.get(Uri.parse(materialUrl));
+      if (response.statusCode == 200) {
+        final dir = await getExternalStorageDirectory();
+        final downloadsDir = Directory('${dir!.path}/Download');
+        if (!await downloadsDir.exists()) {
+          await downloadsDir.create(recursive: true);
+        }
+
+        final fileName =
+            'Material_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final file = File('${downloadsDir.path}/$fileName');
+        await file.writeAsBytes(response.bodyBytes, flush: true);
+
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Downloaded to: ${file.path}'),
+              duration: const Duration(seconds: 3),
+              backgroundColor: const Color(0xFF4CAF50),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to download material'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _downloadAssignment(String assignmentUrl) async {
@@ -857,533 +1464,133 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     final currentVideo = _courseVideos[_selectedVideoIndex];
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Video Player - Fixed at top
-          SafeArea(
-            bottom: false,
-            child: _buildVideoPlayer(),
-          ),
-
-          // Draggable Content Sheet (YouTube-style)
-          DraggableScrollableSheet(
-            controller: _sheetController,
-            initialChildSize: 0.65,
-            minChildSize: 0.65,
-            maxChildSize: 0.73,
-            snap: true,
-            snapSizes: const [0.65, 0.73],
-            builder: (context, scrollController) {
-              return NotificationListener<DraggableScrollableNotification>(
-                onNotification: (notification) {
-                  // Lock when reaching expanded state
-                  if (notification.extent >= 0.72) {
-                    if (!_isSheetFullyExpanded) {
-                      setState(() {
-                        _isSheetFullyExpanded = true;
-                      });
-                    }
-                  } else {
-                    if (_isSheetFullyExpanded) {
-                      setState(() {
-                        _isSheetFullyExpanded = false;
-                      });
-                    }
-                  }
-                  return true;
-                },
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Drag Handle
-                      GestureDetector(
-                        onVerticalDragUpdate: (details) {
-                          // Allow dragging down to collapse when fully expanded
-                          if (_isSheetFullyExpanded && details.delta.dy > 0) {
-                            setState(() {
-                              _isSheetFullyExpanded = false;
-                            });
-                            _sheetController.animateTo(
-                              0.65,
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeOut,
-                            );
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          color: Colors.transparent,
-                          child: Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Content
-                      Expanded(
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (scrollNotification) {
-                            if (!_isSheetFullyExpanded) {
-                              // Expand on any scroll activity - but don't consume the event
-                              if (scrollNotification
-                                  is ScrollStartNotification) {
-                                Future.microtask(() {
-                                  setState(() {
-                                    _isSheetFullyExpanded = true;
-                                  });
-                                  _sheetController.animateTo(
-                                    0.73,
-                                    duration: const Duration(milliseconds: 150),
-                                    curve: Curves.easeOut,
-                                  );
-                                });
-                              }
-                              return false; // Don't consume - allow scroll to proceed
-                            } else {
-                              // When expanded, monitor scroll position
-                              if (scrollNotification
-                                  is ScrollUpdateNotification) {
-                                final scrollPosition =
-                                    scrollNotification.metrics.pixels;
-                                final scrollDelta =
-                                    scrollNotification.scrollDelta ?? 0;
-
-                                // Collapse when at top and trying to scroll up
-                                if (scrollPosition <= 0 && scrollDelta < 0) {
-                                  setState(() {
-                                    _isSheetFullyExpanded = false;
-                                  });
-                                  _sheetController.animateTo(
-                                    0.65,
-                                    duration: const Duration(milliseconds: 200),
-                                    curve: Curves.easeOut,
-                                  );
-                                  return true;
-                                }
-                              }
-
-                              // Handle overscroll at the top
-                              if (scrollNotification
-                                  is OverscrollNotification) {
-                                if (scrollNotification.overscroll < 0) {
-                                  setState(() {
-                                    _isSheetFullyExpanded = false;
-                                  });
-                                  _sheetController.animateTo(
-                                    0.65,
-                                    duration: const Duration(milliseconds: 200),
-                                    curve: Curves.easeOut,
-                                  );
-                                  return true;
-                                }
-                              }
-                            }
-                            return false;
-                          },
-                          child: NestedScrollView(
-                            controller: _mainScrollController,
-                            headerSliverBuilder: (context, innerBoxIsScrolled) {
-                              return [
-                                // Video Title and Description
-                                SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        16, 0, 16, 16),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          currentVideo['title'] as String,
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SliverToBoxAdapter(
-                                  child: Divider(height: 1),
-                                ),
-                                // Sticky Tab Bar
-                                SliverPersistentHeader(
-                                  pinned: true,
-                                  delegate: _StickyTabBarDelegate(
-                                    TabBar(
-                                      controller: _tabController,
-                                      labelColor: const Color(0xFF6366F1),
-                                      unselectedLabelColor:
-                                          Colors.grey.shade600,
-                                      indicatorColor: const Color(0xFF6366F1),
-                                      labelStyle: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      tabs: const [
-                                        Tab(text: 'Overview'),
-                                        Tab(text: 'Assignments'),
-                                        Tab(text: 'Quiz'),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ];
-                            },
-                            body: TabBarView(
-                              controller: _tabController,
-                              children: [
-                                _buildOverviewTab(),
-                                _buildAssignmentsTab(currentVideo),
-                                _buildReviewsTab(),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Floating Navigation Buttons
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              color: Colors.transparent,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: SafeArea(
-                top: false,
-                child: Row(
-                  children: [
-                    // Previous Button
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed:
-                            _selectedVideoIndex > 0 ? _goToPreviousVideo : null,
-                        icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text(
-                          'Previous',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: _selectedVideoIndex > 0
-                              ? const Color(0xFF6366F1)
-                              : Colors.grey,
-                          side: BorderSide(
-                            color: _selectedVideoIndex > 0
-                                ? const Color(0xFF6366F1)
-                                : Colors.grey.shade300,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Next Button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            _selectedVideoIndex < _courseVideos.length - 1
-                                ? _goToNextVideo
-                                : null,
-                        label: const Text(
-                          'Next',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        icon: const Icon(Icons.arrow_forward, size: 18),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              _selectedVideoIndex < _courseVideos.length - 1
-                                  ? const Color(0xFF6366F1)
-                                  : Colors.grey.shade300,
-                          foregroundColor:
-                              _selectedVideoIndex < _courseVideos.length - 1
-                                  ? Colors.white
-                                  : Colors.grey.shade500,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildVideoPlayer(),
+            const SizedBox(height: 10),
+            ..._buildSheetContent(currentVideo),
+          ],
+        ),
       ),
     );
   }
 
+  List<Widget> _buildSheetContent(Map<String, dynamic> currentVideo) {
+    return [
+      // Video Title and Description
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.courseTitle,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      const Divider(height: 1),
+
+      // Tabs Section
+      TabBar(
+        controller: _tabController,
+        labelColor: const Color(0xFF6366F1),
+        unselectedLabelColor: Colors.grey.shade600,
+        indicatorColor: const Color(0xFF6366F1),
+        labelStyle: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        tabs: const [
+          Tab(text: 'Overview'),
+          Tab(text: 'Assignments'),
+          Tab(text: 'Quiz'),
+        ],
+      ),
+
+      // Tab Content
+      SizedBox(
+        height: 600,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildOverviewTab(),
+            _buildAssignmentsTab(currentVideo),
+            _buildReviewsTab(),
+          ],
+        ),
+      ),
+    ];
+  }
+
   Widget _buildVideoPlayer() {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 240,
-          color: Colors.black,
-          child: Stack(
-            children: [
-              // Video - Handle both YouTube and regular videos
-              if (_isVideoInitialized)
-                _isYoutubeVideo && _youtubeController != null
-                    ? YoutubePlayer(
-                        controller: _youtubeController!,
-                        showVideoProgressIndicator: true,
-                        progressIndicatorColor: const Color(0xFF6366F1),
-                        progressColors: const ProgressBarColors(
-                          playedColor: Color(0xFF6366F1),
-                          handleColor: Color(0xFF6366F1),
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        width: double.infinity,
+        height: 240,
+        color: Colors.black,
+        child: Stack(children: [
+          // Video - Handle both YouTube and regular videos
+          if (_isVideoInitialized)
+            _isYoutubeVideo && _youtubeController != null
+                ? YoutubePlayerBuilder(
+                    player: YoutubePlayer(
+                      controller: _youtubeController!,
+                      showVideoProgressIndicator: true,
+                      progressIndicatorColor: const Color(0xFF6366F1),
+                      progressColors: const ProgressBarColors(
+                        playedColor: Color(0xFF6366F1),
+                        handleColor: Color(0xFF6366F1),
+                        backgroundColor: Colors.grey,
+                        bufferedColor: Colors.grey,
+                      ),
+                      onReady: () {
+                        print('YouTube player is ready');
+                      },
+                    ),
+                    builder: (context, player) {
+                      return player;
+                    },
+                  )
+                : _chewieController != null &&
+                        _chewieController!
+                            .videoPlayerController.value.isInitialized
+                    ? AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Chewie(controller: _chewieController!),
+                      )
+                    : const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF6366F1),
                         ),
                       )
-                    : _videoController != null
-                        ? Center(
-                            child: AspectRatio(
-                              aspectRatio: _videoController!.value.aspectRatio,
-                              child: VideoPlayer(_videoController!),
-                            ),
-                          )
-                        : const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF6366F1),
-                            ),
-                          )
-              else
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF6366F1),
-                  ),
-                ),
-
-              // Controls Overlay - Only show for non-YouTube videos
-              if (_isVideoInitialized &&
-                  !_isYoutubeVideo &&
-                  _videoController != null)
-                GestureDetector(
-                  onTap: _toggleControls,
-                  child: AnimatedOpacity(
-                    opacity: _showControls ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Container(
-                      color: Colors.black38,
-                      child: Column(
-                        children: [
-                          // Top Bar
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  icon: const Icon(Icons.arrow_back),
-                                  color: Colors.white,
-                                ),
-                                const Spacer(),
-                                // Loop indicator
-                                if (_isLooping)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF6366F1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.repeat,
-                                            color: Colors.white, size: 14),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Loop',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                if (_isLooping) const SizedBox(width: 8),
-                              ],
-                            ),
-                          ),
-
-                          const Spacer(),
-
-                          // Play/Pause Button with Rewind/Forward
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Rewind 10s
-                              IconButton(
-                                onPressed: _seekBackward,
-                                icon: const Icon(Icons.replay_10),
-                                color: Colors.white,
-                                iconSize: 40,
-                              ),
-                              const SizedBox(width: 20),
-                              // Play/Pause
-                              IconButton(
-                                onPressed: _togglePlayPause,
-                                icon: Icon(
-                                  _videoController!.value.isPlaying
-                                      ? Icons.pause_circle_filled
-                                      : Icons.play_circle_filled,
-                                  size: 64,
-                                ),
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 20),
-                              // Forward 10s
-                              IconButton(
-                                onPressed: _seekForward,
-                                icon: const Icon(Icons.forward_10),
-                                color: Colors.white,
-                                iconSize: 40,
-                              ),
-                            ],
-                          ),
-
-                          const Spacer(),
-
-                          // Progress Bar
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              children: [
-                                VideoProgressIndicator(
-                                  _videoController!,
-                                  allowScrubbing: true,
-                                  colors: const VideoProgressColors(
-                                    playedColor: Color(0xFF6366F1),
-                                    bufferedColor: Colors.grey,
-                                    backgroundColor: Colors.white24,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          _formatDuration(
-                                              _videoController!.value.position),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        Text(
-                                          ' / ${_formatDuration(_videoController!.value.duration)}',
-                                          style: TextStyle(
-                                            color:
-                                                Colors.white.withOpacity(0.7),
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        // Loop button
-                                        IconButton(
-                                          onPressed: _toggleLoop,
-                                          icon: Icon(
-                                            _isLooping
-                                                ? Icons.repeat_on
-                                                : Icons.repeat,
-                                            color: _isLooping
-                                                ? const Color(0xFF6366F1)
-                                                : Colors.white,
-                                            size: 20,
-                                          ),
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        // Speed button
-                                        // InkWell(
-                                        //   onTap: _showSpeedOptions,
-                                        //   child: Container(
-                                        //     padding: const EdgeInsets.symmetric(
-                                        //         horizontal: 8, vertical: 4),
-                                        //     decoration: BoxDecoration(
-                                        //       color: Colors.white.withOpacity(0.2),
-                                        //       borderRadius: BorderRadius.circular(6),
-                                        //     ),
-                                        //     child: Text(
-                                        //       '${_playbackSpeed}x',
-                                        //       style: const TextStyle(
-                                        //         color: Colors.white,
-                                        //         fontSize: 12,
-                                        //         fontWeight: FontWeight.w600,
-                                        //       ),
-                                        //     ),
-                                        //   ),
-                                        // ),
-                                        const SizedBox(width: 12),
-                                        // Fullscreen button
-                                        IconButton(
-                                          onPressed: _toggleFullscreen,
-                                          icon: const Icon(
-                                            Icons.fullscreen,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
+          else
+            const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF6366F1),
+              ),
+            ),
+        ]),
+      ),
     );
   }
 
@@ -1534,89 +1741,83 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   Widget _buildOverviewTab() {
-    // Determine if class is live or recorded
-    // You can change this logic based on your actual class schedule
-    final bool isClassLive =
-        true; // Set to false to show "Watch Recorded Video"
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text(
-          'About This Course',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
-          ),
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      const Text(
+        'About This Course',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: Colors.black87,
         ),
-        const SizedBox(height: 12),
-        Stack(
-          children: [
-            AnimatedCrossFade(
-              firstChild: Text(
-                widget.courseDescription,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey.shade700,
-                  height: 1.6,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+      ),
+      const SizedBox(height: 20),
+      Stack(
+        children: [
+          AnimatedCrossFade(
+            firstChild: Text(
+              widget.courseDescription,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade700,
+                height: 1.6,
               ),
-              secondChild: Text(
-                widget.courseDescription,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey.shade700,
-                  height: 1.6,
-                ),
-              ),
-              crossFadeState: _isDescriptionExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 200),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            if (!_isDescriptionExpanded)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 24,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withOpacity(0.0),
-                        Colors.white,
-                      ],
-                    ),
+            secondChild: Text(
+              widget.courseDescription,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade700,
+                height: 1.6,
+              ),
+            ),
+            crossFadeState: _isDescriptionExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
+          if (!_isDescriptionExpanded)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 24,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withOpacity(0.0),
+                      Colors.white,
+                    ],
                   ),
                 ),
               ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _isDescriptionExpanded = !_isDescriptionExpanded;
-            });
-          },
-          child: Text(
-            _isDescriptionExpanded ? 'See less' : 'See more',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF6366F1),
             ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      GestureDetector(
+        onTap: () {
+          setState(() {
+            _isDescriptionExpanded = !_isDescriptionExpanded;
+          });
+        },
+        child: Text(
+          _isDescriptionExpanded ? 'See less' : 'See more',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF6366F1),
           ),
         ),
-        const SizedBox(height: 24),
+      ),
+      const SizedBox(height: 24),
 
-        // Course Materials Card
+      // Course Materials Card - Only show if materialUrl exists
+      if (widget.materialUrl != null && widget.materialUrl!.isNotEmpty) ...[
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1677,15 +1878,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Downloading course materials...'),
-                        duration: Duration(seconds: 2),
-                        backgroundColor: Color(0xFF10B981),
-                      ),
-                    );
-                  },
+                  onPressed: () => _downloadMaterial(widget.materialUrl!),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
@@ -1707,155 +1900,149 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             ],
           ),
         ),
-
         const SizedBox(height: 16),
+      ],
 
-        // Join/Watch Button with Zoom-style banner
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with Zoom logo
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2D8CFF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.video_camera_front,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'zoom',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2D8CFF),
-                      letterSpacing: -0.5,
-                    ),
+      // Join/Watch Button with Zoom-style banner - Show if zoom URL or recorded URL exists
+      if ((widget.zoomUrl != null && widget.zoomUrl!.isNotEmpty) ||
+          (widget.recordedUrl != null && widget.recordedUrl!.isNotEmpty)) ...[
+        Builder(
+          builder: (context) {
+            final zoomStatus = _getZoomStatus();
+            final status = zoomStatus['status'] as String;
+            final message = zoomStatus['message'] as String;
+            final buttonText = zoomStatus['buttonText'] as String;
+            final url = zoomStatus['url'] as String?;
+
+            // Determine button style and behavior based on status
+            Color backgroundColor;
+            Color iconColor;
+            bool isButtonEnabled;
+
+            switch (status) {
+              case 'scheduled':
+                backgroundColor = Colors.grey.shade300;
+                iconColor = Colors.grey.shade600;
+                isButtonEnabled = false;
+                break;
+              case 'ongoing':
+                backgroundColor = const Color(0xFF2D8CFF);
+                iconColor = Colors.white;
+                isButtonEnabled = true;
+                break;
+              case 'recorded':
+                backgroundColor = const Color(0xFF10B981);
+                iconColor = Colors.white;
+                isButtonEnabled = true;
+                break;
+              case 'pending':
+                backgroundColor = Colors.grey;
+                iconColor = Colors.white;
+                isButtonEnabled = false;
+                break;
+              case 'unavailable':
+              default:
+                backgroundColor = Colors.grey.shade300;
+                iconColor = Colors.grey.shade600;
+                isButtonEnabled = false;
+                break;
+            }
+
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              // Message
-              if (isClassLive) ...[
-                const Text(
-                  'Your Zoom class starts on Wednesday, January 7 from 10:00 AM to 12:00 PM.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
-                ),
-              ] else ...[
-                const Text(
-                  'Your Zoom class has ended. You can now watch the recorded video.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              // Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(isClassLive
-                            ? 'Opening Zoom class...'
-                            : 'Loading recorded video...'),
-                        duration: const Duration(seconds: 2),
-                        backgroundColor: const Color(0xFF2D8CFF),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2D8CFF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    isClassLive ? 'Join Zoom Class' : 'Watch Recorded Video',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-        const Text(
-          'What You\'ll Learn',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...[
-          'Master the fundamentals from scratch',
-          'Build real-world projects',
-          'Understand advanced concepts',
-          'Best practices and common pitfalls',
-          'Hands-on coding exercises',
-        ].map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Color(0xFF10B981),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade700,
+                  // Header with Zoom logo
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: backgroundColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          status == 'recorded'
+                              ? Icons.play_circle_outline
+                              : Icons.video_camera_front,
+                          color: iconColor,
+                          size: 24,
+                        ),
                       ),
+                      const SizedBox(width: 12),
+                      Text(
+                        status == 'recorded' ? 'Recording' : 'class',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: backgroundColor,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Message
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                      height: 1.4,
                     ),
                   ),
+                  if (buttonText.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    // Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isButtonEnabled && url != null
+                            ? () => _launchUrl(url)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: backgroundColor,
+                          foregroundColor: iconColor,
+                          disabledBackgroundColor: backgroundColor,
+                          disabledForegroundColor: iconColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          buttonText,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-            )),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
       ],
-    );
+    ]);
   }
 
   Widget _buildAssignmentsTab(Map<String, dynamic> currentVideo) {
@@ -1989,96 +2176,123 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             ),
           ),
 
-        if (widget.assignmentUrl != null && widget.assignmentUrl!.isNotEmpty)
+        // Submit Assignment Card - Only show if assignmentUrl exists
+        if (widget.assignmentUrl != null &&
+            widget.assignmentUrl!.isNotEmpty) ...[
           const SizedBox(height: 16),
-
-        // Submit Assignment Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with icon
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with icon
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      child: const Icon(
+                        Icons.upload_file,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.upload_file,
-                      color: Colors.white,
-                      size: 24,
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Submit',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF6366F1),
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Submit',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF6366F1),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Message
-              const Text(
-                'Once you\'ve completed the assignment, submit your work here for review.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                  height: 1.4,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              // Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _showSubmitAssignmentModal(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Submit Assignment',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                const SizedBox(height: 12),
+                // Message
+                const Text(
+                  'Once you\'ve completed the assignment, submit your work here for review.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                    height: 1.4,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                // Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Check if quiz has been taken before allowing submission
+                      if (!_quizTaken) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Quiz Required'),
+                            content: const Text(
+                                'You need to take the quiz first before submitting your assignment. Please go to the Quiz tab and complete the quiz.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  // Switch to Quiz tab (index 2)
+                                  _tabController.animateTo(2);
+                                },
+                                child: const Text('Go to Quiz'),
+                              ),
+                            ],
+                          ),
+                        );
+                        return;
+                      }
+                      _showSubmitAssignmentModal(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6366F1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Submit Assignment',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
 
         const SizedBox(height: 24),
 
@@ -2199,7 +2413,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                     final currentVideo = _courseVideos[_selectedVideoIndex];
                     final videoTitle = currentVideo['title'] as String;
 
-                    await Navigator.push(
+                    final result = await Navigator.push<int>(
                       context,
                       MaterialPageRoute(
                         builder: (context) => QuizScreen(
@@ -2208,8 +2422,27 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                         ),
                       ),
                     );
+
                     // Reload quiz data when returning from quiz
-                    _loadQuizData();
+                    await _loadQuizData();
+
+                    // If we have pending assignment data and quiz was completed
+                    if (result != null &&
+                        _pendingUsername != null &&
+                        _quizTaken) {
+                      _prepareAndPrintPayload(
+                        score: result,
+                        assignmentFileName: _pendingAssignmentFileName,
+                        assignmentBase64: _pendingAssignmentFileBase64,
+                        username: _pendingUsername!,
+                      );
+
+                      // Clear pending data
+                      await _clearPendingAssignmentData();
+
+                      // Open email app
+                      _openEmailApp(_pendingUsername!);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFA500),
@@ -2334,33 +2567,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
     return '${hours}h ${minutes}m';
-  }
-}
-
-// Sticky Tab Bar Delegate
-class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-
-  _StickyTabBarDelegate(this.tabBar);
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Colors.white,
-      child: tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
-    return false;
   }
 }
 

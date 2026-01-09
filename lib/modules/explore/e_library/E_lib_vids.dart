@@ -172,10 +172,11 @@ class _E_lib_vidsState extends State<E_lib_vids> {
       ),
       body: Consumer<SubjectProvider>(
         builder: (context, subjectProvider, child) {
-          final allVideos = subjectProvider.subjects
-              .expand((subject) => subject.categories)
-              .expand((category) => category.videos)
-              .toList();
+          // final allVideos = subjectProvider.subjects
+          //     .expand((subject) => subject.categories)
+          //     .expand((category) => category.videos)
+          //     .toList();
+          final allVideos =[];
 
           return Container(
             decoration: Constants.customBoxDecoration(context),
@@ -187,7 +188,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                   const SizedBox(height: 10),
                   _buildVideoMetadata(),
                   DefaultTabController(
-                    length: 2,
+                    length: 1,
                     child: Column(
                       children: [
                         TabBar(
@@ -198,7 +199,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                           unselectedLabelColor: AppColors.assessmentColor2,
                           dividerColor: Colors.transparent,
                           tabs: const [
-                            Tab(text: 'Lessons'),
+                            // Tab(text: 'Lessons'),
                             Tab(text: 'Related'),
                           ],
                         ),
@@ -208,7 +209,8 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                             children: [
                               Skeletonizer(
                                 enabled: _isLoading,
-                                child: _buildLessonsList(allVideos),
+                                child: Container(),
+                               // child: _buildLessonsList(allVideos),
                               ),
                               ListView(
                                 padding: EdgeInsets.zero,
@@ -391,7 +393,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
           margin: const EdgeInsets.symmetric(horizontal: 16.0),
           height: 90,
           child: Text(
-            description,
+            widget.video.description ?? "",
             style: AppTextStyles.normal400(
               fontSize: 16,
               color: AppColors.assessmentColor2,

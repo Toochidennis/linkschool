@@ -10,7 +10,7 @@ class LessonModel {
   final String assignmentUrl;
   final String materialUrl;
   final String videoUrl;
-  final String readingUrl;
+  final String? readingUrl;
   final int hasQuiz;
   final int isFinal;
   final String zoomUrl;
@@ -50,7 +50,7 @@ class LessonModel {
       assignmentUrl: json['assignment_url'] ?? '',
       materialUrl: json['material_url'] ?? '',
       videoUrl: json['video_url'] ?? '',
-      readingUrl: json['reading_url'] ?? '',
+    readingUrl: json['reading_url']?.toString() ?? '',
       hasQuiz: json['has_quiz'] ?? 0,
       isFinal: json['is_final'] ?? 0,
       zoomUrl: json['zoom_url'] ?? '',

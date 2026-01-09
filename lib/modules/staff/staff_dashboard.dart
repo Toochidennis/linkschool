@@ -43,7 +43,9 @@ class _StaffDashboardState extends State<StaffDashboard> {
       case 2:
         return const StaffElearningScreen();
       case 3:
-        return StaffProfileScreen(logout:widget.onLogout ,);
+        return StaffProfileScreen(
+          logout: widget.onLogout,
+        );
       default:
         return Container();
     }
@@ -99,7 +101,7 @@ class _StaffDashboardState extends State<StaffDashboard> {
       createBottomNavIcon(
         imagePath: 'assets/icons/e-learning.svg',
         text: 'E- \n Learning',
-        width:10,
+        width: 10,
         height: 10.0,
       ),
       createBottomNavIcon(

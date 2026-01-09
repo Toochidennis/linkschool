@@ -4,6 +4,7 @@ class Video {
   final String url;
   final String thumbnail;
   final String? author;
+  final String? description;
 
   Video({
     this.id,
@@ -11,6 +12,7 @@ class Video {
     required this.url,
     required this.thumbnail,
     this.author,
+      this.description,
   });
 
   factory Video.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class Video {
       url: json['url'] ?? '',
       thumbnail: json['thumbnail'] ?? '',
       author: json['author']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
     );
   }
 
@@ -30,6 +33,7 @@ class Video {
       url: '',
       thumbnail: '',
       author: '',
+      description: '',
     );
   }
 }

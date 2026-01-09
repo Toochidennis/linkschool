@@ -43,6 +43,7 @@ import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/providers/explore/cbt_settings_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
@@ -57,6 +58,7 @@ import 'package:linkschool/modules/providers/explore/courses/course_provider.dar
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
+import 'package:linkschool/modules/providers/explore/videos/video_provider.dart';
 import 'package:linkschool/modules/providers/login/schools_provider.dart';
 import 'package:linkschool/modules/providers/staff/overview.dart';
 import 'package:linkschool/modules/providers/staff/staff_dashboard_provider.dart';
@@ -73,11 +75,13 @@ import 'package:linkschool/modules/providers/student/student_comment_provider.da
 import 'package:linkschool/modules/providers/student/student_result_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
+import 'package:linkschool/modules/services/explore/cbt_settings_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
 import 'package:linkschool/modules/services/explore/courses/lessons_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
+import 'package:linkschool/modules/services/explore/video/video_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
@@ -98,10 +102,14 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+   await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   await MobileAds.instance.initialize();
-    await Firebase.initializeApp();
+  await Firebase.initializeApp();
   print('Firebase initialized successfully');
-  
+
   try {
     await Hive.initFlutter();
     await Hive.openBox('userData');
@@ -114,17 +122,18 @@ Future<void> main() async {
 
   await EnvConfig.init();
   setupServiceLocator();
-  
+
   // Initialize app settings
   final appSettings = AppSettingsProvider();
   await appSettings.initializeSettings();
-  
+
   // Pre-load CBT settings and update subscription service
   try {
     final settings = await CbtSettingsHelper.getSettings();
     final subscriptionService = CbtSubscriptionService();
     subscriptionService.setMaxFreeTests(settings.freeTrialDays);
-    print('✅ CBT settings pre-loaded: amount=${settings.amount}, discount=${settings.discountRate}, trial=${settings.freeTrialDays}');
+    print(
+        '✅ CBT settings pre-loaded: amount=${settings.amount}, discount=${settings.discountRate}, trial=${settings.freeTrialDays}');
   } catch (e) {
     print('⚠️ Failed to pre-load CBT settings: $e');
   }
@@ -141,7 +150,7 @@ Future<void> main() async {
       providers: [
         // App Settings Provider - Must be first for global theme
         ChangeNotifierProvider.value(value: appSettings),
-        
+
         // Core providers
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => SchoolProvider()),
@@ -164,6 +173,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => LessonProvider(LessonService())),
         ChangeNotifierProvider(create: (_) => LeaderboardProvider(LeaderboardService())),
         ChangeNotifierProvider(create: (_) => QuestionsProvider(QuestionsService())),
+        ChangeNotifierProvider(create: (_) => CourseVideoProvider(CourseVideoService())),
         
         // Admin HomeScreen
          
@@ -276,7 +286,9 @@ class MyApp extends StatelessWidget {
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Linkskool',
-            theme: settings.isDarkMode ? AppThemes.darkTheme : AppThemes.lightTheme,
+            theme: settings.isDarkMode
+                ? AppThemes.darkTheme
+                : AppThemes.lightTheme,
             themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const AppInitializer(),
             navigatorObservers: [routeObserver],
@@ -322,7 +334,8 @@ class _AppInitializerState extends State<AppInitializer> {
       // Get AuthProvider from Provider context
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       // Get CbtUserProvider from Provider context and initialize persistent login
-      final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      final cbtUserProvider =
+          Provider.of<CbtUserProvider>(context, listen: false);
       await cbtUserProvider.initialize();
 
       // Check login status

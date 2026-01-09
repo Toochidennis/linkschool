@@ -45,9 +45,9 @@ class _PortalDashboardState extends State<PortalDashboard> {
     final userName =
         authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
 
-        final name = userName.trim().split(' ');
-        final firstName = name.isNotEmpty ? name.first : 'User';
-        print("First name: $firstName");
+    final name = userName.trim().split(' ');
+    final firstName = name.isNotEmpty ? name.first : 'User';
+    print("First name: $firstName");
 
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 18),
@@ -66,10 +66,9 @@ class _PortalDashboardState extends State<PortalDashboard> {
                     style: AppTextStyles.italic2Light,
                   ),
                   TextSpan(
-  text: userName.trim().split(' ').last,
-  style: AppTextStyles.italic3Light,
-),
-
+                    text: userName.trim().split(' ').last,
+                    style: AppTextStyles.italic3Light,
+                  ),
                 ],
               ),
             ),
@@ -99,9 +98,9 @@ class _PortalDashboardState extends State<PortalDashboard> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userName =
         authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
-      final name = userName.trim().split(' ');
-      final firstName = name.isNotEmpty ? name.first : 'User';
-      print("First name: $firstName");
+    final name = userName.trim().split(' ');
+    final firstName = name.isNotEmpty ? name.first : 'User';
+    print("First name: $firstName");
 
     switch (index) {
       case 0:
@@ -112,12 +111,12 @@ class _PortalDashboardState extends State<PortalDashboard> {
             showSettings: true,
             onSettingsTap: () {
               Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => AdminSettingsScreen(onLogout: widget.onLogout),
-              ),
+                MaterialPageRoute(
+                  builder: (_) =>
+                      AdminSettingsScreen(onLogout: widget.onLogout),
+                ),
               );
             },
-            
           ),
           onLogout: widget.onLogout,
         );

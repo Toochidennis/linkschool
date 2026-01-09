@@ -275,12 +275,12 @@ class _ContinueWatching extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (video.title.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => E_lib_vids(video: video),
-            ),
-          );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => E_lib_vids(video: video),
+          //   ),
+          // );
         }
       },
       child: Container(

@@ -162,7 +162,7 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                   );
                 }).toList(),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 100),
               ],
             ),
           );

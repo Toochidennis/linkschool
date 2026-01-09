@@ -8,7 +8,6 @@ class ReadingLessonScreen extends StatefulWidget {
   final String duration;
   final int currentIndex;
   final List<Map<String, dynamic>> courseContent;
-  final Function(int)? onNavigate;
 
   const ReadingLessonScreen({
     Key? key,
@@ -18,7 +17,6 @@ class ReadingLessonScreen extends StatefulWidget {
     required this.duration,
     required this.currentIndex,
     required this.courseContent,
-    this.onNavigate,
   }) : super(key: key);
 
   @override
@@ -85,17 +83,9 @@ class _ReadingLessonScreenState extends State<ReadingLessonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasPrevious = widget.currentIndex > 0;
-    final hasNext = widget.currentIndex < widget.courseContent.length - 1;
-
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Scaffold(
-              backgroundColor: const Color(0xFFFAFAFA),
-              appBar: AppBar(
+      appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: _showAppBarShadow ? 2 : 0,
         leading: IconButton(
@@ -337,95 +327,7 @@ class _ReadingLessonScreenState extends State<ReadingLessonScreen> {
           ],
         ),
       ),
-            ),
-          ),
-
-          // Floating Navigation Buttons
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              color: Colors.transparent,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: SafeArea(
-                top: false,
-                child: Row(
-                  children: [
-                    // Previous Button
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: hasPrevious
-                            ? () {
-                                if (widget.onNavigate != null) {
-                                  widget.onNavigate!(widget.currentIndex - 1);
-                                }
-                                Navigator.pop(context);
-                              }
-                            : null,
-                        icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text(
-                          'Previous',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          
-                          foregroundColor: hasPrevious
-                              ? const Color(0xFF6366F1)
-                              : Colors.grey,
-                              backgroundColor: Colors.white,
-                          side: BorderSide(
-                            color: hasPrevious
-                                ? const Color(0xFF6366F1)
-                                : Colors.grey.shade300,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Next Button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: hasNext
-                            ? () {
-                                if (widget.onNavigate != null) {
-                                  widget.onNavigate!(widget.currentIndex + 1);
-                                }
-                                Navigator.pop(context);
-                              }
-                            : null,
-                        label: const Text(
-                          'Next',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        icon: const Icon(Icons.arrow_forward, size: 18),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: hasNext
-                              ? const Color(0xFF6366F1)
-                              : Colors.grey.shade300,
-                          foregroundColor:
-                              hasNext ? Colors.white : Colors.grey.shade500,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+        );
+      
   }
 }

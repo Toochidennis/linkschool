@@ -179,13 +179,13 @@ class _QuizScreenState extends State<QuizScreen> {
           },
           onClose: () {
             Navigator.pop(context); // Close summary
-            Navigator.pop(context); // Close quiz screen
+            Navigator.pop(context, score); // Close quiz screen and return score
           },
         ),
       ),
     ).then((_) {
-      // When returning from summary, close the quiz screen
-      Navigator.pop(context);
+      // When returning from summary, close the quiz screen and return score
+      Navigator.pop(context, score);
     });
   }
 

@@ -4,9 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../../model/explore/home/subject_model2.dart';
+import '../../model/explore/home/level_model.dart';
+import '../../model/explore/videos/dashboard_video_model.dart';
 
 class SubjectService {
-  static const String _baseUrl = 'https://linkskool.net/api/v3/public/videos';
+  static const String _subjectsUrl =
+      'https://linkskool.net/api/v3/public/video-library/courses/public';
+  static const String _levelsUrl = 'https://linkskool.net/api/v3/public/levels';
+  static const String _dashboardUrl =
+      'https://linkskool.net/api/v3/public/video-library/courses/by-level';
 
   Future<List<SubjectModel2>> getAllSubjects() async {
     try {
@@ -15,14 +21,14 @@ class SubjectService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      debugPrint('🌐 Making request to: $_baseUrl');
+      debugPrint('🌐 Making request to: $_subjectsUrl');
 
       final response = await http.get(
-        Uri.parse(_baseUrl),
+        Uri.parse(_subjectsUrl),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-API-KEY': apiKey, // ✅ Include API key here
+          'X-API-KEY': apiKey,
         },
       );
 
@@ -32,27 +38,14 @@ class SubjectService {
         final decoded = json.decode(response.body);
         debugPrint('📊 Response Body Type: ${decoded.runtimeType}');
 
-        if (decoded is List) {
-          // ✅ When the response is a List
-          return decoded.map((e) => SubjectModel2.fromJson(e)).toList();
-        } else if (decoded is Map<String, dynamic>) {
-          // ✅ Handle different JSON keys like data/movies/subjects/results
-          final data = decoded['data'] ??
-              decoded['movies'] ??
-              decoded['subjects'] ??
-              decoded['results'];
-
+        if (decoded is Map<String, dynamic>) {
+          final data = decoded['data'];
           if (data is List) {
             return data.map((e) => SubjectModel2.fromJson(e)).toList();
-          } else if (data is Map<String, dynamic>) {
-            return data.values.map((e) => SubjectModel2.fromJson(e)).toList();
-          } else {
-            throw Exception(
-                'Unexpected data format inside response: ${data.runtimeType}');
           }
-        } else {
-          throw Exception('Unexpected response format: ${decoded.runtimeType}');
         }
+
+        throw Exception('Unexpected response format');
       } else {
         debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');
         throw Exception(
@@ -62,6 +55,88 @@ class SubjectService {
       debugPrint('💥 Service Error: $e');
       debugPrint(stackTrace.toString());
       throw Exception('Error fetching subjects: $e');
+    }
+  }
+
+  Future<List<LevelModel>> getAllLevels() async {
+    try {
+      final apiKey = dotenv.env['API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      debugPrint('🌐 Making request to: $_levelsUrl');
+
+      final response = await http.get(
+        Uri.parse(_levelsUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+      );
+
+      debugPrint('📡 Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        debugPrint('📊 Response Body Type: ${decoded.runtimeType}');
+
+        if (decoded is Map<String, dynamic>) {
+          final data = decoded['data'];
+          if (data is List) {
+            return data.map((e) => LevelModel.fromJson(e)).toList();
+          }
+        }
+
+        throw Exception('Unexpected response format');
+      } else {
+        debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to load levels: ${response.statusCode} ${response.reasonPhrase}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('💥 Service Error: $e');
+      debugPrint(stackTrace.toString());
+      throw Exception('Error fetching levels: $e');
+    }
+  }
+
+  Future<DashboardResponseModel> getDashboardData(int levelId) async {
+    try {
+      final apiKey = dotenv.env['API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      final url = '$_dashboardUrl?level_id=$levelId';
+      debugPrint('🌐 Making request to: $url');
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+      );
+
+      debugPrint('📡 Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        debugPrint('📊 Response Body Type: ${decoded.runtimeType}');
+
+        return DashboardResponseModel.fromJson(decoded);
+      } else {
+        debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to load dashboard data: ${response.statusCode} ${response.reasonPhrase}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('💥 Service Error: $e');
+      debugPrint(stackTrace.toString());
+      throw Exception('Error fetching dashboard data: $e');
     }
   }
 }

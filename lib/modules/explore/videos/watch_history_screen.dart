@@ -4,6 +4,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
 import 'package:linkschool/modules/model/explore/home/video_model.dart';
 import 'package:linkschool/modules/services/explore/watch_history_service.dart';
+import 'package:linkschool/modules/model/explore/videos/dashboard_video_model.dart';
+import 'package:linkschool/modules/explore/videos/watch_video.dart';
 
 class WatchHistoryScreen extends StatefulWidget {
   const WatchHistoryScreen({super.key});
@@ -36,7 +38,8 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear Watch History'),
-        content: const Text('Are you sure you want to clear all watch history? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to clear all watch history? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -162,13 +165,57 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
 
   Widget _buildVideoCard(Video video) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        // Convert video to DashboardVideoModel and navigate to player
+        final index = _watchHistory.indexOf(video);
+        final DashboardVideoModel currentVideo = DashboardVideoModel(
+          id: index,
+          title: video.title,
+          videoUrl: video.url,
+          thumbnailUrl: video.thumbnail,
+          courseId: 0,
+          levelId: 0,
+          courseName: '',
+          levelName: '',
+          syllabusName: '',
+          syllabusId: 0,
+          description: video.description ?? '',
+          authorName: '',
+        );
+
+        // Convert all watch history videos to DashboardVideoModel
+        final List<DashboardVideoModel> allHistoryVideos =
+            _watchHistory.map((v) {
+          final idx = _watchHistory.indexOf(v);
+          return DashboardVideoModel(
+            id: idx,
+            title: v.title,
+            videoUrl: v.url,
+            thumbnailUrl: v.thumbnail,
+            courseId: 0,
+            levelId: 0,
+            courseName: '',
+            levelName: '',
+            syllabusName: '',
+            syllabusId: 0,
+            description: v.description ?? '',
+            authorName: '',
+          );
+        }).toList();
+
+        // Navigate to video player
+        await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => E_lib_vids(video: video),
+            builder: (context) => CourseDetailScreen(
+              initialVideo: currentVideo,
+              relatedVideos: allHistoryVideos,
+            ),
           ),
         );
+
+        // Reload watch history when returning
+        _loadWatchHistory();
       },
       child: Container(
         height: 130,

@@ -4,6 +4,11 @@ import 'course_detail_screen.dart';
 import 'reading_lesson_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final String courseTitle;
@@ -53,6 +58,103 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     // Placeholder for completion status tracking
     // This can be implemented later with a proper state management solution
     setState(() {});
+  }
+
+  Future<void> _previewMaterial(String materialUrl, String materialName) async {
+    // Navigate to a PDF preview screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _MaterialPreviewScreen(
+          materialUrl: materialUrl,
+          materialTitle: materialName,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadMaterial(
+      String materialUrl, String materialName) async {
+    try {
+      // Request storage permission
+      var status = await Permission.storage.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Storage permission denied')),
+          );
+        }
+        return;
+      }
+
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Downloading material...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final response = await http.get(Uri.parse(materialUrl));
+      if (response.statusCode == 200) {
+        final dir = await getExternalStorageDirectory();
+        final downloadsDir = Directory('${dir!.path}/Download');
+        if (!await downloadsDir.exists()) {
+          await downloadsDir.create(recursive: true);
+        }
+
+        // Extract file extension from URL or default to .pdf
+        String extension = '.pdf';
+        if (materialUrl.contains('.')) {
+          extension = '.${materialUrl.split('.').last.split('?').first}';
+        }
+
+        final fileName =
+            '${materialName.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}$extension';
+        final file = File('${downloadsDir.path}/$fileName');
+        await file.writeAsBytes(response.bodyBytes, flush: true);
+
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Downloaded: $materialName'),
+              duration: const Duration(seconds: 3),
+              backgroundColor: const Color(0xFF4CAF50),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to download material'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -250,7 +352,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             final lessonIndex = index - 1;
             final lesson = lessons[lessonIndex];
             final isVideo = lesson.videoUrl.isNotEmpty;
-            final hasReading = lesson.readingUrl.isNotEmpty;
+            final hasReading = lesson.readingUrl?.isNotEmpty ?? false;
 
             return GestureDetector(
               onTap: () async {
@@ -261,17 +363,28 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                     MaterialPageRoute(
                       builder: (context) => CourseDetailScreen(
                         courseTitle: lesson.title,
+                        courseName: lesson.courseName,
                         courseDescription: lesson.description,
                         provider: widget.provider,
                         videoUrl: lesson.videoUrl,
-                        assignmentUrl: lesson.assignmentUrl.isNotEmpty 
-                            ? lesson.assignmentUrl 
+                        assignmentUrl: lesson.assignmentUrl.isNotEmpty
+                            ? lesson.assignmentUrl
                             : null,
-                        assignmentDescription: lesson.assignmentDescription.isNotEmpty
-                            ? lesson.assignmentDescription
+                        assignmentDescription:
+                            lesson.assignmentDescription.isNotEmpty
+                                ? lesson.assignmentDescription
+                                : null,
+                        materialUrl: lesson.materialUrl.isNotEmpty
+                            ? lesson.materialUrl
                             : null,
-                        materialUrl: lesson.materialUrl.isNotEmpty 
-                            ? lesson.materialUrl 
+                        zoomUrl: lesson.zoomUrl.isNotEmpty
+                            ? lesson.zoomUrl
+                            : null,
+                        recordedUrl: lesson.recordedUrl.isNotEmpty
+                            ? lesson.recordedUrl
+                            : null,
+                        classDate: lesson.date.isNotEmpty
+                            ? lesson.date
                             : null,
                       ),
                     ),
@@ -288,7 +401,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                         duration: lesson.date,
                         currentIndex: lessonIndex,
                         courseContent: [],
-                        onNavigate: null,
                       ),
                     ),
                   );
@@ -306,7 +418,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                           duration: lesson.date,
                           currentIndex: lessonIndex,
                           courseContent: [],
-                          onNavigate: null,
                         ),
                       ),
                     );
@@ -346,14 +457,27 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              lesson.title,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                                height: 1.3,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${lesson.title} ",overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                    height: 1.3,
+                                  ),
+                                ),
+                                Text(lesson.description,
+                                  style: TextStyle(
+                                   fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 8),
                             Row(
@@ -659,14 +783,8 @@ Key topics would be covered in detail, with examples, exercises, and additional 
 
             return GestureDetector(
               onTap: () {
-                // Open the resource URL
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Opening ${resource.name}...'),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: const Color(0xFF4CAF50),
-                  ),
-                );
+                // Preview the resource
+                _previewMaterial(resource.url, resource.name);
               },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -709,13 +827,7 @@ Key topics would be covered in detail, with examples, exercises, and additional 
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              'Resource ID: ${resource.id}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
+                           
                           ],
                         ),
                       ),
@@ -723,15 +835,8 @@ Key topics would be covered in detail, with examples, exercises, and additional 
                       IconButton(
                         icon: const Icon(Icons.download),
                         color: const Color(0xFFFFA500),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Downloading ${resource.name}...'),
-                              duration: const Duration(seconds: 2),
-                              backgroundColor: const Color(0xFF4CAF50),
-                            ),
-                          );
-                        },
+                        onPressed: () =>
+                            _downloadMaterial(resource.url, resource.name),
                       ),
                     ],
                   ),
@@ -741,6 +846,131 @@ Key topics would be covered in detail, with examples, exercises, and additional 
           },
         );
       },
+    );
+  }
+}
+
+// Material Preview Screen
+class _MaterialPreviewScreen extends StatefulWidget {
+  final String materialUrl;
+  final String materialTitle;
+
+  const _MaterialPreviewScreen({
+    required this.materialUrl,
+    required this.materialTitle,
+  });
+
+  @override
+  State<_MaterialPreviewScreen> createState() => _MaterialPreviewScreenState();
+}
+
+class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
+  String? _localPath;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _downloadFile();
+  }
+
+  Future<void> _downloadFile() async {
+    try {
+      final response = await http.get(Uri.parse(widget.materialUrl));
+      if (response.statusCode == 200) {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/temp_material.pdf');
+        await file.writeAsBytes(response.bodyBytes);
+        setState(() {
+          _localPath = file.path;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Failed to load material';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error loading material: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black87,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.materialTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFFFA500),
+              ),
+            )
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 64,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              : PDFView(
+                  filePath: _localPath!,
+                  enableSwipe: true,
+                  swipeHorizontal: false,
+                  fitEachPage: true,
+                  autoSpacing: true,
+                  pageFling: true,
+                  pageSnap: true,
+                  defaultPage: 0,
+                  fitPolicy: FitPolicy.WIDTH,
+                 // password: _localPath,
+                  preventLinkNavigation: false,
+                  onError: (error) {
+                    setState(() {
+                      _error = error.toString();
+                    });
+                  },
+                  onPageError: (page, error) {
+                    setState(() {
+                      _error = '$page: ${error.toString()}';
+                    });
+                  },
+                ),
     );
   }
 }

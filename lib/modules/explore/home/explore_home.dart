@@ -9,7 +9,9 @@ import 'package:linkschool/modules/explore/home/explore_item.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/announcement_provider.dart';
+import 'package:linkschool/modules/explore/videos/level_subject_selector_modal.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../common/text_styles.dart';
 import '../../../modules/explore/games/games_home.dart';
@@ -108,6 +110,36 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     }
   }
 
+  Future<void> _showLevelSubjectSelector() async {
+    // Check if there's a saved level in shared preferences
+    final prefs = await SharedPreferences.getInstance();
+    final savedLevelId = prefs.getInt('selected_level_id');
+    final savedLevelName = prefs.getString('selected_level_name');
+
+    if (savedLevelId != null && savedLevelName != null) {
+      // Navigate directly to VideosDashboard with saved level
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideosDashboard(
+              levelId: savedLevelId,
+              levelName: savedLevelName,
+            ),
+          ),
+        );
+      }
+    } else {
+      // Show modal for first-time users
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) => const LevelSubjectSelectorModal(),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
@@ -138,7 +170,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         borderColor: AppColors.exploreButton2BorderLight,
         label: 'Videos',
         iconPath: 'assets/icons/video.svg',
-        destination: const VideosDashboard(),
+        destination: null,
         subtitle: 'Watch tutorials',
       ),
       // ExploreItem(
@@ -219,6 +251,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                       iconPath: item.iconPath,
                       subtitle: item.subtitle,
                       destination: item.destination,
+                      onTap: item.label == 'Videos'
+                          ? _showLevelSubjectSelector
+                          : null,
                     );
                   },
                   childCount: exploreItemsList.length,
@@ -538,7 +573,6 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               if (announcement.actionUrl.isNotEmpty)
                 Container(
                   height: 35.0,
-                
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
@@ -588,15 +622,20 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     required String subtitle,
     required String label,
     required String iconPath,
-    required Widget destination,
+    Widget? destination,
     Color? textColor,
+    VoidCallback? onTap,
   }) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => destination),
-        );
+        if (onTap != null) {
+          onTap();
+        } else if (destination != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => destination),
+          );
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(8.0),

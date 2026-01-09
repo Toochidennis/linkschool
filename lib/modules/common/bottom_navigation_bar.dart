@@ -67,23 +67,23 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                   widget.onSwitch(value);
                 },
                 activeIcon: Container(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
                     color: AppColors.paymentTxtColor1,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppColors.secondaryLight,
+                      color: const Color.fromRGBO(252, 147, 56, 1),
                       width: 1.0,
                     ),
                   ),
                   child: SvgPicture.asset(
-                    width: 24.0,
-                    height: 24.0,
+                    width: 18.0,
+                    height: 18.0,
                     widget.actionButtonImagePath,
                   ),
                 ),
                 inActiveIcon: Container(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
                     color: AppColors.paymentTxtColor1,
                     shape: BoxShape.circle,
