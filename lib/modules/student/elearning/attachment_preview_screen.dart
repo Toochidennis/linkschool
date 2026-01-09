@@ -420,7 +420,7 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
             AssignmentFile(
               fileName: result.files.single.name,
               file: base64String,
-              type: extension!,
+              type: extension ?? 'file',
             ),
           );
         });

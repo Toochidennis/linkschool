@@ -264,7 +264,7 @@ class InvoiceDetail {
       feeId: json['fee_id'].toString(),
       feeName: json['fee_name'] ?? '',
       amount: (amountValue is num)
-          ? (amountValue as num).toDouble()
+          ? (amountValue).toDouble()
           : double.tryParse(amountValue.toString()) ?? 0.0,
     );
   }

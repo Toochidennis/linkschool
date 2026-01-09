@@ -74,7 +74,7 @@ class ContentResponse {
         response: JsonUtils.parseList(json['response'],
             (item) => ContentItem.fromJson(JsonUtils.ensureMap(item))),
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -102,7 +102,7 @@ class ContentItem {
         type: JsonUtils.parseString(json['type']),
         children: _parseChildren(json['children']),
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -130,7 +130,7 @@ class ContentItem {
         } else {
           result.add(ChildContent.fromJson(childMap));
         }
-      } catch (e, stackTrace) {
+      } catch (e) {
         // Continue processing other children
       }
     }
@@ -190,7 +190,7 @@ class ChildContent {
         contentFiles: _parseContentFilesList(json['content_files']),
         datePosted: _parseNullableString(json['date_posted']),
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -261,7 +261,7 @@ class QuizContent {
         questions: JsonUtils.parseList(json['questions'],
             (item) => QuizQuestion.fromJson(JsonUtils.ensureMap(item))),
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -313,7 +313,7 @@ class QuizSettings {
         endDate: JsonUtils.parseString(json['end_date']),
         duration: JsonUtils.parseString(json['duration']),
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -351,7 +351,7 @@ class QuizQuestion {
         options: json['options'] is List ? json['options'] : [],
         correct: CorrectAnswer.fromJson(JsonUtils.ensureMap(json['correct'])),
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }

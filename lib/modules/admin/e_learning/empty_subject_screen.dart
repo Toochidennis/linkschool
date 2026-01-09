@@ -1130,14 +1130,10 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
       }
 
       // After the switch, check for success and refresh
-      if (error == null) {
-        CustomToaster.toastSuccess(
-            context, 'Success', '"${item.title}" has been deleted.');
-        _loadSyllabusContents(); // This is where the page is refreshed
-      } else {
-        CustomToaster.toastError(context, 'Error', error);
-      }
-    } catch (e) {
+      CustomToaster.toastSuccess(
+          context, 'Success', '"${item.title}" has been deleted.');
+      _loadSyllabusContents(); // This is where the page is refreshed
+        } catch (e) {
       print('Error during deletion: $e');
       CustomToaster.toastError(context, 'Error', 'An unexpected error occurred.');
     }

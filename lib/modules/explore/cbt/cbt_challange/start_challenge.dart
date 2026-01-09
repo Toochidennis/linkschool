@@ -1069,7 +1069,7 @@ class _StartChallengeState extends State<StartChallenge>
                     onTap: () => _showFullScreenImage(optionImageUrl!),
                     child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: _getImageWidget(optionImageUrl!,
+                        child: _getImageWidget(optionImageUrl,
                             width: 72, height: 56)),
                   ),
                 ),
