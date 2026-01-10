@@ -133,7 +133,6 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         );
       }
     } catch (e) {
-      print('Error handling assessment tap: $e');
       // Show error message to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load content: $e')),
@@ -215,7 +214,6 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         }
       }
     } catch (e) {
-      print('Error handling activity tap: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load content: $e')),
       );

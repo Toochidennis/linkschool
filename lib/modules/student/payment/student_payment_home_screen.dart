@@ -6,7 +6,8 @@ import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/model/student/payment_model.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/student/payment/see_all_payments.dart';
-import 'package:linkschool/modules/student/student_logout.dart' show StudentProfileScreen;
+import 'package:linkschool/modules/student/student_logout.dart'
+    show StudentProfileScreen;
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -79,10 +80,6 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term'].toString()) ?? 0;
       });
-      print("✅ Student ID: $studentId");
-      print("✅ Student Name: $creatorName");
-      print("✅ Term: $academicTerm");
-      print("✅ Role: $userRole");
     } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
@@ -204,7 +201,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StudentProfileScreen( logout: widget.logout );
+        return StudentProfileScreen(logout: widget.logout);
       },
     );
   }
@@ -306,7 +303,6 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8.0, vertical: 10.0),
                           child: Container(
-                           
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: isEmptyState

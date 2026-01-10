@@ -361,9 +361,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     };
 
     final jsonPayload = jsonEncode(payload);
-    debugPrint('=== ASSIGNMENT SUBMISSION PAYLOAD ===');
-    debugPrint(jsonPayload);
-    debugPrint('====================================');
 
     // Show success message to user
     ScaffoldMessenger.of(context).showSnackBar(
@@ -526,8 +523,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     });
 
     try {
-      print('Loading video URL: $url');
-
       // Check if it's a YouTube video
       if (isYouTubeUrl(url)) {
         await _initializeYouTubePlayer(url);
@@ -811,7 +806,38 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     _chewieController?.dispose();
     _youtubeController?.dispose();
     _tabController.dispose();
+
+    // Ensure system UI is restored when leaving this screen
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     super.dispose();
+  }
+
+  Future<void> _handleBackButton() async {
+    final currentOrientation = MediaQuery.of(context).orientation;
+
+    if (currentOrientation == Orientation.landscape) {
+      // In landscape: rotate to portrait, don't pop
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
+    } else {
+      // In portrait: pop the screen
+      Navigator.pop(context);
+    }
   }
 
   void _showSubmitAssignmentModal(BuildContext context) {
@@ -1471,7 +1497,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _handleBackButton,
         ),
       ),
       backgroundColor: Colors.white,
@@ -1565,9 +1591,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                         backgroundColor: Colors.grey,
                         bufferedColor: Colors.grey,
                       ),
-                      onReady: () {
-                        print('YouTube player is ready');
-                      },
+                      onReady: () {},
                     ),
                     builder: (context, player) {
                       return player;
@@ -2598,18 +2622,19 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
   bool _showControls = true;
   late double _playbackSpeed;
   late bool _isLooping;
-  bool _isLandscape = true;
 
   @override
   void initState() {
     super.initState();
     _playbackSpeed = widget.playbackSpeed;
     _isLooping = widget.isLooping;
-    _setLandscapeOrientation();
+
+    // Lock to landscape on fullscreen entry
+    _lockLandscape();
     _hideControlsAfterDelay();
   }
 
-  Future<void> _setLandscapeOrientation() async {
+  Future<void> _lockLandscape() async {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -2617,12 +2642,9 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
     await SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.immersiveSticky,
     );
-    setState(() {
-      _isLandscape = true;
-    });
   }
 
-  Future<void> _setPortraitOrientation() async {
+  Future<void> _resetToPortrait() async {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
@@ -2630,12 +2652,9 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
     );
-    setState(() {
-      _isLandscape = false;
-    });
   }
 
-  Future<void> _resetOrientation() async {
+  Future<void> _resetAllOrientations() async {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -2648,12 +2667,23 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
     );
   }
 
+  /// Handle back button - rotate to portrait first, then exit
   Future<void> _handleBackButton() async {
-    // Reset orientation and exit fullscreen
-    await _resetOrientation();
-    widget.onExit();
-    if (mounted) {
-      Navigator.pop(context);
+    final currentOrientation = MediaQuery.of(context).orientation;
+
+    if (currentOrientation == Orientation.landscape) {
+      // In landscape: rotate to portrait
+      await _resetToPortrait();
+      setState(() {
+        _showControls = true;
+      });
+    } else {
+      // In portrait: exit fullscreen
+      await _resetAllOrientations();
+      widget.onExit();
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -2799,237 +2829,240 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
   }
 
   @override
-  void dispose() {
-    _resetOrientation();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: GestureDetector(
-        onTap: _toggleControls,
-        child: Stack(
-          children: [
-            // Video Player
-            Center(
-              child: AspectRatio(
-                aspectRatio: widget.controller.value.aspectRatio,
-                child: VideoPlayer(widget.controller),
-              ),
-            ),
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
-            // Controls Overlay
-            AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                color: Colors.black38,
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      // Top Bar
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: _handleBackButton,
-                              icon: const Icon(Icons.arrow_back),
-                              color: Colors.white,
-                            ),
-                            const Spacer(),
-                            // Loop indicator
-                            if (_isLooping)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF6366F1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.repeat,
-                                        color: Colors.white, size: 14),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Loop',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (_isLooping) const SizedBox(width: 8),
-                            // Speed indicator
-                            if (_playbackSpeed != 1.0)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFA500),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${_playbackSpeed}x',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // Play/Pause Button with Rewind/Forward
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Rewind 10s
-                          IconButton(
-                            onPressed: _seekBackward,
-                            icon: const Icon(Icons.replay_10),
-                            color: Colors.white,
-                            iconSize: 48,
-                          ),
-                          const SizedBox(width: 32),
-                          // Play/Pause
-                          IconButton(
-                            onPressed: _togglePlayPause,
-                            icon: Icon(
-                              widget.controller.value.isPlaying
-                                  ? Icons.pause_circle_filled
-                                  : Icons.play_circle_filled,
-                              size: 72,
-                            ),
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 32),
-                          // Forward 10s
-                          IconButton(
-                            onPressed: _seekForward,
-                            icon: const Icon(Icons.forward_10),
-                            color: Colors.white,
-                            iconSize: 48,
-                          ),
-                        ],
-                      ),
-
-                      const Spacer(),
-
-                      // Progress Bar and Controls
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            VideoProgressIndicator(
-                              widget.controller,
-                              allowScrubbing: true,
-                              colors: const VideoProgressColors(
-                                playedColor: Color(0xFF6366F1),
-                                bufferedColor: Colors.grey,
-                                backgroundColor: Colors.white24,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      _formatDuration(
-                                          widget.controller.value.position),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    Text(
-                                      ' / ${_formatDuration(widget.controller.value.duration)}',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.7),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    // Loop button
-                                    IconButton(
-                                      onPressed: _toggleLoop,
-                                      icon: Icon(
-                                        _isLooping
-                                            ? Icons.repeat_on
-                                            : Icons.repeat,
-                                        color: _isLooping
-                                            ? const Color(0xFF6366F1)
-                                            : Colors.white,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    // Speed button
-                                    InkWell(
-                                      onTap: _showSpeedOptions,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          '${_playbackSpeed}x',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    // Exit Fullscreen button
-                                    IconButton(
-                                      onPressed: () async {
-                                        await _resetOrientation();
-                                        widget.onExit();
-                                        if (mounted) {
-                                          Navigator.pop(context);
-                                        }
-                                      },
-                                      icon: const Icon(
-                                        Icons.fullscreen_exit,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+    return WillPopScope(
+      onWillPop: () async {
+        await _handleBackButton();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: GestureDetector(
+          onTap: _toggleControls,
+          child: Stack(
+            children: [
+              // Full screen video player
+              SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: SizedBox(
+                    width: widget.controller.value.size.width,
+                    height: widget.controller.value.size.height,
+                    child: VideoPlayer(widget.controller),
                   ),
                 ),
               ),
-            ),
-          ],
+              // Controls overlay
+              AnimatedOpacity(
+                opacity: _showControls ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: Container(
+                  color: Colors.black38,
+                  child: SafeArea(
+                    child: Column(
+                      children: [
+                        // Top bar - back button and indicators
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: _handleBackButton,
+                                icon: Icon(
+                                  isLandscape
+                                      ? Icons.expand_more
+                                      : Icons.arrow_back,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const Spacer(),
+                              // Loop indicator
+                              if (_isLooping)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6366F1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.repeat,
+                                          color: Colors.white, size: 14),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Loop',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (_isLooping) const SizedBox(width: 8),
+                              // Speed indicator
+                              if (_playbackSpeed != 1.0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFA500),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${_playbackSpeed}x',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        // Center controls
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              onPressed: _seekBackward,
+                              icon: const Icon(Icons.replay_10),
+                              color: Colors.white,
+                              iconSize: 48,
+                            ),
+                            const SizedBox(width: 32),
+                            IconButton(
+                              onPressed: _togglePlayPause,
+                              icon: Icon(
+                                widget.controller.value.isPlaying
+                                    ? Icons.pause_circle_filled
+                                    : Icons.play_circle_filled,
+                                size: 72,
+                              ),
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 32),
+                            IconButton(
+                              onPressed: _seekForward,
+                              icon: const Icon(Icons.forward_10),
+                              color: Colors.white,
+                              iconSize: 48,
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Bottom controls
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              VideoProgressIndicator(
+                                widget.controller,
+                                allowScrubbing: true,
+                                colors: const VideoProgressColors(
+                                  playedColor: Color(0xFF6366F1),
+                                  bufferedColor: Colors.grey,
+                                  backgroundColor: Colors.white24,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _formatDuration(
+                                            widget.controller.value.position),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      Text(
+                                        ' / ${_formatDuration(widget.controller.value.duration)}',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.7),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: _toggleLoop,
+                                        icon: Icon(
+                                          _isLooping
+                                              ? Icons.repeat_on
+                                              : Icons.repeat,
+                                          color: _isLooping
+                                              ? const Color(0xFF6366F1)
+                                              : Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      InkWell(
+                                        onTap: _showSpeedOptions,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Colors.white.withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            '${_playbackSpeed}x',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        onPressed: () async {
+                                          await _resetAllOrientations();
+                                          widget.onExit();
+                                          if (mounted) {
+                                            Navigator.pop(context);
+                                          }
+                                        },
+                                        icon: const Icon(
+                                          Icons.fullscreen_exit,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

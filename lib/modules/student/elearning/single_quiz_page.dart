@@ -445,7 +445,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                       (question).correctAnswers.contains(value);
 
                   userAnswers[_currentQuestionIndex] = value;
-                  print("ansss $userAnswers");
                 });
               },
               activeColor: Colors.blue, // Radio color when selected
@@ -629,9 +628,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
           ),
         ),
       );
-    } else {
-      //Error
-      print("E no goooo ");
     }
   }
 }

@@ -71,14 +71,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term']?.toString() ?? '0');
       });
-
-      print("✅ Student ID: $studentId");
-      print("✅ Student Name: $creatorName");
-      print("✅ Term: $academicTerm");
-      print("✅ Role: $userRole");
     } catch (e, stack) {
-      debugPrint('❌ Error loading user data: $e');
-      debugPrint(stack.toString());
+      debugPrint('Error loading user data: $e');
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
@@ -151,9 +145,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             top: 16.0,
             right: 16.0, // Place the FAB in the upper right corner
             child: FloatingActionButton(
-              onPressed: () {
-                print("FAB pressed");
-              },
+              onPressed: () {},
               backgroundColor: Colors.red,
               child: const Icon(Icons.add, color: Colors.white),
             ),

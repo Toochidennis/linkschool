@@ -445,7 +445,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       (question).correctAnswers.contains(value);
 
                   userAnswers[_currentQuestionIndex] = value;
-                  print("ansss $userAnswers");
                 });
               },
               activeColor: Colors.blue, // Radio color when selected
@@ -545,7 +544,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Future<void> _submitQuiz() async {
-    print("Yesss s ${widget.questions.toString()}");
     final List<Map<String, dynamic>> answers =
         widget.questions!.asMap().entries.map((entry) {
       int index = entry.key;
@@ -558,7 +556,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         "type": q.questionType
       };
     }).toList();
-    print("Here are answers$answers");
     QuizSubmissionService service = QuizSubmissionService();
     Map<String, dynamic> quizpayload = {
       "quiz_id": widget.childContent?.settings!.id,
@@ -631,8 +628,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           ),
         ),
       );
-    } else {
-      print("E no goooo ");
     }
   }
 }

@@ -59,9 +59,6 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       _showLogin = false;
       _showSchoolSelection = false;
     });
-
-    print('User Role: $_userRole');
-    print('Is Logged In: $_isLoggedIn');
   }
 
   void _handleSwitchFromExplore(bool value) {

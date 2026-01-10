@@ -49,14 +49,8 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
   // Method to handle onboarding completion
   Future<void> _completeOnboarding() async {
     try {
-      print('🎯 Completing onboarding...');
-
       final userBox = Hive.box('userData');
       await userBox.put('hasSeenOnboarding', true);
-
-      // Verify it was saved
-      final saved = userBox.get('hasSeenOnboarding', defaultValue: false);
-      print('✅ Onboarding completed and saved: $saved');
 
       if (mounted) {
         // Navigate and remove all previous routes
@@ -66,7 +60,6 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
         );
       }
     } catch (e) {
-      print('❌ Error completing onboarding: $e');
       // Still try to navigate even if save fails
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -89,9 +82,6 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
             onPageChanged: (index) {
               setState(() {
                 onLastPage = (index == 2);
-                if (onLastPage) {
-                  print('the user is on the last page');
-                }
               });
             },
             itemCount: _pages.length,
@@ -201,4 +191,3 @@ Widget OnbordingItems({
     ),
   );
 }
-

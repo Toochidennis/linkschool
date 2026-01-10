@@ -8,7 +8,6 @@ import 'package:linkschool/modules/common/constants.dart';
 class StudentProfileScreen extends StatefulWidget {
   final VoidCallback logout;
   const StudentProfileScreen({super.key, required this.logout});
- 
 
   @override
   State<StudentProfileScreen> createState() => _StudentProfileScreenState();
@@ -61,10 +60,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         academicTerm = int.tryParse(settings['term'].toString()) ?? 0;
         isLoading = false;
       });
-
-
     } catch (e) {
-      print("❌ Error loading user data: $e");
       setState(() {
         isLoading = false;
       });
@@ -124,7 +120,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           ),
         ),
         centerTitle: true,
-        
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -135,7 +130,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: AppColors.paymentTxtColor1,
-                
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30.0),
                   bottomRight: Radius.circular(30.0),
@@ -144,7 +138,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               child: Column(
                 children: [
                   CircleAvatar(
-                    
                     radius: 30,
                     backgroundColor: Colors.white,
                     backgroundImage: _getStudentImage(),
@@ -168,13 +161,10 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  
-                  
-               
                 ],
               ),
             ),
-           
+
             // Bottom Section - Now part of the scrollable content
             Container(
               decoration: Constants.customBoxDecoration(context),
@@ -209,9 +199,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   // Logout Button
                   ElevatedButton(
                     onPressed: () {
-                     widget.logout(); // Perform logout action
-                Navigator.pop(context);
-                      
+                      widget.logout(); // Perform logout action
+                      Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
@@ -258,7 +247,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         return NetworkImage(pictureUrl);
       }
     } catch (e) {
-      print('Error loading student image: $e');
+      // Error loading image - will use default
     }
     return null;
   }
@@ -271,8 +260,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     }
     return '${names[0][0]}${names[1][0]}'.toUpperCase();
   }
-
- 
 
   Widget _buildIconColumn(String svgPath) {
     return SvgPicture.asset(svgPath);

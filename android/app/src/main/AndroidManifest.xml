@@ -24,7 +24,7 @@
     
     <application
         android:name="${applicationName}"
-        android:label="LinkSchool"
+        android:label="Linkskool"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">

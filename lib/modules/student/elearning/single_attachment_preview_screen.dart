@@ -115,13 +115,12 @@ class _SingleAttachmentPreviewScreenState
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Error loading user data
     }
   }
 
   getuserdata() {
     final userBox = Hive.box('userData');
-    print(userBox.get('userData'));
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
     final processedData =
@@ -369,7 +368,6 @@ class _SingleAttachmentPreviewScreenState
                       'assets/icons/e_learning/link3.svg',
                       'link',
                       'Link: ${linkController.text}');
-                  print("AAQASSSS ${widget.attachments}");
                 }
                 Navigator.of(context).pop();
               },
@@ -466,7 +464,6 @@ class _SingleAttachmentPreviewScreenState
   void _addAttachment(
       String content, String iconPath, String type, String filename) {
     setState(() {
-      print(_attachments);
       _attachments
           .add(AssignmentFile(type: type, file: content, fileName: filename));
     });

@@ -194,8 +194,6 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
     });
 
     try {
-      debugPrint('Loading video URL: $url');
-
       // Check if it's a YouTube video
       if (isYouTubeUrl(url)) {
         await _initializeYouTubePlayer(url);
@@ -507,6 +505,19 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
     _chewieController?.dispose();
     _youtubeController?.dispose();
     _tabController.dispose();
+
+    // Ensure system UI is restored when leaving this screen
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     super.dispose();
   }
 
@@ -518,6 +529,10 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
       ]);
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
     } else {
       // In portrait: pop the screen
       Navigator.pop(context);
@@ -676,9 +691,7 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
             backgroundColor: Colors.grey,
             bufferedColor: Colors.grey,
           ),
-          onReady: () {
-            debugPrint('YouTube player is ready');
-          },
+          onReady: () {},
         ),
         builder: (context, player) {
           return player;

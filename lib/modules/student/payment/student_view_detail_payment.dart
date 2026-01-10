@@ -234,9 +234,6 @@ class _StudentViewDetailPaymentDialogState
       final String paymentUrl = data['data']['authorization_url'];
       final String paystackReference = data['data']['reference'];
 
-      print("✅ Payment URL: $paymentUrl");
-      print("✅ Paystack Reference: $paystackReference");
-
       final user = getuserdata();
       final settings = getuserSettings();
 

@@ -483,30 +483,17 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                 final feedProvider =
                     Provider.of<DashboardFeedProvider>(context, listen: false);
 
-                print('🟢 Preparing to send comment...');
-                print('Mode: $_commentMode');
-                print('ActiveTarget ID: ${_activeTarget?.id}');
-
-                print('🟢 Comment Mode: $_commentMode');
-                print('🟢 Active Target ID: ${_activeTarget?.id}');
-                print('🟢 Active Target Parent ID: ${_activeTarget?.parentId}');
-                print('🟢 Widget Parent ID: ${widget.parentId}');
-
                 // ✅ ISSUE #1 FIX: Determine correct parent_id based on context
                 int? parentId;
                 if (_commentMode == 'reply' && _activeTarget != null) {
                   // Replying to a comment/reply - use the comment being replied to as parent
                   parentId = _activeTarget!.id;
-                  print('📌 Reply mode: parent_id will be $_activeTarget.id');
                 } else if (_commentMode == 'edit' && _activeTarget != null) {
                   // Editing: send the ORIGINAL parent_id of this comment
                   parentId = _activeTarget!.parentId;
-                  print(
-                      '📌 Edit mode: parent_id is ${_activeTarget!.parentId}');
                 } else {
                   // Top-level comment on main post
                   parentId = widget.parentId;
-                  print('📌 Top-level mode: parent_id is ${widget.parentId}');
                 }
 
                 final Map<String, dynamic> payload = {
@@ -520,23 +507,14 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                   'files': <Map<String, dynamic>>[],
                 };
 
-                print('📤 Sending payload: $payload');
-
                 // ✅ ISSUE #2 FIX: Properly call updateFeed for edits
                 if (_commentMode == 'edit' && _activeTarget != null) {
                   // ✅ CRITICAL: Pass the comment ID being edited (e.g., 1031), NOT parent ID
-                  print('📝 Calling updateFeed');
-                  print('   - Comment ID: ${_activeTarget!.id}');
-                  print('   - Comment Parent ID: ${_activeTarget!.parentId}');
-                  print('   - Payload parent_id: $parentId');
                   await feedProvider.updateFeed(
                       payload, _activeTarget!.id.toString());
                 } else {
-                  print('✍️ Calling createFeed');
                   await feedProvider.createFeed(payload);
                 }
-
-                print('✅ API call completed');
 
                 setState(() {
                   if (_commentMode == 'reply' && _activeTarget != null) {
@@ -583,8 +561,6 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                 });
                 FocusScope.of(context).unfocus();
               } catch (e) {
-                print('❌ Error sending comment: $e');
-
                 if (mounted) {
                   CustomToaster.toastError(
                       context, 'Error', 'Failed to send comment');

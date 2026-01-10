@@ -352,27 +352,185 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
     });
   }
 
+  void _showAboutDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.5,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF6366F1),
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'About LinkSkool AI',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoCard(
+                      'What I can do',
+                      'I\'m here to help with your studies! Ask me questions about any subject, get explanations, practice problems, or study tips.',
+                      Icons.psychology_outlined,
+                      const Color(0xFF6366F1),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildInfoCard(
+                      'How to use',
+                      'Simply type your question in the chat box below. I\'ll do my best to provide clear and helpful answers.',
+                      Icons.chat_bubble_outline,
+                      Colors.orange,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildInfoCard(
+                      'Tips for best results',
+                      'Be specific with your questions. The more details you provide, the better I can help you understand.',
+                      Icons.lightbulb_outline,
+                      Colors.green,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+      String title, String content, IconData icon, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                  fontFamily: 'Urbanist',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            content,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              fontFamily: 'Urbanist',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back, color: Colors.black),
+        backgroundColor: const Color(0xFF6366F1),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'LinkSkool AI',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Urbanist',
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'LinkSkool AI',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            Text(
+              'Your AI study companion',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withOpacity(0.9),
+                fontFamily: 'Urbanist',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.white),
+            onPressed: () {
+              _showAboutDialog();
+            },
           ),
-        ),
-        centerTitle: false,
+        ],
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -381,12 +539,37 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
             Expanded(
               child: _messages.isEmpty
                   ? Center(
-                      child: Text(
-                        'No messages yet',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 16,
-                          fontFamily: 'Urbanist',
+                      child: Container(
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.smart_toy_rounded,
+                              size: 64,
+                              color: const Color(0xFF6366F1).withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Start a conversation',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Ask me anything about your studies and I\'ll help you understand it better!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -432,17 +615,18 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
             ),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
+                horizontal: 14,
+                vertical: 16,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.grey[200]!,
-                    width: 0.5,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
                   ),
-                ),
+                ],
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -450,8 +634,8 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(22),
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: Colors.grey[300]!,
                           width: 1,
@@ -488,16 +672,18 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
                   GestureDetector(
                     onTap: _isLoading ? null : _sendMessage,
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: _isLoading ? Colors.grey[400] : Colors.black,
+                        color: _isLoading
+                            ? Colors.grey[400]
+                            : const Color(0xFF6366F1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.arrow_upward_rounded,
                         color: Colors.white,
-                        size: 20,
+                        size: 22,
                       ),
                     ),
                   ),

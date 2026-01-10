@@ -175,7 +175,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term'].toString()) ?? 0;
       });
-      print("sssss$creatorId");
     } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');

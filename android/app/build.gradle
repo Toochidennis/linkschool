@@ -70,9 +70,9 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
-            minifyEnabled true
-            shrinkResources true
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
             // Add these flags to prevent UI rendering issues
             debuggable false
             jniDebuggable false
@@ -130,7 +130,7 @@ flutter {
 // }
 
 // android {
-//     namespace "com.digitaldream.linkskool.linkschool"
+//     namespace "com.linkskool.app"
 //     compileSdkVersion 35
 //     ndkVersion flutter.ndkVersion
 
@@ -148,7 +148,7 @@ flutter {
 //     }
 
 //     defaultConfig {
-//         applicationId "com.digitaldream.linkskool.linkschool"
+//         applicationId "com.linkskool.app"
 //         minSdkVersion 23 
 //         targetSdkVersion 35
 //         versionCode flutterVersionCode.toInteger()

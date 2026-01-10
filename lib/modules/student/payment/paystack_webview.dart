@@ -57,9 +57,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onUrlChange: (change) {
-            if (change.url != null) {
-              print('📡 URL changed: ${change.url}');
-            }
+            // Monitor URL changes for payment completion
           },
           onNavigationRequest: (navigation) => NavigationDecision.navigate,
         ),
@@ -90,8 +88,6 @@ class _PaystackWebViewState extends State<PaystackWebView> {
         studentId: widget.studentId,
       );
 
-      print("✅ Payment data posted before closing Paystack WebView");
-
       if (!mounted) return;
 
       Navigator.popUntil(
@@ -102,7 +98,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
                 .isFirst, // Fallback to first route if StudentPaymentHomeScreen not found
       );
     } catch (e) {
-      print("❌ Error posting payment data: $e");
+      // Payment error - user will see snackbar from payment provider
     }
   }
 

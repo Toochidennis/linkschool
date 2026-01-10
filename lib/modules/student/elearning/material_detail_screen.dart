@@ -455,14 +455,11 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           };
 
       try {
-        print(" See o seee creator id $creatorId");
-//
         final commentProvider =
             Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
-          print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
         } else {
           await commentProvider.createComment(

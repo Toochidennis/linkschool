@@ -83,12 +83,8 @@ class _SingleAssignmentDetailsScreenState
           academicTerm = settings['term'] as int?;
         });
       }
-      print('Creator ID: $creatorId');
-      print('Creator Name: $creatorName');
-      print('Academic Year: $academicYear');
-      print('Academic Term: $academicTerm');
     } catch (e) {
-      print('Error loading user data: $e');
+      // Error loading user data
     }
   }
 
@@ -399,14 +395,11 @@ class _SingleAssignmentDetailsScreenState
           };
 
       try {
-        print(" See o seee creator id $creatorId");
-//
         final commentProvider =
             Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
-          print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
           CustomToaster.toastSuccess(
               context, 'Success', 'Comment updated successfully');
