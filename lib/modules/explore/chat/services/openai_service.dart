@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:linkschool/config/env_config.dart' show EnvConfig;
 
 class OpenAIService {
   final String apiKey;
@@ -82,50 +83,48 @@ class OpenAIService {
   }
 }
 
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// class DeepSeekService {
-//   final String apiKey;
-//   // Updated API endpoint
-//   final String apiUrl = "https://api.deepinfra.com/v1/openai/chat/completions";
 
-//   DeepSeekService({String? apiKey})
-//       : this.apiKey = apiKey ?? dotenv.env['DEEPSEEK_API_KEY'] ?? '';
+class DeepSeekService {
+  final String apiKey;
+  // Updated API endpoint
+  final String apiUrl = EnvConfig.deepSeekUrl;
 
-//   Future<String> sendMessage(String message) async {
-//     try {
-//       print('Sending request with message: $message'); // Debug print
+  DeepSeekService({String? apiKey})
+      : this.apiKey = apiKey ?? EnvConfig.deepSeekApiKey;
 
-//       final response = await http.post(
-//         Uri.parse(apiUrl),
-//         headers: {
-//           'Authorization': 'Bearer $apiKey',
-//           'Content-Type': 'application/json',
-//         },
-//         body: jsonEncode({
-//           'model': 'deepseek-33b-chat',  // Updated model name
-//           'messages': [
-//             {'role': 'user', 'content': message}
-//           ],
-//           'temperature': 0.7,
-//           'max_tokens': 1000,
-//         }),
-//       );
+  Future<String> sendMessage(String message) async {
+    try {
+      print('Sending request with message: $message'); // Debug print
 
-//       print('Response status code: ${response.statusCode}'); // Debug print
-//       print('Response body: ${response.body}'); // Debug print
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'model': 'deepseek-33b-chat',  // Updated model name
+          'messages': [
+            {'role': 'user', 'content': message}
+          ],
+          'temperature': 0.7,
+          'max_tokens': 1000,
+        }),
+      );
 
-//       if (response.statusCode == 200) {
-//         final data = jsonDecode(response.body);
-//         return data['choices'][0]['message']['content'] as String;
-//       } else {
-//         throw Exception('API Error: ${response.statusCode} - ${response.body}');
-//       }
-//     } catch (e) {
-//       print('Error in sendMessage: $e'); // Debug print
-//       throw Exception('Failed to communicate with DeepSeek API: $e');
-//     }
-//   }
-// }
+      print('Response status code: ${response.statusCode}'); // Debug print
+      print('Response body: ${response.body}'); // Debug print
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['choices'][0]['message']['content'] as String;
+      } else {
+        throw Exception('API Error: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('Error in sendMessage: $e'); // Debug print
+      throw Exception('Failed to communicate with DeepSeek API: $e');
+    }
+  }
+}
