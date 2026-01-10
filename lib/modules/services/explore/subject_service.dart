@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:linkschool/config/env_config.dart';
 
 import '../../model/explore/home/subject_model2.dart';
 import '../../model/explore/home/level_model.dart';
@@ -16,8 +16,8 @@ class SubjectService {
 
   Future<List<SubjectModel2>> getAllSubjects() async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 
@@ -60,8 +60,8 @@ class SubjectService {
 
   Future<List<LevelModel>> getAllLevels() async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 
@@ -104,8 +104,8 @@ class SubjectService {
 
   Future<DashboardResponseModel> getDashboardData(int levelId) async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 

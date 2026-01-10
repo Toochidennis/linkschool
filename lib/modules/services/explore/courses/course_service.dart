@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:linkschool/config/env_config.dart';
 
 class CourseResponse {
   final int statusCode;
@@ -30,12 +30,13 @@ class CourseResponse {
 }
 
 class CourseService {
-  final String baseUrl = "https://linkskool.net/api/v3/public/learning/categories-and-courses";
+  final String baseUrl =
+      "https://linkskool.net/api/v3/public/learning/categories-and-courses";
 
   Future<CourseResponse> getAllCategoriesAndCourses() async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("API key not found in .env file");
       }
 
@@ -57,12 +58,14 @@ class CourseService {
               jsonData['message'] ?? 'Failed to load categories and courses');
         }
 
-        print("✅ Categories and courses fetched successfully: ${jsonData['message']}");
+        print(
+            "✅ Categories and courses fetched successfully: ${jsonData['message']}");
         return CourseResponse.fromJson(jsonData);
       } else {
         print(
             "❌ Failed to load categories and courses: ${response.statusCode} ${response.body}");
-        throw Exception("Failed to load categories and courses: ${response.statusCode}");
+        throw Exception(
+            "Failed to load categories and courses: ${response.statusCode}");
       }
     } catch (e) {
       print("❌ Error fetching categories and courses: $e");

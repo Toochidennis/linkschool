@@ -1,5 +1,5 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
@@ -96,13 +96,30 @@ import 'package:linkschool/modules/services/student/student_dasboard_service.dar
 final GetIt locator = GetIt.instance;
 
 void setupServiceLocator() {
-  // // Initialize API Service with proper configuration
+  // CRITICAL: Only register essential services for auth flow
+  // Other services are registered lazily on-demand
+
+  // Initialize API Service with proper configuration (required immediately)
   locator.registerLazySingleton<ApiService>(() => ApiService(
-        baseUrl: dotenv.env['API_BASE_URL'],
-        apiKey: dotenv.env['API_KEY'],
+        baseUrl: EnvConfig.apiBaseUrl,
+        apiKey: EnvConfig.apiKey,
       ));
 
-// _____________Explore portal____________________________
+  // Register Auth Service (required for login check)
+  locator.registerLazySingleton<AuthService>(() => AuthService());
+
+  // Register AuthProvider with AuthService dependency
+  locator.registerLazySingleton<AuthProvider>(() => AuthProvider());
+
+  // DEFERRED: Register remaining services in background after app is visible
+  // This significantly reduces startup time
+  Future.microtask(() => _registerDeferredServices());
+}
+
+/// Register all non-critical services in the background
+/// This is called after the main UI is rendered
+void _registerDeferredServices() {
+  // _____________Explore portal____________________________
 
   locator.registerLazySingleton<EbookService>(
       () => EbookService(locator<ApiService>()));
@@ -122,13 +139,13 @@ void setupServiceLocator() {
 // Student metrics
   locator.registerLazySingleton<StudentMetricsService>(
       () => StudentMetricsService(locator<ApiService>()));
-  locator.registerLazySingleton<StudentMetricsProvider>(
-      () => StudentMetricsProvider(metricsService: locator<StudentMetricsService>()));
+  locator.registerLazySingleton<StudentMetricsProvider>(() =>
+      StudentMetricsProvider(metricsService: locator<StudentMetricsService>()));
 
-  locator.registerSingleton<AssignCourseService>(
-      AssignCourseService(locator<ApiService>()));
-  locator.registerSingleton<AssignCourseProvider>(
-      AssignCourseProvider(locator<AssignCourseService>()));
+  locator.registerLazySingleton<AssignCourseService>(
+      () => AssignCourseService(locator<ApiService>()));
+  locator.registerLazySingleton<AssignCourseProvider>(
+      () => AssignCourseProvider(locator<AssignCourseService>()));
 // Add courses
   locator.registerLazySingleton<CourseService>(
       () => CourseService(locator<ApiService>()));
@@ -169,12 +186,12 @@ void setupServiceLocator() {
       () => AddStaffProvider(locator<AddStaffService>()));
 
 //  Add levels
-  locator.registerSingleton<LevelClassService>(
-      LevelClassService(locator<ApiService>()));
+  locator.registerLazySingleton<LevelClassService>(
+      () => LevelClassService(locator<ApiService>()));
 
   // Register LevelClassProvider as a singleton, injecting LevelClassService
-  locator.registerSingleton<LevelClassProvider>(
-      LevelClassProvider(locator<LevelClassService>()));
+  locator.registerLazySingleton<LevelClassProvider>(
+      () => LevelClassProvider(locator<LevelClassService>()));
 
 // ******************////************************************* */
 
@@ -329,19 +346,13 @@ void setupServiceLocator() {
 
   locator.registerLazySingleton<ClassService>(() => ClassService());
   locator.registerLazySingleton<LevelService>(() => LevelService());
-  // locator.registerLazySingleton<TermService>(() => TermService());
+
   // Register TermService with ApiService dependency
   locator.registerLazySingleton<TermService>(() {
     final service = TermService();
     service.apiService = locator<ApiService>();
     return service;
   });
-
-  // Register AuthService
-  locator.registerLazySingleton<AuthService>(() => AuthService());
-
-  // Register AuthProvider with AuthService dependency
-  locator.registerLazySingleton<AuthProvider>(() => AuthProvider());
 
   // Register the missing services
   locator.registerLazySingleton<CourseRegistrationService>(
@@ -369,8 +380,8 @@ void setupServiceLocator() {
       () => FeeProvider(locator<FeeService>()));
 
   // register vendor service and provider
-  locator
-      .registerSingleton<VendorService>(VendorService(locator<ApiService>()));
+  locator.registerLazySingleton<VendorService>(
+      () => VendorService(locator<ApiService>()));
   //Register Staff Provider and service api
 
   locator.registerLazySingleton<StaffOverviewService>(
@@ -418,4 +429,6 @@ void setupServiceLocator() {
       () => StreamsProvider(locator<StreamsService>()));
   locator.registerLazySingleton<StreamsService>(
       () => StreamsService(locator<ApiService>()));
+
+  print('✅ Deferred services registered in background');
 }

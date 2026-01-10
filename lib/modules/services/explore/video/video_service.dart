@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/model/explore/videos/video_model.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class CourseVideoService {
-  final String _baseUrl = "https://linkskool.net/api/v3/public/video-library/videos/published";
+  final String _baseUrl =
+      "https://linkskool.net/api/v3/public/video-library/videos/published";
 
   Future<CourseVideosResponseModel> fetchCourseVideos({
     required String levelId,
@@ -12,9 +13,9 @@ class CourseVideoService {
   }) async {
     try {
       // Load API key from .env
-      final apiKey = dotenv.env['API_KEY'];
+      final apiKey = EnvConfig.apiKey;
 
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 

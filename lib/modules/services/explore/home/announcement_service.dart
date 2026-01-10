@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/model/explore/home/announcement_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:linkschool/config/env_config.dart';
 
 class AnnouncementResponse {
   final int statusCode;
@@ -27,12 +27,13 @@ class AnnouncementResponse {
 }
 
 class AnnouncementService {
-  final String baseUrl = "https://linkskool.net/api/v3/public/advertisements/published";
+  final String baseUrl =
+      "https://linkskool.net/api/v3/public/advertisements/published";
 
   Future<AnnouncementResponse> getAllAnnouncements() async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("API key not found in .env file");
       }
 

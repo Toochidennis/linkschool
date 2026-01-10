@@ -543,11 +543,11 @@ void initState() {
       }
 
       // Ensure user data is loaded
-      if (creatorId == null || creatorName == null) {
+      if (creatorId == null) {
 
         await _loadUserData();
       creatorName = creatorName.isEmpty ? 'pass Admin' : creatorName;
-        if (creatorId == null || creatorName == null) {
+        if (creatorId == null) {
           throw Exception('User data not available');
         }
       }

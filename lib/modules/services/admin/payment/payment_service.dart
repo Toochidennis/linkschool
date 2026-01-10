@@ -131,18 +131,10 @@ class PaymentService {
       // First try direct _db key
       dbParam = userBox.get('_db');
 
-      // If not found, try from loginResponse
-      if (dbParam == null) {
-        final loginResponse = userBox.get('loginResponse');
-        if (loginResponse != null) {
-          dbParam = loginResponse['_db'] ?? loginResponse['db'];
-        }
-      }
-
       // If still not found, try from userData directly
       dbParam ??= userBox.get('db');
 
-      if (dbParam == null || dbParam.isEmpty) {
+      if (dbParam?.isEmpty ?? true) {
         throw Exception('Database parameter not found. Please login again.');
       }
 

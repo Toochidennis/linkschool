@@ -14,13 +14,10 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../common/text_styles.dart';
-import '../../../modules/explore/games/games_home.dart';
 import '../../../modules/explore/videos/videos_dashboard.dart';
 import '../../common/app_colors.dart';
-import '../../../modules/explore/ebooks/ebooks_dashboard.dart';
 import '../../common/constants.dart';
 import '../../../modules/explore/cbt/cbt_dashboard.dart';
-import 'custom_button_item.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class ExploreHome extends StatefulWidget {
@@ -295,10 +292,58 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             // Announcements carousel
             if (announcementProvider.isLoading)
               SliverToBoxAdapter(
-                child: Container(
-                  height: 265.0,
-                  margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: const Center(child: CircularProgressIndicator()),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: Skeletonizer(
+                    enabled: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: Container(
+                            height: 180,
+                            width: double.infinity,
+                            color: Colors.grey[300],
+                          ),
+                        ),
+                        const SizedBox(height: 12.0),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(8, 0, 8.0, 0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      height: 16,
+                                      width: 200,
+                                      color: Colors.grey[300],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      height: 12,
+                                      color: Colors.grey[300],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 80,
+                              height: 35,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               )
             else if (announcementProvider.publishedAnnouncements.isEmpty)
@@ -479,6 +524,29 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                   fit: BoxFit.cover,
                   height: 180,
                   width: double.infinity,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.grey[300]!,
+                            Colors.grey[200]!,
+                          ],
+                        ),
+                      ),
+                      child: Skeleton.leaf(
+                        enabled: true,
+                        child: Container(
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                    );
+                  },
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       height: 180,
@@ -726,10 +794,21 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               width: 80,
               height: 100,
               fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Skeleton.leaf(
+                  enabled: true,
+                  child: Container(
+                    width: 80,
+                    height: 100,
+                    color: Colors.grey[300],
+                  ),
+                );
+              },
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   width: 80,
-                  height: 80,
+                  height: 100,
                   color: Colors.grey.shade200,
                   child: Icon(
                     Icons.image,

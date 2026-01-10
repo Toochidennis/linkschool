@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:linkschool/config/env_config.dart' show EnvConfig;
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/paystack_cbt_webview.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
@@ -652,7 +651,7 @@ class _SubscriptionEnforcementDialogState
       print(' Final Amount: ₦$finalAmount');
       print(' Email: $email');
       print(' Reference: $reference');
-      final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+      final paystackSecretKey = EnvConfig.paystackSecretKey;
       // Step 3: Call PaystackFlutter payment
       PaystackFlutter().pay(
         context: context,

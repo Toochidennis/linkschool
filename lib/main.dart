@@ -3,112 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/config/providers_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
-import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
-import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
-import 'package:linkschool/modules/providers/admin/class_provider.dart';
-import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
-import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
-import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
-import 'package:linkschool/modules/providers/admin/home/add_course_provider.dart';
-import 'package:linkschool/modules/providers/admin/home/all_feeds.provider.dart';
-import 'package:linkschool/modules/providers/admin/home/assign_course_provider.dart';
-import 'package:linkschool/modules/providers/admin/home/dashboard_feed_provider.dart';
-import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
-import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
-import 'package:linkschool/modules/providers/admin/home/students_metrica.dart';
-import 'package:linkschool/modules/providers/admin/level_provider.dart';
-import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
-import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
-import 'package:linkschool/modules/providers/admin/performance_provider.dart';
-import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
-import 'package:linkschool/modules/providers/admin/student_provider.dart';
-import 'package:linkschool/modules/providers/admin/term_provider.dart';
-import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
+import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
-import 'package:linkschool/modules/providers/explore/cbt_settings_provider.dart';
-import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
-import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
-import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
-import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
-import 'package:linkschool/modules/providers/explore/exam_provider.dart';
-import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
-import 'package:linkschool/modules/providers/explore/home/admission_provider.dart';
-import 'package:linkschool/modules/providers/explore/home/announcement_provider.dart';
-import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
-import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
-import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
-import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
-import 'package:linkschool/modules/providers/explore/subject_provider.dart';
-import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
-import 'package:linkschool/modules/providers/explore/videos/video_provider.dart';
-import 'package:linkschool/modules/providers/login/schools_provider.dart';
-import 'package:linkschool/modules/providers/staff/overview.dart';
-import 'package:linkschool/modules/providers/staff/staff_dashboard_provider.dart';
-import 'package:linkschool/modules/providers/staff/streams_provider.dart';
-import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
-import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
-import 'package:linkschool/modules/providers/student/home/student_dashboard_feed_provider.dart';
-import 'package:linkschool/modules/providers/student/payment_provider.dart';
-import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
-import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
-import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
-import 'package:linkschool/modules/providers/student/streams_provider.dart';
-import 'package:linkschool/modules/providers/student/student_comment_provider.dart';
-import 'package:linkschool/modules/providers/student/student_result_provider.dart';
-import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
-import 'package:linkschool/modules/services/explore/cbt_service.dart';
-import 'package:linkschool/modules/services/explore/cbt_settings_service.dart';
-import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
-import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
-import 'package:linkschool/modules/services/explore/courses/lessons_service.dart';
-import 'package:linkschool/modules/services/explore/studies_question_service.dart';
-import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
-import 'package:linkschool/modules/services/explore/video/video_service.dart';
-import 'package:linkschool/modules/services/staff/overview_service.dart';
-import 'package:linkschool/routes/onboardingScreen.dart';
-import 'package:linkschool/routes/app_navigation_flow.dart';
-import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-import 'package:linkschool/modules/providers/admin/registered_terms_provider.dart';
-import 'modules/providers/explore/game/game_provider.dart';
-import 'modules/providers/admin/grade_provider.dart';
-import 'modules/providers/student/dashboard_provider.dart';
-import 'modules/providers/app_settings_provider.dart';
-import 'modules/common/cbt_settings_helper.dart';
-import 'modules/services/cbt_subscription_service.dart';
-// import challangeleader provider and service
-import 'modules/providers/explore/challenge/challenge_leader_provider.dart';
+import 'package:linkschool/routes/app_navigation_flow.dart';
+import 'package:linkschool/routes/onboardingScreen.dart';
+import 'package:provider/provider.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
- 
-  await MobileAds.instance.initialize();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Initialize Firebase (required for auth)
   await Firebase.initializeApp();
   print('Firebase initialized successfully');
 
+  // Initialize Hive (required for session management)
   try {
     await Hive.initFlutter();
+    // Open boxes sequentially but without unnecessary delays
     await Hive.openBox('userData');
     await Hive.openBox('attendance');
     await Hive.openBox('loginResponse');
@@ -117,23 +39,21 @@ Future<void> main() async {
     print('Error initializing Hive: $e');
   }
 
-  await EnvConfig.init();
+  // Initialize service locator (required for auth)
   setupServiceLocator();
 
-  // Initialize app settings
-  final appSettings = AppSettingsProvider();
-  await appSettings.initializeSettings();
+  // DEFERRED: Initialize MobileAds in background (not needed for launch)
+  // This will run after the app is visible
+  Future.microtask(() async {
+    try {
+      await MobileAds.instance.initialize();
+      print('✅ MobileAds initialized in background');
+    } catch (e) {
+      print('⚠️ MobileAds initialization failed: $e');
+    }
+  });
 
-  // Pre-load CBT settings and update subscription service
-  try {
-    final settings = await CbtSettingsHelper.getSettings();
-    final subscriptionService = CbtSubscriptionService();
-    subscriptionService.setMaxFreeTests(settings.freeTrialDays);
-    print(
-        '✅ CBT settings pre-loaded: amount=${settings.amount}, discount=${settings.discountRate}, trial=${settings.freeTrialDays}');
-  } catch (e) {
-    print('⚠️ Failed to pre-load CBT settings: $e');
-  }
+  // await EnvConfig.init();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -144,126 +64,7 @@ Future<void> main() async {
   );
   runApp(
     MultiProvider(
-      providers: [
-        // App Settings Provider - Must be first for global theme
-        ChangeNotifierProvider.value(value: appSettings),
-
-        // Core providers
-        ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => SchoolProvider()),
-        // Explore
-        ChangeNotifierProvider(create: (_) => AdmissionProvider()),
-        ChangeNotifierProvider<NewsProvider>(create: (_) => NewsProvider()),
-        ChangeNotifierProvider(create: (_) => AnnouncementProvider()),
-        ChangeNotifierProvider(create: (_) => ChallengeProvider(ChallengeService())),
-        ChangeNotifierProvider(create: (_) => SubjectTopicsProvider(SubjectTopicsService())),
-        ChangeNotifierProvider(create: (_) => SubjectProvider()),
-        ChangeNotifierProvider(create: (_) => CbtUserProvider()),
-        ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
-        ChangeNotifierProvider(create: (_) => GameProvider()),
-        ChangeNotifierProvider(create: (_) => ExamProvider()),
-        ChangeNotifierProvider(create: (_) => ForYouProvider()),
-        ChangeNotifierProvider(create: (_) => locator<BookProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<EbookProvider>()),
-        ChangeNotifierProvider(create: (_) => ChallengeQuestionProvider()),
-        ChangeNotifierProvider(create: (_) => ExploreCourseProvider()),
-        ChangeNotifierProvider(create: (_) => LessonProvider(LessonService())),
-        ChangeNotifierProvider(create: (_) => LeaderboardProvider(LeaderboardService())),
-        ChangeNotifierProvider(create: (_) => QuestionsProvider(QuestionsService())),
-        ChangeNotifierProvider(create: (_) => CourseVideoProvider(CourseVideoService())),
-        
-        // Admin HomeScreen
-         
-
-        // student metrics
-        ChangeNotifierProvider(
-            create: (_) => locator<StudentMetricsProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<AddStaffProvider>()),
-        ChangeNotifierProvider(
-          create: (_) => locator<LevelClassProvider>(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => locator<AssignCourseProvider>(),
-        ),
-        ChangeNotifierProvider(create: (_) => locator<ManageStudentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<CourseProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<DashboardFeedProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<FeedsPaginationProvider>()),
-
-        // Admin E-Learning
-        ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<SyllabusContentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<DeleteSyllabusProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<DeleteQuestionProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<MarkAssignmentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<SingleContentProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => OverviewProvider(locator<OverviewService>())),
-        ChangeNotifierProvider(create: (_) => locator<AdminCommentProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<StudentCommentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
-
-        // Admin core
-        ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<SkillsBehaviorTableProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<PerformanceProvider>()),
-
-        // Payments
-        ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
-     
-
-        // Level, Class, Assessment, Term
-        ChangeNotifierProvider(create: (_) => LevelProvider()),
-        ChangeNotifierProvider(create: (_) => ClassProvider()),
-        ChangeNotifierProvider(create: (_) => AssessmentProvider()),
-        ChangeNotifierProvider(create: (_) => TermProvider()),
-        ChangeNotifierProvider(create: (_) => RegisteredTermsProvider()),
-        ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
-
-        // Course results
-        ChangeNotifierProvider(create: (_) => CourseResultProvider()),
-        ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
-        ChangeNotifierProvider(create: (_) => locator<AdminCommentProvider>()),
-
-        // Student
-        ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
-        ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<MarkedAssignmentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<StudentResultProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<PaymentProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<StudentDashboardFeedProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<SingleelearningcontentProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<SingleelearningcontentProvider>()),
-        // Staff
-        ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
-        ChangeNotifierProvider(
-            create: (_) =>
-                StaffOverviewProvider(locator<StaffOverviewService>())),
-        ChangeNotifierProvider(create: (_) => locator<StaffStreamsProvider>()),
-        ChangeNotifierProvider(
-            create: (_) => locator<StaffDashboardProvider>()),
-      ],
+      providers: getAppProviders(),
       child: const MyApp(),
     ),
   );
@@ -278,7 +79,7 @@ class MyApp extends StatelessWidget {
       builder: (context, settings, _) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaleFactor: settings.textScaleFactor,
+            textScaler: TextScaler.linear(settings.textScaleFactor),
           ),
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
@@ -325,21 +126,17 @@ class _AppInitializerState extends State<AppInitializer> {
           userBox.get('hasSeenOnboarding', defaultValue: false);
       print('hasSeenOnboarding: $hasSeenOnboarding');
 
-      // CRITICAL: Wait for the next frame to ensure Provider is ready
-      await Future.delayed(const Duration(milliseconds: 50));
-
       // Get AuthProvider from Provider context
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      // Get CbtUserProvider from Provider context and initialize persistent login
-      final cbtUserProvider =
-          Provider.of<CbtUserProvider>(context, listen: false);
-      await cbtUserProvider.initialize();
 
-      // Check login status
+      // Check login status (fast - uses cached session or silent login)
       await authProvider.checkLoginStatus();
 
-      // Give state time to settle
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Get CbtUserProvider and initialize in background (non-blocking)
+      final cbtUserProvider =
+          Provider.of<CbtUserProvider>(context, listen: false);
+      // Don't await - let it initialize in background
+      cbtUserProvider.initialize();
 
       print('Auth Status:');
       print('  - isLoggedIn: ${authProvider.isLoggedIn}');

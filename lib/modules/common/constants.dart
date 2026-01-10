@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'app_colors.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class Constants {
-  static const String deepseekApiUrl =
-      "https://api.deepseek.com/v1/chat/completions";
+  static String deepseekApiUrl = EnvConfig.deepSeekUrl;
 
   static const double padding = 16.0;
   static const double gap = 10.0;

@@ -17,8 +17,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.d
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_assignment_screen.dart'
-    hide Assignment;
+import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_assignment_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_create_topic_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_question_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_details_screen.dart';
@@ -66,7 +65,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   late double opacity = 0.1;
   List<TopicContent> _topics = [];
   List<SyllabusContentItem> _noTopicItems = [];
-  bool _shouldRefresh = false;
   int _currentIndex = 0;
   static const String _courseworkIconPath =
       'assets/icons/student/coursework_icon.svg';
@@ -82,7 +80,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   int? academicTerm;
   String? academicYear;
   List<Comment> comments = [];
-  bool _isAddingComment = true;
   bool _isEditing = false;
   Comment? _editingComment;
 
@@ -111,16 +108,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     setState(() {
       _topics = [];
       _noTopicItems = [];
-      _shouldRefresh = false;
       isLoading = true;
     });
     _loadSyllabusContents();
-  }
-
-  void setRefreshFlag() {
-    setState(() {
-      _shouldRefresh = true;
-    });
   }
 
   Future<void> _loadUserData() async {
@@ -530,7 +520,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         }
         setState(() {
           fetchStreams();
-          _isAddingComment = false;
           _isEditing = false;
           _editingComment = null;
           _controllers[sm.id]?.clear();
@@ -559,7 +548,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    return ChangeNotifierProvider.value(
+    return ChangeNotifierProvider<SyllabusContentProvider>.value(
       value: locator<SyllabusContentProvider>(),
       child: Scaffold(
         appBar: AppBar(
@@ -807,7 +796,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                     _buildForumPost(
                       iconPath: _getIconPath(stream.type),
                       title: ellipsize(stream.title),
-                      subtitle: '${stream.type ?? 0} comments',
+                      subtitle: '${stream.type} comments',
                       sm: stream,
                     ),
                     const SizedBox(height: 16),
@@ -875,9 +864,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                   children: [
                     _buildComment(
                       avatarColor: AppColors.booksButtonColor,
-                      name: comment.authorName ?? '',
-                      date: comment.uploadDate ?? '',
-                      message: comment.comment ?? '',
+                      name: comment.authorName,
+                      date: comment.uploadDate,
+                      message: comment.comment,
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -1348,24 +1337,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       );
     }).toList();
 
-    final syllabusItem = SyllabusContentItem(
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      type: item.type,
-      classes: item.classes,
-      startDate: item.startDate,
-      endDate: item.endDate,
-      duration: item.duration,
-      grade: item.grade,
-      topicId: item.topicId,
-      topic: item.topic,
-      contentFiles: [],
-      datePosted: item.datePosted,
-      questions: item.questions,
-      rank: 0,
-    );
-
     final assignment = Assignment(
       title: item.title,
       description: item.description,
@@ -1399,7 +1370,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         break;
       case 'quiz':
       case 'question':
-        final questions = item.questions;
         final List<Map<String, dynamic>> correctAnswers = [];
         if (item.questions != null) {
           for (var q in item.questions!) {
@@ -1613,7 +1583,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               syllabusClasses: widget.syllabusClasses,
               questions: item.questions,
               editMode: true,
-              onSaveFlag: setRefreshFlag,
               onCreation: () {
                 _loadSyllabusContents();
               },

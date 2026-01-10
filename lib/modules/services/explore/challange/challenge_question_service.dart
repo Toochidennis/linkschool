@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class ChallengeQuestionService {
-
   Future<Map<String, dynamic>> fetchChallengeQuestions({
     required int examId,
     required int challengeId,
     int? limit,
   }) async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("API key not found in .env file");
       }
 
@@ -45,8 +44,7 @@ class ChallengeQuestionService {
         print("📊 Response: $body");
         return body;
       } else {
-        throw Exception(
-            "Failed: ${response.statusCode} - ${response.body}");
+        throw Exception("Failed: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       print("💥 Error: $e");

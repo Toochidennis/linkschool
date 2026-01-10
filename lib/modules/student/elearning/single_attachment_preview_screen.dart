@@ -421,7 +421,7 @@ class _SingleAttachmentPreviewScreenState
             AssignmentFile(
               fileName: result.files.single.name,
               file: base64String,
-              type: extension!,
+              type: extension ?? 'file',
             ),
           );
         });

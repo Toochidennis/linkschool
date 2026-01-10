@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 import 'dart:io';
+import 'package:linkschool/config/env_config.dart';
 
 // Enum to define the available HTTP methods
 enum HttpMethod { GET, POST, PUT, DELETE, PATCH }
@@ -69,10 +69,8 @@ class ApiService {
   };
 
   ApiService({String? baseUrl, String? apiKey})
-      : baseUrl = baseUrl ??
-            dotenv.env['API_BASE_URL'] ??
-            'https://linkskool.net/api/v3',
-        apiKey = apiKey ?? dotenv.env['API_KEY'] {
+      : baseUrl = baseUrl ?? EnvConfig.apiBaseUrl,
+        apiKey = apiKey ?? EnvConfig.apiKey {
     print('Initializing ApiService with baseUrl: $baseUrl');
   }
 

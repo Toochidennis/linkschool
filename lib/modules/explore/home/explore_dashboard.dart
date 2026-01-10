@@ -5,10 +5,10 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/explore/courses/explore_courses.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
+import 'package:linkschool/modules/explore/ai_chat/linkskool_ai_chat.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
-import 'package:linkschool/modules/explore/admission/explore_admission.dart';
 
 class ExploreDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -116,6 +116,19 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
+          // AI Chat Icon
+          IconButton(
+            icon: const Icon(Icons.smart_toy, color: Colors.white),
+            tooltip: 'LinkSkool AI Chat',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LinkSkoolAIChatPage(),
+                ),
+              );
+            },
+          ),
           if (!_showSearchIcon)
             IconButton(
               icon: const Icon(Icons.search, color: Colors.white),

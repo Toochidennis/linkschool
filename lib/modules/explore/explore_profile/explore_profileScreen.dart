@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:linkschool/config/env_config.dart' show EnvConfig;
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +10,6 @@ import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Add this import for the payment dialog
-import 'package:linkschool/modules/explore/e_library/widgets/paystack_payment_dialog.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -199,7 +198,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     }
     final amountInKobo = _subscriptionPrice * 100;
     final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
-    final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+    final paystackSecretKey = EnvConfig.paystackSecretKey;
     PaystackFlutter().pay(
       context: context,
       secretKey: paystackSecretKey,

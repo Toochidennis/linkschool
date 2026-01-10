@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/model/explore/challange_leader_model.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class LeaderboardService {
   final String _baseUrl = "https://linkskool.net/api/v3/public";
@@ -20,9 +20,9 @@ class LeaderboardService {
     required String platform,
   }) async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
+      final apiKey = EnvConfig.apiKey;
 
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("API KEY not found");
       }
 
@@ -71,9 +71,9 @@ class LeaderboardService {
   /// Fetch leaderboard for a specific challenge
   Future<LeaderboardResponse> fetchLeaderboard(int challengeId) async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
+      final apiKey = EnvConfig.apiKey;
 
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("API KEY not found");
       }
 

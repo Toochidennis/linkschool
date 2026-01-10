@@ -131,11 +131,11 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
 
     try {
       String levelId = widget.levelId ?? "";
-      String? term = widget.term;
+      String term = widget.term ?? "";
       String? courseId = widget.courseId;
       String classId = widget.classId ?? '';
 
-      if (levelId.isEmpty || term == null || term.isEmpty) {
+      if (levelId.isEmpty || term.isEmpty) {
         final userBox = Hive.box('userData');
         final storedUserData =
             userBox.get('userData') ?? userBox.get('loginResponse');
