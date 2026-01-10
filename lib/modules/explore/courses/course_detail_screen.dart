@@ -131,7 +131,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       'isCompleted': false,
       'description': 'Understand key principles of effective learning.',
       'content':
-          '''Best Practices Guide\n\nEffective learning requires understanding several fundamental principles that guide your progress.\n\nKey Learning Principles\n\nSeveral fundamental principles guide effective learning:\n\nActive Engagement\nEngage actively with the material. Don\'t just passively consume content - think critically and ask questions.\n\nConsistent Practice\nRegular practice reinforces learning. Short, consistent study sessions are more effective than cramming.\n\nReflection\nTake time to reflect on what you\'ve learned. Consider how new concepts connect to what you already know.\n\nApplication\nApply what you learn in practical scenarios. Real-world application deepens understanding.\n\nPractical Implementation\n\nApply these principles by:\n1. Setting clear learning objectives\n2. Taking regular breaks\n3. Seeking feedback from others\n4. Reviewing and revising regularly\n5. Teaching others what you\'ve learned\n\nRemember, effective learning balances understanding with application. Always prioritize comprehension over memorization.''',
+          '''Best Practices Guide\n\nEffective learning requires understanding several fundamental principles that guide your progress.\n\nKey Learning Principles\n\nSeveral fundamental principles guide effective learning:\n\nActive Engagement\nEngage actively with the material. Don't just passively consume content - think critically and ask questions.\n\nConsistent Practice\nRegular practice reinforces learning. Short, consistent study sessions are more effective than cramming.\n\nReflection\nTake time to reflect on what you've learned. Consider how new concepts connect to what you already know.\n\nApplication\nApply what you learn in practical scenarios. Real-world application deepens understanding.\n\nPractical Implementation\n\nApply these principles by:\n1. Setting clear learning objectives\n2. Taking regular breaks\n3. Seeking feedback from others\n4. Reviewing and revising regularly\n5. Teaching others what you've learned\n\nRemember, effective learning balances understanding with application. Always prioritize comprehension over memorization.''',
     },
     {
       'title': 'Practical Examples',
@@ -743,7 +743,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                   Navigator.pop(context);
                 },
               );
-            }).toList(),
+            }),
             const SizedBox(height: 16),
           ],
         ),
@@ -2649,16 +2649,11 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
   }
 
   Future<void> _handleBackButton() async {
-    if (_isLandscape) {
-      // First click: rotate to portrait
-      await _setPortraitOrientation();
-    } else {
-      // Second click: exit fullscreen
-      await _resetOrientation();
-      widget.onExit();
-      if (mounted) {
-        Navigator.pop(context);
-      }
+    // Reset orientation and exit fullscreen
+    await _resetOrientation();
+    widget.onExit();
+    if (mounted) {
+      Navigator.pop(context);
     }
   }
 
@@ -2785,7 +2780,7 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                   Navigator.pop(context);
                 },
               );
-            }).toList(),
+            }),
             const SizedBox(height: 16),
           ],
         ),
@@ -2801,6 +2796,12 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
     return duration.inHours > 0
         ? '$hours:$minutes:$seconds'
         : '$minutes:$seconds';
+  }
+
+  @override
+  void dispose() {
+    _resetOrientation();
+    super.dispose();
   }
 
   @override
@@ -2835,9 +2836,7 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                           children: [
                             IconButton(
                               onPressed: _handleBackButton,
-                              icon: Icon(_isLandscape
-                                  ? Icons.close
-                                  : Icons.arrow_back),
+                              icon: const Icon(Icons.arrow_back),
                               color: Colors.white,
                             ),
                             const Spacer(),
@@ -3005,9 +3004,12 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                                     const SizedBox(width: 8),
                                     // Exit Fullscreen button
                                     IconButton(
-                                      onPressed: () {
+                                      onPressed: () async {
+                                        await _resetOrientation();
                                         widget.onExit();
-                                        Navigator.pop(context);
+                                        if (mounted) {
+                                          Navigator.pop(context);
+                                        }
                                       },
                                       icon: const Icon(
                                         Icons.fullscreen_exit,
