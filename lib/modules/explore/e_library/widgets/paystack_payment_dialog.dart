@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
@@ -360,7 +360,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
   try {
     final amountInKobo = _subscriptionPrice * 100;
     final reference = _generateReference();
-   final  paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+   final  paystackSecretKey = EnvConfig.paystackSecretKey;
 
     print('💳 Charging with Paystack using PaystackFlutter...');
     print(' Reference: $reference');
@@ -406,7 +406,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
 
   Future<void> _verifyAndUpdatePayment(String reference) async {
     try {
-      final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+      final paystackSecretKey = EnvConfig.paystackSecretKey;
       print('🔍 Verifying payment with Paystack...');
       
       final response = await http.get(

@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:linkschool/config/env_config.dart';
 
 class DeepSeekService {
- static String get _apiKey => dotenv.env['_deepSeekApiKey'] ?? "";
-  static const String _baseUrl = "https://api.deepseek.com/v1/chat/completions";
+  static String get _apiKey => EnvConfig.deepSeekApiKey;
+  static String get _baseUrl => EnvConfig.deepSeekUrl;
 
   /// Get explanation from DeepSeek API
   static Future<String> getExplanation({
@@ -12,18 +12,16 @@ class DeepSeekService {
     required String selectedAnswer,
     required String correctAnswer,
     required bool isCorrect,
-  }) async{
+  }) async {
     try {
       final url = Uri.parse(_baseUrl);
-      
+
       final response = await http.post(
         url,
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $_apiKey",
         },
-
-       
         body: json.encode({
           "model": "deepseek-chat",
           "messages": [
@@ -54,7 +52,7 @@ Keep it brief and educational.
         }),
       );
 
-       print("lll ${response.body}");
+      print("lll ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

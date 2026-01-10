@@ -163,12 +163,43 @@ class AuthProvider with ChangeNotifier {
       final userBox = Hive.box('userData');
       final prefs = await SharedPreferences.getInstance();
 
-      // Check if we have saved credentials for silent login
+      // OPTIMIZATION: First check if we have a valid cached session
+      final sessionValid = userBox.get('sessionValid', defaultValue: false);
+      final hasUserData = userBox.get('userData') != null;
+      final hasToken = userBox.get('token') != null;
+
+      print('📊 Quick Session Check:');
+      print('  - Session valid: $sessionValid');
+      print('  - Has userData: $hasUserData');
+      print('  - Has token: $hasToken');
+
+      // If we have a valid session, restore it immediately (FAST PATH)
+      if (sessionValid && hasUserData && hasToken) {
+        print('⚡ Valid session found - using fast restore');
+        await _restoreFromSavedSession();
+
+        // Only attempt silent login in background if session is old (e.g., > 24 hours)
+        final lastLoginTime =
+            userBox.get('lastLoginTime', defaultValue: 0) as int;
+        final hoursSinceLogin =
+            (DateTime.now().millisecondsSinceEpoch - lastLoginTime) /
+                (1000 * 60 * 60);
+
+        if (hoursSinceLogin > 24) {
+          print(
+              '🔄 Session is old (${hoursSinceLogin.toStringAsFixed(1)}h), refreshing in background...');
+          // Refresh session in background without blocking UI
+          _attemptSilentLoginInBackground();
+        }
+        return;
+      }
+
+      // SLOW PATH: No valid session, attempt full silent login
       final hasSavedCredentials =
           userBox.get('has_saved_credentials', defaultValue: false);
 
       if (hasSavedCredentials) {
-        print('🔑 Found saved credentials - attempting silent login');
+        print('🔑 No valid session - attempting silent login');
         final success = await _attemptSilentLogin();
 
         if (success) {
@@ -186,6 +217,19 @@ class AuthProvider with ChangeNotifier {
       print('Stack trace: $stackTrace');
       await _clearCorruptedSession();
     }
+  }
+
+  /// Refresh session in background without blocking UI
+  void _attemptSilentLoginInBackground() {
+    Future.microtask(() async {
+      try {
+        print('🔄 Background session refresh started...');
+        await _attemptSilentLogin();
+        print('✅ Background session refresh completed');
+      } catch (e) {
+        print('⚠️ Background session refresh failed: $e');
+      }
+    });
   }
 
   /// Attempt silent login using saved credentials

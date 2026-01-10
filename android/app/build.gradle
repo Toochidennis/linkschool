@@ -32,17 +32,17 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.digitaldream.linkskool.linkschool"
-    compileSdkVersion 35
+    compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
         coreLibraryDesugaringEnabled false
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     sourceSets {
@@ -51,8 +51,8 @@ android {
 
     defaultConfig {
         applicationId "com.digitaldream.linkskool.linkschool"
-        minSdkVersion 23 
-        targetSdkVersion 35
+        minSdkVersion flutter.minSdkVersion 
+        targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true

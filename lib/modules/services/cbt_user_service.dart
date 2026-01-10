@@ -1,16 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
 
 class CbtUserService {
   final String baseUrl = 'https://linkskool.net/api/v3/public/cbt/users';
+  final apiKey = EnvConfig.apiKey;
 
   Future<CbtUserModel?> fetchUserByEmail(String userEmail) async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 
@@ -54,9 +53,7 @@ class CbtUserService {
 
   Future<CbtUserModel> createOrUpdateUser(CbtUserModel user) async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 
@@ -90,7 +87,8 @@ class CbtUserService {
             throw Exception("No user data or userId in response");
           }
         } else {
-          throw Exception("Failed to create/update user: ${decoded['message'] ?? 'Unknown error'}");
+          throw Exception(
+              "Failed to create/update user: ${decoded['message'] ?? 'Unknown error'}");
         }
       } else {
         print("❌ Failed to create/update user: ${response.statusCode}");
@@ -153,12 +151,7 @@ class CbtUserService {
     required String reference,
   }) async {
     try {
-      print("💳 [UPDATE USER AFTER PAYMENT] email: $email");
-      print("➡️ Reference: $reference");
-
-      final apiKey = dotenv.env['API_KEY'];
-
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 
@@ -209,7 +202,8 @@ class CbtUserService {
             return updatedUser;
           }
         } else {
-          throw Exception("Failed to update user: ${decoded['message'] ?? 'Unknown error'}");
+          throw Exception(
+              "Failed to update user: ${decoded['message'] ?? 'Unknown error'}");
         }
       } else {
         print("❌ Failed to update user: ${response.statusCode}");
@@ -232,7 +226,8 @@ class CbtUserService {
   }) async {
     print("🚦 Payment success detected. Starting post-payment flow...");
     await Future.delayed(const Duration(seconds: 1));
-    print("⏳ Waited 1 second. Fetching user with up to $maxFetchAttempts attempts...");
+    print(
+        "⏳ Waited 1 second. Fetching user with up to $maxFetchAttempts attempts...");
 
     CbtUserModel? user;
     int attempt = 0;
@@ -253,7 +248,8 @@ class CbtUserService {
     }
 
     if (user == null) {
-      print("❌ Failed to fetch user after $maxFetchAttempts attempts. Aborting.");
+      print(
+          "❌ Failed to fetch user after $maxFetchAttempts attempts. Aborting.");
       return null;
     }
 
@@ -286,10 +282,12 @@ class CbtUserService {
     try {
       verifiedUser = await fetchUserByEmail(email);
       if (verifiedUser != null && verifiedUser.reference == reference) {
-        print("✅ Verified user has payment reference: ${verifiedUser.reference}");
+        print(
+            "✅ Verified user has payment reference: ${verifiedUser.reference}");
         return verifiedUser;
       } else {
-        print("❌ Verified user missing reference or not updated. Data: ${verifiedUser?.toJson()}");
+        print(
+            "❌ Verified user missing reference or not updated. Data: ${verifiedUser?.toJson()}");
         return verifiedUser;
       }
     } catch (e) {

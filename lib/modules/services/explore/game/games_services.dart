@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../../../model/explore/home/game_model.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class GameService {
   final String _baseUrl = "https://linkskool.net/api/v3/public/games";
@@ -9,9 +9,9 @@ class GameService {
   Future<Games?> fetchGames() async {
     try {
       // Load API key from .env file
-      final apiKey = dotenv.env['API_KEY'];
+      final apiKey = EnvConfig.apiKey;
 
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 

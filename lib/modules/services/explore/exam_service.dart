@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class ExamService {
   static const String baseUrl = 'http://www.public.linkskool.com/api';
@@ -10,13 +10,14 @@ class ExamService {
     int? limit,
   }) async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
 
       // Build URL with optional limit parameter
-      var url = "https://linkskool.net/api/v3/public/cbt/exams/$examType/questions";
+      var url =
+          "https://linkskool.net/api/v3/public/cbt/exams/$examType/questions";
       if (limit != null) {
         url += "?limit=$limit";
       }

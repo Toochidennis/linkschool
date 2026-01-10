@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:linkschool/config/env_config.dart';
 
 class NewsResponse {
   final Map<String, List<int>> groups;
@@ -18,7 +18,7 @@ class NewsResponse {
 
   factory NewsResponse.fromJson(Map<String, dynamic> json) {
     final dataSection = json['data'] ?? {};
-    
+
     return NewsResponse(
       groups: (dataSection['groups'] as Map<String, dynamic>?)?.map(
             (key, value) => MapEntry(key, List<int>.from(value ?? [])),
@@ -71,8 +71,8 @@ class NewsService {
 
   Future<NewsResponse> getAllNews() async {
     try {
-      final apiKey = dotenv.env['API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
         throw Exception("API key not found in .env file");
       }
 
@@ -87,15 +87,15 @@ class NewsService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
-        
+
         // Check if API call was successful
         if (jsonData['success'] != true) {
           throw Exception(jsonData['message'] ?? 'Failed to load news');
         }
-        
+
         // Extract the nested data structure
         final dataWrapper = jsonData['data'] ?? {};
-        
+
         print("✅ News fetched successfully: ${jsonData['message']}");
         return NewsResponse.fromJson(dataWrapper);
       } else {

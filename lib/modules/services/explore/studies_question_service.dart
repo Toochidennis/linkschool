@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class QuestionsService {
   final String _baseUrl = "https://linkskool.net/api/v3/public";
@@ -12,13 +12,14 @@ class QuestionsService {
     required int? examTypeId,
   }) async {
     try {
-      final apiKey = dotenv.env["API_KEY"];
+      final apiKey = EnvConfig.apiKey;
 
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("API KEY not found");
       }
 
-      final url = "$_baseUrl/cbt/exams/questions/by-topic?topic_id=$topicId&course_id=$courseId&exam_type_id=$examTypeId";
+      final url =
+          "$_baseUrl/cbt/exams/questions/by-topic?topic_id=$topicId&course_id=$courseId&exam_type_id=$examTypeId";
       print("📡 Fetching Questions → $url");
 
       final response = await http.get(

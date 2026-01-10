@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class SubjectTopicsService {
   final String _baseUrl = "https://linkskool.net/api/v3/public";
@@ -11,9 +11,9 @@ class SubjectTopicsService {
     required int examTypeId,
   }) async {
     try {
-      final apiKey = dotenv.env["API_KEY"];
+      final apiKey = EnvConfig.apiKey;
 
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey.isEmpty) {
         throw Exception("API KEY not found");
       }
 

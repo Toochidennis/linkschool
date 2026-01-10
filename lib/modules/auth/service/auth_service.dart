@@ -1,12 +1,13 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:linkschool/config/env_config.dart';
 
 class AuthService {
   Future<ApiResponse<Map<String, dynamic>>> login(
       String username, String password, String schoolCode) async {
-    final apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    final apiKey = dotenv.env['API_KEY'] ?? '';
+    final apiBaseUrl = EnvConfig.apiBaseUrl;
+    final apiKey = EnvConfig.apiKey;
 
     try {
       final response = await http.post(
