@@ -24,8 +24,8 @@ class CourseVideosScreen extends StatefulWidget {
 
 class _CourseVideosScreenState extends State<CourseVideosScreen> {
   bool _isLoading = false;
-  List<DashboardVideoModel> _allVideos = [];
-  Map<String, List<DashboardVideoModel>> _videosBySyllabus = {};
+  final List<DashboardVideoModel> _allVideos = [];
+  final Map<String, List<DashboardVideoModel>> _videosBySyllabus = {};
 
   @override
   void initState() {
@@ -110,7 +110,7 @@ class _CourseVideosScreenState extends State<CourseVideosScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CourseDetailScreen(
+        builder: (context) => VideoWatchScreen(
           initialVideo: video,
           relatedVideos: allVideosFormatted,
         ),
@@ -187,63 +187,65 @@ class _CourseVideosScreenState extends State<CourseVideosScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Syllabus header - matching video dashboard style
-       // Replace your _buildSyllabusSection header section with this:
+        // Replace your _buildSyllabusSection header section with this:
 
-Padding(
-  padding: const EdgeInsets.only(bottom: 16),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Expanded(  // Add Expanded here to constrain the width
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6C5CE7).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.video_library_rounded,
-                color: const Color(0xFF6C5CE7),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(  // Add Expanded here too
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    syllabusName,
-                    maxLines: 2,
-                   // overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                // Add Expanded here to constrain the width
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.video_library_rounded,
+                        color: const Color(0xFF6C5CE7),
+                        size: 20,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '${videos.length} video${videos.length != 1 ? 's' : ''}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.grey[600],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      // Add Expanded here too
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            syllabusName,
+                            maxLines: 2,
+                            // overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            '${videos.length} video${videos.length != 1 ? 's' : ''}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    ],
-  ),
-),
 
         // Videos list
-        ...videos.map((video) => _buildVideoCard(video)).toList(),
+        ...videos.map((video) => _buildVideoCard(video)),
 
         const SizedBox(height: 24),
       ],

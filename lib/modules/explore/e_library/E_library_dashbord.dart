@@ -185,7 +185,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CourseDetailScreen(
+        builder: (context) => VideoWatchScreen(
           initialVideo: currentVideo,
           relatedVideos: allHistoryVideos,
         ),

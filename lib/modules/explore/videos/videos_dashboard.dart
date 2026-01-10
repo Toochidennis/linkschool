@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
 import 'package:linkschool/modules/explore/videos/see_all_screen.dart';
 import 'package:linkschool/modules/explore/videos/watch_history_screen.dart';
-import 'package:linkschool/modules/explore/videos/video_watch_screen.dart';
 import 'package:linkschool/modules/explore/videos/watch_video.dart';
 import 'package:linkschool/modules/explore/videos/course_videos_screen.dart';
 import 'package:linkschool/modules/model/explore/home/video_model.dart';
@@ -42,9 +41,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
   int? _currentLevelId;
 
   // Section visibility states
-  bool _showRecommendedVideos = true;
-  bool _showWatchHistory = true;
-  bool _showSubjects = true;
+  final bool _showRecommendedVideos = true;
+  final bool _showWatchHistory = true;
+  final bool _showSubjects = true;
 
   @override
   void initState() {
@@ -409,7 +408,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  CourseDetailScreen(
+                                                  VideoWatchScreen(
                                                 initialVideo: video,
                                                 relatedVideos:
                                                     recommendationVideos.cast<
@@ -546,7 +545,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => CourseDetailScreen(
+                                  builder: (context) => VideoWatchScreen(
                                     initialVideo: currentVideo,
                                     relatedVideos: allHistoryVideos,
                                   ),

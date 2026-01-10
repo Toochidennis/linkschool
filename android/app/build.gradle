@@ -31,7 +31,7 @@ if (keystorePropertiesFile.exists()) {
 
 
 android {
-    namespace "com.digitaldream.linkskool.linkschool"
+    namespace "com.linkskool.app"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
@@ -50,7 +50,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.digitaldream.linkskool.linkschool"
+        applicationId "com.linkskool.app"
         minSdkVersion flutter.minSdkVersion 
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()

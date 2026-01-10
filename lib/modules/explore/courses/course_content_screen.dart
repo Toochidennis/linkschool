@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'course_detail_screen.dart';
 import 'reading_lesson_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
@@ -21,7 +20,7 @@ class CourseContentScreen extends StatefulWidget {
   final int categoryId;
 
   const CourseContentScreen({
-    Key? key,
+    super.key,
     required this.courseTitle,
     required this.courseDescription,
     required this.provider,
@@ -30,7 +29,7 @@ class CourseContentScreen extends StatefulWidget {
     this.providerSubtitle = 'Powered By Digital Dreams',
     this.category = 'COURSE',
     this.categoryColor = const Color(0xFF6366F1),
-  }) : super(key: key);
+  });
 
   @override
   State<CourseContentScreen> createState() => _CourseContentScreenState();
@@ -377,15 +376,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                         materialUrl: lesson.materialUrl.isNotEmpty
                             ? lesson.materialUrl
                             : null,
-                        zoomUrl: lesson.zoomUrl.isNotEmpty
-                            ? lesson.zoomUrl
-                            : null,
+                        zoomUrl:
+                            lesson.zoomUrl.isNotEmpty ? lesson.zoomUrl : null,
                         recordedUrl: lesson.recordedUrl.isNotEmpty
                             ? lesson.recordedUrl
                             : null,
-                        classDate: lesson.date.isNotEmpty
-                            ? lesson.date
-                            : null,
+                        classDate: lesson.date.isNotEmpty ? lesson.date : null,
                       ),
                     ),
                   );
@@ -461,20 +457,26 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "${lesson.title} ",overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                  lesson.title,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
                                   style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
                                     color: Colors.black87,
                                     height: 1.3,
                                   ),
                                 ),
-                                Text(lesson.description,
+                                const SizedBox(height: 6),
+                                Text(
+                                  lesson.description,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
                                   style: TextStyle(
-                                   fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.grey.shade600,
+                                    height: 1.4,
                                   ),
                                 ),
                               ],
@@ -827,7 +829,6 @@ Key topics would be covered in detail, with examples, exercises, and additional 
                               ),
                             ),
                             const SizedBox(height: 4),
-                           
                           ],
                         ),
                       ),
@@ -958,7 +959,7 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
                   pageSnap: true,
                   defaultPage: 0,
                   fitPolicy: FitPolicy.WIDTH,
-                 // password: _localPath,
+                  // password: _localPath,
                   preventLinkNavigation: false,
                   onError: (error) {
                     setState(() {

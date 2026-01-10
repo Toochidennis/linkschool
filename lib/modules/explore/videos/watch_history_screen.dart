@@ -207,7 +207,7 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CourseDetailScreen(
+            builder: (context) => VideoWatchScreen(
               initialVideo: currentVideo,
               relatedVideos: allHistoryVideos,
             ),
