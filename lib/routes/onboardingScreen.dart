@@ -1,0 +1,193 @@
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
+import 'app_navigation_flow.dart'; // Import AppNavigationFlow
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+
+class Onboardingscreen extends StatefulWidget {
+  const Onboardingscreen({super.key});
+
+  @override
+  _OnboardingscreenState createState() => _OnboardingscreenState();
+}
+
+class _OnboardingscreenState extends State<Onboardingscreen> {
+  final PageController _pageController = PageController();
+  bool onLastPage = false;
+  final List<Widget> _pages = [
+    OnbordingItems(
+        image: 'assets/images/onboardng-image/amico.svg',
+        title: 'Welcome to LinkSkool',
+        description:
+            'Take a step towards making your school better. We are here to support you on your journey to paperless learning.'),
+    OnbordingItems(
+        image: 'assets/images/onboardng-image/amico.svg',
+        title: 'Explore LinkSkool amazing features',
+        description:
+            'Take CBTs, play games, read educative e-books and watch academic videos.'),
+    OnbordingItems(
+        image: 'assets/images/onboardng-image/amico.svg',
+        title: 'Welcome to LinkSkool',
+        description:
+            'Take a step towards making your school better. We are here to support you on your journey to paperless learning.')
+  ];
+
+  // Method to handle onboarding completion
+  // Future<void> _completeOnboarding() async {
+  //   final userBox = Hive.box('userData');
+  //   await userBox.put('hasSeenOnboarding', true);
+
+  //   if (mounted) {
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(builder: (context) => const AppNavigationFlow())
+  //     );
+  //   }
+  // }
+
+  // Method to handle onboarding completion
+  Future<void> _completeOnboarding() async {
+    try {
+      final userBox = Hive.box('userData');
+      await userBox.put('hasSeenOnboarding', true);
+
+      if (mounted) {
+        // Navigate and remove all previous routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AppNavigationFlow()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Still try to navigate even if save fails
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AppNavigationFlow()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned(
+              child: SvgPicture.asset('assets/images/onboardng-image/Blur.svg',
+                  fit: BoxFit.contain)),
+          PageView.builder(
+            onPageChanged: (index) {
+              setState(() {
+                onLastPage = (index == 2);
+              });
+            },
+            itemCount: _pages.length,
+            controller: _pageController,
+            itemBuilder: (context, index) {
+              return _pages[index];
+            },
+          ),
+          Positioned(
+            bottom: 110,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: SmoothPageIndicator(
+                  effect: const WormEffect(dotHeight: 10, dotWidth: 10),
+                  controller: _pageController,
+                  count: _pages.length),
+            ),
+          ),
+          Positioned(
+              bottom: 50,
+              right: 16,
+              left: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                      onPressed: _completeOnboarding, // Use the method
+                      child: const Text(
+                        'Skip',
+                        style: TextStyle(fontSize: 20),
+                      )),
+                  if (onLastPage)
+                    ElevatedButton(
+                      onPressed: _completeOnboarding, // Use the method
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonColor,
+                        shape: const CircleBorder(),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: () {
+                        _pageController.nextPage(
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeIn);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonColor,
+                        shape: const CircleBorder(),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                    )
+                ],
+              ))
+        ],
+      ),
+    );
+  }
+}
+
+Widget OnbordingItems({
+  required image,
+  required title,
+  required description,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    child: Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 180),
+          child: SvgPicture.asset(image),
+        ),
+        const SizedBox(
+          height: 10,
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              title,
+              style: AppTextStyles.normal700(
+                  fontSize: 25, color: AppColors.titleColor),
+              textAlign: TextAlign.center,
+            ),
+            Center(
+                child: Text(
+              description,
+              style: AppTextStyles.normal400(
+                  fontSize: 18, color: AppColors.onboardingtext),
+              textAlign: TextAlign.center,
+            ))
+          ],
+        ),
+      ],
+    ),
+  );
+}

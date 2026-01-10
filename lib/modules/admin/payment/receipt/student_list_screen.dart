@@ -1,0 +1,325 @@
+// Modified student_list_screen.dart (now matches payment_outstanding_screen structure)
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/admin/payment_model.dart';
+import 'package:linkschool/modules/services/admin/payment/payment_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
+// import 'package:linkschool/modules/admin/payment/custom_toaster.dart';
+import '../../../common/widgets/portal/profile/naira_icon.dart';
+import '../../../services/api/api_service.dart';
+import 'student_payment_detail_screen.dart';
+import 'student_invoice_selection_screen.dart';
+
+class StudentListScreen extends StatefulWidget {
+  final int levelId;
+  final int classId;
+  final String className;
+
+  const StudentListScreen({
+    super.key,
+    required this.levelId,
+    required this.classId,
+    required this.className,
+  });
+
+  @override
+  State<StudentListScreen> createState() => _StudentListScreenState();
+}
+
+class _StudentListScreenState extends State<StudentListScreen> {
+  List<UnpaidStudent> _unpaidStudents = [];
+  bool _isLoading = true;
+  late PaymentService _paymentService;
+  late int _currentLevelId;
+  late int _currentClassId;
+  late String _currentClassName;
+  String? selectedClass;
+  String searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentService = PaymentService(locator<ApiService>());
+    _currentLevelId = widget.levelId;
+    _currentClassId = widget.classId;
+    _currentClassName = widget.className;
+    selectedClass = widget.className;
+    _loadStudents();
+  }
+
+  Future<void> _loadStudents() async {
+    setState(() => _isLoading = true);
+    try {
+      final students = await _paymentService.getUnpaidInvoices(
+        levelId: _currentLevelId,
+        classId: _currentClassId,
+      );
+      setState(() {
+        _unpaidStudents = students;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      CustomToaster.toastError(context, 'Error', 'Failed to load students: $e');
+    }
+  }
+
+  List<UnpaidStudent> get filteredStudents {
+    return _unpaidStudents.where((student) {
+      return student.name.toLowerCase().contains(searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  void _showClassSelectionOverlay() {
+    final classes = _paymentService.getClassesForLevel(_currentLevelId);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Select Class',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: const Color.fromRGBO(47, 85, 221, 1),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Flexible(
+                    child: ListView.builder(
+                      itemCount: classes.length,
+                      itemBuilder: (context, index) {
+                        final classModel = classes[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
+                          child: _buildClassButton(classModel),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildClassButton(ClassModel classModel) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        setState(() {
+          _currentClassId = classModel.id;
+          _currentClassName = classModel.className;
+          selectedClass = classModel.className;
+        });
+        _loadStudents();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(47, 85, 221, 1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          classModel.className,
+          style: AppTextStyles.normal500(
+            fontSize: 18,
+            color: AppColors.backgroundLight,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.paymentTxtColor1,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
+        centerTitle: true,
+        title: Text(
+          _currentClassName,
+          style: AppTextStyles.normal600(
+            fontSize: 24.0,
+            color: AppColors.paymentTxtColor1,
+          ),
+        ),
+        backgroundColor: AppColors.backgroundLight,
+      ),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        InkWell(
+                          onTap: _showClassSelectionOverlay,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  selectedClass ?? 'Class',
+                                  style: AppTextStyles.normal500(
+                                    fontSize: 16.0,
+                                    color: selectedClass != null
+                                        ? AppColors.primaryLight
+                                        : Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.arrow_drop_down,
+                                  color: selectedClass != null
+                                      ? AppColors.primaryLight
+                                      : Colors.grey,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: filteredStudents.isEmpty
+                          ? const Center(
+                              child: Text('No outstanding payments found'))
+                          : ListView.builder(
+                              itemCount: filteredStudents.length,
+                              itemBuilder: (context, index) {
+                                final student = filteredStudents[index];
+                                return _buildStudentItem(context, student);
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildStudentItem(BuildContext context, UnpaidStudent student) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        leading: SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
+        title: Text(
+          student.name,
+          style: AppTextStyles.normal500(
+            fontSize: 18,
+            color: AppColors.backgroundDark,
+          ),
+        ),
+        subtitle: Text(
+          _paymentService.getClassName(student.classId) ?? 'Unknown Class',
+          style: AppTextStyles.normal400(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const NairaSvgIcon(color: AppColors.paymentTxtColor3),
+            const SizedBox(width: 4),
+            Text(
+              student.totalAmount.toStringAsFixed(2),
+              style: AppTextStyles.normal700(
+                fontSize: 18,
+                color: AppColors.paymentTxtColor3,
+              ),
+            ),
+          ],
+        ),
+        onTap: () {
+          if (student.invoices.length > 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StudentInvoiceSelectionScreen(
+                  student: student,
+                ),
+              ),
+            );
+          } else if (student.invoices.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StudentPaymentDetailScreen(
+                  student: student,
+                  invoice: student.invoices.first,
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}

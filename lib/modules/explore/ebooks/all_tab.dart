@@ -1,53 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/constants.dart';
-
+import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart';
+// import 'package:linkschool/modules/e_library/elibrary_ebooks/book_page.dart';
+// import 'package:linkschool/modules/E_library/elibrary-ebooks/book_page.dart';
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
+import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
+import '../../common/constants.dart';
 import '../../common/text_styles.dart';
+// import 'book_page.dart';
 
 class AllTab extends StatelessWidget {
-  const AllTab({super.key});
+  final int selectedCategoryIndex;
+
+  const AllTab({super.key, required this.selectedCategoryIndex});
 
   @override
   Widget build(BuildContext context) {
-    final readingItems = [
-      _buildContinueReadingItem(
-        coverImage: 'assets/images/book_1.png',
-        bookTitle: 'Purple Hibiscus',
-        authorName: 'Chimamanda N. Adichie',
-        bookProgress: 0.2,
-      ),
-      _buildContinueReadingItem(
-        coverImage: 'assets/images/book_2.png',
-        bookTitle: 'Doom of Aliens',
-        authorName: 'K. S. Jenson',
-        bookProgress: 0.5,
-      ),
-    ];
+    final bookProvider = Provider.of<EbookProvider>(context);
+    final books = bookProvider.ebooks;
+    final categories = bookProvider.categories;
+    
+    // Safety check: Ensure selectedCategoryIndex is valid
+    if (categories.isEmpty || selectedCategoryIndex >= categories.length) {
+      return const Center(
+        child: Text('No categories available'),
+      );
+    }
+    
+    final selectedCategory = categories[selectedCategoryIndex];
 
-    final suggestedItems = [
-      _buildSuggestedForYouItem(
-        coverImage: 'assets/images/book_4.png',
-        bookTitle: 'Sugar Girl',
-        authorName: 'UBE Reader Boosters',
-      ),
-      _buildSuggestedForYouItem(
-        coverImage: 'assets/images/book_5.png',
-        bookTitle: 'Things Fall Apart',
-        authorName: 'Chinua Achebe',
-      ),
-      _buildSuggestedForYouItem(
-        coverImage: 'assets/images/book_3.png',
-        bookTitle: 'Americanah',
-        authorName: 'Chimamanda N. Adichie',
-      ),
-    ];
+    // Filter books based on the selected category
+    final filteredBooks = books
+        .where((book) => book.categories.contains(selectedCategory))
+        .toList();
 
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 16.0, top: 16.0),
-          sliver: SliverToBoxAdapter(
+    final readingItems = filteredBooks.map((book) {
+      return _buildContinueReadingItem(
+        coverImage: book.thumbnail,
+        bookTitle: book.title,
+        authorName: book.author,
+        bookProgress: 0.2, // Adjust based on actual progress
+      );
+    }).toList();
+
+    final suggestedItems = filteredBooks.map((book) {
+      return _buildSuggestedForYouItem(
+        coverImage: book.thumbnail,
+        bookTitle: book.title,
+        authorName: book.author,
+      );
+    }).toList();
+
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, top: 16.0),
             child: Text(
               'Continue reading',
               style: AppTextStyles.normal500(
@@ -56,9 +66,7 @@ class AllTab extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          Container(
             height: 260,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
@@ -68,20 +76,25 @@ class AllTab extends StatelessWidget {
                 itemCount: readingItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  return readingItems[index];
+                  final continueReading = filteredBooks[index];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              MybookPage(suggestedbook: continueReading)),
+                    ),
+                    child: readingItems[index],
+                  );
                 }),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-        SliverToBoxAdapter(
-          child: Constants.headingWithSeeAll600(
+          const SizedBox(height: 10.0),
+          Constants.headingWithSeeAll600(
             title: 'Suggested for you',
             titleSize: 18.0,
             titleColor: AppColors.text2Light,
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          Container(
             height: 250,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
@@ -91,20 +104,25 @@ class AllTab extends StatelessWidget {
                 itemCount: suggestedItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  return suggestedItems[index];
+                  final suggestbook = filteredBooks[index];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              MybookPage(suggestedbook: suggestbook)),
+                    ),
+                    child: suggestedItems[index],
+                  );
                 }),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-        SliverToBoxAdapter(
-          child: Constants.headingWithSeeAll600(
+          const SizedBox(height: 10.0),
+          Constants.headingWithSeeAll600(
             title: 'You might also like',
             titleSize: 18.0,
             titleColor: AppColors.text2Light,
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          Container(
             height: 250,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
@@ -114,11 +132,20 @@ class AllTab extends StatelessWidget {
                 itemCount: suggestedItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  return suggestedItems[index];
+                  final suggestedBook = filteredBooks[index];
+                  return GestureDetector(
+                    onTap: () => (Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                MybookPage(suggestedbook: suggestedBook)))),
+                    child: suggestedItems[index],
+                  );
                 }),
           ),
-        ),
-      ],
+          const SizedBox(height: 80.0),
+        ],
+      ),
     );
   }
 
@@ -140,17 +167,29 @@ class AllTab extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
-                  child: Image.asset(
+                  child: Image.network(
                     coverImage,
                     fit: BoxFit.cover,
                     height: 180,
                     width: 130,
+                     errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 173,
+                        width: 114,
+                        color: AppColors.videoColor9.withAlpha(50),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 40,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 4.0),
                 LinearProgressIndicator(
                   value: bookProgress,
-                  // Adjust the value (0.5 means 50% progress)
                   color: AppColors.primaryLight,
                 ),
                 const SizedBox(height: 4.0),
@@ -199,11 +238,24 @@ class AllTab extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
-                  child: Image.asset(
+                  child: Image.network(
                     coverImage,
                     fit: BoxFit.cover,
                     height: 180,
                     width: 130,
+                     errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 173,
+                        width: 114,
+                        color: AppColors.videoColor9.withAlpha(50),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 40,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 4.0),

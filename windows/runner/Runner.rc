@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.digitaldream.linkskool" "\0"
+            VALUE "CompanyName", "com.linkskool.app" "\0"
             VALUE "FileDescription", "linkschool" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "linkschool" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.digitaldream.linkskool. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2024 com.linkskool.app. All rights reserved." "\0"
             VALUE "OriginalFilename", "linkschool.exe" "\0"
             VALUE "ProductName", "linkschool" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

@@ -1,235 +1,930 @@
-import 'package:flutter/material.dart';
-import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
+import 'dart:math';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart';
+import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
+import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
+import 'package:linkschool/modules/explore/e_library/test_screen.dart';
+import 'package:linkschool/modules/explore/cbt/all_test_history_screen.dart';
+import 'package:linkschool/modules/explore/cbt/subject_selection_screen.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
-import '../ebooks/books_button_item.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class CBTDashboard extends StatefulWidget {
-  const CBTDashboard({super.key});
+  final bool showAppBar;
+  final bool fromELibrary;
+
+  const CBTDashboard({
+    super.key,
+    this.showAppBar = true,
+    this.fromELibrary = false,
+  });
 
   @override
   State<CBTDashboard> createState() => _CBTDashboardState();
 }
 
-class _CBTDashboardState extends State<CBTDashboard> {
-  int selectedCategoryIndex = 0;
+class _CBTDashboardState extends State<CBTDashboard>
+    with AutomaticKeepAliveClientMixin {
+  final _subscriptionService = CbtSubscriptionService();
+  final _authService = FirebaseAuthService();
 
-  final categoryShortNames = [
-    'JAMB',
-    'SSC',
-    'WAEC',
-    'SE',
-    'PSTE',
-    'BCE',
-    'Millionaire',
-    'NCEE',
-    'NECO',
-    'PSLC',
-  ];
+  // 🚀 Cache subscription status to avoid repeated checks
+  bool? _cachedCanTakeTest;
+  bool _isCheckingSubscription = false;
 
-  final categoryFullNames = {
-    'JAMB': 'Joint Admission and Matriculation Board',
-    'SSC': 'Senior School certificate',
-    'WAEC': 'West African Examination Council',
-    'SE': 'Scratch Examination',
-    'PSTE': 'Primary School Transition Examination',
-    'BCE': 'Basic Certificate Examination',
-    'Millionaire': 'Millionaire',
-    'NCEE': 'Nationwide Common Entrance Examination',
-    'NECO': 'Nigeria Examination Council',
-    'PSLC': 'Primary School Leaving Certificate',
-  };
+  @override
+  bool get wantKeepAlive => true;
 
-  List<SubjectItem> subjectItems = [
-    SubjectItem.name(
-      'Mathematics',
-      'maths',
-      '2001-2014',
-      AppColors.cbtCardColor1,
-    ),
-    SubjectItem.name(
-      'English Language',
-      'english',
-      '2001-2014',
-      AppColors.cbtCardColor2,
-    ),
-    SubjectItem.name(
-      'Chemistry',
-      'chemistry',
-      '2001-2014',
-      AppColors.cbtCardColor3,
-    ),
-    SubjectItem.name(
-      'Physics',
-      'physics',
-      '2001-2014',
-      AppColors.cbtCardColor4,
-    ),
-    SubjectItem.name(
-      'Further Mathematics',
-      'further_maths',
-      '2001-2014',
-      AppColors.cbtCardColor5,
-    )
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CBTProvider>().loadBoards();
+      _preloadSubscriptionStatus(); // Pre-cache subscription status
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Always refresh user data when dashboard is shown
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    cbtUserProvider.refreshCurrentUser();
+
+    // Listen for payment reference changes to update state
+    cbtUserProvider.paymentReferenceNotifier.addListener(() {
+      final reference = cbtUserProvider.paymentReferenceNotifier.value;
+      if (reference != null && reference.isNotEmpty) {
+        // User has paid, update cache and state
+        _cachedCanTakeTest = true;
+        if (mounted) setState(() {});
+      }
+    });
+  }
+
+  /// 🔥 PRE-LOAD subscription status to avoid UI blocking
+  Future<void> _preloadSubscriptionStatus() async {
+    try {
+      final hasPaid = await _subscriptionService.hasPaid();
+      final canTakeTest = await _subscriptionService.canTakeTest();
+
+      if (mounted) {
+        setState(() {
+          _cachedCanTakeTest = hasPaid || canTakeTest;
+        });
+      }
+    } catch (e) {
+      print('❌ Error preloading subscription: $e');
+    }
+  }
+
+  /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
+  Future<bool> _checkSubscriptionBeforeTest() async {
+    if (_isCheckingSubscription) return false;
+
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    // Use user data to check if user has paid
+    if (cbtUserProvider.hasPaid == true) {
+      _cachedCanTakeTest = true;
+      return true;
+    }
+
+    // Use cached value if available (instant response)
+    if (_cachedCanTakeTest != null && _cachedCanTakeTest == true) {
+      return true;
+    }
+
+    setState(() => _isCheckingSubscription = true);
+
+    try {
+      final hasPaid = cbtUserProvider.hasPaid;
+      final canTakeTest = await _subscriptionService.canTakeTest();
+      final remainingDays = await _subscriptionService.getRemainingFreeTests();
+
+      // Update cache
+      _cachedCanTakeTest = hasPaid || canTakeTest;
+
+      if (hasPaid || canTakeTest) {
+        return true;
+      }
+
+      // User must pay - show enforcement dialog
+      final settings = await CbtSettingsHelper.getSettings();
+      if (!mounted) return false;
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SubscriptionEnforcementDialog(
+          isHardBlock: true,
+          remainingTests: remainingDays,
+          amount: settings.amount,
+          discountRate: settings.discountRate,
+          onSubscribed: () {
+            print('✅ User subscribed from CBT Dashboard');
+            _cachedCanTakeTest = true; // Update cache
+            if (mounted) {
+              setState(() {});
+            }
+          },
+        ),
+      );
+
+      return false;
+    } catch (e) {
+      print('❌ Subscription check error: $e');
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingSubscription = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final metrics = [
-      Expanded(
-        child: _buildPerformanceCard(
-          imagePath: 'assets/icons/test.png',
-          title: 'Tests',
-          completionRate: '123',
-          backgroundColor: AppColors.cbtColor1,
-          borderColor: AppColors.cbtBorderColor1,
-        ),
-      ),
-      const SizedBox(width: 16.0),
-      Expanded(
-        child: _buildPerformanceCard(
-          imagePath: 'assets/icons/success.png',
-          title: 'Success',
-          completionRate: '123%',
-          backgroundColor: AppColors.cbtColor2,
-          borderColor: AppColors.cbtBorderColor2,
-        ),
-      ),
-      const SizedBox(width: 16.0),
-      Expanded(
-        child: _buildPerformanceCard(
-          imagePath: 'assets/icons/average.png',
-          title: 'Average',
-          completionRate: '123%',
-          backgroundColor: AppColors.cbtColor3,
-          borderColor: AppColors.cbtBorderColor3,
-          marginEnd: 16.0,
-        ),
-      ),
-    ];
+    super.build(context);
 
     return Scaffold(
-      appBar: Constants.customAppBar(
-          context: context, iconPath: 'assets/icons/search.png'),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _cbtCategories(
-                buttonLabels: categoryShortNames,
-                selectedCBTCategoriesIndex: selectedCategoryIndex,
-                onCategorySelected: (index) {
-                  setState(() {
-                    selectedCategoryIndex = index;
-                  });
-                }),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                categoryFullNames[categoryShortNames[selectedCategoryIndex]]!,
-                style: AppTextStyles.normal600(
-                  fontSize: 22.0,
-                  color: AppColors.text4Light,
-                ),
-              ),
-            ),
-            Expanded(
+      appBar: widget.showAppBar
+          ? Constants.customAppBar(
+              context: context,
+              showBackButton: true,
+              title: 'CBT Dashboard',
+            )
+          : null,
+      body: Consumer<CBTProvider>(
+        builder: (context, provider, child) {
+          return Skeletonizer(
+            enabled: provider.isLoading,
+            child: Container(
+              color: AppColors.backgroundLight,
+              // decoration: Constants.customBoxDecoration(context),
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: metrics,
-                      ),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                  SliverToBoxAdapter(
-                    child: Constants.headingWithSeeAll600(
-                      title: 'Test history',
-                      titleSize: 18.0,
-                      titleColor: AppColors.text4Light,
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 100,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(right: 16.0),
-                        children: [
-                          _buildHistoryCard(
-                            courseName: 'Biology',
-                            year: '2015',
-                            progressValue: 0.5,
-                            borderColor: AppColors.cbtColor3,
-                          ),
-                          _buildHistoryCard(
-                            courseName: 'Biology',
-                            year: '2015',
-                            progressValue: 0.25,
-                            borderColor: AppColors.cbtColor4,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                  SliverToBoxAdapter(
-                    child: Constants.headingWithSeeAll600(
-                      title: 'Choose subject',
-                      titleSize: 18.0,
-                      titleColor: AppColors.text4Light,
-                    ),
-                  ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final item = subjectItems[index];
-                        return _buildChooseSubjectCard(
-                          subject: item.subject,
-                          year: item.year,
-                          cardColor: item.cardColor,
-                          subjectIcon: item.subjectIcon,
-                        );
-                      },
-                      childCount: subjectItems.length,
-                    ),
-                  ),
-                ],
+                slivers: _buildSlivers(provider),
               ),
             ),
-          ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Build slivers conditionally based on data availability
+  /// Eliminates empty heights when sections have no content
+  List<Widget> _buildSlivers(CBTProvider provider) {
+    final slivers = <Widget>[
+      const SliverToBoxAdapter(child: SizedBox(height: 8)),
+    ];
+
+    // Add performance metrics section only if history is not empty
+    if (provider.recentHistory.isNotEmpty) {
+      slivers.addAll([
+        SliverToBoxAdapter(child: _buildPerformanceMetrics()),
+        const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+      ]);
+    }
+
+    // Add resume test banner only if there are incomplete tests
+    if (provider.incompleteTest != null) {
+      slivers.addAll([
+        SliverToBoxAdapter(child: _buildResumeTestBanner()),
+        const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+      ]);
+    }
+
+    // Add test history only if history is not empty
+    if (provider.recentHistory.isNotEmpty) {
+      slivers.addAll([
+        SliverToBoxAdapter(child: _buildTestHistory()),
+        const SliverToBoxAdapter(child: SizedBox(height: 30)),
+      ]);
+    }
+
+    // Add CBT categories (boards)
+    slivers.add(SliverToBoxAdapter(child: _buildCBTCategories(provider)));
+
+    // Add bottom padding only if boards exist
+    if (provider.boards.isNotEmpty) {
+      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 20.0)));
+    }
+
+    return slivers;
+  }
+
+  Widget _buildCBTCategories(CBTProvider provider) {
+    if (provider.isLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: List.generate(3, (index) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16.0),
+              height: 145,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(12),
+              ),
+            );
+          }),
+        ),
+      );
+    }
+
+    if (provider.boards.isEmpty) {
+      return _buildEmptyBoardsState(provider);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text(
+              'Exam Boards',
+              style: AppTextStyles.normal600(
+                fontSize: 22.0,
+                color: AppColors.text4Light,
+              ),
+            ),
+          ),
+          ...provider.boards.map((board) {
+            return _buildBoardCard(
+              board: board,
+              backgroundColor: Colors.transparent, // Not used anymore
+              provider: provider,
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBoardCard({
+    required dynamic board,
+    required Color backgroundColor,
+    required CBTProvider provider,
+  }) {
+    // Get unique color for this board based on its code
+    final boardColor = _getBoardColor(board.boardCode);
+    final shortName = board.shortName ?? board.boardCode;
+
+    return GestureDetector(
+      onTap: () => _handleBoardTap(board, provider),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Container(
+          height: 150,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.transparent,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: boardColor.withOpacity(0.15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: boardColor.withOpacity(0.18),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Icon and Badge Row
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: boardColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.school,
+                            size: 24,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Short name badge
+                        Text(
+                          shortName,
+                          style: AppTextStyles.normal700P(
+                            fontSize: 16.0,
+                            color: boardColor,
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Title and Start Button
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          board.title,
+                          style: AppTextStyles.normal700P(
+                            fontSize: 16.0,
+                            color: AppColors.text4Light,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: boardColor,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: boardColor.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: TextButton(
+                                onPressed: () =>
+                                    _handleBoardTap(board, provider),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Start',
+                                      style: AppTextStyles.normal700P(
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Loading overlay when checking subscription
+              if (_isCheckingSubscription)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _cbtCategories({
-    required List<String> buttonLabels,
-    required int selectedCBTCategoriesIndex,
-    required ValueChanged<int> onCategorySelected,
-  }) {
+  Color _getBoardColor(String boardCode) {
+    final Map<String, Color> boardColors = {
+      // 'JAMB': const Color(0xFF6366F1),      // Indigo
+      // 'WAEC': const Color(0xFF10B981),      // Emerald
+      // 'BECE': const Color(0xFFEC4899),      // Pink
+      // 'Million': const Color(0xFFF59E0B),   // Amber
+      // 'PSTE': const Color(0xFF8B5CF6),      // Violet
+      // 'ESUT': const Color(0xFF06B6D4),      // Cyan
+      // 'PSLC': const Color(0xFFEF4444),      // Red
+      // 'SCE': const Color(0xFF14B8A6),       // Teal
+      // 'NCEE': const Color(0xFFF97316),      // Orange
+    };
+
+    // List of random fallback colors
+    final List<Color> fallbackColors = [
+      const Color(0xFF6366F1), // Indigo
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFFF59E0B), // Amber
+      const Color(0xFF8B5CF6), // Violet
+      const Color(0xFF06B6D4), // Cyan
+      const Color(0xFFEC4899), // Pink
+      const Color(0xFFEF4444), // Red
+      const Color(0xFF14B8A6), // Teal
+      const Color(0xFFF97316), // Orange
+    ];
+
+    if (boardColors.containsKey(boardCode)) {
+      return boardColors[boardCode]!;
+    } else {
+      // Pick a random color from the fallback list
+      final random = Random(boardCode.hashCode);
+      return fallbackColors[random.nextInt(fallbackColors.length)];
+    }
+  }
+
+  /// ⚡ OPTIMIZED: Non-blocking board tap handler
+  Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {
+    // Check subscription asynchronously
+    final canProceed = await _checkSubscriptionBeforeTest();
+    if (!canProceed || !mounted) return;
+
+    provider.selectBoard(board.boardCode);
+
+    // Show board options modal
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _BoardOptionsModal(
+        boardName: board.title,
+        onPractice: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SubjectSelectionScreen(),
+            ),
+          );
+        },
+        onStudy: () {
+          Navigator.pop(context);
+          // Show study subject selection modal using current board subjects
+          final examTypeId =
+              int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => StudySubjectSelectionModal(
+              subjects: provider.currentBoardSubjects,
+              examTypeId: examTypeId,
+            ),
+          );
+        },
+        onGamify: () {
+          Navigator.pop(context);
+          final examTypeId = int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GameDashboardScreen(
+                subjects: provider.currentBoardSubjects,
+                examTypeId: examTypeId,
+              ),
+            ),
+          );
+        },
+        onChallenge: () async {
+          Navigator.pop(context);
+
+          // ⚡ Challenge Module: Check if user is signed in and has paid
+          // Does NOT check free trial limits - only checks active subscription
+          final cbtuserProvider =
+              Provider.of<CbtUserProvider>(context, listen: false);
+          final isSignedIn = await _authService.isUserSignedUp();
+          final hasPaid = cbtuserProvider.hasPaid;
+
+          print('\n🎯 Challenge Module Access Check:');
+          print('   - User signed in: $isSignedIn');
+          print('   - Has paid: $hasPaid');
+
+          // If not signed in or not paid, show enforcement dialog
+          if (!isSignedIn || !hasPaid) {
+            print('   ❌ Challenge access denied - showing enforcement dialog');
+
+            final settings = await CbtSettingsHelper.getSettings();
+            if (!mounted) return;
+
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => SubscriptionEnforcementDialog(
+                isHardBlock: true,
+                remainingTests: 0, // Challenge doesn't use free trials
+                amount: settings.amount,
+                discountRate: settings.discountRate,
+                onSubscribed: () {
+                  print('✅ User subscribed for Challenge module');
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+              ),
+            );
+            return;
+          }
+
+          // User is signed in and has paid, proceed to challenge
+          print('   ✅ Challenge access granted - proceeding');
+          final cbtProvider = Provider.of<CBTProvider>(context, listen: false);
+          final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
+
+          String userName = cbtuserProvider.currentUser?.name ?? 'User';
+          int userId = cbtuserProvider.currentUser?.id ?? 0;
+          print(
+              'userName: $userName, userId: $userId , examTypeId: $CurrentexamTypeId');
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ModernChallengeScreen(
+                userName: userName,
+                userId: userId,
+                examTypeId: CurrentexamTypeId.toString(),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyBoardsState(CBTProvider provider) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Wrap(
-        spacing: 10.0,
-        runSpacing: 10.0,
-        children: List.generate(buttonLabels.length, (index) {
-          return BooksButtonItem(
-              label: buttonLabels[index],
-              isSelected: selectedCBTCategoriesIndex == index,
-              onPressed: () {
-                onCategorySelected(index);
-              });
-        }),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text(
+              'Exam Boards',
+              style: AppTextStyles.normal600(
+                fontSize: 22.0,
+                color: AppColors.text4Light,
+              ),
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              vertical: 60.0,
+              horizontal: 24.0,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.text6Light.withOpacity(0.3),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.eLearningBtnColor1.withOpacity(0.1),
+                        AppColors.eLearningBtnColor1.withOpacity(0.05),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.school_outlined,
+                    size: 56,
+                    color: AppColors.eLearningBtnColor1,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'No Exam Boards Available',
+                  style: AppTextStyles.normal600(
+                    fontSize: 18,
+                    color: AppColors.text2Light,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Exam boards are currently not available.\nPlease check back later or contact support.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.normal400(
+                    fontSize: 14,
+                    color: AppColors.text7Light,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => provider.loadBoards(),
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: Text(
+                    'Retry',
+                    style: AppTextStyles.normal600(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.eLearningBtnColor1,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildPerformanceMetrics() {
+    return Consumer<CBTProvider>(
+      builder: (context, provider, child) {
+        if (provider.recentHistory.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildPerformanceCard(
+                imagePath: 'assets/icons/test.png',
+                title: 'Tests',
+                completionRate: provider.totalTests.toString(),
+                backgroundColor: AppColors.cbtColor1,
+                borderColor: AppColors.cbtBorderColor1,
+              ),
+              const SizedBox(width: 16.0),
+              _buildPerformanceCard(
+                imagePath: 'assets/icons/success.png',
+                title: 'Completed',
+                completionRate: provider.successCount.toString(),
+                backgroundColor: AppColors.cbtColor2,
+                borderColor: AppColors.cbtBorderColor2,
+              ),
+              const SizedBox(width: 16.0),
+              _buildPerformanceCard(
+                imagePath: 'assets/icons/average.png',
+                title: 'Average',
+                completionRate: '${provider.averageScore.toStringAsFixed(0)}%',
+                backgroundColor: AppColors.cbtColor3,
+                borderColor: AppColors.cbtBorderColor3,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildResumeTestBanner() {
+    return Consumer<CBTProvider>(
+      builder: (context, provider, child) {
+        final incompleteTest = provider.incompleteTest;
+
+        if (incompleteTest == null) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.eLearningBtnColor1,
+                AppColors.eLearningBtnColor1.withOpacity(0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12.0),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.refresh,
+                  color: Colors.white,
+                  size: 28.0,
+                ),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Continue where you left off',
+                      style: AppTextStyles.normal600(
+                        fontSize: 16.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4.0),
+                    Text(
+                      '${incompleteTest.subject} (${incompleteTest.year})',
+                      style: AppTextStyles.normal500(
+                        fontSize: 14.0,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                    const SizedBox(height: 4.0),
+                    Text(
+                      '${incompleteTest.percentage.toStringAsFixed(0)}% completed',
+                      style: AppTextStyles.normal400(
+                        fontSize: 12.0,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _handleResumeTest(incompleteTest, provider),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Resume',
+                        style: AppTextStyles.normal600(
+                          fontSize: 14.0,
+                          color: AppColors.eLearningBtnColor1,
+                        ),
+                      ),
+                      const SizedBox(width: 4.0),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16.0,
+                        color: AppColors.eLearningBtnColor1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleResumeTest(
+    CbtHistoryModel test,
+    CBTProvider provider,
+  ) async {
+    final canProceed = await _checkSubscriptionBeforeTest();
+    if (!canProceed || !mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TestScreen(
+          examTypeId: test.examId,
+          subjectId: null,
+          subject: test.subject,
+          year: test.year,
+          calledFrom: 'dashboard',
+        ),
+      ),
+    ).then((_) => provider.refreshStats());
+  }
+
+  Widget _buildTestHistory() {
+    return Consumer<CBTProvider>(
+      builder: (context, provider, child) {
+        if (provider.recentHistory.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Constants.headingWithSeeAll600(
+              title: 'Test history',
+              titleSize: 18.0,
+              titleColor: AppColors.text4Light,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AllTestHistoryScreen(),
+                  ),
+                ).then((_) => provider.refreshStats());
+              },
+            ),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: 13.0),
+                itemCount: provider.recentHistory.length,
+                itemBuilder: (context, index) {
+                  final history = provider.recentHistory[index];
+                  final colors = [
+                    AppColors.cbtColor3,
+                    AppColors.cbtColor4,
+                    AppColors.cbtColor1,
+                  ];
+
+                  return _buildHistoryCard(
+                    context: context,
+                    history: history,
+                    courseName: history.subject,
+                    year: history.year.toString(),
+                    progressValue: history.percentage / 100,
+                    borderColor: colors[index % colors.length],
+                    provider: provider,
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -239,185 +934,329 @@ class _CBTDashboardState extends State<CBTDashboard> {
     required String imagePath,
     required Color backgroundColor,
     required Color borderColor,
-    double? marginEnd,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
-      height: 130.0,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: borderColor,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+        height: 115.0,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              spreadRadius: 0,
+              offset: const Offset(0, 1),
+              blurRadius: 2,
+              color: Colors.black.withOpacity(0.25),
+            )
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            spreadRadius: 0,
-            offset: const Offset(0, 1),
-            blurRadius: 2,
-            color: Colors.black.withOpacity(0.25),
-          )
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Image.asset(
-            imagePath,
-            width: 24.0,
-            height: 24.0,
-          ),
-          const SizedBox(height: 4.0),
-          Text(
-            completionRate,
-            style: AppTextStyles.normal600(
-              fontSize: 24.0,
-              color: AppColors.backgroundLight,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Image.asset(
+              imagePath,
+              width: 24.0,
+              height: 24.0,
             ),
-          ),
-          const SizedBox(height: 4.0),
-          Text(
-            title,
-            style: AppTextStyles.normal600(
-              fontSize: 16.0,
-              color: AppColors.backgroundLight,
+            const SizedBox(height: 4.0),
+            Text(
+              completionRate,
+              style: AppTextStyles.normal600(
+                fontSize: 24.0,
+                color: AppColors.backgroundLight,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 4.0),
+            Text(
+              title,
+              style: AppTextStyles.normal600(
+                fontSize: 15.0,
+                color: AppColors.backgroundLight,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildHistoryCard({
+    required BuildContext context,
+    required CbtHistoryModel history,
     required String courseName,
     required String year,
     required double progressValue,
-    required borderColor,
+    required Color borderColor,
+    required CBTProvider provider,
   }) {
-    return Container(
-      width: 195,
-      margin: const EdgeInsets.only(left: 16.0),
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundLight,
-        borderRadius: BorderRadius.circular(4.0),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                height: 70.0,
-                width: 70.0,
-                child: CircularProgressIndicator(
-                  color: borderColor,
-                  value: progressValue,
-                  strokeWidth: 7.5,
-                ),
-              ),
-              Text(
-                '${(progressValue * 100).round()}%',
-                style: AppTextStyles.normal600(
-                  fontSize: 16.0,
-                  color: AppColors.text4Light,
-                ),
-              ),
-            ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TestScreen(
+              examTypeId: history.examId,
+              subjectId: null,
+              subject: history.subject,
+              year: history.year,
+              calledFrom: 'dashboard',
+            ),
           ),
-          const SizedBox(width: 10.0),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ).then((_) => provider.refreshStats());
+      },
+      child: Container(
+        width: 195,
+        margin: const EdgeInsets.only(left: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundLight,
+          borderRadius: BorderRadius.circular(4.0),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.center,
               children: [
+                SizedBox(
+                  height: 70.0,
+                  width: 70.0,
+                  child: CircularProgressIndicator(
+                    color: borderColor,
+                    value: progressValue,
+                    strokeWidth: 7.5,
+                  ),
+                ),
                 Text(
-                  'Biology',
+                  '${(progressValue * 100).round()}%',
                   style: AppTextStyles.normal600(
                     fontSize: 16.0,
                     color: AppColors.text4Light,
                   ),
                 ),
-                const SizedBox(height: 4.0),
-                Text(
-                  '($year)',
-                  style: AppTextStyles.normal600(
-                    fontSize: 12.0,
-                    color: AppColors.text7Light,
-                  ),
-                ),
-                const SizedBox(height: 4.0),
-                Text(
-                  'Tap to retake',
-                  style: AppTextStyles.normal600(
-                    fontSize: 14.0,
-                    color: AppColors.text8Light,
-                  ),
-                ),
               ],
             ),
-          )
-        ],
+            const SizedBox(width: 10.0),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    courseName,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.normal600(
+                      fontSize: 14.0,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    '($year)',
+                    style: AppTextStyles.normal600(
+                      fontSize: 12.0,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    'Tap to retake',
+                    style: AppTextStyles.normal600(
+                      fontSize: 14.0,
+                      color: AppColors.text8Light,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildChooseSubjectCard({
-    required String subject,
-    required String year,
-    required cardColor,
-    required subjectIcon,
-  }) {
+/// Modal for board options
+class _BoardOptionsModal extends StatelessWidget {
+  final String boardName;
+  final VoidCallback onPractice;
+  final VoidCallback onStudy;
+  final VoidCallback onGamify;
+  final VoidCallback onChallenge;
+
+  const _BoardOptionsModal({
+    required this.boardName,
+    required this.onPractice,
+    required this.onStudy,
+    required this.onGamify,
+    required this.onChallenge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
       decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.cbtColor5))),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(4.0),
-            ),
-            child: Center(
-              child: Image.asset(
-                'assets/icons/$subjectIcon.png',
-                width: 24.0,
-                height: 24.0,
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-          const SizedBox(width: 10.0),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  subject,
-                  style: AppTextStyles.normal600(
-                    fontSize: 16.0,
-                    color: AppColors.backgroundDark,
+
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(
+                    'Choose Learning Mode',
+                    style: AppTextStyles.normal700(
+                      fontSize: 20,
+                      color: AppColors.text4Light,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8.0),
-                Text(
-                  year,
-                  style: AppTextStyles.normal600(
-                    fontSize: 12.0,
-                    color: AppColors.text9Light,
+                  const SizedBox(height: 8),
+                  Text(
+                    boardName,
+                    style: AppTextStyles.normal500(
+                      fontSize: 14,
+                      color: AppColors.text7Light,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )
-        ],
+
+            // Options
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _OptionTile(
+                    icon: Icons.school,
+                    title: 'Practice',
+                    subtitle: 'Take practice tests',
+                    color: const Color(0xFF6366F1),
+                    onTap: onPractice,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.menu_book,
+                    title: 'Study',
+                    subtitle: 'Learn with explanations',
+                    color: const Color(0xFF10B981),
+                    onTap: onStudy,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.videogame_asset,
+                    title: 'Gamify',
+                    subtitle: 'Make learning fun',
+                    color: const Color(0xFFF59E0B),
+                    onTap: onGamify,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.emoji_events,
+                    title: 'Challenge',
+                    subtitle: 'Compete with others',
+                    color: const Color(0xFFEC4899),
+                    onTap: onChallenge,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _OptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 28, color: Colors.white),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.normal600(
+                      fontSize: 16,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.normal400(
+                      fontSize: 13,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: color,
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }

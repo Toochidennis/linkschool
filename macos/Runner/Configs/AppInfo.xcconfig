@@ -8,7 +8,7 @@
 PRODUCT_NAME = linkschool
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.digitaldream.linkskool.linkschool
+PRODUCT_BUNDLE_IDENTIFIER = com.linkskool.app
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2024 com.digitaldream.linkskool. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2024 com.linkskool.app. All rights reserved.

@@ -1,0 +1,32 @@
+import '../../common/widgets/portal/attachmentItem.dart';
+
+class Material {
+  final String title;
+  final String description;
+  final String selectedClass;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String topic;
+  final Duration? duration;
+  final String marks;
+  final DateTime createdAt;
+  final List<AttachmentItem>? attachments;
+  final String? topicId;
+
+  Material({
+    required this.title,
+    required this.description,
+    required this.selectedClass,
+    DateTime? startDate,
+    DateTime? endDate,
+    required this.topic,
+    this.duration,
+    required this.marks,
+    this.attachments,
+    DateTime? createdAt,
+    int? id,
+    this.topicId,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        startDate = startDate ?? DateTime.now(),
+        endDate = endDate ?? DateTime.now();
+}

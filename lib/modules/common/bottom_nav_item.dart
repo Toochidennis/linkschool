@@ -2,7 +2,6 @@ import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-
 import 'app_colors.dart';
 
 FABBottomAppBarItem createBottomNavIcon({
@@ -24,7 +23,7 @@ FABBottomAppBarItem createBottomNavIcon({
     inActiveIcon: SvgPicture.asset(
       imagePath,
       colorFilter: const ColorFilter.mode(
-        AppColors.primaryLight,
+        AppColors.paymentTxtColor1,
         BlendMode.srcIn,
       ),
       height: height ?? 24.0,

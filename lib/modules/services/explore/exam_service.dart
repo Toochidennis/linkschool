@@ -1,0 +1,53 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:linkschool/config/env_config.dart';
+
+class ExamService {
+  static const String baseUrl = 'http://www.public.linkskool.com/api';
+
+  Future<Map<String, dynamic>> fetchExamData({
+    required String examType,
+    int? limit,
+  }) async {
+    try {
+      final apiKey = EnvConfig.apiKey;
+      if (apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      // Build URL with optional limit parameter
+      var url =
+          "https://linkskool.net/api/v3/public/cbt/exams/$examType/questions";
+      if (limit != null) {
+        url += "?limit=$limit";
+      }
+      print('🌐 Making request to: $url');
+      print('🔢 Question limit: ${limit ?? "All"}');
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(response.body);
+        print('📊 Response body type: ${responseBody.runtimeType}');
+        print('📊 Response body type: $responseBody');
+
+        return responseBody;
+      } else {
+        print('🚨 API Error: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to load exam data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('💥 Service error: $e');
+      throw Exception('Error fetching exam data: $e');
+    }
+  }
+}

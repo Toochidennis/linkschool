@@ -5,8 +5,10 @@ import '../../common/text_styles.dart';
 class CustomButtonItem extends StatelessWidget {
   final Color backgroundColor;
   final Color borderColor;
+  final Color? textColor; // Remains nullable
   final String iconPath;
   final String label;
+  final int? number;
   final double? iconHeight;
   final double? iconWidth;
   final Widget? destination;
@@ -17,20 +19,24 @@ class CustomButtonItem extends StatelessWidget {
     required this.borderColor,
     required this.iconPath,
     required this.label,
+    this.textColor,
+    this.destination,
+    this.number,
     this.iconHeight,
     this.iconWidth,
-    this.destination,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => destination!,
-          ),
-        );
+        if (destination != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => destination!,
+            ),
+          );
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -41,28 +47,42 @@ class CustomButtonItem extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SvgPicture.asset(
                 iconPath,
-                colorFilter: const ColorFilter.mode(
-                  Colors.white,
-                  BlendMode.srcIn,
-                ),
+                // Use null-aware operator to handle nullable textColor
+                colorFilter: textColor != null
+                    ? ColorFilter.mode(textColor!, BlendMode.srcIn)
+                    : null,
                 height: iconHeight,
                 width: iconWidth,
               ),
               const SizedBox(
                 width: 10.0,
               ),
-              Text(
-                label,
-                style: AppTextStyles.normal500(
-                  fontSize: 14.0,
-                  color: Colors.white,
-                ),
+              Column(
+                children: [
+                  if (number != null)
+                    Text(
+                      '$number',
+                      style: AppTextStyles.normal600(
+                        fontSize: 18.0,
+                        // Use null-aware operator
+                        color: textColor ?? Colors.black,
+                      ),
+                    ),
+                  Text(
+                    label,
+                    style: AppTextStyles.normal500(
+                      fontSize: 14.0,
+                      // Use null-aware operator
+                      color: textColor ?? Colors.black,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

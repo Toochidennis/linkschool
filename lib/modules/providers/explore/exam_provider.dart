@@ -1,0 +1,175 @@
+import 'package:flutter/material.dart';
+import 'package:linkschool/modules/model/explore/home/exam_model.dart';
+import 'package:linkschool/modules/services/explore/exam_service.dart';
+
+class ExamProvider extends ChangeNotifier {
+  final ExamService _examService;
+
+  ExamProvider({ExamService? examService})
+      : _examService = examService ?? ExamService();
+
+  ExamModel? examInfo;
+  List<QuestionModel> questions = [];
+  int currentQuestionIndex = 0;
+  Map<int, int> userAnswers = {};
+  bool _isLoading = false;
+  String? _error;
+
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  Future<void> fetchExamData(String examType, {int? limit}) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      print('🔄 Fetching exam data for type: $examType');
+      print('🔢 Question limit: ${limit ?? "All"}');
+
+      final data = await _examService.fetchExamData(
+        examType: examType,
+        limit: limit,
+      );
+
+      // Debug: Print the response structure
+      print('📦 API Response: $data');
+
+      // Check if the API call was successful
+      if (data['success'] == true) {
+        // Parse exam info from the new structure
+        if (data['data'] != null && data['data']['exam'] != null) {
+          final examData = data['data']['exam'];
+          print('📊 Exam data: $examData');
+
+          examInfo = ExamModel.fromJson(examData);
+          print('✅ Exam info loaded: ${examInfo?.title}');
+        } else {
+          throw Exception('Exam data not found in response');
+        }
+
+        // Parse questions from the new structure
+        if (data['data'] != null && data['data']['questions'] != null) {
+          final questionsData = data['data']['questions'];
+          print('❓ Questions data type: ${questionsData.runtimeType}');
+          print('❓ Questions data: $questionsData');
+
+          List<dynamic> flatQuestions = [];
+
+          if (questionsData is Map) {
+            // Handle Map structure: {"0": [{...}, {...}]}
+            print('🔄 Handling Map structure for questions');
+            questionsData.forEach((key, value) {
+              if (value is List) {
+                flatQuestions.addAll(value);
+              } else if (value is Map) {
+                flatQuestions.add(value);
+              }
+            });
+          } else if (questionsData is List && questionsData.isNotEmpty) {
+            // Handle nested array structure
+            print('🔄 Handling List structure for questions');
+            for (var item in questionsData) {
+              if (item is List) {
+                flatQuestions.addAll(item);
+              } else if (item is Map) {
+                flatQuestions.add(item);
+              }
+            }
+          }
+          
+          print('📝 Flattened questions count: ${flatQuestions.length}');
+
+          questions = flatQuestions
+              .whereType<Map>()
+              .map((q) {
+                try {
+                  return QuestionModel.fromJson(Map<String, dynamic>.from(q));
+                } catch (e) {
+                  print('⚠️ Error parsing question: $e');
+                  print('⚠️ Question data that failed: $q');
+                  return null;
+                }
+              })
+              .whereType<QuestionModel>()
+              .toList();
+
+          print('✅ Successfully loaded ${questions.length} questions');
+
+          // Debug: Print first question details
+          if (questions.isNotEmpty) {
+            print('🔍 First question details:');
+            print('  ID: ${questions.first.id}');
+            print('  Content: ${questions.first.content}');
+            print('  Options: ${questions.first.getOptions()}');
+            print('  Correct: ${questions.first.correct}');
+          }
+
+          // Reset navigation state
+          currentQuestionIndex = 0;
+          userAnswers.clear();
+        } else {
+          print('ℹ️ No questions available or questions list is empty');
+          questions = [];
+        }
+      } else {
+        throw Exception('API returned success: false');
+      }
+    } catch (e) {
+      print("💥 Provider error: $e");
+      print("💥 Stack trace: ${e.toString()}");
+      _error = "Failed to load exam data: ${e.toString()}";
+
+      // Reset data on error
+      questions = [];
+      currentQuestionIndex = 0;
+      userAnswers.clear();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  QuestionModel? get currentQuestion {
+    if (questions.isEmpty || currentQuestionIndex >= questions.length) {
+      return null;
+    }
+    return questions[currentQuestionIndex];
+  }
+
+  void selectAnswer(int questionIndex, int answerIndex) {
+    userAnswers[questionIndex] = answerIndex;
+    notifyListeners();
+  }
+
+  void nextQuestion() {
+    if (currentQuestionIndex < questions.length - 1) {
+      currentQuestionIndex++;
+      notifyListeners();
+    }
+  }
+
+  void previousQuestion() {
+    if (currentQuestionIndex > 0) {
+      currentQuestionIndex--;
+      notifyListeners();
+    }
+  }
+
+  // Additional helper methods
+  bool get canMoveNext => currentQuestionIndex < questions.length - 1;
+  bool get canMovePrevious => currentQuestionIndex > 0;
+  int get totalQuestions => questions.length;
+  bool isQuestionAnswered(int index) => userAnswers.containsKey(index);
+
+  // Reset the provider state
+  void reset() {
+    examInfo = null;
+    questions = [];
+    currentQuestionIndex = 0;
+    userAnswers.clear();
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
+  }
+}
