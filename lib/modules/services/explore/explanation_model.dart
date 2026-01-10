@@ -79,4 +79,60 @@ Keep it brief and educational.
           "Review this topic and try similar questions to improve your understanding.";
     }
   }
+
+  /// Get follow-up explanation from DeepSeek API
+  static Future<String> getFollowUpExplanation({
+    required String question,
+    required String originalExplanation,
+    required String followUpQuestion,
+  }) async {
+    try {
+      final url = Uri.parse(_baseUrl);
+      
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $_apiKey",
+        },
+        body: json.encode({
+          "model": "deepseek-chat",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a helpful tutor for students preparing for exams. "
+                  "Provide clear, concise answers to follow-up questions. "
+                  "Keep answers under 150 words and use simple, easy-to-understand language."
+            },
+            {
+              "role": "user",
+              "content": """
+Original Question: $question
+
+Previous Explanation: $originalExplanation
+
+Student's Follow-up Question: $followUpQuestion
+
+Please answer the student's follow-up question clearly and concisely.
+"""
+            }
+          ],
+          "temperature": 0.7,
+          "max_tokens": 400,
+        }),
+      );
+
+      print("Follow-up response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data["choices"][0]["message"]["content"].trim();
+      } else {
+        throw Exception("API Error: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      print("DeepSeek Follow-up API Error: $e");
+      throw Exception("Failed to get follow-up explanation. Please try again.");
+    }
+  }
 }

@@ -80,7 +80,12 @@ class ExploreCourseProvider with ChangeNotifier {
     notifyListeners();
     try {
       final response = await _courseService.getAllCategoriesAndCourses();
-      _categories = response.categories;
+      _categories = response.categories.reversed.toList();
+
+      // Reverse courses in each category to show most recent first
+      // for (var category in _categories) {
+      //   category.courses = category.courses.reversed.toList();
+      // }
 
       // Log the fetched data for debugging
       print('✅ Fetched ${_categories.length} categories');

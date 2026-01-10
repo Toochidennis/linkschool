@@ -1,5 +1,6 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'quiz_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1513,6 +1514,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       TabBar(
         controller: _tabController,
         labelColor: const Color(0xFF6366F1),
+        isScrollable: false,
         unselectedLabelColor: Colors.grey.shade600,
         indicatorColor: const Color(0xFF6366F1),
         labelStyle: const TextStyle(
@@ -2596,13 +2598,68 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
   bool _showControls = true;
   late double _playbackSpeed;
   late bool _isLooping;
+  bool _isLandscape = true;
 
   @override
   void initState() {
     super.initState();
     _playbackSpeed = widget.playbackSpeed;
     _isLooping = widget.isLooping;
+    _setLandscapeOrientation();
     _hideControlsAfterDelay();
+  }
+
+  Future<void> _setLandscapeOrientation() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+    );
+    setState(() {
+      _isLandscape = true;
+    });
+  }
+
+  Future<void> _setPortraitOrientation() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    setState(() {
+      _isLandscape = false;
+    });
+  }
+
+  Future<void> _resetOrientation() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+  }
+
+  Future<void> _handleBackButton() async {
+    if (_isLandscape) {
+      // First click: rotate to portrait
+      await _setPortraitOrientation();
+    } else {
+      // Second click: exit fullscreen
+      await _resetOrientation();
+      widget.onExit();
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }
   }
 
   void _hideControlsAfterDelay() {
@@ -2777,11 +2834,10 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                widget.onExit();
-                                //  Navigator.pop(context);
-                              },
-                              icon: const Icon(Icons.close),
+                              onPressed: _handleBackButton,
+                              icon: Icon(_isLandscape
+                                  ? Icons.close
+                                  : Icons.arrow_back),
                               color: Colors.white,
                             ),
                             const Spacer(),

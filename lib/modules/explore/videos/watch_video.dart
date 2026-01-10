@@ -911,6 +911,7 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
   bool _showControls = true;
   late double _playbackSpeed;
   late bool _isLooping;
+  bool _isLandscape = true;
 
   @override
   void initState() {
@@ -929,6 +930,22 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
     await SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.immersiveSticky,
     );
+    setState(() {
+      _isLandscape = true;
+    });
+  }
+
+  Future<void> _setPortraitOrientation() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    setState(() {
+      _isLandscape = false;
+    });
   }
 
   Future<void> _resetOrientation() async {
@@ -942,6 +959,20 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
     );
+  }
+
+  Future<void> _handleBackButton() async {
+    if (_isLandscape) {
+      // First click: rotate to portrait
+      await _setPortraitOrientation();
+    } else {
+      // Second click: exit fullscreen
+      await _resetOrientation();
+      widget.onExit();
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }
   }
 
   void _hideControlsAfterDelay() {
@@ -1123,11 +1154,10 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                widget.onExit();
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(Icons.close),
+                              onPressed: _handleBackButton,
+                              icon: Icon(_isLandscape
+                                  ? Icons.close
+                                  : Icons.arrow_back),
                               color: Colors.white,
                             ),
                             const Spacer(),

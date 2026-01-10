@@ -5,6 +5,7 @@ import 'package:linkschool/modules/services/explore/explanation_model.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/ai_chat_screen.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
@@ -1683,7 +1684,7 @@ class _ExplanationModalState extends State<ExplanationModal> {
             ),
           ),
 
-          // Continue button
+          // Continue and Ask More buttons
           Container(
             padding: const EdgeInsets.all(23),
             decoration: BoxDecoration(
@@ -1696,22 +1697,68 @@ class _ExplanationModalState extends State<ExplanationModal> {
                 ),
               ],
             ),
-            child: ElevatedButton(
-              onPressed: widget.onContinue,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.eLearningBtnColor1,
-                minimumSize: const Size(double.infinity, 52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                // Ask More button
+                Expanded(
+                  flex: 1,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      // Navigate to chat screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AIChatScreen(
+                            question: widget.question,
+                            initialExplanation: _explanation ?? '',
+                            correctAnswer: widget.correctAnswer,
+                            selectedAnswer: widget.selectedAnswer,
+                          ),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 52),
+                      side: BorderSide(
+                        color: AppColors.eLearningBtnColor1,
+                        width: 2,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Ask More',
+                      style: AppTextStyles.normal600(
+                        fontSize: 16,
+                        color: AppColors.eLearningBtnColor1,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: Text(
-                'Continue Learning',
-                style: AppTextStyles.normal600(
-                  fontSize: 16,
-                  color: Colors.white,
+                const SizedBox(width: 12),
+                // Continue button
+                Expanded(
+                  flex: 1,
+                  child: ElevatedButton(
+                    onPressed: widget.onContinue,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.eLearningBtnColor1,
+                      minimumSize: const Size(0, 52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Continue',
+                      style: AppTextStyles.normal600(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
