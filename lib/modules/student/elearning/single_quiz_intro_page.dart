@@ -50,6 +50,7 @@ class SingleQuizIntroPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (childContent == null) {
+      print(childContent);
       return const Scaffold(
         body: Center(
           child: Column(
@@ -182,6 +183,7 @@ class SingleQuizIntroPage extends StatelessWidget {
                               ),
                             );
                           } else {
+                            print("Qs${childContent!.questions}");
                             // Add quizId to Hive
                             quizzesTaken.add(quizId);
                             userBox.put('quizzes', quizzesTaken);
