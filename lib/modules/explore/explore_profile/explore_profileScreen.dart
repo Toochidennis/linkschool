@@ -295,27 +295,27 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   _buildProfileHeader(settings, subscriptionStatus),
                 if (_isSignedIn) const SizedBox(height: 24),
 
-                // App Preferences Section
-                _buildSectionHeader('App Preferences', settings),
-                const SizedBox(height: 12),
-                _buildSettingsCard([
-                  _buildSettingsTile(
-                    icon: Icons.dark_mode_outlined,
-                    title: 'Dark Mode',
-                    subtitle: 'Switch to dark theme',
-                    settings: settings,
-                    trailing: Switch(
-                      value: settings.isDarkMode,
-                      onChanged: (value) {
-                        settings.setDarkMode(value);
-                      },
-                      activeColor: AppColors.text2Light,
-                    ),
-                  ),
-                  _buildDivider(),
-                ], settings),
-
-                const SizedBox(height: 24),
+                // App Preferences Section (Disabled for now)
+                // _buildSectionHeader('App Preferences', settings),
+                // const SizedBox(height: 12),
+                // _buildSettingsCard([
+                //   _buildSettingsTile(
+                //     icon: Icons.dark_mode_outlined,
+                //     title: 'Dark Mode',
+                //     subtitle: 'Switch to dark theme',
+                //     settings: settings,
+                //     trailing: Switch(
+                //       value: settings.isDarkMode,
+                //       onChanged: (value) {
+                //         settings.setDarkMode(value);
+                //       },
+                //       activeColor: AppColors.text2Light,
+                //     ),
+                //   ),
+                //   _buildDivider(),
+                // ], settings),
+                //
+                // const SizedBox(height: 24),
 
                 // Support & Legal Section
                 _buildSectionHeader('Support & Legal', settings),

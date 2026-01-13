@@ -1,6 +1,7 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
 import 'quiz_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +17,12 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
+import '../../providers/explore/assignment_submission_provider.dart';
+
+// Top-level function for compute isolate - encodes bytes to base64
+String _encodeToBase64(Uint8List bytes) {
+  return base64Encode(bytes);
+}
 
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
@@ -70,6 +77,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? _pendingUsername;
   String? _pendingAssignmentFileName;
   String? _pendingAssignmentFileBase64;
+
+  // Assignment submission state
+  bool _isAssignmentSubmitted = false;
+  bool _isSubmittingAssignment = false;
 
   final List<Map<String, dynamic>> _courseVideos = [
     {
@@ -182,6 +193,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     _tabController = TabController(length: 3, vsync: this);
     _loadCompletionStatus();
     _loadPendingAssignmentData();
+    _loadSubmissionStatus();
     // Use provided video URL or fallback to hardcoded videos
     final initialVideoUrl = widget.videoUrl?.isNotEmpty == true
         ? widget.videoUrl!
@@ -269,6 +281,34 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       _quizScore = quizScore;
       _quizTaken = quizScore > 0;
     });
+  }
+
+  Future<void> _loadSubmissionStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.courseTitle}_assignment_submitted';
+      final isSubmitted = prefs.getBool(key) ?? false;
+
+      setState(() {
+        _isAssignmentSubmitted = isSubmitted;
+      });
+    } catch (e) {
+      print('Error loading submission status: $e');
+    }
+  }
+
+  Future<void> _saveSubmissionStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.courseTitle}_assignment_submitted';
+      await prefs.setBool(key, true);
+
+      setState(() {
+        _isAssignmentSubmitted = true;
+      });
+    } catch (e) {
+      print('Error saving submission status: $e');
+    }
   }
 
   Future<void> _loadPendingAssignmentData() async {
@@ -958,10 +998,18 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                 if (result != null) {
                                   final filePath = result.files.single.path;
                                   if (filePath != null) {
-                                    // Read file and convert to base64
+                                    // Show loading indicator while encoding
+                                    setModalState(() {
+                                      selectedFileName = 'Encoding file...';
+                                    });
+
+                                    // Read file bytes
                                     final file = File(filePath);
                                     final bytes = await file.readAsBytes();
-                                    final base64String = base64Encode(bytes);
+
+                                    // Encode to base64 in background isolate to avoid blocking UI
+                                    final base64String =
+                                        await compute(_encodeToBase64, bytes);
 
                                     setModalState(() {
                                       selectedFileName =
@@ -972,6 +1020,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                   }
                                 }
                               } catch (e) {
+                                setModalState(() {
+                                  selectedFileName = null;
+                                });
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text('Error picking file: $e'),
@@ -1109,6 +1160,20 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                       return;
                                     }
 
+                                    // Check if assignment file is selected
+                                    if (selectedFileName == null ||
+                                        selectedFileBase64 == null) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Please upload your assignment file'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+
                                     // Check if quiz has been taken
                                     if (!_quizTaken) {
                                       // Save pending data
@@ -1210,47 +1275,214 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
                                         // Reload quiz data
                                         await _loadQuizData();
-
-                                        // If quiz was completed and we have score
-                                        if (result != null && _quizTaken) {
-                                          // Prepare and print payload
-                                          _prepareAndPrintPayload(
-                                            score: result,
-                                            assignmentFileName:
-                                                selectedFileName,
-                                            assignmentBase64:
-                                                selectedFileBase64,
-                                            username: name,
-                                          );
-
-                                          // Clear pending data
-                                          await _clearPendingAssignmentData();
-
-                                          // Open email app
-                                          _openEmailApp(name);
-                                        }
                                       }
                                       return;
                                     }
 
-                                    // Quiz already taken, proceed normally
-                                    Navigator.pop(context);
+                                    // Close the modal first
+                                    Navigator.of(context).pop();
 
-                                    // Prepare and print payload
-                                    _prepareAndPrintPayload(
-                                      score: _quizScore,
-                                      assignmentFileName: selectedFileName,
-                                      assignmentBase64: selectedFileBase64,
-                                      username: name,
+                                    // Store the navigator context before showing dialog
+                                    final navigatorContext =
+                                        Navigator.of(context).context;
+
+                                    // Show loading dialog
+                                    showDialog(
+                                      context: navigatorContext,
+                                      barrierDismissible: false,
+                                      builder: (BuildContext dialogContext) {
+                                        return PopScope(
+                                          canPop: false,
+                                          child: Dialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(24.0),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const CircularProgressIndicator(
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                            Color>(
+                                                      Color(0xFF6366F1),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 24),
+                                                  const Text(
+                                                    'Submitting Assignment...',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.black87,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    'Please wait while we submit your work',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color:
+                                                          Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     );
 
-                                    // Clear pending data if any
-                                    await _clearPendingAssignmentData();
+                                    // Submit assignment using provider (run asynchronously without blocking UI)
+                                    try {
+                                      // Import the provider at the top of the file if not already imported
+                                      final provider =
+                                          AssignmentSubmissionProvider();
 
-                                    _openEmailApp(name);
+                                      final success =
+                                          await provider.submitAssignment(
+                                        name: name,
+                                        email:
+                                            'student@linkschool.com', // You can add email field to modal if needed
+                                        phone:
+                                            '0000000000', // You can add phone field to modal if needed
+                                        quizScore: _quizScore.toString(),
+                                        assignments: [
+                                          {
+                                            'file_name': selectedFileName!,
+                                            'type': 'pdf',
+                                            'file': selectedFileBase64!,
+                                          }
+                                        ],
+                                      );
+
+                                      // Close loading dialog using root navigator
+                                      if (navigatorContext.mounted) {
+                                        Navigator.of(navigatorContext,
+                                                rootNavigator: true)
+                                            .pop();
+                                      }
+
+                                      if (success) {
+                                        // Save submission status
+                                        await _saveSubmissionStatus();
+                                        await _clearPendingAssignmentData();
+
+                                        // Show success message
+                                        if (navigatorContext.mounted) {
+                                          showDialog(
+                                            context: navigatorContext,
+                                            builder:
+                                                (BuildContext successContext) {
+                                              return AlertDialog(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                title: const Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.check_circle,
+                                                      color: Colors.green,
+                                                      size: 28,
+                                                    ),
+                                                    SizedBox(width: 12),
+                                                    Text(
+                                                      'Success!',
+                                                      style: TextStyle(
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                content: const Text(
+                                                  'Your assignment has been submitted successfully and is pending review.',
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    height: 1.5,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.of(
+                                                              successContext)
+                                                          .pop();
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          const Color(
+                                                              0xFF6366F1),
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                      ),
+                                                    ),
+                                                    child: const Text(
+                                                      'OK',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        }
+                                      } else {
+                                        // Show error message
+                                        if (navigatorContext.mounted) {
+                                          ScaffoldMessenger.of(navigatorContext)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                provider.errorMessage ??
+                                                    'Failed to submit assignment',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                              duration:
+                                                  const Duration(seconds: 5),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    } catch (e) {
+                                      // Close loading dialog
+                                      if (navigatorContext.mounted) {
+                                        Navigator.of(navigatorContext,
+                                                rootNavigator: true)
+                                            .pop();
+                                      }
+
+                                      // Show error message
+                                      if (navigatorContext.mounted) {
+                                        ScaffoldMessenger.of(navigatorContext)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text('Error: $e'),
+                                            backgroundColor: Colors.red,
+                                            duration:
+                                                const Duration(seconds: 5),
+                                          ),
+                                        );
+                                      }
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0066FF),
+                                    backgroundColor: const Color(0xFF6366F1),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 16),
@@ -1260,7 +1492,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                     elevation: 0,
                                   ),
                                   child: const Text(
-                                    'Send Email',
+                                    'Submit Assignment',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -2268,37 +2500,41 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Check if quiz has been taken before allowing submission
-                      if (!_quizTaken) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Quiz Required'),
-                            content: const Text(
-                                'You need to take the quiz first before submitting your assignment. Please go to the Quiz tab and complete the quiz.'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  // Switch to Quiz tab (index 2)
-                                  _tabController.animateTo(2);
-                                },
-                                child: const Text('Go to Quiz'),
-                              ),
-                            ],
-                          ),
-                        );
-                        return;
-                      }
-                      _showSubmitAssignmentModal(context);
-                    },
+                    onPressed: _isAssignmentSubmitted
+                        ? null
+                        : () {
+                            // Check if quiz has been taken before allowing submission
+                            if (!_quizTaken) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Quiz Required'),
+                                  content: const Text(
+                                      'You need to take the quiz first before submitting your assignment. Please go to the Quiz tab and complete the quiz.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        // Switch to Quiz tab (index 2)
+                                        _tabController.animateTo(2);
+                                      },
+                                      child: const Text('Go to Quiz'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              return;
+                            }
+                            _showSubmitAssignmentModal(context);
+                          },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
+                      backgroundColor: _isAssignmentSubmitted
+                          ? Colors.grey.shade400
+                          : const Color(0xFF6366F1),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -2306,12 +2542,22 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Submit Assignment',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isAssignmentSubmitted)
+                          const Icon(Icons.pending, size: 18),
+                        if (_isAssignmentSubmitted) const SizedBox(width: 8),
+                        Text(
+                          _isAssignmentSubmitted
+                              ? 'Submission Pending'
+                              : 'Submit Assignment',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

@@ -463,6 +463,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
       builder: (BuildContext context) {
         return SubjectYearSelectionModal(
           subjects: subjects,
+          selectedSubjects: selectedSubjects, // Pass the selected subjects
           onSubjectYearSelected: (subject, subjectId, year, examId, icon) {
             final formattedSubject = _sentenceCase(subject);
 
@@ -800,11 +801,13 @@ class SubjectYearSelectionModal extends StatefulWidget {
   final List<SubjectModel> subjects;
   final Function(String subject, String subjectId, String year, String examId,
       String icon) onSubjectYearSelected;
+  final List<SelectedSubject> selectedSubjects; // Add this parameter
 
   const SubjectYearSelectionModal({
     super.key,
     required this.subjects,
     required this.onSubjectYearSelected,
+    required this.selectedSubjects, // Add this parameter
   });
 
   @override
@@ -1133,6 +1136,14 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
       itemCount: sortedYears.length,
       itemBuilder: (context, index) {
         final year = sortedYears[index];
+        
+        // Check if this year is already selected for the current subject
+        final isSelected = selectedSubject != null && 
+            widget.selectedSubjects.any(
+              (s) => s.subjectName == _sentenceCase(selectedSubject!.name) && 
+                     s.year == year.year,
+            );
+        
         return Padding(
           padding: const EdgeInsets.only(bottom: 12.0),
           child: Material(
@@ -1166,11 +1177,12 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
                         color: AppColors.text3Light,
                       ),
                     ),
-                    const Icon(
-                      Icons.check_circle_outline,
-                      size: 20,
-                      color: AppColors.eLearningBtnColor1,
-                    ),
+                    if (isSelected) // Only show icon if already selected
+                      const Icon(
+                        Icons.check_circle,
+                        size: 20,
+                        color: AppColors.eLearningBtnColor1,
+                      ),
                   ],
                 ),
               ),

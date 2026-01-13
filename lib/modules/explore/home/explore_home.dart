@@ -515,90 +515,93 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Announcement Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.0),
-            child: Stack(
-              children: [
-                Image.network(
-                  announcement.imageUrl,
-                  fit: BoxFit.cover,
-                  height: 180,
-                  width: double.infinity,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey[300]!,
-                            Colors.grey[200]!,
-                          ],
-                        ),
-                      ),
-                      child: Skeleton.leaf(
-                        enabled: true,
-                        child: Container(
-                          color: Colors.grey[300],
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.buttonColor2,
-                            AppColors.buttonColor3,
-                          ],
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.campaign_rounded,
-                          size: 60,
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                if (announcement.sponsored)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.star, size: 12, color: Colors.white),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Sponsored',
-                            style: AppTextStyles.normal500(
-                              fontSize: 10.0,
-                              color: Colors.white,
-                            ),
+          GestureDetector(
+            onTap: () => _launchURL(announcement.actionUrl),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12.0),
+              child: Stack(
+                children: [
+                  Image.network(
+                    announcement.imageUrl,
+                    fit: BoxFit.cover,
+                    height: 180,
+                    width: double.infinity,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 180,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.grey[300]!,
+                              Colors.grey[200]!,
+                            ],
                           ),
-                        ],
+                        ),
+                        child: Skeleton.leaf(
+                          enabled: true,
+                          child: Container(
+                            color: Colors.grey[300],
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 180,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.buttonColor2,
+                              AppColors.buttonColor3,
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.campaign_rounded,
+                            size: 60,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (announcement.sponsored)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star, size: 12, color: Colors.white),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Sponsored',
+                              style: AppTextStyles.normal500(
+                                fontSize: 10.0,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12.0),

@@ -36,17 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  void _navigateToExploreDashboard() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ExploreDashboard(
-          onSwitch: (bool value) {},
-          selectedIndex: 0,
-          onTabSelected: (int index) {},
-        ),
-      ),
-    );
+  void _navigateBack() {
+    // Simply pop back to previous screen (SelectSchool)
+    Navigator.of(context).pop();
   }
 
   @override
@@ -86,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _navigateToExploreDashboard();
+        _navigateBack();
         return false;
       },
       child: Scaffold(
@@ -103,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   right: 300,
                   left: 0,
                   child: InkWell(
-                    onTap: () => _navigateToExploreDashboard(),
+                    onTap: () => _navigateBack(),
                     child: Icon(Icons.arrow_back,
                         size: 16, color: AppColors.attCheckColor1),
                   ),
@@ -203,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "${widget.schoolName} (Code: ${widget.schoolCode})",
+                          widget.schoolName!,
                           style: AppTextStyles.normal500(
                               fontSize: 13, color: AppColors.bookText),
                         ),

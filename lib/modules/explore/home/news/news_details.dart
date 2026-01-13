@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkfy_text/linkfy_text.dart';
 // import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
 // import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -9,6 +10,8 @@ import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class NewsDetails extends StatefulWidget {
   final NewsModel news;
@@ -64,6 +67,14 @@ class _NewsDetailsState extends State<NewsDetails> {
     return provider.getNewsByCategory(selectedCategory);
   }
 
+   void launchURL(String url) async {
+    if (await canLaunchUrlString(url)) {
+      await launchUrlString(url, mode: LaunchMode.externalApplication);
+    } else {
+      print("Could not launch $url");
+    }
+  } 
+
   Color getCategoryColor(String category) {
     switch (category) {
       case 'WAEC':
@@ -102,6 +113,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     
     Share.share(shareText);
   }
+
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -349,14 +363,31 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Content text
-                    Text(
+                    // Text(
+                    //   currentNews.content,
+                    //   style: AppTextStyles.normal400(
+                    //     fontSize: 16.0,
+                    //     color: Colors.black,
+                    //   ).copyWith(height: 1.7),
+                    // ),
+                    
+                    LinkifyText(
+
                       currentNews.content,
-                      style: AppTextStyles.normal400(
+                      textStyle: AppTextStyles.normal400(
                         fontSize: 16.0,
                         color: Colors.black,
                       ).copyWith(height: 1.7),
+                      linkStyle: TextStyle(
+                        color: AppColors.primaryLight,
+                        decoration: TextDecoration.underline,
+                      ),
+                      onTap: (link) {
+                        launchURL(link.value.toString());
+                      },
                     ),
-                    
+
+
                     const SizedBox(height: 40),
                     
                     // Recommended News Section

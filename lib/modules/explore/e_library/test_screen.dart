@@ -1359,13 +1359,14 @@ class _TestScreenState extends State<TestScreen>
                         // Auto-proceed to next exam without dialog
                         _proceedToNextExam(provider);
                       }
-                    : null,
+                    : (isLastQuestion && isLastSubject)
+                        ? () {
+                            // Show submit modal on last question of last subject
+                            _submitQuiz(provider, isFullyCompleted: true);
+                          }
+                        : null,
             style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                  color: (!isLastQuestion ||
-                          (widget.onExamComplete != null && !isLastSubject))
-                      ? Colors.white
-                      : const Color.fromARGB(255, 169, 168, 168)),
+              side: const BorderSide(color: Colors.white),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -1374,13 +1375,9 @@ class _TestScreenState extends State<TestScreen>
               (isLastQuestion &&
                       widget.onExamComplete != null &&
                       !isLastSubject)
-                  ? 'Next Subject'
+                  ? 'Next'
                   : 'Next',
-              style: TextStyle(
-                  color: (!isLastQuestion ||
-                          (widget.onExamComplete != null && !isLastSubject))
-                      ? Colors.white
-                      : const Color.fromARGB(255, 169, 168, 168)),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ),

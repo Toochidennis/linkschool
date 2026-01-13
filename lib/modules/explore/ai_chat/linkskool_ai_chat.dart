@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:dio/dio.dart';
+import 'package:uuid/uuid.dart';
 
 class LinkSkoolAIChatPage extends StatefulWidget {
   const LinkSkoolAIChatPage({super.key});
@@ -9,285 +14,84 @@ class LinkSkoolAIChatPage extends StatefulWidget {
   State<LinkSkoolAIChatPage> createState() => _LinkSkoolAIChatPageState();
 }
 
-class Message {
-  final String text;
-  final bool isUser;
-  final DateTime timestamp;
-
-  Message({
-    required this.text,
-    required this.isUser,
-    required this.timestamp,
-  });
-}
-
-class _AnimatedDots extends StatefulWidget {
-  const _AnimatedDots();
-
-  @override
-  State<_AnimatedDots> createState() => _AnimatedDotsState();
-}
-
-class _AnimatedDotsState extends State<_AnimatedDots>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _dotControllers;
-
-  @override
-  void initState() {
-    super.initState();
-    _dotControllers = List.generate(
-      3,
-      (index) => AnimationController(
-        duration: const Duration(milliseconds: 600),
-        vsync: this,
-      ),
-    );
-
-    for (int i = 0; i < _dotControllers.length; i++) {
-      Future.delayed(Duration(milliseconds: i * 150), () {
-        if (mounted) {
-          _dotControllers[i].repeat();
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _dotControllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (index) {
-        return ScaleTransition(
-          scale: Tween<double>(begin: 0.5, end: 1.0).animate(
-            CurvedAnimation(
-                parent: _dotControllers[index], curve: Curves.easeInOut),
-          ),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: Colors.grey[500],
-              shape: BoxShape.circle,
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _AnimatedMessageBubble extends StatefulWidget {
-  final Message message;
-
-  const _AnimatedMessageBubble({required this.message});
-
-  @override
-  State<_AnimatedMessageBubble> createState() => _AnimatedMessageBubbleState();
-}
-
-class _AnimatedMessageBubbleState extends State<_AnimatedMessageBubble>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    );
-
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: Offset(widget.message.isUser ? 0.3 : -0.3, 0),
-        end: Offset.zero,
-      ).animate(animation),
-      child: FadeTransition(
-        opacity: animation,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: widget.message.isUser
-                ? MainAxisAlignment.end
-                : MainAxisAlignment.start,
-            children: [
-              if (!widget.message.isUser) ...[
-                Container(
-                  width: 28,
-                  height: 28,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.smart_toy_rounded,
-                      color: Colors.grey[700],
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ],
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        widget.message.isUser ? Colors.black : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    widget.message.text,
-                    style: TextStyle(
-                      color:
-                          widget.message.isUser ? Colors.white : Colors.black,
-                      fontSize: 15,
-                      height: 1.4,
-                      fontFamily: 'Urbanist',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              if (widget.message.isUser) ...[
-                Container(
-                  width: 28,
-                  height: 28,
-                  margin: const EdgeInsets.only(left: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
-  late TextEditingController _messageController;
-  final List<Message> _messages = [];
-  bool _isLoading = false;
-  late ScrollController _scrollController;
+  final List<types.Message> _messages = [];
+  final _user = const types.User(id: 'user');
+  final _ai = const types.User(id: 'ai', firstName: 'LinkSkool AI');
+  bool _isTyping = false;
   final Dio _dio = Dio();
 
   @override
   void initState() {
     super.initState();
-    _messageController = TextEditingController();
-    _scrollController = ScrollController();
     _initializeChat();
   }
 
   void _initializeChat() {
+    final initialMessage = types.TextMessage(
+      author: _ai,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      id: const Uuid().v4(),
+      text: 'Hi! 👋 I\'m LinkSkool AI. How can I help you with your studies today?',
+    );
+
     setState(() {
-      _messages.add(
-        Message(
-          text:
-              'Hi! 👋 I\'m LinkSkool AI. How can I help you with your studies today?',
-          isUser: false,
-          timestamp: DateTime.now(),
-        ),
-      );
+      _messages.insert(0, initialMessage);
     });
   }
 
   @override
   void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
     _dio.close();
     super.dispose();
   }
 
-  Future<void> _sendMessage() async {
-    final message = _messageController.text.trim();
-    if (message.isEmpty) return;
-
-    FocusScope.of(context).unfocus();
-
-    setState(() {
-      _messages.add(
-        Message(
-          text: message,
-          isUser: true,
-          timestamp: DateTime.now(),
-        ),
-      );
-    });
-
-    _messageController.clear();
-    _scrollToBottom();
+  void _handleSendPressed(types.PartialText message) async {
+    final userMessage = types.TextMessage(
+      author: _user,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      id: const Uuid().v4(),
+      text: message.text,
+    );
 
     setState(() {
-      _isLoading = true;
+      _messages.insert(0, userMessage);
+      _isTyping = true;
     });
 
     try {
-      final response = await _getAIResponse(message);
-      setState(() {
-        _messages.add(
-          Message(
-            text: response,
-            isUser: false,
-            timestamp: DateTime.now(),
-          ),
-        );
-      });
+      final response = await _getAIResponse(message.text);
+      
+      final aiMessage = types.TextMessage(
+        author: _ai,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        id: const Uuid().v4(),
+        text: response,
+      );
+
+      if (mounted) {
+        setState(() {
+          _messages.insert(0, aiMessage);
+          _isTyping = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _messages.add(
-          Message(
-            text: 'Sorry, I encountered an error. Please try again.',
-            isUser: false,
-            timestamp: DateTime.now(),
-          ),
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+        });
+
+        final errorMessage = types.TextMessage(
+          author: _ai,
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          id: const Uuid().v4(),
+          text: 'Sorry, I encountered an error. Please try again.',
         );
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-      _scrollToBottom();
+
+        setState(() {
+          _messages.insert(0, errorMessage);
+        });
+      }
     }
   }
 
@@ -307,7 +111,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
             {
               'role': 'system',
               'content':
-                  'You are LinkSkool AI, a helpful educational assistant. Provide clear and concise responses.'
+                  'You are LinkSkool AI, a helpful educational assistant. Provide clear and concise responses. Use markdown formatting when appropriate (e.g., **bold**, *italic*, lists, etc.).'
             },
             {
               'role': 'user',
@@ -340,18 +144,6 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
     }
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
   void _showAboutDialog() {
     showModalBottomSheet(
       context: context,
@@ -382,19 +174,18 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.info_outline,
-                    color: Color(0xFF6366F1),
+                    color: AppColors.eLearningBtnColor1,
                     size: 28,
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'About LinkSkool AI',
-                      style: TextStyle(
+                      style: AppTextStyles.normal700(
                         fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Urbanist',
+                        color: AppColors.text4Light,
                       ),
                     ),
                   ),
@@ -419,7 +210,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
                       'What I can do',
                       'I\'m here to help with your studies! Ask me questions about any subject, get explanations, practice problems, or study tips.',
                       Icons.psychology_outlined,
-                      const Color(0xFF6366F1),
+                      AppColors.eLearningBtnColor1,
                     ),
                     const SizedBox(height: 16),
                     _buildInfoCard(
@@ -465,11 +256,9 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: TextStyle(
+                style: AppTextStyles.normal600(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
                   color: color,
-                  fontFamily: 'Urbanist',
                 ),
               ),
             ],
@@ -477,10 +266,9 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
           const SizedBox(height: 8),
           Text(
             content,
-            style: const TextStyle(
+            style: AppTextStyles.normal400(
               fontSize: 14,
-              fontWeight: FontWeight.w400,
-              fontFamily: 'Urbanist',
+              color: AppColors.text4Light,
             ),
           ),
         ],
@@ -491,10 +279,9 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6366F1),
+        backgroundColor: AppColors.eLearningBtnColor1,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -503,22 +290,18 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'LinkSkool AI',
-              style: TextStyle(
-                color: Colors.white,
+              style: AppTextStyles.normal600(
                 fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Urbanist',
+                color: Colors.white,
               ),
             ),
             Text(
               'Your AI study companion',
-              style: TextStyle(
+              style: AppTextStyles.normal400(
                 fontSize: 12,
                 color: Colors.white.withOpacity(0.9),
-                fontFamily: 'Urbanist',
-                fontWeight: FontWeight.w400,
               ),
             ),
           ],
@@ -532,165 +315,69 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          children: [
-            Expanded(
-              child: _messages.isEmpty
-                  ? Center(
-                      child: Container(
-                        alignment: Alignment.center,
-                        margin: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.smart_toy_rounded,
-                              size: 64,
-                              color: const Color(0xFF6366F1).withOpacity(0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Start a conversation',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Urbanist',
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Ask me anything about your studies and I\'ll help you understand it better!',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontFamily: 'Urbanist',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 16,
-                      ),
-                      itemCount: _messages.length + (_isLoading ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (_isLoading && index == _messages.length) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  margin: const EdgeInsets.only(right: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.smart_toy_rounded,
-                                      color: Colors.grey[700],
-                                      size: 16,
-                                    ),
-                                  ),
-                                ),
-                                const _AnimatedDots(),
-                              ],
-                            ),
-                          );
-                        }
-
-                        final message = _messages[index];
-                        return _AnimatedMessageBubble(message: message);
-                      },
-                    ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 16,
+      body: Chat(
+        messages: _messages,
+        onSendPressed: _handleSendPressed,
+        user: _user,
+        showUserAvatars: true,
+        showUserNames: true,
+        typingIndicatorOptions: TypingIndicatorOptions(
+          typingUsers: _isTyping ? [_ai] : [],
+        ),
+        theme: DefaultChatTheme(
+          backgroundColor: Colors.grey.shade50,
+          primaryColor: AppColors.eLearningBtnColor1,
+          secondaryColor: Colors.grey.shade200,
+          inputBackgroundColor: Colors.white,
+          inputTextColor: AppColors.text4Light,
+          inputBorderRadius: BorderRadius.circular(24),
+          messageBorderRadius: 16,
+          sentMessageBodyTextStyle: AppTextStyles.normal400(
+            fontSize: 15,
+            color: Colors.white,
+          ),
+          receivedMessageBodyTextStyle: AppTextStyles.normal400(
+            fontSize: 15,
+            color: AppColors.text4Light,
+          ),
+          inputTextStyle: AppTextStyles.normal400(
+            fontSize: 15,
+            color: AppColors.text4Light,
+          ),
+        ),
+        inputOptions: InputOptions(
+          sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+        ),
+        emptyState: Container(
+          alignment: Alignment.center,
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.smart_toy_rounded,
+                size: 64,
+                color: AppColors.eLearningBtnColor1.withOpacity(0.5),
               ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              Text(
+                'Start a conversation',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text4Light,
+                ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      child: TextField(
-                        controller: _messageController,
-                        maxLines: null,
-                        minLines: 1,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        decoration: InputDecoration(
-                          hintText: 'Message LinkSkool AI...',
-                          hintStyle: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 16,
-                            fontFamily: 'Urbanist',
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                          fontFamily: 'Urbanist',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: _isLoading ? null : _sendMessage,
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: _isLoading
-                            ? Colors.grey[400]
-                            : const Color(0xFF6366F1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.arrow_upward_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 8),
+              Text(
+                'Ask me anything about your studies and I\'ll help you understand it better!',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: AppColors.text7Light,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

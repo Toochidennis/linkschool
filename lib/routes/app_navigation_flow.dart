@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flip_card/flip_card_controller.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
+import 'package:linkschool/modules/providers/login/schools_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 import 'package:linkschool/modules/auth/ui/login_screen.dart';
@@ -84,12 +85,30 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     }
   }
 
-  /// ✅ This is now updated to receive a school code
-  void _navigateToLogin(String selectedSchoolCode) {
-    setState(() {
-      _selectedSchoolCode = selectedSchoolCode;
-      _showLogin = true;
-      _showSchoolSelection = false;
+  /// ✅ This is now updated to receive a school code and navigate properly
+  void _navigateToLogin(String selectedSchoolCode, String schoolName) {
+    // Navigate to login screen using Navigator.push
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginScreen(
+          schoolCode: selectedSchoolCode,
+          schoolName: schoolName,
+          onLoginSuccess: () async {
+            await _checkLoginStatus();
+            // Pop the login screen
+            Navigator.of(context).pop();
+            // Flip back to show the appropriate dashboard
+            if (_flipController.state?.isFront == false) {
+              _flipController.toggleCard();
+            }
+            setState(() {});
+          },
+        ),
+      ),
+    ).then((_) {
+      // When coming back from login screen without logging in
+      // User is still on SelectSchool, no need to change state
     });
   }
 
@@ -127,26 +146,24 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     if (_showSchoolSelection) {
       return SelectSchool(
         onSchoolSelected: (String selectedSchoolCode) {
-          _navigateToLogin(selectedSchoolCode); // ✅ Pass selected school code
+          // Get school name from provider
+          final schoolProvider =
+              Provider.of<SchoolProvider>(context, listen: false);
+          final selectedSchool = schoolProvider.schools.firstWhere(
+            (school) => school.schoolCode.toString() == selectedSchoolCode,
+            orElse: () => schoolProvider.schools.first,
+          );
+          _navigateToLogin(selectedSchoolCode, selectedSchool.schoolName);
         },
         onBack: () {
           // Handle back navigation - flip back to explore dashboard
+          setState(() {
+            _showSchoolSelection = false;
+            _showLogin = false;
+          });
           if (_flipController.state?.isFront == false) {
             _flipController.toggleCard();
           }
-          setState(() {
-            _showSchoolSelection = false;
-          });
-        },
-      );
-    }
-
-    if (_showLogin) {
-      return LoginScreen(
-        schoolCode: _selectedSchoolCode ?? '', // ✅ Receive here
-        onLoginSuccess: () async {
-          await _checkLoginStatus();
-          setState(() {});
         },
       );
     }

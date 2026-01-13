@@ -35,6 +35,7 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/providers/explore/assignment_submission_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
@@ -72,6 +73,7 @@ import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_leader_provider.dart';
 import 'package:linkschool/modules/providers/admin/registered_terms_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:linkschool/modules/services/explore/assignment_submission_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
@@ -137,6 +139,8 @@ List<SingleChildWidget> getAppProviders() {
         create: (_) => QuestionsProvider(QuestionsService()), lazy: true),
     ChangeNotifierProvider(
         create: (_) => CourseVideoProvider(CourseVideoService()), lazy: true),
+      ChangeNotifierProvider(
+          create: (_) => AssignmentSubmissionProvider(), lazy: true),
 
     // Admin HomeScreen - ALL LAZY
 
