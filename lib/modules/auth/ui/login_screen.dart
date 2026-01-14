@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
+  final VoidCallback? onBack; // ✅ Add back navigation callback
   final String schoolCode; // ✅ received from SelectSchool
   final String? schoolName;
 
@@ -19,6 +20,7 @@ class LoginScreen extends StatefulWidget {
     super.key,
     required this.onLoginSuccess,
     required this.schoolCode,
+    this.onBack,
     this.schoolName,
   });
 
@@ -37,8 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   void _navigateBack() {
-    // Simply pop back to previous screen (SelectSchool)
-    Navigator.of(context).pop();
+    // Use callback if provided, otherwise try Navigator.pop
+    if (widget.onBack != null) {
+      widget.onBack!();
+    } else {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -97,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: InkWell(
                     onTap: () => _navigateBack(),
                     child: Icon(Icons.arrow_back,
-                        size: 16, color: AppColors.attCheckColor1),
+                        size: 25, color: AppColors.attCheckColor1),
                   ),
                 ),
 
@@ -110,26 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 // 👇 Bottom Sign Up
-                Positioned(
-                  top: 700,
-                  bottom: 30,
-                  left: 60,
-                  child: Wrap(
-                    children: [
-                      Text("Don't have an account?",
-                          style: AppTextStyles.normal500(
-                              fontSize: 12, color: AppColors.assessmentColor2)),
-                      InkWell(
-                        onTap: () {},
-                        child: Text(
-                          " Sign Up",
-                          style: AppTextStyles.normal500(
-                              fontSize: 14, color: AppColors.aicircle),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
+                
               ],
             ),
           ),

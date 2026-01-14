@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flip_card/flip_card_controller.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
-import 'package:linkschool/modules/providers/login/schools_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 import 'package:linkschool/modules/auth/ui/login_screen.dart';
@@ -26,24 +25,77 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   bool _showLogin = false;
   bool _showSchoolSelection = false;
   bool _isInitialized = false;
-  String? _selectedSchoolCode; // ✅ Add this
+  String? _selectedSchoolCode;
+  late AuthProvider _authProvider;
 
   @override
   void initState() {
     super.initState();
     _flipController = FlipCardController();
-    _initializeApp();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _authProvider = Provider.of<AuthProvider>(context, listen: false);
+      _authProvider.addListener(_onAuthStateChanged);
+      _initializeApp();
+    }
+  }
+
+  @override
+  void dispose() {
+    _authProvider.removeListener(_onAuthStateChanged);
+    super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    // React to auth state changes from AuthProvider
+    if (mounted) {
+      _syncAuthState();
+    }
+  }
+
+  void _syncAuthState() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final wasLoggedIn = _isLoggedIn;
+    final newIsLoggedIn = authProvider.isLoggedIn;
+    final newRole = authProvider.user?.role ?? '';
+
+    setState(() {
+      _userRole = newRole;
+      _isLoggedIn = newIsLoggedIn;
+    });
+
+    print('🔄 Auth State Synced - Role: $_userRole, LoggedIn: $_isLoggedIn');
+
+    // If user became logged in, flip to dashboard
+    if (!wasLoggedIn && newIsLoggedIn && _isInitialized) {
+      if (_flipController.state?.isFront == true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _flipController.toggleCard();
+        });
+      }
+      setState(() {
+        _showLogin = false;
+        _showSchoolSelection = false;
+      });
+    }
   }
 
   Future<void> _initializeApp() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.checkLoginStatus();
-    await _checkLoginStatus();
+
+    // AuthProvider.checkLoginStatus() is already called in AppInitializer (main.dart)
+    // Just sync the current state from AuthProvider
+    _syncAuthState();
 
     setState(() {
       _isInitialized = true;
     });
 
+    // If already logged in, flip to dashboard
     if (_isLoggedIn && _flipController.state?.isFront == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _flipController.toggleCard();
@@ -52,14 +104,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   }
 
   Future<void> _checkLoginStatus() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    setState(() {
-      _userRole = authProvider.user?.role ?? '';
-      _isLoggedIn = authProvider.isLoggedIn;
-      _showLogin = false;
-      _showSchoolSelection = false;
-    });
+    _syncAuthState();
   }
 
   void _handleSwitchFromExplore(bool value) {
@@ -85,30 +130,12 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     }
   }
 
-  /// ✅ This is now updated to receive a school code and navigate properly
-  void _navigateToLogin(String selectedSchoolCode, String schoolName) {
-    // Navigate to login screen using Navigator.push
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LoginScreen(
-          schoolCode: selectedSchoolCode,
-          schoolName: schoolName,
-          onLoginSuccess: () async {
-            await _checkLoginStatus();
-            // Pop the login screen
-            Navigator.of(context).pop();
-            // Flip back to show the appropriate dashboard
-            if (_flipController.state?.isFront == false) {
-              _flipController.toggleCard();
-            }
-            setState(() {});
-          },
-        ),
-      ),
-    ).then((_) {
-      // When coming back from login screen without logging in
-      // User is still on SelectSchool, no need to change state
+  /// ✅ This is now updated to receive a school code
+  void _navigateToLogin(String selectedSchoolCode) {
+    setState(() {
+      _selectedSchoolCode = selectedSchoolCode;
+      _showLogin = true;
+      _showSchoolSelection = false;
     });
   }
 
@@ -146,24 +173,41 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     if (_showSchoolSelection) {
       return SelectSchool(
         onSchoolSelected: (String selectedSchoolCode) {
-          // Get school name from provider
-          final schoolProvider =
-              Provider.of<SchoolProvider>(context, listen: false);
-          final selectedSchool = schoolProvider.schools.firstWhere(
-            (school) => school.schoolCode.toString() == selectedSchoolCode,
-            orElse: () => schoolProvider.schools.first,
-          );
-          _navigateToLogin(selectedSchoolCode, selectedSchool.schoolName);
+          _navigateToLogin(selectedSchoolCode); // ✅ Pass selected school code
         },
         onBack: () {
           // Handle back navigation - flip back to explore dashboard
+          if (_flipController.state?.isFront == false) {
+            _flipController.toggleCard();
+          }
+          setState(() {
+            _showSchoolSelection = false;
+          });
+        },
+        onDemoLoginSuccess: () async {
+          // Handle demo login success - same as regular login success
+          await _checkLoginStatus();
           setState(() {
             _showSchoolSelection = false;
             _showLogin = false;
           });
-          if (_flipController.state?.isFront == false) {
-            _flipController.toggleCard();
-          }
+        },
+      );
+    }
+
+    if (_showLogin) {
+      return LoginScreen(
+        schoolCode: _selectedSchoolCode ?? '', // ✅ Receive here
+        onLoginSuccess: () async {
+          await _checkLoginStatus();
+          setState(() {});
+        },
+        onBack: () {
+          // Navigate back to school selection
+          setState(() {
+            _showLogin = false;
+            _showSchoolSelection = true;
+          });
         },
       );
     }
