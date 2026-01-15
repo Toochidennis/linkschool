@@ -70,13 +70,20 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isLooping = false;
   bool _isFullscreen = false;
   bool _isDescriptionExpanded = false;
-
+  String? emailError;
   // Quiz state variables
   int _quizScore = 0;
   bool _quizTaken = false;
   String? _pendingUsername;
   String? _pendingAssignmentFileName;
   String? _pendingAssignmentFileBase64;
+
+  bool _isValidEmail(String email) {
+  final emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
+  return emailRegex.hasMatch(email);
+}
 
   // Assignment submission state
   bool _isAssignmentSubmitted = false;
@@ -381,6 +388,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     required String? assignmentFileName,
     required String? assignmentBase64,
     required String username,
+    required TextEditingController emailController,
+    required TextEditingController phoneController,
   }) {
     final payload = {
       'quiz_score': score.toString(),
@@ -392,8 +401,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
               "old_file_name": "",
             }
           : 'No file uploaded',
-      "email": "",
-      "phone": "",
+      "email":emailController.text,
+      "phone": phoneController.text,
       'name': username,
       'course_title': widget.courseTitle,
       'lesson_title': _courseVideos[_selectedVideoIndex]['title'],
@@ -882,6 +891,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
   void _showSubmitAssignmentModal(BuildContext context) {
     final TextEditingController nameController = TextEditingController();
+    final TextEditingController phoneController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
     String? selectedFileName;
     String? selectedFilePath;
     String? selectedFileBase64;
@@ -985,6 +996,100 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                             ),
                           ),
                           const SizedBox(height: 16),
+                          TextField(
+                            controller: phoneController,
+                            decoration: InputDecoration(
+                              hintText: 'Phone Number',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 14,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF6366F1),
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: emailController,
+                            decoration: InputDecoration(
+                              hintText: 'Email',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 14,
+                              ),
+                           
+
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF6366F1),
+                                  width: 2,
+                                ),
+                              ),
+                               errorText: emailError, // Use local variable
+    errorStyle: const TextStyle(
+      fontSize: 12,
+      color: Colors.red,
+    ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                            ),
+                            
+
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+    keyboardType: TextInputType.emailAddress,
+    onChanged: (value) {
+      // Clear error when user starts typing again
+      setModalState(() {
+        emailError = null;
+      });
+    },
+  ),
+  const SizedBox(height: 16),
                           // PDF Upload Button
                           InkWell(
                             onTap: () async {
@@ -994,26 +1099,38 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                   type: FileType.custom,
                                   allowedExtensions: ['pdf'],
                                 );
-
                                 if (result != null) {
                                   final filePath = result.files.single.path;
+                                  final fileName = result.files.single.name;
+                                  final ext =
+                                      fileName.split('.').last.toLowerCase();
                                   if (filePath != null) {
+                                    if (ext != 'pdf') {
+                                      setModalState(() {
+                                        selectedFileName = null;
+                                      });
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Only PDF files are allowed.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
                                     // Show loading indicator while encoding
                                     setModalState(() {
                                       selectedFileName = 'Encoding file...';
                                     });
-
                                     // Read file bytes
                                     final file = File(filePath);
                                     final bytes = await file.readAsBytes();
-
                                     // Encode to base64 in background isolate to avoid blocking UI
                                     final base64String =
                                         await compute(_encodeToBase64, bytes);
-
                                     setModalState(() {
-                                      selectedFileName =
-                                          result.files.single.name;
+                                      selectedFileName = fileName;
                                       selectedFilePath = filePath;
                                       selectedFileBase64 = base64String;
                                     });
@@ -1148,18 +1265,29 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                 child: ElevatedButton(
                                   onPressed: () async {
                                     final name = nameController.text.trim();
-                                    if (name.isEmpty) {
+                                    final phone = phoneController.text.trim();
+                                    final email = emailController.text.trim();
+                                    if (name.isEmpty ||
+                                        phone.isEmpty ||
+                                        email.isEmpty) {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         const SnackBar(
                                           content:
-                                              Text('Please enter your name'),
+                                              Text('Please fill all fields'),
                                           backgroundColor: Colors.red,
                                         ),
                                       );
                                       return;
                                     }
 
+     
+    if (!_isValidEmail(email)) {
+    setModalState(() {
+      emailError = 'Please enter a valid email address';
+    });
+    return;
+  }
                                     // Check if assignment file is selected
                                     if (selectedFileName == null ||
                                         selectedFileBase64 == null) {
@@ -1173,15 +1301,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                       );
                                       return;
                                     }
-
                                     // Check if quiz has been taken
                                     if (!_quizTaken) {
                                       // Save pending data
                                       await _savePendingAssignmentData(name,
                                           selectedFileName, selectedFileBase64);
-
                                       Navigator.pop(context);
-
                                       // Show dialog to take quiz
                                       final shouldTakeQuiz =
                                           await showDialog<bool>(
@@ -1349,9 +1474,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                           await provider.submitAssignment(
                                         name: name,
                                         email:
-                                            'student@linkschool.com', // You can add email field to modal if needed
+                                            emailController.text, // You can add email field to modal if needed
                                         phone:
-                                            '0000000000', // You can add phone field to modal if needed
+                                            phoneController.text, // You can add phone field to modal if needed
                                         quizScore: _quizScore.toString(),
                                         assignments: [
                                           {
@@ -1432,6 +1557,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                                     child: const Text(
                                                       'OK',
                                                       style: TextStyle(
+                                                        backgroundColor: Colors.white,
                                                         fontWeight:
                                                             FontWeight.w600,
                                                       ),
@@ -1492,7 +1618,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                     elevation: 0,
                                   ),
                                   child: const Text(
-                                    'Submit Assignment',
+                                    'Submit ',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -2617,6 +2743,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   Widget _buildReviewsTab() {
+    // Define controllers for use in the quiz submission
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController phoneController = TextEditingController();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -2703,6 +2833,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                         _pendingUsername != null &&
                         _quizTaken) {
                       _prepareAndPrintPayload(
+                        emailController: emailController,
+                        phoneController: phoneController,
                         score: result,
                         assignmentFileName: _pendingAssignmentFileName,
                         assignmentBase64: _pendingAssignmentFileBase64,

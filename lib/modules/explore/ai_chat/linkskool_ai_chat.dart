@@ -103,12 +103,24 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
       _chatSessions = sessionsList
           .map((json) => ChatSession.fromJson(Map<String, dynamic>.from(json)))
           .toList();
+
+      // Remove empty chats (chats with no user messages)
+      _chatSessions.removeWhere((session) => !_hasUserMessages(session));
+
       // Sort by updatedAt descending (most recent first)
       _chatSessions.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+      // Save after removing empty chats
+      await _saveChatSessions();
     } catch (e) {
       print('Error loading chat sessions: $e');
       _chatSessions = [];
     }
+  }
+
+  /// Check if a session has at least one user message
+  bool _hasUserMessages(ChatSession session) {
+    return session.messages.any((msg) => msg['authorId'] == _user.id);
   }
 
   Future<void> _saveChatSessions() async {
@@ -123,6 +135,17 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
 
   Future<void> _saveCurrentSession() async {
     if (_currentSessionId == null) return;
+
+    // Check if there are any user messages - don't save empty chats
+    final hasUserMessage = _messages.any(
+      (m) => m is types.TextMessage && m.author.id == _user.id,
+    );
+    if (!hasUserMessage) {
+      // Remove this empty session from the list if it exists
+      _chatSessions.removeWhere(
+          (s) => s.id == _currentSessionId && !_hasUserMessages(s));
+      return;
+    }
 
     final sessionIndex =
         _chatSessions.indexWhere((s) => s.id == _currentSessionId);
@@ -202,6 +225,23 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
   }
 
   void _startNewChat() {
+    // If current session is empty (no user messages), remove it before creating new
+    if (_currentSessionId != null) {
+      final currentSession = _chatSessions.firstWhere(
+        (s) => s.id == _currentSessionId,
+        orElse: () => ChatSession(
+          id: '',
+          title: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          messages: [],
+        ),
+      );
+      if (!_hasUserMessages(currentSession)) {
+        _chatSessions.removeWhere((s) => s.id == _currentSessionId);
+      }
+    }
+
     final sessionId = const Uuid().v4();
     final now = DateTime.now();
 
@@ -227,7 +267,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
     );
     _messages.insert(0, initialMessage);
 
-    _saveChatSessions();
+    // Don't save yet - will save when user sends first message
     setState(() {});
   }
 
@@ -244,6 +284,72 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
       }
     }
     setState(() {});
+  }
+
+  /// Show confirmation dialog before deleting a session
+  Future<void> _confirmDeleteSession(ChatSession session) async {
+    final shouldDelete = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Delete Chat'),
+            content:
+                Text('Are you sure you want to delete "${session.title}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (shouldDelete) {
+      Navigator.pop(context); // Close the drawer
+      await _deleteSession(session.id);
+    }
+  }
+
+  /// Show confirmation dialog before clearing all history
+  Future<void> _confirmClearAllHistory() async {
+    final shouldClear = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Clear All History'),
+            content: const Text(
+              'Are you sure you want to delete all chat history? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Clear All'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (shouldClear) {
+      Navigator.pop(context); // Close the drawer
+      await _clearAllHistory();
+    }
+  }
+
+  /// Clear all chat history
+  Future<void> _clearAllHistory() async {
+    _chatSessions.clear();
+    await _saveChatSessions();
+    _startNewChat();
   }
 
   @override
@@ -665,6 +771,35 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
               ),
             ),
 
+            // Clear All History Button (only show if there are sessions)
+            if (_chatSessions.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _confirmClearAllHistory,
+                    icon: Icon(Icons.delete_sweep,
+                        size: 20, color: Colors.red.shade400),
+                    label: Text(
+                      'Clear All History',
+                      style: AppTextStyles.normal500(
+                        fontSize: 14,
+                        color: Colors.red.shade400,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade400,
+                      side: BorderSide(color: Colors.red.shade200),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
             const Divider(height: 1),
 
             // Chat Sessions List
@@ -774,6 +909,14 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
             fontSize: 12,
             color: Colors.grey.shade500,
           ),
+        ),
+        trailing: IconButton(
+          icon: Icon(
+            Icons.delete_outline,
+            size: 20,
+            color: Colors.grey.shade500,
+          ),
+          onPressed: () => _confirmDeleteSession(session),
         ),
         selected: isActive,
         selectedTileColor: AppColors.eLearningBtnColor1.withOpacity(0.05),
