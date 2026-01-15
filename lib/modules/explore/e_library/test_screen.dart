@@ -1311,77 +1311,82 @@ class _TestScreenState extends State<TestScreen>
       );
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: provider.currentQuestionIndex > 0
-                ? () => provider.previousQuestion()
-                : null,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+    // Add bottom padding using MediaQuery to avoid navigation bar overlap
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding > 16 ? bottomPadding : 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: provider.currentQuestionIndex > 0
+                  ? () => provider.previousQuestion()
+                  : null,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-            ),
-            child:
-                const Text('Previous', style: TextStyle(color: Colors.white)),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () => _submitQuiz(
-              provider,
-              isFullyCompleted: isLastQuestion && isLastSubject,
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.eLearningContColor3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            child: const Text(
-              'Submit',
-              style: TextStyle(color: Colors.white),
+              child:
+                  const Text('Previous', style: TextStyle(color: Colors.white)),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: OutlinedButton(
-            onPressed: !isLastQuestion
-                ? () {
-                    provider.nextQuestion();
-                  }
-                : (widget.onExamComplete != null && !isLastSubject)
-                    ? () {
-                        // Auto-proceed to next exam without dialog
-                        _proceedToNextExam(provider);
-                      }
-                    : (isLastQuestion && isLastSubject)
-                        ? () {
-                            // Show submit modal on last question of last subject
-                            _submitQuiz(provider, isFullyCompleted: true);
-                          }
-                        : null,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _submitQuiz(
+                provider,
+                isFullyCompleted: isLastQuestion && isLastSubject,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.eLearningContColor3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: const Text(
+                'Submit',
+                style: TextStyle(color: Colors.white),
               ),
             ),
-            child: Text(
-              (isLastQuestion &&
-                      widget.onExamComplete != null &&
-                      !isLastSubject)
-                  ? 'Next'
-                  : 'Next',
-              style: const TextStyle(color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: !isLastQuestion
+                  ? () {
+                      provider.nextQuestion();
+                    }
+                  : (widget.onExamComplete != null && !isLastSubject)
+                      ? () {
+                          // Auto-proceed to next exam without dialog
+                          _proceedToNextExam(provider);
+                        }
+                      : (isLastQuestion && isLastSubject)
+                          ? () {
+                              // Show submit modal on last question of last subject
+                              _submitQuiz(provider, isFullyCompleted: true);
+                            }
+                          : null,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: Text(
+                (isLastQuestion &&
+                        widget.onExamComplete != null &&
+                        !isLastSubject)
+                    ? 'Next'
+                    : 'Next',
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
