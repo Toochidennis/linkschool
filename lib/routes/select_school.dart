@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'signup_screen.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -421,7 +422,11 @@ class _SelectSchoolState extends State<SelectSchool> {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
-                              // TODO: Navigate to sign up
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SignupScreen(),
+                                ),
+                              );
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Padding(
