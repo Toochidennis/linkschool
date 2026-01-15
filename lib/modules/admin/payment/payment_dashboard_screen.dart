@@ -5,7 +5,6 @@ import 'package:linkschool/modules/admin/payment/transaction_receipt_screen.dart
 import 'package:linkschool/modules/admin/payment/widget/transaction_history_screen.dart';
 
 import '../../common/app_colors.dart';
-import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/widgets/portal/profile/naira_icon.dart';
 import '../../common/widgets/portal/student/student_customized_appbar.dart';

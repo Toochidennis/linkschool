@@ -30,7 +30,7 @@ class StartChallenge extends StatefulWidget {
   final int? questionLimit;
   final bool isPreview;
   const StartChallenge({
-    Key? key,
+    super.key,
     this.challenge,
     this.examIds,
     this.subjectNames,
@@ -39,7 +39,7 @@ class StartChallenge extends StatefulWidget {
     this.questionLimit,
     this.challengeId,
     this.isPreview = false,
-  }) : super(key: key);
+  });
 
   @override
   State<StartChallenge> createState() => _StartChallengeState();
@@ -51,7 +51,7 @@ class _StartChallengeState extends State<StartChallenge>
   late AnimationController _scaleController;
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
-  int _lastDisplayedQuestionIndex = -1;
+  final int _lastDisplayedQuestionIndex = -1;
 
   Timer? _timer;
   int? _remainingSeconds;
@@ -558,8 +558,8 @@ class _StartChallengeState extends State<StartChallenge>
                             SizedBox(height: 20),
                             // Instruction/Passage Preview Card
                             if (question != null &&
-                                ((question.instruction?.isNotEmpty ?? false) ||
-                                    (question.passage?.isNotEmpty ?? false)))
+                                ((question.instruction.isNotEmpty ?? false) ||
+                                    (question.passage.isNotEmpty ?? false)))
                               _buildInstructionPassagePreviewCard(question),
                             if (question != null)
                               SlideTransition(
@@ -710,8 +710,8 @@ class _StartChallengeState extends State<StartChallenge>
   }
 
   Widget _buildInstructionPassagePreviewCard(QuestionModel question) {
-    final hasInstruction = question.instruction?.isNotEmpty ?? false;
-    final hasPassage = question.passage?.isNotEmpty ?? false;
+    final hasInstruction = question.instruction.isNotEmpty ?? false;
+    final hasPassage = question.passage.isNotEmpty ?? false;
 
     String title = '';
     String content = '';
@@ -942,8 +942,8 @@ class _StartChallengeState extends State<StartChallenge>
         ),
 
         // Positioned instruction/passage icon at top-right
-        if ((q.instruction?.isNotEmpty ?? false) ||
-            (q.passage?.isNotEmpty ?? false))
+        if ((q.instruction.isNotEmpty ?? false) ||
+            (q.passage.isNotEmpty ?? false))
           Positioned(
             top: 12,
             right: 12,
@@ -958,10 +958,10 @@ class _StartChallengeState extends State<StartChallenge>
                 String title = '';
                 String content = '';
 
-                if (q.instruction?.isNotEmpty ?? false) {
+                if (q.instruction.isNotEmpty ?? false) {
                   title = 'Instruction';
                   content = q.instruction ?? '';
-                } else if (q.passage?.isNotEmpty ?? false) {
+                } else if (q.passage.isNotEmpty ?? false) {
                   title = 'Passage';
                   content = q.passage ?? '';
                 }
@@ -971,7 +971,7 @@ class _StartChallengeState extends State<StartChallenge>
                   _showInstructionOrPassageModal(title, content);
                 }
               },
-              tooltip: (q.instruction?.isNotEmpty ?? false)
+              tooltip: (q.instruction.isNotEmpty ?? false)
                   ? 'View Instruction'
                   : 'View Passage',
               style: IconButton.styleFrom(
@@ -1321,7 +1321,7 @@ class _StartChallengeState extends State<StartChallenge>
                                   const SizedBox(height: 24),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

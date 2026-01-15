@@ -55,7 +55,7 @@ class _TestScreenState extends State<TestScreen>
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
   int? remainingSeconds;
-  int _lastDisplayedQuestionIndex =
+  final int _lastDisplayedQuestionIndex =
       -1; // Track which question's instruction/passage was shown
   bool _isCountdownActive = false;
 
@@ -506,8 +506,7 @@ class _TestScreenState extends State<TestScreen>
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (question.questionImage != null &&
-                          question.questionImage.isNotEmpty)
+                      if (question.questionImage.isNotEmpty)
                         GestureDetector(
                           onTap: () =>
                               _showFullScreenImage(question.questionImage),
@@ -546,8 +545,9 @@ class _TestScreenState extends State<TestScreen>
                         content = question.passage;
                       }
 
-                      if (content.isNotEmpty)
+                      if (content.isNotEmpty) {
                         _showInstructionOrPassageModal(title, content);
+                      }
                     },
                     child: Row(
                       children: [
@@ -586,8 +586,9 @@ class _TestScreenState extends State<TestScreen>
                               content = question.passage;
                             }
 
-                            if (content.isNotEmpty)
+                            if (content.isNotEmpty) {
                               _showInstructionOrPassageModal(title, content);
+                            }
                           },
                           tooltip: (question.instruction.isNotEmpty &&
                                   question.passage.isNotEmpty)
@@ -1231,7 +1232,7 @@ class _TestScreenState extends State<TestScreen>
                                   const SizedBox(height: 24),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

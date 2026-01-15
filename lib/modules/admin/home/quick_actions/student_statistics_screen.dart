@@ -210,7 +210,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
                                         ),
                                       ],
                                     );
-                                  }).toList(),
+                                  }),
                                 ],
                               ),
                             const SizedBox(height: 20),
@@ -591,7 +591,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

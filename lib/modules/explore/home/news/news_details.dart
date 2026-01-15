@@ -3,14 +3,12 @@ import 'package:linkfy_text/linkfy_text.dart';
 // import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
 // import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class NewsDetails extends StatefulWidget {

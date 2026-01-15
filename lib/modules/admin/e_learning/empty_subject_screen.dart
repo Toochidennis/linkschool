@@ -1287,7 +1287,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
                 ),
               ),
             );
-    };
+    }
   }
 
   String _formatDate(DateTime date) {

@@ -13,12 +13,12 @@ class AIChatScreen extends StatefulWidget {
   final String selectedAnswer;
 
   const AIChatScreen({
-    Key? key,
+    super.key,
     required this.question,
     required this.initialExplanation,
     required this.correctAnswer,
     required this.selectedAnswer,
-  }) : super(key: key);
+  });
 
   @override
   State<AIChatScreen> createState() => _AIChatScreenState();

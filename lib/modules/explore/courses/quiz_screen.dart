@@ -6,10 +6,10 @@ class QuizScreen extends StatefulWidget {
   final String lessonTitle;
 
   const QuizScreen({
-    Key? key,
+    super.key,
     required this.courseTitle,
     required this.lessonTitle,
-  }) : super(key: key);
+  });
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -17,7 +17,7 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   int _currentQuestionIndex = 0;
-  Map<int, int> _selectedAnswers = {}; // questionIndex -> selectedOptionIndex
+  final Map<int, int> _selectedAnswers = {}; // questionIndex -> selectedOptionIndex
 
   // Static quiz questions
   final List<Map<String, dynamic>> _questions = [

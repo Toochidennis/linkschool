@@ -191,7 +191,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                           Navigator.pop(context);
                         },
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -262,14 +262,12 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                           setState(() {
                             selectedClassId = cls.id;
                             // Ensure the level is set to the class's level
-                            if (selectedLevelId == null) {
-                              selectedLevelId = cls.levelId;
-                            }
+                            selectedLevelId ??= cls.levelId;
                           });
                           Navigator.pop(context);
                         },
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -683,8 +681,9 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                                         },
                                                         loadingBuilder: (context,
                                                             child, loadingProgress) {
-                                                          if (loadingProgress == null)
+                                                          if (loadingProgress == null) {
                                                             return child;
+                                                          }
                                                           return const SizedBox(
                                                             width: 20,
                                                             height: 20,
@@ -1009,8 +1008,9 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                                       },
                                                       loadingBuilder:
                                                           (context, child, loadingProgress) {
-                                                        if (loadingProgress == null)
+                                                        if (loadingProgress == null) {
                                                           return child;
+                                                        }
                                                         return const SizedBox(
                                                           width: 20,
                                                           height: 20,
@@ -1739,7 +1739,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
     required Function(dynamic) onChanged,
   }) {
     return DropdownButtonFormField<dynamic>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(

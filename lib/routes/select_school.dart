@@ -23,8 +23,8 @@ class SelectSchool extends StatefulWidget {
 
 class _SelectSchoolState extends State<SelectSchool> {
   String query = '';
-  bool _isDemoLoading = false;
-  String _loadingRole = '';
+  final bool _isDemoLoading = false;
+  final String _loadingRole = '';
 
   @override
   void initState() {

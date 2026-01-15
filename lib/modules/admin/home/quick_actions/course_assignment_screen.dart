@@ -445,7 +445,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
                       if (!isLast) const SizedBox(height: 16),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),

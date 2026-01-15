@@ -518,8 +518,9 @@ class AuthProvider with ChangeNotifier {
     final studentProfile = userBox.get('student_profile');
     if (studentProfile != null) {
       if (studentProfile is Map<String, dynamic>) return studentProfile;
-      if (studentProfile is Map)
+      if (studentProfile is Map) {
         return Map<String, dynamic>.from(studentProfile);
+      }
     }
     return {};
   }

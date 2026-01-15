@@ -91,7 +91,7 @@ class DeepSeekService {
   final String apiUrl = EnvConfig.deepSeekUrl;
 
   DeepSeekService({String? apiKey})
-      : this.apiKey = apiKey ?? EnvConfig.deepSeekApiKey;
+      : apiKey = apiKey ?? EnvConfig.deepSeekApiKey;
 
   Future<String> sendMessage(String message) async {
     try {

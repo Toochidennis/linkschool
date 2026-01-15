@@ -814,10 +814,12 @@ class _StaffAddMaterialScreenState extends State<StaffAddMaterialScreen> {
     if (iconPath.contains('upload')) {
       final extension = content.split('.').last.toLowerCase();
       if (extension == 'pdf') return 'pdf';
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension))
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
         return 'image';
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension))
+      }
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
         return 'video';
+      }
       return 'file'; // Default for other uploaded files
     }
     if (iconPath.contains('camera')) return 'image';

@@ -19,13 +19,13 @@ class CBTStudyScreen extends StatefulWidget {
   final int examTypeId;
 
   const CBTStudyScreen({
-    Key? key,
+    super.key,
     required this.subject,
     required this.topics,
     required this.topicIds,
     required this.courseId,
     required this.examTypeId,
-  }) : super(key: key);
+  });
 
   @override
   State<CBTStudyScreen> createState() => _CBTStudyScreenState();
@@ -596,7 +596,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                                   const SizedBox(height: 24),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -966,8 +966,9 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                                           extensionContext.attributes;
                                       final src = attributes['src'] ?? '';
 
-                                      if (src.isEmpty)
+                                      if (src.isEmpty) {
                                         return const SizedBox.shrink();
+                                      }
 
                                       return Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -1053,8 +1054,9 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                                               final src =
                                                   attributes['src'] ?? '';
 
-                                              if (src.isEmpty)
+                                              if (src.isEmpty) {
                                                 return const SizedBox.shrink();
+                                              }
 
                                               return GestureDetector(
                                                 onTap: () =>
@@ -1172,7 +1174,7 @@ class ExplanationModal extends StatefulWidget {
   final VoidCallback onContinue;
 
   const ExplanationModal({
-    Key? key,
+    super.key,
     required this.isCorrect,
     required this.selectedAnswer,
     required this.correctAnswer,
@@ -1181,7 +1183,7 @@ class ExplanationModal extends StatefulWidget {
     this.apiExplanation,
     required this.onExplanationGenerated,
     required this.onContinue,
-  }) : super(key: key);
+  });
 
   @override
   State<ExplanationModal> createState() => _ExplanationModalState();
@@ -1516,8 +1518,9 @@ class _ExplanationModalState extends State<ExplanationModal> {
                                         extensionContext.attributes;
                                     final src = attributes['src'] ?? '';
 
-                                    if (src.isEmpty)
+                                    if (src.isEmpty) {
                                       return const SizedBox.shrink();
+                                    }
 
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -1575,8 +1578,9 @@ class _ExplanationModalState extends State<ExplanationModal> {
                                           extensionContext.attributes;
                                       final src = attributes['src'] ?? '';
 
-                                      if (src.isEmpty)
+                                      if (src.isEmpty) {
                                         return const SizedBox.shrink();
+                                      }
 
                                       return Padding(
                                         padding: const EdgeInsets.symmetric(

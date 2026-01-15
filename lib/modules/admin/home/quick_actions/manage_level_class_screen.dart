@@ -218,7 +218,7 @@ class _LevelClassManagementScreenState
                 labelText: 'School Type',
                 border: OutlineInputBorder(),
               ),
-              value: schoolType,
+              initialValue: schoolType,
               items: ['nursery', 'primary', 'secondary'].map((type) {
                 return DropdownMenuItem(
                   value: type,

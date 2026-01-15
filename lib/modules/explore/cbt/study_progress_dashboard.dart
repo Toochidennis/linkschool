@@ -77,9 +77,9 @@ class StudyProgressDashboard extends StatefulWidget {
   final StudySessionStats sessionStats;
 
   const StudyProgressDashboard({
-    Key? key,
+    super.key,
     required this.sessionStats,
-  }) : super(key: key);
+  });
 
   @override
   State<StudyProgressDashboard> createState() => _StudyProgressDashboardState();
@@ -545,7 +545,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildTopicCard(topic, index + 1),
           );
-        }).toList(),
+        }),
       ],
     );
   }

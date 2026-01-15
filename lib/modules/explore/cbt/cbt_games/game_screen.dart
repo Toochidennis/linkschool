@@ -23,13 +23,13 @@ class GameTestScreen extends StatefulWidget {
   final int examTypeId;
 
   const GameTestScreen({
-    Key? key,
+    super.key,
     required this.subject,
     required this.topics,
     required this.topicIds,
     required this.courseId,
     required this.examTypeId,
-  }) : super(key: key);
+  });
 
   @override
   State<GameTestScreen> createState() => _GameTestScreenState();
@@ -37,7 +37,7 @@ class GameTestScreen extends StatefulWidget {
 
 class _GameTestScreenState extends State<GameTestScreen>
     with TickerProviderStateMixin {
-  Map<int, int> _userAnswers = {};
+  final Map<int, int> _userAnswers = {};
   int _score = 0;
   int _streak = 0;
   int _highestStreak = 0;
@@ -52,8 +52,8 @@ class _GameTestScreenState extends State<GameTestScreen>
   // Lifeline states
   bool _fiftyFiftyUsed = false;
   bool _askComputerUsed = false;
-  bool _shuffleUsed = false;
-  Map<int, Set<int>> _hiddenOptionsPerQuestion =
+  final bool _shuffleUsed = false;
+  final Map<int, Set<int>> _hiddenOptionsPerQuestion =
       {}; // For 50:50 lifeline - stores hidden options per question index
   int? _computerSuggestion; // For Ask Computer lifeline
   List<int>? _shuffledIndices; // For Shuffle lifeline
@@ -1793,7 +1793,7 @@ class _GameTestScreenState extends State<GameTestScreen>
                                   const SizedBox(height: 24),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

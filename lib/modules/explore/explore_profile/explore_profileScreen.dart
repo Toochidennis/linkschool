@@ -181,11 +181,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   Future<void> _handleSubscribeNow() async {
     // Directly launch Paystack payment page using the same logic as _chargeWithPaystack
     final settings = await CbtSettingsHelper.getSettings();
-    final _subscriptionPrice = settings.discountRate > 0
+    final subscriptionPrice = settings.discountRate > 0
         ? (settings.amount * (1 - settings.discountRate)).round()
         : settings.amount;
-    final _authService = FirebaseAuthService();
-    final userEmail = await _authService.getCurrentUserEmail();
+    final authService = FirebaseAuthService();
+    final userEmail = authService.getCurrentUserEmail();
     if (userEmail == null || userEmail.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -196,7 +196,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       );
       return;
     }
-    final amountInKobo = _subscriptionPrice * 100;
+    final amountInKobo = subscriptionPrice * 100;
     final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
     final paystackSecretKey = EnvConfig.paystackSecretKey;
     PaystackFlutter().pay(
@@ -214,7 +214,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       currency: Currency.NGN,
       metaData: {
         "subscription": "CBT Access",
-        "price": _subscriptionPrice,
+        "price": subscriptionPrice,
       },
       onSuccess: (paystackCallback) async {
         print('✅ Payment successful: "+paystackCallback.reference+"');
@@ -255,7 +255,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     final subscriptionStatus = cbtUserProvider.subscriptionStatus;
     return MediaQuery(
       data: MediaQuery.of(context)
-          .copyWith(textScaleFactor: settings.textScaleFactor),
+          .copyWith(textScaler: TextScaler.linear(settings.textScaleFactor)),
       child: Scaffold(
         backgroundColor: settings.backgroundColor,
         body: SingleChildScrollView(

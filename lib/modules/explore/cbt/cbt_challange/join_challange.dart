@@ -28,7 +28,7 @@ class _ModernChallengeScreenState extends State<ModernChallengeScreen>
     with TickerProviderStateMixin {
   late AnimationController _shimmerController;
   late Timer _countdownTimer;
-  int _selectedFilter = 0;
+  final int _selectedFilter = 0;
   final bool fromChallenge = true;
 
   final List<String> _filters = ['All', 'Daily', 'Weekly', 'Popular'];
@@ -769,7 +769,7 @@ class _ModernChallengeScreenState extends State<ModernChallengeScreen>
   }
 
   Widget _buildForYouCard(ChallengeModel challenge, int index) {
-    return Container(
+    return SizedBox(
       width: 300,
       height: 200,
       child: Stack(
@@ -1049,9 +1049,8 @@ class _ModernChallengeScreenState extends State<ModernChallengeScreen>
   }
 
   bool _canStartChallenge(ChallengeModel challenge) {
-    if (challenge.startDate == null) return true;
     final now = DateTime.now();
-    final start = challenge.startDate!;
+    final start = challenge.startDate;
     return now.isAfter(start) || now.isAtSameMomentAs(start);
   }
 

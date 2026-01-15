@@ -661,7 +661,7 @@ void initState() {
                                 children: [
                                   Expanded(
                                     child: _buildQuickActionButton(
-                                      label: '${provider.overview?.students.toString() ?? '0'}',
+                                      label: provider.overview?.students.toString() ?? '0',
                                       icon: Icons.people_rounded,
                                       title: "Students",
                                       backgroundColor: AppColors.bookText1,
@@ -681,7 +681,7 @@ void initState() {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _buildQuickActionButton(
-                                      label: '${provider.overview?.staff.toString() ?? '0'}',
+                                      label: provider.overview?.staff.toString() ?? '0',
                                       title: "Staff",
                                       icon: Icons.school_rounded,
                                       backgroundColor: Colors.teal,
@@ -705,7 +705,7 @@ void initState() {
                                 children: [
                                   Expanded(
                                     child: _buildQuickActionButton(
-                                      label: '${provider.overview?.classes.toString() ?? '0'}',
+                                      label: provider.overview?.classes.toString() ?? '0',
                                       title: "Classes",
                                       icon: Icons.class_rounded,
                                       backgroundColor: Colors.orangeAccent,
@@ -725,7 +725,7 @@ void initState() {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _buildQuickActionButton(
-                                      label: '${provider.overview?.levels.toString() ?? '0'}',
+                                      label: provider.overview?.levels.toString() ?? '0',
                                       title: "Levels",
                                       icon: Icons.layers_rounded,
                                       backgroundColor: Colors.purpleAccent,

@@ -238,7 +238,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -315,7 +315,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
       }
 
       // Get user email
-      final userEmail = await _authService.getCurrentUserEmail();
+      final userEmail = _authService.getCurrentUserEmail();
       if (userEmail == null || userEmail.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

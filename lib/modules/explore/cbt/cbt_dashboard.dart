@@ -271,7 +271,7 @@ class _CBTDashboardState extends State<CBTDashboard>
               backgroundColor: Colors.transparent, // Not used anymore
               provider: provider,
             );
-          }).toList(),
+          }),
         ],
       ),
     );

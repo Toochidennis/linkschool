@@ -146,25 +146,34 @@ class _VideosDashboardState extends State<VideosDashboard> {
     final name = subjectName.toUpperCase();
     if (name.contains('MATH')) return Color(0xFFFF6B35);
     if (name.contains('ENGLISH')) return Color(0xFF4A90E2);
-    if (name.contains('CHEMISTRY') || name.contains('CHEM'))
+    if (name.contains('CHEMISTRY') || name.contains('CHEM')) {
       return Color(0xFFFFB84D);
-    if (name.contains('BIOLOGY') || name.contains('BIO'))
+    }
+    if (name.contains('BIOLOGY') || name.contains('BIO')) {
       return Color(0xFF5CB85C);
-    if (name.contains('PHYSICS') || name.contains('PHY'))
+    }
+    if (name.contains('PHYSICS') || name.contains('PHY')) {
       return Color(0xFF6C5CE7);
-    if (name.contains('ECONOMICS') || name.contains('ECO'))
+    }
+    if (name.contains('ECONOMICS') || name.contains('ECO')) {
       return Color(0xFFE74C3C);
-    if (name.contains('GEOGRAPHY') || name.contains('GEO'))
+    }
+    if (name.contains('GEOGRAPHY') || name.contains('GEO')) {
       return Color(0xFF3498DB);
+    }
     if (name.contains('HISTORY')) return Color(0xFF9B59B6);
-    if (name.contains('LITERATURE') || name.contains('LIT'))
+    if (name.contains('LITERATURE') || name.contains('LIT')) {
       return Color(0xFF1ABC9C);
-    if (name.contains('GOVERNMENT') || name.contains('GOV'))
+    }
+    if (name.contains('GOVERNMENT') || name.contains('GOV')) {
       return Color(0xFFE67E22);
-    if (name.contains('COMMERCE') || name.contains('COM'))
+    }
+    if (name.contains('COMMERCE') || name.contains('COM')) {
       return Color(0xFF2ECC71);
-    if (name.contains('ACCOUNTING') || name.contains('ACC'))
+    }
+    if (name.contains('ACCOUNTING') || name.contains('ACC')) {
       return Color(0xFFF39C12);
+    }
     return Color(0xFF2C3E50); // Default dark color
   }
 
@@ -173,23 +182,29 @@ class _VideosDashboardState extends State<VideosDashboard> {
     final name = subjectName.toUpperCase();
     if (name.contains('MATH')) return Icons.functions;
     if (name.contains('ENGLISH')) return Icons.import_contacts;
-    if (name.contains('CHEMISTRY') || name.contains('CHEM'))
+    if (name.contains('CHEMISTRY') || name.contains('CHEM')) {
       return Icons.water_drop;
+    }
     if (name.contains('BIOLOGY') || name.contains('BIO')) return Icons.spa;
     if (name.contains('PHYSICS') || name.contains('PHY')) return Icons.bolt;
-    if (name.contains('ECONOMICS') || name.contains('ECO'))
+    if (name.contains('ECONOMICS') || name.contains('ECO')) {
       return Icons.show_chart;
-    if (name.contains('GEOGRAPHY') || name.contains('GEO'))
+    }
+    if (name.contains('GEOGRAPHY') || name.contains('GEO')) {
       return Icons.language;
+    }
     if (name.contains('HISTORY')) return Icons.auto_stories;
-    if (name.contains('LITERATURE') || name.contains('LIT'))
+    if (name.contains('LITERATURE') || name.contains('LIT')) {
       return Icons.auto_stories;
+    }
     if (name.contains('GOVERNMENT') || name.contains('GOV')) return Icons.gavel;
     if (name.contains('COMMERCE') || name.contains('COM')) return Icons.store;
-    if (name.contains('ACCOUNTING') || name.contains('ACC'))
+    if (name.contains('ACCOUNTING') || name.contains('ACC')) {
       return Icons.account_balance_wallet;
-    if (name.contains('COMPUTER') || name.contains('ICT'))
+    }
+    if (name.contains('COMPUTER') || name.contains('ICT')) {
       return Icons.computer;
+    }
     if (name.contains('ARTS') || name.contains('ART')) return Icons.palette;
     if (name.contains('MUSIC')) return Icons.music_note;
     return Icons.menu_book; // Default icon

@@ -71,7 +71,7 @@ class _EditFeeOverlayState extends State<EditFeeOverlay> {
                     _isMandatory = value;
                   });
                 },
-                activeColor: Colors.green,
+                activeThumbColor: Colors.green,
               ),
               const Text('Required'),
             ],

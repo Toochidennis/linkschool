@@ -1299,7 +1299,7 @@ void _showStatusSelectionModal() {
                     items: timeOptions.map((time) {
                       return DropdownMenuItem(
                         value: time,
-                        child: Text('${time} mins'),
+                        child: Text('$time mins'),
                       );
                     }).toList(),
                     onChanged: (value) {

@@ -7,7 +7,7 @@ import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'course_content_screen.dart';
 
 class ExploreCourses extends StatefulWidget {
-  const ExploreCourses({Key? key}) : super(key: key);
+  const ExploreCourses({super.key});
 
   @override
   State<ExploreCourses> createState() => _ExploreCoursesState();
@@ -160,7 +160,7 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                       const SizedBox(height: 24),
                     ],
                   );
-                }).toList(),
+                }),
 
                 const SizedBox(height: 100),
               ],

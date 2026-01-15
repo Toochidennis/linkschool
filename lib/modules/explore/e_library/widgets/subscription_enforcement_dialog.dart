@@ -508,7 +508,7 @@ class _SubscriptionEnforcementDialogState
                   height: fontSize,
                 ),
                 Text(
-                  '${discountedPrice}',
+                  '$discountedPrice',
                   style: AppTextStyles.normal400(
                     fontSize: fontSize,
                     color: AppColors.eLearningBtnColor1,
@@ -632,7 +632,7 @@ class _SubscriptionEnforcementDialogState
       }
 
       // Step 2: Get email & generate reference
-      final email = await _authService.getCurrentUserEmail();
+      final email = _authService.getCurrentUserEmail();
       if (email == null || email.isEmpty) {
         throw Exception('Unable to retrieve user email');
       }

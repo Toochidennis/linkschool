@@ -6,7 +6,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 import 'package:linkschool/modules/common/custom_toaster.dart';
-import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 
 import 'package:provider/provider.dart';
 

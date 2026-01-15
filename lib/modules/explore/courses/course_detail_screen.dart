@@ -87,7 +87,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
   // Assignment submission state
   bool _isAssignmentSubmitted = false;
-  bool _isSubmittingAssignment = false;
+  final bool _isSubmittingAssignment = false;
 
   final List<Map<String, dynamic>> _courseVideos = [
     {

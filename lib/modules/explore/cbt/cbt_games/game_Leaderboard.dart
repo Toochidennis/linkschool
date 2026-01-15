@@ -8,11 +8,11 @@ class LeaderboardScreen extends StatefulWidget {
   final int? challengeId;
 
   const LeaderboardScreen({
-    Key? key,
+    super.key,
     this.fromChallenge,
     this.fromGameDashboard,
     this.challengeId,
-  }) : super(key: key);
+  });
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
@@ -213,7 +213,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                               '',
                             ),
                           ))
-                      .toList(),
+                      ,
                 ],
               ),
             ),

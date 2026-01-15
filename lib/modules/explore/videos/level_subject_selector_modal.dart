@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
-import 'package:linkschool/modules/model/explore/home/subject_model2.dart';
 import 'package:linkschool/modules/model/explore/home/level_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';

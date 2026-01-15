@@ -8,10 +8,10 @@ class ChallengeInstructionsScreen extends StatefulWidget {
   final VoidCallback onContinue;
 
   const ChallengeInstructionsScreen({
-    Key? key,
+    super.key,
     required this.challenge,
     required this.onContinue,
-  }) : super(key: key);
+  });
 
   @override
   State<ChallengeInstructionsScreen> createState() =>
@@ -443,7 +443,7 @@ class _ChallengeInstructionsScreenState
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -571,7 +571,7 @@ class _ChallengeInstructionsScreenState
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

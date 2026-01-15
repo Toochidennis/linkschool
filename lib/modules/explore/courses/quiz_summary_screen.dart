@@ -12,7 +12,7 @@ class QuizSummaryScreen extends StatefulWidget {
   final String lessonTitle;
 
   const QuizSummaryScreen({
-    Key? key,
+    super.key,
     required this.totalScore,
     required this.totalQuestions,
     required this.questions,
@@ -21,7 +21,7 @@ class QuizSummaryScreen extends StatefulWidget {
     required this.onClose,
     required this.courseTitle,
     required this.lessonTitle,
-  }) : super(key: key);
+  });
 
   @override
   State<QuizSummaryScreen> createState() => _QuizSummaryScreenState();
