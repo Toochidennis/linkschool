@@ -71,6 +71,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isFullscreen = false;
   bool _isDescriptionExpanded = false;
   String? emailError;
+  String? pdfError;
   // Quiz state variables
   int _quizScore = 0;
   bool _quizTaken = false;
@@ -1108,23 +1109,26 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                     if (ext != 'pdf') {
                                       setModalState(() {
                                         selectedFileName = null;
+                                        pdfError = 'Only PDF files are allowed.';
                                       });
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Only PDF files are allowed.'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
+                                      return;
+                                    }
+                                    // Check file size (limit to 1MB)
+                                    final file = File(filePath);
+                                    final fileSize = await file.length();
+                                    if (fileSize > 1024 * 1024) {
+                                      setModalState(() {
+                                        selectedFileName = null;
+                                        pdfError = 'PDF file must not exceed 1MB.';
+                                      });
                                       return;
                                     }
                                     // Show loading indicator while encoding
                                     setModalState(() {
                                       selectedFileName = 'Encoding file...';
+                                      pdfError = null;
                                     });
                                     // Read file bytes
-                                    final file = File(filePath);
                                     final bytes = await file.readAsBytes();
                                     // Encode to base64 in background isolate to avoid blocking UI
                                     final base64String =
@@ -1133,6 +1137,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                       selectedFileName = fileName;
                                       selectedFilePath = filePath;
                                       selectedFileBase64 = base64String;
+                                      pdfError = null;
                                     });
                                   }
                                 }
@@ -1207,7 +1212,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
+                          if (pdfError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Text(
+                                pdfError!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 8),
                           RichText(
                             textAlign: TextAlign.center,
                             text: TextSpan(

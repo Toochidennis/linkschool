@@ -65,6 +65,7 @@ android {
         storeFile file(keystoreProperties['storeFile'])
         storePassword keystoreProperties['storePassword']
     }
+    
 }
 
 
