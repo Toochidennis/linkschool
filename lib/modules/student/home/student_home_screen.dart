@@ -870,47 +870,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                             getuserdata()['profile']['level_id'].toString(),
                         term: getuserdata()['settings']['term'].toString());
               },
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 120.0),
-                child: ListView(
-                  padding: const EdgeInsets.all(16.0),
-                  children: [
-                    const SizedBox(height: 8),
-                    const SizedBox(height: 16),
-                    _buildActivitiesSection(activities),
-                    const SizedBox(height: 24),
-                    Text(
-                      'You can...',
-                      style: AppTextStyles.normal600(
-                        fontSize: 20,
-                        color: AppColors.primaryLight,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildActionButtons(),
-                    const SizedBox(height: 24),
-                    _buildFeedSection(),
-                  ],
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Padding(
+              child: ListView(
                 padding: const EdgeInsets.all(16.0),
-                child: FloatingActionButton(
-                  onPressed: () {
-                    setState(() {
-                      _showAddForm = !_showAddForm;
-                    });
-                    HapticFeedback.lightImpact();
-                  },
-                  backgroundColor: AppColors.text2Light,
-                  child: Icon(_showAddForm ? Icons.close : Icons.add,
-                      color: Colors.white),
-                ),
+                children: [
+                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                  _buildActivitiesSection(activities),
+                  const SizedBox(height: 24),
+                  Text(
+                    'You can...',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: AppColors.primaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildActionButtons(),
+                  const SizedBox(height: 24),
+                  _buildFeedSection(),
+                ],
               ),
             ),
+           
           ],
         ),
       ),

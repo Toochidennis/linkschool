@@ -1,4 +1,3 @@
-import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -6,8 +5,7 @@ import 'package:linkschool/modules/explore/courses/explore_courses.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
 import 'package:linkschool/modules/explore/ai_chat/linkskool_ai_chat.dart';
-import '../../common/bottom_navigation_bar.dart';
-import '../../common/bottom_nav_item.dart';
+import '../../common/flat_bottom_navigation.dart';
 import 'explore_home.dart';
 
 class ExploreDashboard extends StatefulWidget {
@@ -79,25 +77,39 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     ];
   }
 
-  List<FABBottomAppBarItem> _buildAppBarItems() {
+  List<NavigationItem> _buildNavItems() {
     return [
-      createBottomNavIcon(
-        imagePath: 'assets/icons/home.svg',
-        text: 'Home',
+      NavigationItem(
+        iconPath: 'assets/icons/home.svg',
+          activeIconPath: 'assets/icons/fill_home.svg',
+        label: 'Home',
       ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/admission.svg',
-        text: 'Programs',
+      // admission.svg
+      NavigationItem(
+        iconPath: 'assets/icons/laptop-binary.svg',
+        activeIconPath: 'assets/icons/laptop-binary_fill.svg',
+         iconWidth: 24.0,
+        label: 'Programs',
       ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/e-books.svg',
-        text: 'E-library',
-        width: 24.0,
-        height: 25.0,
+      NavigationItem(
+        iconPath: 'assets/icons/portal.svg',
+        iconWidth: 24.0,
+        iconHeight: 25.0,
+    
+        color: const Color(0xFF1E3A8A), // Blue color for portal
+        label: 'Portal',
       ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/settings.svg',
-        text: 'Settings',
+      NavigationItem(
+        iconPath: 'assets/icons/diary-bookmark-down.svg',
+          activeIconPath: 'assets/icons/diary-bookmark-down_fill.svg',
+        label: 'E-library',
+        iconWidth: 24.0,
+        iconHeight: 25.0,
+      ),
+      NavigationItem(
+        iconPath: 'assets/icons/settings.svg',
+        activeIconPath: 'assets/icons/settings_fill.svg',
+        label: 'Settings',
       ),
     ];
   }
@@ -136,28 +148,29 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
                 // Handle search action
               },
             ),
-          // IconButton(
-          //   onPressed: () {},
-          //   icon: SvgPicture.asset(
-          //     'assets/icons/notifications.svg',
-          //     colorFilter:
-          //         const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          //   ),
-          // )
         ],
         elevation: 0,
       ),
-      body: CustomNavigationBar(
-        actionButtonImagePath: 'assets/icons/portal.svg',
-        appBarItems: _buildAppBarItems(),
-        bodyItems: _bodyItems,
+      body: _bodyItems[widget.selectedIndex],
+      bottomNavigationBar: FlatBottomNavigation(
+        items: _buildNavItems(),
+        // Convert body index to navigation index (account for portal at index 2)
+        // Body indices: 0=Home, 1=Programs, 2=E-library, 3=Settings
+        // Nav indices:  0=Home, 1=Programs, 2=Portal, 3=E-library, 4=Settings
+        selectedIndex: widget.selectedIndex >= 2
+            ? widget.selectedIndex + 1
+            : widget.selectedIndex,
         onTabSelected: (index) {
-          widget.onTabSelected(index);
-          // Update search icon visibility when tab is selected
-          _updateSearchIconVisibility();
+          // Handle portal switch (index 2)
+          if (index == 2) {
+            widget.onSwitch(true);
+          } else {
+            // Adjust index for body items (skip portal index)
+            final adjustedIndex = index > 2 ? index - 1 : index;
+            widget.onTabSelected(adjustedIndex);
+            _updateSearchIconVisibility();
+          }
         },
-        onSwitch: widget.onSwitch,
-        selectedIndex: widget.selectedIndex,
       ),
     );
   }

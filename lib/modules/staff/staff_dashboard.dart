@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
-import 'package:linkschool/modules/common/bottom_nav_item.dart';
+import 'package:linkschool/modules/common/flat_bottom_navigation.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_elearning_home_screen.dart';
 import 'package:linkschool/modules/staff/home/staff_home_screen.dart';
 import 'package:linkschool/modules/staff/result/staff_result_screen.dart';
@@ -51,27 +50,6 @@ class _StaffDashboardState extends State<StaffDashboard> {
     }
   }
 
-  Widget _buildProfileScreen() {
-    return Container(
-      height: MediaQuery.of(context).size.height,
-      color: Colors.blue,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Profile',
-                style: TextStyle(fontSize: 24, color: Colors.white)),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: widget.onLogout,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: Text('Logout'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   void didUpdateWidget(StaffDashboard oldWidget) {
@@ -85,48 +63,63 @@ class _StaffDashboardState extends State<StaffDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final appBarItems = [
-      createBottomNavIcon(
-        imagePath: 'assets/icons/home.svg',
-        text: 'Home',
-        width: 20.0,
-        height: 20.0,
-      ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/result.svg',
-        text: 'Result',
-        width: 10.0,
-        height: 20.0,
-      ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/e-learning.svg',
-        text: 'E- \n Learning',
-        width: 10,
-        height: 10.0,
-      ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/profile.svg',
-        text: 'Profile',
-        width: 10.0,
-        height: 20.0,
-      ),
-    ];
+
 
     return Scaffold(
       key: const ValueKey('staff_dashboard'),
       body: _buildBodyItem(_selectedIndex),
-      bottomNavigationBar: CustomNavigationBar(
-        actionButtonImagePath: 'assets/icons/explore.svg',
-        appBarItems: appBarItems,
-        bodyItems: List.generate(4, (index) => _buildBodyItem(index)),
+      bottomNavigationBar: FlatBottomNavigation(
+        items: [
+          NavigationItem(
+            iconPath: 'assets/icons/home.svg',
+            activeIconPath: 'assets/icons/fill_home.svg',
+            label: 'Home',
+            iconWidth: 20.0,
+            iconHeight: 20.0,
+          ),
+          //iconPath: 'assets/icons/result.svg',
+          NavigationItem(
+            iconPath: 'assets/icons/two_pager.svg',
+            activeIconPath: 'assets/icons/two_pager_fill.svg',
+            label: 'Result',
+            iconWidth: 10.0,
+            iconHeight: 20.0,
+          ),
+          NavigationItem(
+            iconPath: 'assets/icons/portal.svg',
+            label: 'Explore',
+              iconWidth: 24.0,
+        iconHeight: 25.0,
+            color: const Color(0xFF1E3A8A),
+          ),
+          // iconPath: 'assets/icons/e-learning.svg',
+          NavigationItem(
+            iconPath: 'assets/icons/globe_book.svg',
+            activeIconPath: 'assets/icons/globe_book.svg',
+            label: 'E-learning',
+            
+          ),
+          // profile.svg
+          NavigationItem(
+            iconPath: 'assets/icons/profile.svg',
+            activeIconPath: 'assets/icons/person_fill.svg',
+            label: 'Profile',
+            iconWidth: 10.0,
+            iconHeight: 20.0,
+          ),
+        ],
+        selectedIndex: _selectedIndex >= 2 ? _selectedIndex + 1 : _selectedIndex,
         onTabSelected: (index) {
+          if (index == 2) {
+            widget.onSwitch(true);
+            return;
+          }
+          final adjustedIndex = index > 2 ? index - 1 : index;
           setState(() {
-            _selectedIndex = index;
+            _selectedIndex = adjustedIndex;
           });
-          widget.onTabSelected(index);
+          widget.onTabSelected(adjustedIndex);
         },
-        onSwitch: widget.onSwitch,
-        selectedIndex: widget.selectedIndex,
       ),
     );
   }

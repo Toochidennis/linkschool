@@ -11,7 +11,7 @@ import 'reading_lesson_screen.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
+import 'dart:io' show Platform, Directory, File;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:intl/intl.dart';
@@ -80,11 +80,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? _pendingAssignmentFileBase64;
 
   bool _isValidEmail(String email) {
-  final emailRegex = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-  );
-  return emailRegex.hasMatch(email);
-}
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
 
   // Assignment submission state
   bool _isAssignmentSubmitted = false;
@@ -402,7 +402,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
               "old_file_name": "",
             }
           : 'No file uploaded',
-      "email":emailController.text,
+      "email": emailController.text,
       "phone": phoneController.text,
       'name': username,
       'course_title': widget.courseTitle,
@@ -891,12 +891,24 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   void _showSubmitAssignmentModal(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController phoneController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
+    int selectedProfileIndex = 0; // Default to first profile
     String? selectedFileName;
     String? selectedFilePath;
     String? selectedFileBase64;
+
+    // Available profiles
+    final List<Map<String, String>> profiles = [
+      {
+        'name': 'John Doe',
+        'email': 'john.doe@example.com',
+        'phone': '+1234567890',
+      },
+      {
+        'name': 'Rich Brown',
+        'email': 'richardB324@mail.com',
+        'phone': '+0987654321',
+      },
+    ];
 
     showGeneralDialog(
       context: context,
@@ -950,7 +962,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'Please enter your full name and upload your assignment:',
+                            'Select the profile to submit as:',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
@@ -959,138 +971,46 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                             ),
                           ),
                           const SizedBox(height: 24),
-                          TextField(
-                            controller: nameController,
-                            decoration: InputDecoration(
-                              hintText: 'Your Full Name',
-                              hintStyle: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 14,
+
+                          // Profile Selection List
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 300),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  // Profile 1 - Primary
+                                  _buildProfileItem(
+                                    name: 'John Doe',
+                                    email: 'john.doe@example.com',
+                                    phone: '+1234567890',
+                                    imageUrl: null,
+                                    isSelected: selectedProfileIndex == 0,
+                                    onTap: () {
+                                      setModalState(() {
+                                        selectedProfileIndex = 0;
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  // Profile 2 - Secondary
+                                  _buildProfileItem(
+                                    name: 'Rich Brown',
+                                    email: 'richardB324@mail.com',
+                                    phone: '+0987654321',
+                                    imageUrl: null,
+                                    isSelected: selectedProfileIndex == 1,
+                                    onTap: () {
+                                      setModalState(() {
+                                        selectedProfileIndex = 1;
+                                      });
+                                    },
+                                  ),
+                                ],
                               ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.grey.shade300),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.grey.shade300),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF6366F1),
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                            ),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 16),
-                          TextField(
-                            controller: phoneController,
-                            decoration: InputDecoration(
-                              hintText: 'Phone Number',
-                              hintStyle: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 14,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.grey.shade300),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.grey.shade300),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF6366F1),
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                            ),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            keyboardType: TextInputType.phone,
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: emailController,
-                            decoration: InputDecoration(
-                              hintText: 'Email',
-                              hintStyle: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 14,
-                              ),
-                           
-
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.grey.shade300),
-                              ),
-                              
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.grey.shade300),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF6366F1),
-                                  width: 2,
-                                ),
-                              ),
-                               errorText: emailError, // Use local variable
-    errorStyle: const TextStyle(
-      fontSize: 12,
-      color: Colors.red,
-    ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                            ),
-                            
-
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-    keyboardType: TextInputType.emailAddress,
-    onChanged: (value) {
-      // Clear error when user starts typing again
-      setModalState(() {
-        emailError = null;
-      });
-    },
-  ),
-  const SizedBox(height: 16),
                           // PDF Upload Button
                           InkWell(
                             onTap: () async {
@@ -1109,7 +1029,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                     if (ext != 'pdf') {
                                       setModalState(() {
                                         selectedFileName = null;
-                                        pdfError = 'Only PDF files are allowed.';
+                                        pdfError =
+                                            'Only PDF files are allowed.';
                                       });
                                       return;
                                     }
@@ -1119,7 +1040,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                     if (fileSize > 1024 * 1024) {
                                       setModalState(() {
                                         selectedFileName = null;
-                                        pdfError = 'PDF file must not exceed 1MB.';
+                                        pdfError =
+                                            'PDF file must not exceed 1MB.';
                                       });
                                       return;
                                     }
@@ -1281,30 +1203,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: () async {
-                                    final name = nameController.text.trim();
-                                    final phone = phoneController.text.trim();
-                                    final email = emailController.text.trim();
-                                    if (name.isEmpty ||
-                                        phone.isEmpty ||
-                                        email.isEmpty) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content:
-                                              Text('Please fill all fields'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-     
-    if (!_isValidEmail(email)) {
-    setModalState(() {
-      emailError = 'Please enter a valid email address';
-    });
-    return;
-  }
+                                    // Get selected profile data
+                                    final selectedProfile =
+                                        profiles[selectedProfileIndex];
+                                    final name = selectedProfile['name']!;
+                                    final phone = selectedProfile['phone']!;
+                                    final email = selectedProfile['email']!;
                                     // Check if assignment file is selected
                                     if (selectedFileName == null ||
                                         selectedFileBase64 == null) {
@@ -1490,10 +1394,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                       final success =
                                           await provider.submitAssignment(
                                         name: name,
-                                        email:
-                                            emailController.text, // You can add email field to modal if needed
+                                        email: email ,// You can add email field to modal if needed
                                         phone:
-                                            phoneController.text, // You can add phone field to modal if needed
+                                            "08099999999", // You can add phone field to modal if needed
                                         quizScore: _quizScore.toString(),
                                         assignments: [
                                           {
@@ -1574,7 +1477,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                                     child: const Text(
                                                       'OK',
                                                       style: TextStyle(
-                                                        backgroundColor: Colors.white,
+                                                        backgroundColor:
+                                                            Colors.white,
                                                         fontWeight:
                                                             FontWeight.w600,
                                                       ),
@@ -1658,6 +1562,78 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     );
   }
 
+  Widget _buildProfileItem({
+    required String name,
+    required String email,
+    required String phone,
+    String? imageUrl,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF6366F1).withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF6366F1) : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Avatar
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.grey.shade300,
+              backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+              child: imageUrl == null
+                  ? const Icon(Icons.person, color: Colors.grey)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            // Name and Email
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          isSelected ? const Color(0xFF6366F1) : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Selection Indicator
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xFF6366F1),
+                size: 24,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _openEmailApp(String userName) async {
     final courseTitle = widget.courseTitle;
     final subject = Uri.encodeComponent(
@@ -1707,6 +1683,42 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     );
   }
 
+  // Helper function to get public Downloads directory
+  Future<Directory?> _getDownloadsDirectory() async {
+    if (Platform.isAndroid) {
+      // For Android, use the public Downloads folder
+      final downloadsPath = '/storage/emulated/0/Download';
+      final downloadsDir = Directory(downloadsPath);
+      
+      // Check if the directory exists, if not try alternative paths
+      if (await downloadsDir.exists()) {
+        return downloadsDir;
+      }
+      
+      // Try alternative path (some devices use different paths)
+      final altPath = '/sdcard/Download';
+      final altDir = Directory(altPath);
+      if (await altDir.exists()) {
+        return altDir;
+      }
+      
+      // If neither exists, create the standard one
+      try {
+        await downloadsDir.create(recursive: true);
+        return downloadsDir;
+      } catch (e) {
+        // Fallback to external storage directory
+        final dir = await getExternalStorageDirectory();
+        return Directory('${dir!.path}/Download');
+      }
+    } else if (Platform.isIOS) {
+      // For iOS, use the app's documents directory
+      final dir = await getApplicationDocumentsDirectory();
+      return Directory('${dir.path}/Downloads');
+    }
+    return null;
+  }
+
   Future<void> _downloadMaterial(String materialUrl) async {
     try {
       // Request storage permission
@@ -1739,8 +1751,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
       final response = await http.get(Uri.parse(materialUrl));
       if (response.statusCode == 200) {
-        final dir = await getExternalStorageDirectory();
-        final downloadsDir = Directory('${dir!.path}/Download');
+        final downloadsDir = await _getDownloadsDirectory();
+        if (downloadsDir == null) {
+          throw Exception('Could not access Downloads directory');
+        }
+        
         if (!await downloadsDir.exists()) {
           await downloadsDir.create(recursive: true);
         }
@@ -1816,8 +1831,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
       final response = await http.get(Uri.parse(assignmentUrl));
       if (response.statusCode == 200) {
-        final dir = await getExternalStorageDirectory();
-        final downloadsDir = Directory('${dir!.path}/Download');
+        final downloadsDir = await _getDownloadsDirectory();
+        if (downloadsDir == null) {
+          throw Exception('Could not access Downloads directory');
+        }
+        
         if (!await downloadsDir.exists()) {
           await downloadsDir.create(recursive: true);
         }
@@ -1830,10 +1848,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         if (mounted) {
           Navigator.pop(context); // Close loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Downloaded to: ${file.path}'),
-              duration: const Duration(seconds: 3),
-              backgroundColor: const Color(0xFF4CAF50),
+            const SnackBar(
+              content: Text('Downloaded to Downloads folder'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Color(0xFF4CAF50),
             ),
           );
         }
@@ -1924,8 +1942,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         ),
         tabs: const [
           Tab(text: 'Overview'),
-          Tab(text: 'Assignments'),
           Tab(text: 'Quiz'),
+          Tab(text: 'Assignments'),
         ],
       ),
 
@@ -1936,8 +1954,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           controller: _tabController,
           children: [
             _buildOverviewTab(),
-            _buildAssignmentsTab(currentVideo),
             _buildReviewsTab(),
+            _buildAssignmentsTab(currentVideo),
           ],
         ),
       ),
@@ -3491,6 +3509,42 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     _downloadPdf();
   }
 
+  // Helper function to get public Downloads directory
+  Future<Directory?> _getDownloadsDirectory() async {
+    if (Platform.isAndroid) {
+      // For Android, use the public Downloads folder
+      final downloadsPath = '/storage/emulated/0/Download';
+      final downloadsDir = Directory(downloadsPath);
+      
+      // Check if the directory exists, if not try alternative paths
+      if (await downloadsDir.exists()) {
+        return downloadsDir;
+      }
+      
+      // Try alternative path (some devices use different paths)
+      final altPath = '/sdcard/Download';
+      final altDir = Directory(altPath);
+      if (await altDir.exists()) {
+        return altDir;
+      }
+      
+      // If neither exists, create the standard one
+      try {
+        await downloadsDir.create(recursive: true);
+        return downloadsDir;
+      } catch (e) {
+        // Fallback to external storage directory
+        final dir = await getExternalStorageDirectory();
+        return Directory('${dir!.path}/Download');
+      }
+    } else if (Platform.isIOS) {
+      // For iOS, use the app's documents directory
+      final dir = await getApplicationDocumentsDirectory();
+      return Directory('${dir.path}/Downloads');
+    }
+    return null;
+  }
+
   Future<void> _downloadPdf() async {
     try {
       final response = await http.get(Uri.parse(widget.assignmentUrl));
@@ -3552,8 +3606,11 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
 
       final response = await http.get(Uri.parse(widget.assignmentUrl));
       if (response.statusCode == 200) {
-        final dir = await getExternalStorageDirectory();
-        final downloadsDir = Directory('${dir!.path}/Download');
+        final downloadsDir = await _getDownloadsDirectory();
+        if (downloadsDir == null) {
+          throw Exception('Could not access Downloads directory');
+        }
+        
         if (!await downloadsDir.exists()) {
           await downloadsDir.create(recursive: true);
         }
@@ -3566,10 +3623,10 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Downloaded to: ${file.path}'),
-              duration: const Duration(seconds: 3),
-              backgroundColor: const Color(0xFF4CAF50),
+            const SnackBar(
+              content: Text('Downloaded to Downloads folder'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Color(0xFF4CAF50),
             ),
           );
         }

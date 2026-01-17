@@ -6,7 +6,7 @@ import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dar
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
+import 'dart:io' show Platform, Directory, File;
 import 'package:permission_handler/permission_handler.dart';
 
 class CourseContentScreen extends StatefulWidget {
@@ -72,6 +72,42 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     );
   }
 
+  // Helper function to get public Downloads directory
+  Future<Directory?> _getDownloadsDirectory() async {
+    if (Platform.isAndroid) {
+      // For Android, use the public Downloads folder
+      final downloadsPath = '/storage/emulated/0/Download';
+      final downloadsDir = Directory(downloadsPath);
+      
+      // Check if the directory exists, if not try alternative paths
+      if (await downloadsDir.exists()) {
+        return downloadsDir;
+      }
+      
+      // Try alternative path (some devices use different paths)
+      final altPath = '/sdcard/Download';
+      final altDir = Directory(altPath);
+      if (await altDir.exists()) {
+        return altDir;
+      }
+      
+      // If neither exists, create the standard one
+      try {
+        await downloadsDir.create(recursive: true);
+        return downloadsDir;
+      } catch (e) {
+        // Fallback to external storage directory
+        final dir = await getExternalStorageDirectory();
+        return Directory('${dir!.path}/Download');
+      }
+    } else if (Platform.isIOS) {
+      // For iOS, use the app's documents directory
+      final dir = await getApplicationDocumentsDirectory();
+      return Directory('${dir.path}/Downloads');
+    }
+    return null;
+  }
+
   Future<void> _downloadMaterial(
       String materialUrl, String materialName) async {
     try {
@@ -105,8 +141,11 @@ class _CourseContentScreenState extends State<CourseContentScreen>
 
       final response = await http.get(Uri.parse(materialUrl));
       if (response.statusCode == 200) {
-        final dir = await getExternalStorageDirectory();
-        final downloadsDir = Directory('${dir!.path}/Download');
+        final downloadsDir = await _getDownloadsDirectory();
+        if (downloadsDir == null) {
+          throw Exception('Could not access Downloads directory');
+        }
+        
         if (!await downloadsDir.exists()) {
           await downloadsDir.create(recursive: true);
         }
@@ -126,7 +165,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
           Navigator.pop(context); // Close loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Downloaded: $materialName'),
+              content: Text('Downloaded: $materialName to Downloads folder'),
               duration: const Duration(seconds: 3),
               backgroundColor: const Color(0xFF4CAF50),
             ),

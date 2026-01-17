@@ -437,7 +437,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                                  
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Sign Up',
+                                    'Add school',
                                     style: AppTextStyles.normal700(
                                       fontSize: 15,
                                       color: Colors.white,

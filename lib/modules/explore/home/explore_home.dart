@@ -3,6 +3,8 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
@@ -29,10 +31,25 @@ class ExploreHome extends StatefulWidget {
   State<ExploreHome> createState() => _ExploreHomeState();
 }
 
-class _ExploreHomeState extends State<ExploreHome> {
+class _ExploreHomeState extends State<ExploreHome> with AutomaticKeepAliveClientMixin {
   late ScrollController _controller;
   bool _showSearchBar = true;
   bool isLoading = true;
+
+  // Keep this screen alive when switching tabs/navigation
+  @override
+  bool get wantKeepAlive => true;
+
+  // Custom cache manager to retain downloaded images longer
+  final CacheManager _exploreCacheManager = CacheManager(
+    Config(
+      'exploreCacheKey',
+      stalePeriod: const Duration(days: 30),
+      maxNrOfCacheObjects: 200,
+    ),
+  );
+
+  bool _imagesPrecached = false;
 
   void _shareNews(String title, String content, String time, String imageUrl) {
     // Format the complete news content for sharing
@@ -139,8 +156,17 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final newsProvider = Provider.of<NewsProvider>(context);
     final announcementProvider = Provider.of<AnnouncementProvider>(context);
+
+    // Precache images once data is available to avoid re-downloading when returning
+    if (!_imagesPrecached && !newsProvider.isLoading && !announcementProvider.isLoading) {
+      _imagesPrecached = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _precacheImages(newsProvider, announcementProvider);
+      });
+    }
     // String formattedDate = DateFormat('MMMM d, y')
     //     .format(DateTime.parse(newsProvider.newsmode.datePosted));
 
@@ -182,9 +208,6 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
     return Container(
       decoration: Constants.customBoxDecoration(context),
-      padding: const EdgeInsets.only(
-        bottom: 90.0,
-      ),
       child: RefreshIndicator(
         onRefresh: () async {
           await Future.delayed(const Duration(milliseconds: 500));
@@ -470,6 +493,10 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 childCount: newsProvider.latestNews.length,
               ),
             ),
+
+            const SliverToBoxAdapter(
+  child: SizedBox(height: kBottomNavigationBarHeight),
+),
           ],
         ),
       ),
@@ -506,6 +533,30 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     return '${days ~/ 7} weeks ago';
   }
 
+  // Pre-cache images for news and announcements into memory + disk cache
+  void _precacheImages(NewsProvider newsProvider, AnnouncementProvider announcementProvider) {
+    final urls = <String>{};
+
+    for (final n in newsProvider.latestNews) {
+      if (n.imageUrl.isNotEmpty) urls.add(n.imageUrl);
+    }
+
+    for (final a in announcementProvider.publishedAnnouncements) {
+      if (a.imageUrl.isNotEmpty) urls.add(a.imageUrl);
+    }
+
+    for (final url in urls) {
+      try {
+        precacheImage(
+          CachedNetworkImageProvider(url, cacheManager: _exploreCacheManager),
+          context,
+        );
+      } catch (_) {
+        // ignore errors while precaching
+      }
+    }
+  }
+
   Widget _buildAnnouncementCard({
     required announcement,
   }) {
@@ -521,35 +572,33 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               borderRadius: BorderRadius.circular(12.0),
               child: Stack(
                 children: [
-                  Image.network(
-                    announcement.imageUrl,
+                  CachedNetworkImage(
+                    cacheManager: _exploreCacheManager,
+                    imageUrl: announcement.imageUrl,
                     fit: BoxFit.cover,
                     height: 180,
                     width: double.infinity,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        height: 180,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.grey[300]!,
-                              Colors.grey[200]!,
-                            ],
-                          ),
+                    placeholder: (context, url) => Container(
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.grey[300]!,
+                            Colors.grey[200]!,
+                          ],
                         ),
-                        child: Skeleton.leaf(
-                          enabled: true,
-                          child: Container(
-                            color: Colors.grey[300],
-                          ),
+                      ),
+                      child: Skeleton.leaf(
+                        enabled: true,
+                        child: Container(
+                          color: Colors.grey[300],
                         ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
+                      ),
+                    ),
+                    errorWidget: (context, url, error) {
                       return Container(
                         height: 180,
                         width: double.infinity,
@@ -792,23 +841,21 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           // Image thumbnail on the left
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              imageUrl,
+            child: CachedNetworkImage(
+              cacheManager: _exploreCacheManager,
+              imageUrl: imageUrl,
               width: 80,
               height: 100,
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Skeleton.leaf(
-                  enabled: true,
-                  child: Container(
-                    width: 80,
-                    height: 100,
-                    color: Colors.grey[300],
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
+              placeholder: (context, url) => Skeleton.leaf(
+                enabled: true,
+                child: Container(
+                  width: 80,
+                  height: 100,
+                  color: Colors.grey[300],
+                ),
+              ),
+              errorWidget: (context, url, error) {
                 return Container(
                   width: 80,
                   height: 100,

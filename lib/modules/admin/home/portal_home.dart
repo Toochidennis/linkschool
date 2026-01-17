@@ -608,540 +608,537 @@ void initState() {
       body: Container(
         height: double.infinity,
         decoration: Constants.customBoxDecoration(context),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 100.0),
-          child: RefreshIndicator(
-            onRefresh: () async {
-              await Provider.of<DashboardFeedProvider>(context, listen: false)
-                  .fetchDashboardData();
-            },
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              physics: const BouncingScrollPhysics(),
-              child: Consumer<DashboardFeedProvider>(
-                builder: (context, provider, _) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // School Overview Section (Now with Quick Action Button Design)
-                      _buildAnimatedCard(
-                        index: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          AppColors.text2Light.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.analytics_rounded,
-                                      color: AppColors.text2Light,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'School Overview',
-                                    style: AppTextStyles.normal600(
-                                      fontSize: 20,
-                                      color: AppColors.text2Light,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildQuickActionButton(
-                                      label: '${provider.overview?.students.toString() ?? '0'}',
-                                      icon: Icons.people_rounded,
-                                      title: "Students",
-                                      backgroundColor: AppColors.bookText1,
-                                      borderColor: AppColors.bookText1.withOpacity(0.3),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const ManageStudentsScreen(),
-                                          ),
-                                        );
-                                      },
-                                      index: 1,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildQuickActionButton(
-                                      label: '${provider.overview?.staff.toString() ?? '0'}',
-                                      title: "Staff",
-                                      icon: Icons.school_rounded,
-                                      backgroundColor: Colors.teal,
-                                      borderColor: Colors.teal.withOpacity(0.3),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const ManageStaffScreen(),
-                                          ),
-                                        );
-                                      },
-                                      index: 2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildQuickActionButton(
-                                      label: '${provider.overview?.classes.toString() ?? '0'}',
-                                      title: "Classes",
-                                      icon: Icons.class_rounded,
-                                      backgroundColor: Colors.orangeAccent,
-                                      borderColor: Colors.orangeAccent.withOpacity(0.3),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const LevelClassManagementScreen(),
-                                          ),
-                                        );
-                                      },
-                                      index: 3,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildQuickActionButton(
-                                      label: '${provider.overview?.levels.toString() ?? '0'}',
-                                      title: "Levels",
-                                      icon: Icons.layers_rounded,
-                                      backgroundColor: Colors.purpleAccent,
-                                      borderColor: Colors.purpleAccent.withOpacity(0.3),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const LevelClassManagementScreen(),
-                                          ),
-                                        );
-                                      },
-                                      index: 4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Quick Actions Section (Now with Stats Card Design)
-                      _buildAnimatedCard(
-                        index: 5,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Provider.of<DashboardFeedProvider>(context, listen: false)
+                .fetchDashboardData();
+          },
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            physics: const BouncingScrollPhysics(),
+            child: Consumer<DashboardFeedProvider>(
+              builder: (context, provider, _) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // School Overview Section (Now with Quick Action Button Design)
+                    _buildAnimatedCard(
+                      index: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
                                 Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color:
-                                    AppColors.text2Light.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.dashboard_rounded,
-                                  color: AppColors.text2Light,
-                                  size: 24,
-                                ),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        AppColors.text2Light.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.analytics_rounded,
+                                    color: AppColors.text2Light,
+                                    size: 24,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                'Quick Actions',
-                                style: AppTextStyles.normal600(
-                                  fontSize: 20,
-                                  color: AppColors.text2Light,
-                                ),
+                                  'School Overview',
+                                  style: AppTextStyles.normal600(
+                                    fontSize: 20,
+                                    color: AppColors.text2Light,
+                                  ),
                                 ),
                               ],
-                              ),
-                              const SizedBox(height: 12),
-                              // Modern list view replacing the grid
-                              Builder(builder: (context) {
-                              final actions = [
-                                {
-                                'title': 'Manage Students ',
-                                'subtitle': 'View & Edit Students',
-                                'icon': Icons.people_alt_rounded,
-                                'color': AppColors.portalButton1Light,
-                                'route': const StudentStatisticsScreen(),
-                                },
-                                // {
-                                // 'title': 'Manage Students ',
-                                // 'subtitle': 'View & Edit Students',
-                                // 'icon': Icons.people_alt_rounded,
-                                // 'color': AppColors.portalButton1Light,
-                                // 'route': const ManageStudentsScreen(),
-                                // },
-                                {
-                                'title': 'Manage Staff ',
-                                'subtitle': 'Manage Staff Members',
-                                'icon': Icons.badge_rounded,
-                                'color': AppColors.portalButton2Light,
-                                'route': const ManageStaffScreen(),
-                                },
-                                {
-                                'title': 'Manage Courses',
-                                'subtitle': 'Add & Edit Courses',
-                                'icon': Icons.book_rounded,
-                                'color': AppColors.attCheckColor2,
-                                'route': const CourseManagementScreen(),
-                                },
-                                {
-                                'title': 'Levels & Classes',
-                                'subtitle': 'Manage Levels & Classes',
-                                'icon': Icons.school_outlined,
-                                'color': AppColors.secondaryLight,
-                                'route': const LevelClassManagementScreen(),
-                                },
-                              ];
-
-                              return ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: actions.length,
-                                separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                                itemBuilder: (ctx, i) {
-                                final item = actions[i];
-                                return _buildAnimatedCard(
-                                  index: i + 10,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildQuickActionButton(
+                                    label: '${provider.overview?.students.toString() ?? '0'}',
+                                    icon: Icons.people_rounded,
+                                    title: "Students",
+                                    backgroundColor: AppColors.bookText1,
+                                    borderColor: AppColors.bookText1.withOpacity(0.3),
                                     onTap: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                            item['route'] as Widget,
+                                              const ManageStudentsScreen(),
                                         ),
                                       );
                                     },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: (item['color'] as Color),
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: (item['color'] as Color)
-                                              .withOpacity(0.3),
-                                            spreadRadius: 1,
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                          vertical: 16,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              item['icon'] as IconData,
-                                              color: Colors.white,
-                                              size: 28,
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    item['title'] as String,
-                                                    style: AppTextStyles
-                                                      .normal600(
-                                                        fontSize: 16,
-                                                        color: Colors.white,
-                                                      ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    item['subtitle'] as String,
-                                                    style: AppTextStyles
-                                                      .normal400(
-                                                        fontSize: 13,
-                                                        color: Colors.white.withOpacity(0.9),
-                                                      ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const Icon(
-                                              Icons.arrow_forward_ios_rounded,
-                                              color: Colors.white,
-                                              size: 16,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
+                                    index: 1,
                                   ),
-                                );
-                                },
-                              );
-                              }),
-                            ],
-                          ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildQuickActionButton(
+                                    label: '${provider.overview?.staff.toString() ?? '0'}',
+                                    title: "Staff",
+                                    icon: Icons.school_rounded,
+                                    backgroundColor: Colors.teal,
+                                    borderColor: Colors.teal.withOpacity(0.3),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ManageStaffScreen(),
+                                        ),
+                                      );
+                                    },
+                                    index: 2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildQuickActionButton(
+                                    label: '${provider.overview?.classes.toString() ?? '0'}',
+                                    title: "Classes",
+                                    icon: Icons.class_rounded,
+                                    backgroundColor: Colors.orangeAccent,
+                                    borderColor: Colors.orangeAccent.withOpacity(0.3),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LevelClassManagementScreen(),
+                                        ),
+                                      );
+                                    },
+                                    index: 3,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildQuickActionButton(
+                                    label: '${provider.overview?.levels.toString() ?? '0'}',
+                                    title: "Levels",
+                                    icon: Icons.layers_rounded,
+                                    backgroundColor: Colors.purpleAccent,
+                                    borderColor: Colors.purpleAccent.withOpacity(0.3),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LevelClassManagementScreen(),
+                                        ),
+                                      );
+                                    },
+                                    index: 4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      // Feeds Section Header
-                      _buildAnimatedCard(
-                        index: 7,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                    const SizedBox(height: 8),
+                    // Quick Actions Section (Now with Stats Card Design)
+                    _buildAnimatedCard(
+                      index: 5,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                             children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          AppColors.text2Light.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.feed_rounded,
-                                      color: AppColors.text2Light,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'School Feeds',
-                                    style: AppTextStyles.normal600(
-                                      fontSize: 20,
-                                      color: AppColors.text2Light,
-                                    ),
-                                  ),
-                                ],
+                              Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color:
+                                  AppColors.text2Light.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _showAddForm = !_showAddForm;
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
+                              child: Icon(
+                                Icons.dashboard_rounded,
+                                color: AppColors.text2Light,
+                                size: 24,
+                              ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                              'Quick Actions',
+                              style: AppTextStyles.normal600(
+                                fontSize: 20,
+                                color: AppColors.text2Light,
+                              ),
+                              ),
+                            ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Modern list view replacing the grid
+                            Builder(builder: (context) {
+                            final actions = [
+                              {
+                              'title': 'Manage Students ',
+                              'subtitle': 'View & Edit Students',
+                              'icon': Icons.people_alt_rounded,
+                              'color': AppColors.portalButton1Light,
+                              'route': const StudentStatisticsScreen(),
+                              },
+                              // {
+                              // 'title': 'Manage Students ',
+                              // 'subtitle': 'View & Edit Students',
+                              // 'icon': Icons.people_alt_rounded,
+                              // 'color': AppColors.portalButton1Light,
+                              // 'route': const ManageStudentsScreen(),
+                              // },
+                              {
+                              'title': 'Manage Staff ',
+                              'subtitle': 'Manage Staff Members',
+                              'icon': Icons.badge_rounded,
+                              'color': AppColors.portalButton2Light,
+                              'route': const ManageStaffScreen(),
+                              },
+                              {
+                              'title': 'Manage Courses',
+                              'subtitle': 'Add & Edit Courses',
+                              'icon': Icons.book_rounded,
+                              'color': AppColors.attCheckColor2,
+                              'route': const CourseManagementScreen(),
+                              },
+                              {
+                              'title': 'Levels & Classes',
+                              'subtitle': 'Manage Levels & Classes',
+                              'icon': Icons.school_outlined,
+                              'color': AppColors.secondaryLight,
+                              'route': const LevelClassManagementScreen(),
+                              },
+                            ];
+        
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: actions.length,
+                              separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                              itemBuilder: (ctx, i) {
+                              final item = actions[i];
+                              return _buildAnimatedCard(
+                                index: i + 10,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                          item['route'] as Widget,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.text2Light,
-                                        borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.text2Light
-                                                .withOpacity(0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
+                                    );
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: (item['color'] as Color),
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (item['color'] as Color)
+                                            .withOpacity(0.3),
+                                          spreadRadius: 1,
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 16,
                                       ),
                                       child: Row(
                                         children: [
                                           Icon(
-                                            _showAddForm
-                                                ? Icons.close
-                                                : Icons.add,
+                                            item['icon'] as IconData,
+                                            color: Colors.white,
+                                            size: 28,
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item['title'] as String,
+                                                  style: AppTextStyles
+                                                    .normal600(
+                                                      fontSize: 16,
+                                                      color: Colors.white,
+                                                    ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  item['subtitle'] as String,
+                                                  style: AppTextStyles
+                                                    .normal400(
+                                                      fontSize: 13,
+                                                      color: Colors.white.withOpacity(0.9),
+                                                    ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Icon(
+                                            Icons.arrow_forward_ios_rounded,
                                             color: Colors.white,
                                             size: 16,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            _showAddForm ? 'Close' : 'Add',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              fontFamily: 'Urbanist',
-                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  // See All button
-
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AllFeedsScreen(),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text(
-                                      'See all',
-                                      style: TextStyle(
-                                        decoration: TextDecoration.underline,
-                                        color: AppColors.text2Light,
-                                        fontFamily: 'Urbanist',
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                ),
+                              );
+                              },
+                            );
+                            }),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      // Add Content Form
-                      if (_showAddForm)
-                        _buildAnimatedCard(
-                          index: 8,
-                          child: _buildAddContentForm(),
-                        ),
-                      if (_showAddForm) const SizedBox(height: 8),
-                      // Feeds Content
-                      _buildAnimatedCard(
-                        index: 9,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (provider.isLoading)
-                                const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(20.0),
-                                    child: CircularProgressIndicator(),
+                    ),
+                    const SizedBox(height: 8),
+                    // Feeds Section Header
+                    _buildAnimatedCard(
+                      index: 7,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        AppColors.text2Light.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.feed_rounded,
+                                    color: AppColors.text2Light,
+                                    size: 20,
                                   ),
                                 ),
-                              if (!provider.isLoading && provider.feeds.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Text(
-                                    'No feeds available yet.',
-                                    style: TextStyle(
-                                      fontFamily: 'Urbanist',
-                                      fontSize: 14,
-                                      color: Colors.grey,
+                                const SizedBox(width: 8),
+                                Text(
+                                  'School Feeds',
+                                  style: AppTextStyles.normal600(
+                                    fontSize: 20,
+                                    color: AppColors.text2Light,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _showAddForm = !_showAddForm;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.text2Light,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.text2Light
+                                              .withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          _showAddForm
+                                              ? Icons.close
+                                              : Icons.add,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _showAddForm ? 'Close' : 'Add',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            fontFamily: 'Urbanist',
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
-                              if (provider.feeds.isNotEmpty)
-                                Column(
-                                  children: [
-                                    // Show only first 3 feeds
-                                    ...provider.feeds
-                                        .asMap()
-                                        .entries
-                                        .map((entry) {
-                                      final index = entry.key;
-                                      final feed = entry.value;
-
-                                      if (_editingFeedId == feed.id) {
-                                        return _buildEditForm(feed, index);
-                                      }
-                                      return TweenAnimationBuilder<double>(
-                                        tween: Tween<double>(begin: 0, end: 1),
-                                        duration:
-                                            const Duration(milliseconds: 600),
-                                        curve: Curves.easeOutBack,
-                                        builder: (context, value, child) {
-                                          return Transform.scale(
-                                            scale: value,
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        FeedDetailsScreen(
-                                                      replies: [
-                                                        ...feed.replies
-                                                      ],
-                                                      profileImageUrl:
-                                                          'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
-                                                      name: feed.authorName,
-                                                      content: feed.content,
-                                                      interactions:
-                                                          feed.replies.length,
-                                                      time: feed.createdAt,
-                                                      parentId: feed.id,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                              child: Column(
-                                                children: [
-                                                  PortalNewsItem(
+                                const SizedBox(width: 8),
+                                // See All button
+        
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            AllFeedsScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'See all',
+                                    style: TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      color: AppColors.text2Light,
+                                      fontFamily: 'Urbanist',
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Add Content Form
+                    if (_showAddForm)
+                      _buildAnimatedCard(
+                        index: 8,
+                        child: _buildAddContentForm(),
+                      ),
+                    if (_showAddForm) const SizedBox(height: 8),
+                    // Feeds Content
+                    _buildAnimatedCard(
+                      index: 9,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (provider.isLoading)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                            if (!provider.isLoading && provider.feeds.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'No feeds available yet.',
+                                  style: TextStyle(
+                                    fontFamily: 'Urbanist',
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            if (provider.feeds.isNotEmpty)
+                              Column(
+                                children: [
+                                  // Show only first 3 feeds
+                                  ...provider.feeds
+                                      .asMap()
+                                      .entries
+                                      .map((entry) {
+                                    final index = entry.key;
+                                    final feed = entry.value;
+        
+                                    if (_editingFeedId == feed.id) {
+                                      return _buildEditForm(feed, index);
+                                    }
+                                    return TweenAnimationBuilder<double>(
+                                      tween: Tween<double>(begin: 0, end: 1),
+                                      duration:
+                                          const Duration(milliseconds: 600),
+                                      curve: Curves.easeOutBack,
+                                      builder: (context, value, child) {
+                                        return Transform.scale(
+                                          scale: value,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      FeedDetailsScreen(
+                                                    replies: [
+                                                      ...feed.replies
+                                                    ],
                                                     profileImageUrl:
                                                         'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
                                                     name: feed.authorName,
-                                                    newsContent: feed.content,
-                                                    time: feed.createdAt,
-                                                    title: feed.title,
-                                                    CreatorId:
-                                                        creatorId.toString(),
-                                                    authorId:
-                                                        feed.authorId,
-                                                    role: userRole,
-                                                    edit: () => _startEditing(
-                                                        feed), // Direct function call
-                                                    delete: () => _confirmDelete(
-                                                        feed), // Direct function call
-                                                    comments:
+                                                    content: feed.content,
+                                                    interactions:
                                                         feed.replies.length,
+                                                    time: feed.createdAt,
+                                                    parentId: feed.id,
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              );
+                                            },
+                                            child: Column(
+                                              children: [
+                                                PortalNewsItem(
+                                                  profileImageUrl:
+                                                      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                                                  name: feed.authorName,
+                                                  newsContent: feed.content,
+                                                  time: feed.createdAt,
+                                                  title: feed.title,
+                                                  CreatorId:
+                                                      creatorId.toString(),
+                                                  authorId:
+                                                      feed.authorId,
+                                                  role: userRole,
+                                                  edit: () => _startEditing(
+                                                      feed), // Direct function call
+                                                  delete: () => _confirmDelete(
+                                                      feed), // Direct function call
+                                                  comments:
+                                                      feed.replies.length,
+                                                ),
+                                              ],
                                             ),
-                                          );
-                                        },
-                                      );
-                                    }),
-                                  ],
-                                ),
-                            ],
-                          ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }),
+                                ],
+                              ),
+                          ],
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
