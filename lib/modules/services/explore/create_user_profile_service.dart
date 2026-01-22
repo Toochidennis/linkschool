@@ -1,0 +1,92 @@
+﻿import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:linkschool/config/env_config.dart';
+
+class CreateUserProfileService {
+// baseurl: String
+  final String baseUrl = "https://linkskool.net/api/v3/public";
+
+  Future<Map<String, dynamic>> createUserProfile(
+      Map<String, dynamic> profileData,
+      String UserId,
+  ) async {
+    // Implementation for creating user profile
+     try {
+      final apiKey = EnvConfig.apiKey;
+
+      if (apiKey.isEmpty) {
+        throw Exception("API KEY not found");
+      }
+
+      final url = "$baseUrl/learning/profiles";
+      print("📡 creating profile → $url");
+
+      final payload = profileData;
+      print("📦 Payload: $payload");
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Accept": "application/json",
+          "X-API-KEY": apiKey,
+        },
+        body: payload,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        print("❌ Failed to create profile");
+        print("📦 Response: ${response.body}");
+        throw Exception("Failed: ${response.body}");
+
+      } else {
+        print("✅ profile created successfully");
+        print("📦 Response: ${response.body}");
+      }
+
+      final decoded = json.decode(response.body);
+      return decoded;
+    } catch (e) {
+        throw Exception("Error creating profile: $e");
+      }
+  }
+
+
+  // Delete user profile
+  Future<void> deleteUserProfile(String profileId) async {
+    // Implementation for deleting user profile
+    try {
+      final apiKey = EnvConfig.apiKey;
+
+      if (apiKey.isEmpty) {
+        throw Exception("API KEY not found");
+      }
+
+      final url = "$baseUrl/learning/profiles/$profileId";
+      print("📡 Deleting profile → $url");
+
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          "Accept": "application/json",
+          "X-API-KEY": apiKey,
+        },
+        body: {}
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        print("❌ Failed to delete profile");
+        print("📦 Response: ${response.body}");
+        throw Exception("Failed: ${response.body}");
+
+      } else {
+        print("✅ profile deleted successfully");
+        print("📦 Response: ${response.body}");
+      }
+
+    } catch (e) {
+        throw Exception("Error deleting profile: $e");
+      }
+    
+  }
+
+}

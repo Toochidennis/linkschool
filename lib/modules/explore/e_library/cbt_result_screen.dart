@@ -197,8 +197,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
   // Save test result to shared preferences
   Future<void> _saveTestResult() async {
-    if (_isSaved || !_userSignedIn)
+    if (_isSaved || !_userSignedIn) {
       return; // Prevent duplicate saves and ensure user is signed in
+    }
 
     try {
       // Check if this is a multi-subject test
@@ -1104,7 +1105,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                                   const SizedBox(height: 24),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

@@ -1144,51 +1144,49 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
                      s.year == year.year,
             );
         
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                _onYearSelected(year.id, year.year);
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  // border: Border.all(color: Colors.grey[300]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      year.year,
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: AppColors.text3Light,
-                      ),
-                    ),
-                    if (isSelected) // Only show icon if already selected
-                      const Icon(
-                        Icons.check_circle,
-                        size: 20,
-                        color: AppColors.eLearningBtnColor1,
-                      ),
-                  ],
-                ),
+      return Padding(
+  padding: const EdgeInsets.only(bottom: 12.0),
+  child: Material(
+    color: Colors.white, // ✅ background lives here
+    borderRadius: BorderRadius.circular(8),
+    elevation: 2, // ✅ shadow now works correctly
+    shadowColor: Colors.green.withOpacity(0.3),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(8),
+      splashColor: Colors.blue.withOpacity(0.25),
+      highlightColor: Colors.blue.withOpacity(0.12),
+      onTap: () async {
+        // small delay so user sees feedback
+        await Future.delayed(const Duration(milliseconds: 120));
+        if (!context.mounted) return;
+
+        _onYearSelected(year.id, year.year);
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              year.year,
+              style: AppTextStyles.normal600(
+                fontSize: 16,
+                color: AppColors.text3Light,
               ),
             ),
-          ),
-        );
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                size: 20,
+                color: AppColors.eLearningBtnColor1,
+              ),
+          ],
+        ),
+      ),
+    ),
+  ),
+);
+
       },
     );
   }

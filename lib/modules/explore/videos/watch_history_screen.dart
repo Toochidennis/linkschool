@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
 import 'package:linkschool/modules/model/explore/home/video_model.dart';
 import 'package:linkschool/modules/services/explore/watch_history_service.dart';
 import 'package:linkschool/modules/model/explore/videos/dashboard_video_model.dart';

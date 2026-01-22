@@ -74,12 +74,12 @@ class ExploreCourseProvider with ChangeNotifier {
 
   final CourseService _courseService = CourseService();
 
-  void fetchCategoriesAndCourses() async {
+  Future<void> fetchCategoriesAndCourses({int? profileId, String? dateOfBirth}) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
     try {
-      final response = await _courseService.getAllCategoriesAndCourses();
+      final response = await _courseService.getAllCategoriesAndCourses(profileId: profileId, dateOfBirth: dateOfBirth);
       _categories = response.categories.reversed.toList();
 
       // Reverse courses in each category to show most recent first

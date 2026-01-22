@@ -24,8 +24,8 @@ class SelectSchool extends StatefulWidget {
 
 class _SelectSchoolState extends State<SelectSchool> {
   String query = '';
-  bool _isDemoLoading = false;
-  String _loadingRole = '';
+  final bool _isDemoLoading = false;
+  final String _loadingRole = '';
 
   @override
   void initState() {
@@ -437,7 +437,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                                  
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Add school',
+                                    'Add a school',
                                     style: AppTextStyles.normal700(
                                       fontSize: 15,
                                       color: Colors.white,

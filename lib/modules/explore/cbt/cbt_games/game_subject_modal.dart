@@ -18,10 +18,10 @@ class GameSubjectModal extends StatefulWidget {
   final int examTypeId;
 
   const GameSubjectModal({
-    Key? key,
+    super.key,
     required this.subjects,
     required this.examTypeId,
-  }) : super(key: key);
+  });
 
   @override
   State<GameSubjectModal> createState() => _GameSubjectModalState();
@@ -34,7 +34,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
   List<String> _selectedTopicNames = [];
   bool _showTopics = false;
   bool _isTransitioning = false;
-  Set<int> _expandedSyllabusIds = {};
+  final Set<int> _expandedSyllabusIds = {};
   late AnimationController _pulseController;
   late AnimationController _sparkleController;
   late AnimationController _slideController;
@@ -126,7 +126,9 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     if (name.contains('science')) return '🔬';
     if (name.contains('french') ||
         name.contains('spanish') ||
-        name.contains('language')) return '🗣️';
+        name.contains('language')) {
+      return '🗣️';
+    }
     return '📚'; // Default emoji
   }
 

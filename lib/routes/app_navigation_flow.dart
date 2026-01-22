@@ -21,6 +21,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   bool _isLoggedIn = false;
   String _userRole = '';
   int _selectedIndex = 0;
+  bool _isExploreActive = true;
   late FlipCardController _flipController;
   bool _showLogin = false;
   bool _showSchoolSelection = false;
@@ -80,6 +81,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       setState(() {
         _showLogin = false;
         _showSchoolSelection = false;
+        _isExploreActive = false;
       });
     }
   }
@@ -100,6 +102,9 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _flipController.toggleCard();
       });
+      setState(() {
+        _isExploreActive = false;
+      });
     }
   }
 
@@ -108,6 +113,11 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   }
 
   void _handleSwitchFromExplore(bool value) {
+    setState(() {
+      _selectedIndex = 0;
+      _isExploreActive = false;
+    });
+
     if (_isLoggedIn) {
       if (_flipController.state?.isFront == true) {
         _flipController.toggleCard();
@@ -125,11 +135,15 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   }
 
   void _handleSwitchFromDashboard(bool value) {
+    setState(() {
+      _selectedIndex = 0;
+      _isExploreActive = true;
+    });
+
     if (_flipController.state?.isFront == false) {
       _flipController.toggleCard();
     }
   }
-
   /// ✅ This is now updated to receive a school code
   void _navigateToLogin(String selectedSchoolCode) {
     setState(() {
@@ -166,6 +180,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       onSwitch: _handleSwitchFromExplore,
       selectedIndex: _selectedIndex,
       onTabSelected: _updateSelectedIndex,
+      isActive: _isExploreActive,
     );
   }
 
@@ -275,3 +290,6 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     );
   }
 }
+
+
+

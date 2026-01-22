@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 
 class LanyardScreen extends StatelessWidget {
-  const LanyardScreen({Key? key}) : super(key: key);
+  const LanyardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class LanyardScreen extends StatelessWidget {
 }
 
 class AnimatedLanyard extends StatefulWidget {
-  const AnimatedLanyard({Key? key}) : super(key: key);
+  const AnimatedLanyard({super.key});
 
   @override
   State<AnimatedLanyard> createState() => _AnimatedLanyardState();

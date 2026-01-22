@@ -17,10 +17,10 @@ class StudySubjectSelectionModal extends StatefulWidget {
   final int examTypeId;
 
   const StudySubjectSelectionModal({
-    Key? key,
+    super.key,
     required this.subjects,
     required this.examTypeId,
-  }) : super(key: key);
+  });
 
   @override
   State<StudySubjectSelectionModal> createState() =>
@@ -34,7 +34,7 @@ class _StudySubjectSelectionModalState
   List<String> _selectedTopicNames = [];
   bool _showTopics = false;
   bool _isTransitioning = false;
-  Set<int> _expandedSyllabusIds = {};
+  final Set<int> _expandedSyllabusIds = {};
 
   // Search state
   bool _isSearching = false;
@@ -462,12 +462,12 @@ class _StudySubjectSelectionModalState
                   ),
                   child: CircleAvatar(
                     backgroundColor: Colors.transparent,
+                    radius: 12,
                     child: Text(
                       displayName.isNotEmpty ? displayName[0] : '?',
                       style: const TextStyle(
                           color: Colors.white, fontWeight: FontWeight.bold),
                     ),
-                    radius: 12,
                   ),
                 ),
                 const SizedBox(width: 16),

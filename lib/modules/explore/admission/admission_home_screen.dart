@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'admission_detail_screen.dart';
 
 class AdmissionHomeScreen extends StatelessWidget {
   const AdmissionHomeScreen({super.key});

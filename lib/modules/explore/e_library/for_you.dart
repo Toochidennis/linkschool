@@ -5,7 +5,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
-import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';

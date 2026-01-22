@@ -70,7 +70,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term']?.toString() ?? '0');
       });
-    } catch (e, stack) {
+    } catch (e) {
       debugPrint('Error loading user data: $e');
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
@@ -133,6 +133,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           NavigationItem(
             iconPath: 'assets/icons/portal.svg',
             label: 'Explore',
+            flipIcon: true,
             color: const Color(0xFF1E3A8A),
           ),
            NavigationItem(

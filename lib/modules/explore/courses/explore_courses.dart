@@ -1,22 +1,43 @@
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
+import '../../common/constants.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
+import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/services/user_profile_update_service.dart';
+import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'course_description_screen.dart';
 import 'create_user_profile_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ExploreCourses extends StatefulWidget {
-  const ExploreCourses({Key? key}) : super(key: key);
+  final bool allowProfilePrompt;
+
+  const ExploreCourses({super.key, this.allowProfilePrompt = true});
 
   @override
   State<ExploreCourses> createState() => _ExploreCoursesState();
 }
 
-class _ExploreCoursesState extends State<ExploreCourses> {
+class _ExploreCoursesState extends State<ExploreCourses> with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _bounceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _bounceAnimation;
+  bool _wasLoading = true;
+bool _animationTriggered = false;
+  bool _didCheckProfileModal = false;
+  bool _loadedActiveProfile = false;
+  CbtUserProfile? _activeProfile;
+
+
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -26,6 +47,46 @@ class _ExploreCoursesState extends State<ExploreCourses> {
   @override
   void initState() {
     super.initState();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+    );
+
+    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+
+    // Add mounted checks
+    _fadeController.forward();
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _slideController.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _bounceController.forward();
+    });
+
     // Fetch categories and courses when the widget is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
@@ -40,9 +101,19 @@ class _ExploreCoursesState extends State<ExploreCourses> {
 
   @override
   void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _bounceController.dispose();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // No automatic profile prompt here anymore; profile completion is
+    // handled on-demand (course tap) or from CBT Dashboard after sign-in.
   }
 
   // @override
@@ -364,6 +435,7 @@ class _ExploreCoursesState extends State<ExploreCourses> {
           name: user.displayName ?? '',
           profilePicture: user.photoURL ?? '',
         );
+        // Profile prompt is handled by CBT Dashboard after sign-in now.
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Signed in successfully')),
@@ -388,6 +460,8 @@ class _ExploreCoursesState extends State<ExploreCourses> {
   }
 
   void _showAccountSwitcherDialog(BuildContext context, dynamic user) {
+    final profiles = (user?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
+    final activeProfileId = _activeProfile?.id;
     showDialog(
       context: context,
       builder: (context) {
@@ -403,7 +477,7 @@ class _ExploreCoursesState extends State<ExploreCourses> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Switch Account',
+                  'Switch Profile',
                   style: TextStyle(
                     fontSize: 18.0,
                     fontWeight: FontWeight.bold,
@@ -411,20 +485,30 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Current User (Active)
-                _buildAccountItem(
-                  name: user?.name ?? 'User',
-                  email: user?.email ?? 'user@email.com',
-                  imageUrl: user?.profilePicture,
-                  isActive: true,
-                ),
-                const SizedBox(height: 16),
-                // Mock User (Inactive) - Replicating design
-                _buildAccountItem(
-                  name: 'Rich Brown',
-                  email: 'richardB324@mail.com',
-                  isActive: false,
-                ),
+                if (profiles.isNotEmpty)
+                  Column(
+                    children: profiles.map((profile) {
+                      final name = _profileName(profile);
+                      final subtitle = user.email.toString();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: _buildAccountItem(
+                          profile: profile,
+                          name: name,
+                          email: subtitle,
+                          imageUrl: profile.avatar,
+                          isActive: activeProfileId == profile.id,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              _activeProfile = profile;
+                            });
+                            _saveActiveProfileId(profile.id);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 const SizedBox(height: 24),
                 // Add New Profile Button
                 SizedBox(
@@ -436,13 +520,26 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const CreateUserProfileScreen(),
+                          builder: (context) => CreateUserProfileScreen(
+                            userId: user.id.toString(),
+
+                          ),
                         ),
                       );
                       // If profile was created successfully, refresh user data
                       if (result == true && mounted) {
-                        // Refresh user list if needed
-                        setState(() {});
+                        // Refresh user list if needed and select the newly created profile
+                        final updatedUser = Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+                        final profiles = (updatedUser?.profiles ?? []);
+                        setState(() {
+                          if (profiles.isNotEmpty) {
+                            _activeProfile = profiles.last;
+                            _saveActiveProfileId(_activeProfile?.id);
+                          } else {
+                            _activeProfile = null;
+                            _saveActiveProfileId(null);
+                          }
+                        });
                       }
                     },
                     icon: const Icon(Icons.add, size: 20),
@@ -470,78 +567,390 @@ class _ExploreCoursesState extends State<ExploreCourses> {
   }
 
   Widget _buildAccountItem({
+    required CbtUserProfile profile,
     required String name,
     required String email,
     String? imageUrl,
     required bool isActive,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.grey.shade50 : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        border: isActive ? Border.all(color: Colors.grey.shade200) : null,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.grey.shade50 : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: isActive ? Border.all(color: Colors.grey.shade200) : null,
+        ),
+        child: Row(
+          children: [
+            _avatarWidget(
+              imageUrl: imageUrl,
+              name: name,
+              radius: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            //  delete and update icons
+            //  popupmenubutton
+            PopupMenuButton<String>(
+  onSelected: (value) async {
+    if (value == 'edit') {
+      // handle edit
+    } else if (value == 'delete') {
+      // handle delete
+      final profileProvider = Provider.of<CreateUserProfileProvider>(context, listen: false);
+      final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      try {
+        await profileProvider.deleteUserProfile(profile.id.toString());
+        
+        // Remove from local profiles list
+        final currentProfiles = List<CbtUserProfile>.from(cbtUserProvider.currentUser?.profiles ?? []);
+        currentProfiles.removeWhere((p) => p.id == profile.id);
+        await cbtUserProvider.replaceProfiles(currentProfiles);
+        
+        // If it was the active profile, clear it
+        if (_activeProfile?.id == profile.id) {
+          setState(() {
+            _activeProfile = null;
+          });
+          await _saveActiveProfileId(null);
+        }
+        
+        // Close the dialog to reflect changes
+        Navigator.of(context).pop();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile deleted successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error deleting profile: $e')),
+          );
+        }
+      }
+    }
+  },
+  itemBuilder: (context) => [
+    const PopupMenuItem(
+      value: 'edit',
+      child: Text('Edit'),
+    ),
+    const PopupMenuItem(
+      value: 'delete',
+      child: Text('Delete'),
+    ),
+  ],
+)
+
+           
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.grey.shade300,
-            backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
-            child: imageUrl == null
-                ? const Icon(Icons.person, color: Colors.grey)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+    );
+  }
+
+  String _profileName(CbtUserProfile profile) {
+    final first = profile.firstName?.trim() ?? '';
+    final last = profile.lastName?.trim() ?? '';
+    final name = "$first $last".trim();
+    if (name.isNotEmpty) return name;
+    if (profile.id != null) return "Profile ${profile.id}";
+   
+    return 'Profile';
+  }
+
+  String _profileInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+  }
+
+  Future<void> _saveActiveProfileId(int? id) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (id != null) {
+      await prefs.setInt('active_profile_id', id);
+    } else {
+      await prefs.remove('active_profile_id');
+    }
+  }
+
+  Future<int?> _loadActiveProfileId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('active_profile_id');
+  }
+
+  Widget _avatarWidget({String? imageUrl, required String name, double radius = 20}) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey.shade200,
+        backgroundImage: NetworkImage(imageUrl),
+      );
+    }
+
+    final initials = _profileInitials(name);
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Colors.grey.shade300,
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: radius * 0.6,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required String label,
+    required String title,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color borderColor,
+    required VoidCallback onTap,
+    required int index,
+  }) {
+    return AnimatedBuilder(
+      animation: _bounceAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _bounceAnimation.value,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(color: borderColor, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: backgroundColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 800 + (index * 200)),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            label,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Urbanist',
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Icon(
+                            icon,
+                            size: 24,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 8),
                 Text(
-                  email,
-                  style: TextStyle(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          if (isActive)
-            const Padding(
-              padding: EdgeInsets.only(left: 8.0),
-              child: Icon(
-                Icons.check,
-                color: Colors.grey,
-                size: 20,
-              ),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
+
+
+  Widget _buildAnimatedCard({
+  required Widget child,
+  required int index,
+}) {
+  final start = (index * 0.06).clamp(0.0, 0.85);
+  final end = (start + 0.25).clamp(0.0, 1.0);
+
+  final fade = CurvedAnimation(
+    parent: _fadeController,
+    curve: Interval(start, end, curve: Curves.easeOut),
+  );
+
+  final slide = CurvedAnimation(
+    parent: _slideController,
+    curve: Interval(start, end, curve: Curves.easeOutCubic),
+  );
+
+  // Use a stronger elastic scale for a visible bounce effect
+  final scale = CurvedAnimation(
+    parent: _bounceController,
+    curve: Interval(start, end, curve: Curves.elasticOut),
+  );
+
+  return FadeTransition(
+    opacity: fade,
+    child: SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.12),
+        end: Offset.zero,
+      ).animate(slide),
+      child: ScaleTransition(
+        // Increase scale delta so the bounce is noticeable
+        scale: Tween<double>(begin: 0.8, end: 1.0).animate(scale),
+        child: child,
+      ),
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
     // Access user provider to get current user info
     final cbtUserProvider = Provider.of<CbtUserProvider>(context);
     final user = cbtUserProvider.currentUser;
+    final profiles = (user?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
+    final firstProfile = profiles.isNotEmpty ? profiles.first : null;
+    CbtUserProfile? activeProfile = _activeProfile;
+    if (activeProfile != null) {
+      final stillExists =
+          profiles.any((profile) => profile.id == activeProfile?.id);
+      if (!stillExists) {
+        activeProfile = null;
+      }
+    }
+    activeProfile ??= firstProfile;
+    if (!_loadedActiveProfile && profiles.isNotEmpty) {
+      _loadedActiveProfile = true;
+      _loadActiveProfileId().then((savedId) {
+        if (savedId != null && mounted) {
+          final savedProfile = profiles.where((p) => p.id == savedId).isNotEmpty
+              ? profiles.firstWhere((p) => p.id == savedId)
+              : null;
+          if (savedProfile != null) {
+            setState(() {
+              _activeProfile = savedProfile;
+            });
+            if (mounted) {
+              context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+                profileId: savedProfile.id,
+                dateOfBirth: savedProfile.birthDate,
+              );
+            }
+          }
+        }
+      });
+    }
+    if (_activeProfile == null && activeProfile != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _activeProfile = activeProfile;
+        });
+        if (mounted && activeProfile != null) {
+          context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+            profileId: activeProfile.id,
+            dateOfBirth: activeProfile.birthDate,
+          );
+        }
+      });
+    }
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Consumer<ExploreCourseProvider>(
+    final displayName = activeProfile != null ? _profileName(activeProfile) : 'User';
+
+
+    return Container(
+      decoration: Constants.customBoxDecoration(context),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Consumer<ExploreCourseProvider>(
         builder: (context, courseProvider, child) {
+
+          final loading = courseProvider.isLoading;
+
+// If we go back into loading (refresh / retry), allow replay
+if (!_wasLoading && loading) {
+  _animationTriggered = false;
+  _fadeController.reset();
+  _slideController.reset();
+  _bounceController.reset();
+}
+
+// When loading finishes, start animations AFTER first real-content frame
+if (_wasLoading && !loading && !_animationTriggered) {
+  _animationTriggered = true;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+
+    _fadeController
+      ..reset()
+      ..forward();
+
+    _slideController
+      ..reset()
+      ..forward();
+
+    _bounceController
+      ..reset()
+      ..forward();
+  });
+}
+
+_wasLoading = loading;
           // Helper function to render result content
           Widget buildContent() {
             if (courseProvider.isLoading) {
@@ -556,37 +965,60 @@ class _ExploreCoursesState extends State<ExploreCourses> {
             }
 
             if (courseProvider.errorMessage.isNotEmpty) {
-              return Padding(
-                padding: const EdgeInsets.only(top: 50),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
+              // fine error section with retry button
+              return 
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
                         Icons.error_outline,
+                        color: Colors.grey,
                         size: 48,
-                        color: Colors.red,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        courseProvider.errorMessage,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, color: Colors.red),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Oops! Something went wrong',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade800,
                       ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          courseProvider.fetchCategoriesAndCourses();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFA500),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        courseProvider.fetchCategoriesAndCourses();
+                      },
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 25, 32, 171),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('Retry'),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              );
+              ),
+            );
+            
             }
 
             if (courseProvider.categories.isEmpty) {
@@ -632,23 +1064,25 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                   return const SizedBox.shrink();
                 }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Category Card as Header
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: _buildCategoryHeaderCard(category),
-                    ),
+                return _buildAnimatedCard(
+                  index: courseProvider.categories.indexOf(category) + 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Category Card as Header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        child: _buildCategoryHeaderCard(category),
+                      ),
 
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                    // Courses Horizontal List
-                    SizedBox(
-                      height: 250,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
+                      // Courses Horizontal List
+                      SizedBox(
+                        height: 250,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: category.courses.length,
                         itemBuilder: (context, index) {
@@ -660,62 +1094,78 @@ class _ExploreCoursesState extends State<ExploreCourses> {
 
                     const SizedBox(height: 24),
                   ],
-                );
+                 ) );
               }).toList(),
             );
           }
 
-          return SingleChildScrollView(
-            controller: _scrollController,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
+          return RefreshIndicator(
+            onRefresh: () async {
+              await courseProvider.fetchCategoriesAndCourses(
+                profileId: activeProfile?.id,
+                dateOfBirth: activeProfile?.birthDate,
+              );
 
-                // Profile Header Section
-                if (user != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 8.0),
-                    child: GestureDetector(
-                      onTap: () => _showAccountSwitcherDialog(context, user),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Colors.grey[200],
-                            backgroundImage: user.profilePicture != null
-                                ? NetworkImage(user.profilePicture!)
-                                : null,
-                            child: user.profilePicture == null
-                                ? const Icon(Icons.person, color: Colors.grey)
-                                : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Hi, ${user.name}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+              if (courseProvider.errorMessage.isNotEmpty) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(courseProvider.errorMessage),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              controller: _scrollController,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+
+                  // Profile Header Section
+                  if (user != null)
+                    _buildAnimatedCard(
+                      index: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: GestureDetector(
+                          onTap: () => _showAccountSwitcherDialog(context, user),
+                          child: Row(
+                            children: [
+                              _avatarWidget(
+                                imageUrl: activeProfile?.avatar,
+                                name: displayName,
+                                radius: 24,
+                              ),
+                              const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                     'Hi, $displayName',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'What would you like to learn today?',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'What would you like to learn today?',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -723,72 +1173,75 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                 const SizedBox(height: 16),
 
                 // Search Bar and Filter
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: const InputDecoration(
-                              hintText: 'Search for courses...',
-                              prefixIcon:
-                                  Icon(Icons.search, color: Colors.grey),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 14),
+                _buildAnimatedCard(
+                  index: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
-                            onChanged: (value) {
-                              // State updated via listener
-                            },
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Search for courses...',
+                                prefixIcon:
+                                    Icon(Icons.search, color: Colors.grey),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                              ),
+                              onChanged: (value) {
+                                // State updated via listener
+                              },
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFA500).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color:
-                                      const Color(0xFFFFA500).withOpacity(0.3)),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.filter_list_rounded,
-                                color: Color(0xFFFFA500),
+                        const SizedBox(width: 12),
+                        Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFA500).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color:
+                                        const Color(0xFFFFA500).withOpacity(0.3)),
                               ),
-                              onPressed: () => _showFilterBottomSheet(
-                                  courseProvider.categories),
-                            ),
-                          ),
-                          if (_selectedCategoryIds.isNotEmpty)
-                            Positioned(
-                              right: 8,
-                              top: 8,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.filter_list_rounded,
+                                  color: Color(0xFFFFA500),
                                 ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 8,
-                                  minHeight: 8,
-                                ),
+                                onPressed: () => _showFilterBottomSheet(
+                                    courseProvider.categories),
                               ),
                             ),
-                        ],
-                      ),
-                    ],
+                            if (_selectedCategoryIds.isNotEmpty)
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 8,
+                                    minHeight: 8,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -800,8 +1253,9 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                 const SizedBox(height: 100),
               ],
             ),
-          );
+          ));
         },
+        ),
       ),
     );
   }
@@ -836,15 +1290,115 @@ class _ExploreCoursesState extends State<ExploreCourses> {
             return;
           }
 
+          // Before navigating, ensure phone is present; if missing show modal
+          final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+          if (cbtUserProvider.isPhoneMissing) {
+            // Show profile modal and block navigation until filled
+            await UserProfileUpdateModal.show(
+              context,
+              user: cbtUserProvider.currentUser,
+              onSave: ({required String phone, required String gender, required String birthDate}) async {
+                final profileService = UserProfileUpdateService();
+                final user = cbtUserProvider.currentUser;
+                if (user == null) return;
+                await profileService.updateUserPhone(
+                  userId: user.id!,
+                  firstName: user.name!.split(' ').first,
+                  lastName: user.name!.split(' ').last,
+                  phone: phone,
+                  attempt: user.attempt.toString(),
+                  email: user.email,
+                  gender: gender,
+                  birthDate: birthDate,
+                );
+                await cbtUserProvider.refreshCurrentUser();
+              },
+            );
+
+            // Recheck phone after modal
+            if (cbtUserProvider.isPhoneMissing) {
+              return; // still missing - don't proceed
+            }
+          }
+
+          // Check if course has active cohort
+          if (!course.hasActiveCohort) {
+            showDialog(
+              context: context,
+                builder: (context) => Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
+                  decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                    ),
+                  ],
+                  ),
+                  child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.orange, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                    'No Active Cohort',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                    'There is no active cohort for this course.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFA500),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('OK'),
+                    ),
+                    ),
+                  ],
+                  ),
+                ),
+                ),
+              );
+           
+            return;
+          }
+
           // Navigate to course description if signed in
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CourseDescriptionScreen(
+                profileId: _activeProfile?.id,
+
                 course: course,
                 categoryName: category.name,
                 categoryId: category.id,
                 provider: category.name,
+                cohortId: course.cohortId.toString(),
                 providerSubtitle: 'Powered By Digital Dreams',
                 categoryColor: _getCategoryColor(course.category),
               ),
@@ -872,11 +1426,13 @@ class _ExploreCoursesState extends State<ExploreCourses> {
               // Course Image
               ClipRRect(
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
+                    const BorderRadius.vertical(top: Radius.circular(12
+                  ),
+                ),
                 child: Stack(
                   children: [
                     Image.network(
-                      course.imageUrl,
+                      course.imageUrl.startsWith('https') ? course.imageUrl : "https://linkskool.net/${course.imageUrl}",
                       height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -912,25 +1468,38 @@ class _ExploreCoursesState extends State<ExploreCourses> {
                       },
                     ),
                     // Category badge
+                   
+                    // Price & Trial badges
                     Positioned(
                       top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _getCategoryColor(course.category),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          course.category.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.3,
+                      right: 8,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Price badge (Free / Paid)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: (course.isFree == true || course.isFree == null)
+                                  ? Colors.green.shade600
+                                  : Colors.red.shade600,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              (course.isFree == true || course.isFree == null) ? 'Free' : course.priceLabel,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
                           ),
-                        ),
+
+                          // Optional Trial badge
+                         
+                        ],
                       ),
                     ),
                   ],
@@ -1065,3 +1634,21 @@ class _ExploreCoursesState extends State<ExploreCourses> {
         ));
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

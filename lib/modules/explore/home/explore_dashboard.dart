@@ -12,12 +12,14 @@ class ExploreDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
   final int selectedIndex;
   final Function(int) onTabSelected;
+  final bool isActive;
 
   const ExploreDashboard({
     super.key,
     required this.onSwitch,
     required this.selectedIndex,
     required this.onTabSelected,
+    this.isActive = true,
   });
 
   @override
@@ -63,7 +65,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged,
       ),
 
-      ExploreCourses(),
+      ExploreCourses(allowProfilePrompt: widget.isActive),
       // ExploreAdmission(
       //   height: MediaQuery.of(context).size.height,
       // ),
@@ -141,13 +143,8 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
               );
             },
           ),
-          if (!_showSearchIcon)
-            IconButton(
-              icon: const Icon(Icons.search, color: Colors.white),
-              onPressed: () {
-                // Handle search action
-              },
-            ),
+          
+           
         ],
         elevation: 0,
       ),
@@ -175,3 +172,4 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     );
   }
 }
+

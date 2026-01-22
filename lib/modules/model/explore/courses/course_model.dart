@@ -9,6 +9,17 @@ class CourseModel {
   final String email;
   final bool hasContent;
 
+  // New fields from API
+  final bool hasActiveCohort;
+  final int? cohortId;
+  final bool isFree;
+  final String? trialType;
+  final int trialValue;
+  final double cost;
+  final bool isEnrolled;
+  final bool isCompleted;
+  final String? enrollmentStatus;
+
   CourseModel({
     required this.id,
     required this.courseName,
@@ -19,11 +30,31 @@ class CourseModel {
     required this.icon,
     required this.email,
     required this.hasContent,
+    required this.hasActiveCohort,
+    required this.cohortId,
+    required this.isFree,
+    required this.trialType,
+    required this.trialValue,
+    required this.cost,
+    required this.isEnrolled,
+    required this.isCompleted,
+    required this.enrollmentStatus,
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
+    // support both 'course_id' and 'id'
+    final int idVal = json['course_id'] ?? json['id'] ?? 0;
+
+    // normalize cost to double
+    double parseCost(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
     return CourseModel(
-      id: json['id'] ?? 0,
+      id: idVal,
       courseName: json['course_name'] ?? "",
       description: json['description'] ?? "",
       imageUrl: json['image_url'] ?? "",
@@ -32,6 +63,17 @@ class CourseModel {
       icon: json['icon'] ?? "",
       email: json['email'] ?? "",
       hasContent: json['has_content'] ?? false,
+
+      // new fields
+      hasActiveCohort: json['has_active_cohort'] ?? false,
+      cohortId: json['cohort_id'],
+      isFree: (json['is_free'] == true) || (json['is_free'] == 1),
+      trialType: json['trial_type'] != null ? json['trial_type'].toString() : null,
+      trialValue: (json['trial_value'] ?? 0) is int ? (json['trial_value'] ?? 0) : (int.tryParse((json['trial_value'] ?? 0).toString()) ?? 0),
+      cost: parseCost(json['cost']),
+      isEnrolled: json['is_enrolled'] ?? false,
+      isCompleted: json['is_completed'] ?? false,
+      enrollmentStatus: json['enrollment_status']?.toString(),
     );
   }
 
@@ -46,6 +88,30 @@ class CourseModel {
       'icon': icon,
       'email': email,
       'has_content': hasContent,
+
+      // new fields
+      'has_active_cohort': hasActiveCohort,
+      'cohort_id': cohortId,
+      'is_free': isFree,
+      'trial_type': trialType,
+      'trial_value': trialValue,
+      'cost': cost,
+      'is_enrolled': isEnrolled,
+      'is_completed': isCompleted,
+      'enrollment_status': enrollmentStatus,
     };
   }
+
+  // Convenience helpers
+  bool get hasTrial => (trialType != null && trialValue > 0);
+
+  String get trialLabel {
+    if (!hasTrial) return '';
+    final t = trialType?.toLowerCase();
+    if (t == 'days' || t == 'day') return '${trialValue}d trial';
+    if (t == 'percentage' || t == 'percent') return 'Trial ${trialValue}%';
+    return 'Trial ${trialValue.toString()}';
+  }
+
+  String get priceLabel => isFree ? 'FREE' : 'PAID';
 }

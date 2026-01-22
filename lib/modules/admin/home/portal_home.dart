@@ -622,14 +622,14 @@ void initState() {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // School Overview Section (Now with Quick Action Button Design)
-                    _buildAnimatedCard(
-                      index: 0,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildAnimatedCard(
+                            index: 0,
+                            child: Row(
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(8),
@@ -654,12 +654,15 @@ void initState() {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildAnimatedCard(
+                                  index: 1,
                                   child: _buildQuickActionButton(
-                                    label: '${provider.overview?.students.toString() ?? '0'}',
+                                    label: provider.overview?.students.toString() ?? '0',
                                     icon: Icons.people_rounded,
                                     title: "Students",
                                     backgroundColor: AppColors.bookText1,
@@ -676,10 +679,13 @@ void initState() {
                                     index: 1,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildAnimatedCard(
+                                  index: 2,
                                   child: _buildQuickActionButton(
-                                    label: '${provider.overview?.staff.toString() ?? '0'}',
+                                    label: provider.overview?.staff.toString() ?? '0',
                                     title: "Staff",
                                     icon: Icons.school_rounded,
                                     backgroundColor: Colors.teal,
@@ -696,14 +702,17 @@ void initState() {
                                     index: 2,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildAnimatedCard(
+                                  index: 3,
                                   child: _buildQuickActionButton(
-                                    label: '${provider.overview?.classes.toString() ?? '0'}',
+                                    label: provider.overview?.classes.toString() ?? '0',
                                     title: "Classes",
                                     icon: Icons.class_rounded,
                                     backgroundColor: Colors.orangeAccent,
@@ -720,10 +729,13 @@ void initState() {
                                     index: 3,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildAnimatedCard(
+                                  index: 4,
                                   child: _buildQuickActionButton(
-                                    label: '${provider.overview?.levels.toString() ?? '0'}',
+                                    label: provider.overview?.levels.toString() ?? '0',
                                     title: "Levels",
                                     icon: Icons.layers_rounded,
                                     backgroundColor: Colors.purpleAccent,
@@ -740,10 +752,10 @@ void initState() {
                                     index: 4,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1364,3 +1376,5 @@ void initState() {
     }
   }
 }
+
+

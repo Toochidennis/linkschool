@@ -19,7 +19,7 @@ class QuizResultService {
       final existingResults = await getQuizResults();
 
       // Create a unique key for this quiz
-      final quizKey = '${courseTitle}_${lessonTitle}';
+      final quizKey = '${courseTitle}_$lessonTitle';
 
       // Create quiz result data
       final quizResult = {
@@ -73,7 +73,7 @@ class QuizResultService {
     required String lessonTitle,
   }) async {
     try {
-      final quizKey = '${courseTitle}_${lessonTitle}';
+      final quizKey = '${courseTitle}_$lessonTitle';
       final allResults = await getQuizResults();
 
       if (allResults.containsKey(quizKey)) {
@@ -125,7 +125,7 @@ class QuizResultService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final existingResults = await getQuizResults();
-      final quizKey = '${courseTitle}_${lessonTitle}';
+      final quizKey = '${courseTitle}_$lessonTitle';
 
       existingResults.remove(quizKey);
 

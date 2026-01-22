@@ -18,6 +18,8 @@ class CourseContentScreen extends StatefulWidget {
   final Color categoryColor;
   final int courseId;
   final int categoryId;
+  final String cohortId;
+  final int? profileId;
 
   const CourseContentScreen({
     super.key,
@@ -26,9 +28,11 @@ class CourseContentScreen extends StatefulWidget {
     required this.provider,
     required this.courseId,
     required this.categoryId,
+    required this.cohortId,
     this.providerSubtitle = 'Powered By Digital Dreams',
     this.category = 'COURSE',
     this.categoryColor = const Color(0xFF6366F1),
+    this.profileId,
   });
 
   @override
@@ -47,8 +51,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     // Fetch lessons for this course
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LessonProvider>().loadLessons(
-            categoryId: widget.categoryId.toString(),
-            courseId: widget.courseId.toString(),
+            cohortId: widget.cohortId,
           );
     });
   }
@@ -390,8 +393,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             final lessonIndex = index - 1;
             final lesson = lessons[lessonIndex];
             final isVideo = lesson.videoUrl.isNotEmpty;
-            final hasReading = lesson.readingUrl?.isNotEmpty ?? false;
-
+            final hasReading = false;
             return GestureDetector(
               onTap: () async {
                 if (isVideo) {
@@ -401,63 +403,28 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                     MaterialPageRoute(
                       builder: (context) => CourseDetailScreen(
                         courseTitle: lesson.title,
-                        courseName: lesson.courseName,
+                        courseName: widget.courseTitle,
                         courseDescription: lesson.description,
                         provider: widget.provider,
                         videoUrl: lesson.videoUrl,
-                        assignmentUrl: lesson.assignmentUrl.isNotEmpty
-                            ? lesson.assignmentUrl
-                            : null,
-                        assignmentDescription:
-                            lesson.assignmentDescription.isNotEmpty
-                                ? lesson.assignmentDescription
-                                : null,
-                        materialUrl: lesson.materialUrl.isNotEmpty
-                            ? lesson.materialUrl
-                            : null,
-                        zoomUrl:
-                            lesson.zoomUrl.isNotEmpty ? lesson.zoomUrl : null,
-                        recordedUrl: lesson.recordedUrl.isNotEmpty
-                            ? lesson.recordedUrl
-                            : null,
-                        classDate: lesson.date.isNotEmpty ? lesson.date : null,
-                      ),
-                    ),
-                  );
-                  await _loadCompletionStatus();
-                } else if (hasReading) {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReadingLessonScreen(
-                        lessonTitle: lesson.title,
-                        lessonContent: lesson.description,
-                        courseTitle: widget.courseTitle,
-                        duration: lesson.date,
-                        currentIndex: lessonIndex,
-                        courseContent: [],
+                        assignmentUrl: null,
+                        assignmentDescription: null,
+                        materialUrl: null,
+                        zoomUrl: null,
+                        recordedUrl: null,
+                        classDate: null,
+                        profileId: widget.profileId,
+                        lessonId: lesson.id,
+                        cohortId: widget.cohortId,
                       ),
                     ),
                   );
                   await _loadCompletionStatus();
                 } else {
-                  // Handle lessons with materials but no video/reading
-                  if (lesson.materialUrl.isNotEmpty) {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ReadingLessonScreen(
-                          lessonTitle: lesson.title,
-                          lessonContent: lesson.description,
-                          courseTitle: widget.courseTitle,
-                          duration: lesson.date,
-                          currentIndex: lessonIndex,
-                          courseContent: [],
-                        ),
-                      ),
-                    );
-                    await _loadCompletionStatus();
-                  }
+                  // No action for lessons without video
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No content available for this lesson')),
+                  );
                 }
               },
               child: Container(
@@ -534,56 +501,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  lesson.date,
+                                  'Lesson ${lesson.displayOrder}',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey.shade600,
                                   ),
                                 ),
-                                if (hasReading && !isVideo) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2196F3)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      'Reading',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF2196F3),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                                if (lesson.hasQuiz == 1) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFA500)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      'Quiz',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFFFFA500),
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
                           ],

@@ -12,7 +12,7 @@ class QuizSummaryScreen extends StatefulWidget {
   final String lessonTitle;
 
   const QuizSummaryScreen({
-    Key? key,
+    super.key,
     required this.totalScore,
     required this.totalQuestions,
     required this.questions,
@@ -21,7 +21,7 @@ class QuizSummaryScreen extends StatefulWidget {
     required this.onClose,
     required this.courseTitle,
     required this.lessonTitle,
-  }) : super(key: key);
+  });
 
   @override
   State<QuizSummaryScreen> createState() => _QuizSummaryScreenState();
@@ -97,7 +97,7 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
             Container(
               width: double.infinity,
               margin: const EdgeInsets.all(10),
-              padding: const EdgeInsets.all(15),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [
@@ -196,7 +196,7 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
                             Text(
                               '${widget.totalScore}',
                               style: const TextStyle(
-                                fontSize: 48,
+                                fontSize: 40,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,
                                 height: 1,

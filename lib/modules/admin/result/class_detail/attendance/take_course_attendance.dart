@@ -137,13 +137,16 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
       ),
       body: Consumer<StudentProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading)
+          if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
-          if (provider.errorMessage.isNotEmpty)
+          }
+          if (provider.errorMessage.isNotEmpty) {
             return Center(child: Text(provider.errorMessage));
-          if (provider.students.isEmpty)
+          }
+          if (provider.students.isEmpty) {
             return const Center(
                 child: Text('No students found for this course'));
+          }
 
           return Column(
             children: [

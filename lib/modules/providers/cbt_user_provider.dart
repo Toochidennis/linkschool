@@ -1,14 +1,21 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/cbt_user_service.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
-import 'dart:convert';
+import 'package:linkschool/modules/services/user_profile_update_service.dart';
+import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 
 class CbtUserProvider with ChangeNotifier {
+    final UserProfileUpdateService _profileUpdateService = UserProfileUpdateService();
   final CbtUserService _userService = CbtUserService();
+  bool _isShowingProfileUpdate = false;
 
   // User state
   CbtUserModel? _currentUser;
@@ -25,6 +32,7 @@ class CbtUserProvider with ChangeNotifier {
   // SharedPreferences keys
   static const String _keyCurrentUser = 'cbt_current_user';
   static const String _keyPaymentReference = 'cbt_payment_reference';
+  static const String _keyUserProfiles = 'cbt_user_profiles';
 
   // =========================================================================
   // 🔄 INITIALIZE - Load user from SharedPreferences on app start
@@ -40,6 +48,13 @@ class CbtUserProvider with ChangeNotifier {
         final userData = json.decode(userJson);
         _currentUser = CbtUserModel.fromJson(userData);
         print('✅ User loaded from SharedPreferences: ${_currentUser?.email}');
+
+        final cachedProfiles = await _loadProfilesFromPreferences();
+        if (cachedProfiles.isNotEmpty) {
+          _currentUser = _currentUser?.copyWith(profiles: cachedProfiles);
+        } else if (_currentUser?.profiles.isNotEmpty == true) {
+          await _saveProfilesToPreferences(_currentUser!.profiles);
+        }
 
         // ✨ SYNC SUBSCRIPTION SERVICE WITH USER PAYMENT STATUS
         await syncSubscriptionService();
@@ -78,11 +93,53 @@ class CbtUserProvider with ChangeNotifier {
   Future<void> _saveUserToPreferences(CbtUserModel user) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userJson = json.encode(user.toJson());
+      // Save user details (profiles stored separately)
+      final userJson = json.encode({
+        'user': {
+          'id': user.id,
+          'username': user.username,
+          'name': user.name,
+          'email': user.email,
+          'phone': user.phone ,
+          'profile_picture': user.profilePicture,
+          'attempt': user.attempt,
+          'subscribed': user.subscribed,
+          'reference': user.reference,
+          'created_at': user.createdAt,
+        },
+      });
       await prefs.setString(_keyCurrentUser, userJson);
+      await _saveProfilesToPreferences(user.profiles);
       print('✅ User saved to SharedPreferences: ${user.email}');
     } catch (e) {
       print('❌ Error saving user to SharedPreferences: $e');
+    }
+  }
+
+  // =========================================================================
+  // 👥 PROFILES - Save/Load helper methods
+  // =========================================================================
+  Future<void> _saveProfilesToPreferences(List<CbtUserProfile> profiles) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profilesJson = json.encode(profiles.map((p) => p.toJson()).toList());
+      await prefs.setString(_keyUserProfiles, profilesJson);
+      print('✅ User profiles saved to SharedPreferences: ${profiles.length}');
+    } catch (e) {
+      print('❌ Error saving profiles to SharedPreferences: $e');
+    }
+  }
+
+  Future<List<CbtUserProfile>> _loadProfilesFromPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profilesString = prefs.getString(_keyUserProfiles);
+      if (profilesString == null || profilesString.isEmpty) return [];
+      final decoded = json.decode(profilesString) as List;
+      return decoded.map((e) => CbtUserProfile.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      print('❌ Error loading profiles from SharedPreferences: $e');
+      return [];
     }
   }
 
@@ -96,10 +153,12 @@ class CbtUserProvider with ChangeNotifier {
       // Check if keys exist before removing
       final userExists = prefs.containsKey(_keyCurrentUser);
       final refExists = prefs.containsKey(_keyPaymentReference);
+      final profilesExist = prefs.containsKey(_keyUserProfiles);
 
       print('🗑️ Clearing user data from SharedPreferences...');
       print('   - User key exists: $userExists');
       print('   - Payment reference key exists: $refExists');
+      print('   - Profiles key exists: $profilesExist');
 
       if (userExists) {
         final removed = await prefs.remove(_keyCurrentUser);
@@ -111,9 +170,15 @@ class CbtUserProvider with ChangeNotifier {
         print('   - Payment reference removed: $removed');
       }
 
+      if (profilesExist) {
+        final removed = await prefs.remove(_keyUserProfiles);
+        print('   - Profiles removed: $removed');
+      }
+
       // Verify removal
       final stillExists = prefs.containsKey(_keyCurrentUser) ||
-          prefs.containsKey(_keyPaymentReference);
+          prefs.containsKey(_keyPaymentReference) ||
+          prefs.containsKey(_keyUserProfiles);
       if (stillExists) {
         throw Exception('Failed to remove user data from SharedPreferences');
       }
@@ -184,139 +249,36 @@ class CbtUserProvider with ChangeNotifier {
     required String profilePicture,
   }) async {
     print('🔐 Handling Firebase sign-up for: $email');
-    print('📋 Flow: GET → Check → (POST if needed) → Save');
+    print('📋 Flow: POST only, use returned data');
 
     _isLoading = true;
     notifyListeners();
+    
 
     try {
-      // =====================================================================
-      // STEP 1: First GET - Check if user exists
-      // =====================================================================
-      print('📡 [STEP 1] Making initial GET request...');
-      CbtUserModel? existingUser = await _userService.fetchUserByEmail(email);
-
-      if (existingUser != null) {
-        // ===================================================================
-        // User EXISTS → Save to SharedPreferences and proceed
-        // ===================================================================
-        print('✅ [STEP 1] User found in database');
-        print('   - Email: ${existingUser.email}');
-        print('   - Subscribed: ${existingUser.subscribed}');
-        print('   - Reference: ${existingUser.reference}');
-
-        // Update user info (name, profile picture may have changed)
-        if (existingUser.name != name ||
-            existingUser.profilePicture != profilePicture) {
-          print('🔄 Updating user profile info...');
-          existingUser = existingUser.copyWith(
-            name: name,
-            profilePicture: profilePicture,
-          );
-
-          // Update in backend
-          existingUser = await _userService.createOrUpdateUser(existingUser);
-          print('✅ User profile updated');
-        }
-
-        // Save to state and SharedPreferences
-        _currentUser = existingUser;
-        await _saveUserToPreferences(existingUser);
-
-        // Update payment reference if exists
-        if (existingUser.reference != null &&
-            existingUser.reference!.isNotEmpty) {
-          await _savePaymentReference(existingUser.reference!);
-        }
-
-        print('✅ User saved to SharedPreferences. Ready to proceed.');
-
-        _isLoading = false;
-        notifyListeners();
-        return existingUser;
-      }
-
-      void loadUserOnStartup() {
-        final user = FirebaseAuthService().getCurrentUser();
-        if (user != null) {
-          // Set user as logged in, load profile info, etc.
-          _currentUser = CbtUserModel(
-            id: null, // or assign an appropriate id if available
-            name: user.displayName ?? '',
-            email: user.email ?? '',
-            profilePicture: user.photoURL,
-            attempt: 0,
-            subscribed: 0,
-            reference: null,
-          );
-          notifyListeners();
-        } else {
-          _currentUser = null;
-          notifyListeners();
-        }
-      }
-
-      // =======================================================================
-      // User DOESN'T EXIST → Create new user (POST) → GET again → Save
-      // =======================================================================
-      print('⚠️ [STEP 1] User NOT found in database');
-      print('🆕 [STEP 2] Creating new user via POST...');
-
-      // Create new user model
+      // Only POST, do not GET
       final newUser = CbtUserModel(
-        name: name,
+        last_name: name.split(' ').last,
+        first_name:name.split(' ').first,
         email: email,
+        name: name,
         profilePicture: profilePicture,
         attempt: 0,
+        phone: "",
         subscribed: 1, // New users start as subscribed
         reference: null,
       );
-
-      // POST to create user
-      final createdUser = await _userService.createOrUpdateUser(newUser);
-      print('✅ [STEP 2] User created successfully');
-      print('   - User ID: ${createdUser.id}');
-
-      // =======================================================================
-      // STEP 3: GET again to ensure data consistency
-      // =======================================================================
-      print('📡 [STEP 3] Fetching newly created user to verify...');
-      final verifiedUser = await _userService.fetchUserByEmail(email);
-
-      if (verifiedUser == null) {
-        print('⚠️ [STEP 3] Could not verify user after creation');
-        // Fallback to created user data
-        _currentUser = createdUser;
-        await _saveUserToPreferences(createdUser);
-
-        _isLoading = false;
-        notifyListeners();
-        return createdUser;
-      }
-
-      print('✅ [STEP 3] User verified successfully');
-      print('   - Email: ${verifiedUser.email}');
-      print('   - Subscribed: ${verifiedUser.subscribed}');
-      print('   - Reference: ${verifiedUser.reference}');
-
-      // =======================================================================
-      // STEP 4: Save to SharedPreferences
-      // =======================================================================
-      print('💾 [STEP 4] Saving user to SharedPreferences...');
-      _currentUser = verifiedUser;
-      await _saveUserToPreferences(verifiedUser);
-
-      if (verifiedUser.reference != null &&
-          verifiedUser.reference!.isNotEmpty) {
-        await _savePaymentReference(verifiedUser.reference!);
+          final createdUser = await _userService.createUser(newUser);
+      _currentUser = createdUser;
+      await _saveUserToPreferences(createdUser);
+      if (createdUser.reference != null && createdUser.reference!.isNotEmpty) {
+        await _savePaymentReference(createdUser.reference!);
       }
       await syncSubscriptionService();
-
       print('✅ Sign-up flow completed successfully');
-
       _isLoading = false;
       notifyListeners();
-      return verifiedUser;
+      return createdUser;
     } catch (e) {
       print('❌ Error in sign-up flow: $e');
       _isLoading = false;
@@ -344,12 +306,10 @@ class CbtUserProvider with ChangeNotifier {
     try {
       // Step 1: Make PUT request to update user
       print('📡 Making PUT request to update user...');
-      final updatedUser = await _userService.updateUserAfterPayment(
-        email: _currentUser!.email,
-        name: _currentUser!.name,
-        profilePicture: _currentUser!.profilePicture ?? '',
+      final updatedUser = await _userService.updateUser(_currentUser!.copyWith(
+        subscribed: 1,
         reference: reference,
-      );
+      ));
 
       // Step 2: Update current user
       _currentUser = updatedUser;
@@ -382,8 +342,25 @@ class CbtUserProvider with ChangeNotifier {
   }
 
   // =========================================================================
-  // 💾 SAVE PAYMENT REFERENCE
+  // 📌 Phone check moved to UI
+  // The modal prompting for phone/profile updates is now shown from UI
+  // components (`CBTDashboard` and `ExploreCourses`). A convenience getter
+  // is provided so widgets can quickly check if a phone is missing.
+  bool get isPhoneMissing {
+    final phone = _currentUser?.phone?.trim();
+    return phone == null || phone.isEmpty;
+  }
+
+  // Replace profiles list with the provided profiles and persist
+  Future<void> replaceProfiles(List<CbtUserProfile> profiles) async {
+    if (_currentUser == null) return;
+    _currentUser = _currentUser!.copyWith(profiles: profiles);
+    await _saveUserToPreferences(_currentUser!);
+    notifyListeners();
+  }
+
   // =========================================================================
+  // SAVE PAYMENT REFERENCE
   Future<void> _savePaymentReference(String reference) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -673,7 +650,7 @@ class CbtUserProvider with ChangeNotifier {
 //         reference: reference,
 //       );
 
-//       await _userService.createOrUpdateUser(newUser);
+//       await _userService.createUser(newUser);
 //       _log('✅ POST request successful, user created');
 
 //       _log('📡 Step 2: Fetching user data back with GET request...');
@@ -745,7 +722,7 @@ class CbtUserProvider with ChangeNotifier {
 //   }
 
 //   /// Create or update user manually
-//   Future<void> createOrUpdateUser({
+//   Future<void> createUser({
 //     required String email,
 //     required String name,
 //     String? profilePicture,
@@ -767,7 +744,7 @@ class CbtUserProvider with ChangeNotifier {
 //         reference: reference,
 //       );
 
-//       final updatedUser = await _userService.createOrUpdateUser(user);
+//       final updatedUser = await _userService.updateUser(user);
 //       _currentUser = updatedUser;
 //       await _cacheUserData(updatedUser);
       
@@ -799,7 +776,7 @@ class CbtUserProvider with ChangeNotifier {
 
 //     try {
 //       final updatedUser = _currentUser!.copyWith(subscribed: subscribed);
-//       final result = await _userService.createOrUpdateUser(updatedUser);
+//       final result = await _userService.updateUser(updatedUser);
       
 //       _currentUser = result;
 //       await _cacheUserData(result);
@@ -943,3 +920,13 @@ class CbtUserProvider with ChangeNotifier {
 //     };
 //   }
 // }
+
+
+
+
+
+
+
+
+
+

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-import 'package:linkschool/modules/model/cbt_user_model.dart';
-import 'package:linkschool/modules/services/cbt_user_service.dart';
+
+import 'package:intl/intl.dart';
+import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
+
 
 class CreateUserProfileScreen extends StatefulWidget {
-  const CreateUserProfileScreen({Key? key}) : super(key: key);
+  final String userId;
+  const CreateUserProfileScreen({super.key, required this.userId});
 
   @override
   State<CreateUserProfileScreen> createState() =>
@@ -14,21 +17,43 @@ class CreateUserProfileScreen extends StatefulWidget {
 
 class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _dobController = TextEditingController();
 
-  bool _isLoading = false;
   String? _errorMessage;
+  DateTime? _selectedDob;
+  String? _selectedGender;
 
-  final CbtUserService _userService = CbtUserService();
+
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _dobController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    final now = DateTime.now();
+    final initialDate =
+        _selectedDob ?? DateTime(now.year - 12, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked == null) return;
+    setState(() {
+      _selectedDob = picked;
+      _dobController.text = DateFormat('yyyy-MM-dd').format(picked);
+    });
   }
 
   Future<void> _submitForm() async {
@@ -37,67 +62,49 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
     }
 
     setState(() {
-      _isLoading = true;
       _errorMessage = null;
     });
 
+    final profileData = {
+      "user_id": widget.userId,
+      'first_name': _firstNameController.text.trim(),
+      'last_name': _lastNameController.text.trim(),
+      // 'email': _emailController.text.trim(),
+    //  'phone': _phoneController.text.trim(),
+      'birth_date': _dobController.text.trim(),
+      'gender': _selectedGender,
+    };
+
     try {
-      // Check if user with this email already exists
-      final existingUser =
-          await _userService.fetchUserByEmail(_emailController.text.trim());
+      final profiles = await context
+          .read<CreateUserProfileProvider>()
+          .createUserProfile(profileData, widget.userId);
 
-      if (existingUser != null) {
-        setState(() {
-          _errorMessage = 'A user with this email already exists.';
-          _isLoading = false;
-        });
-        return;
+      // Update CbtUserProvider with the returned profiles
+      final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      if (profiles.isNotEmpty) {
+        await cbtUserProvider.replaceProfiles(profiles);
       }
 
-      // Create new user model
-      // Note: Storing phone number in username field since model doesn't have phone field
-      final newUser = CbtUserModel(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        username: _phoneController.text.trim().isNotEmpty
-            ? _phoneController.text.trim()
-            : null,
-        profilePicture: null,
-        attempt: 0,
-        subscribed: 1, // New users start as subscribed
-        reference: null,
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile created successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
-
-      // Create user via service
-      final createdUser = await _userService.createOrUpdateUser(newUser);
-
-      // Update the provider with the new user
-      final userProvider =
-          Provider.of<CbtUserProvider>(context, listen: false);
-      await userProvider.fetchUserByEmail(createdUser.email);
-
-      if (mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Navigate back
-        Navigator.pop(context, true);
-      }
+      Navigator.pop(context, true);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to create profile: $e';
-        _isLoading = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.watch<CreateUserProfileProvider>().isLoading;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -139,12 +146,12 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Name Field
+              // First Name Field
               TextFormField(
-                controller: _nameController,
+                controller: _firstNameController,
                 decoration: InputDecoration(
-                  labelText: 'Full Name *',
-                  hintText: 'Enter your full name',
+                  labelText: 'First Name *',
+                  hintText: 'Enter your first name',
                   prefixIcon: const Icon(Icons.person_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -163,7 +170,7 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your name';
+                    return 'Please enter your first name';
                   }
                   return null;
                 },
@@ -171,13 +178,13 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Email Field
+              // Last Name Field
               TextFormField(
-                controller: _emailController,
+                controller: _lastNameController,
                 decoration: InputDecoration(
-                  labelText: 'Email Address *',
-                  hintText: 'Enter your email',
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  labelText: 'Last Name *',
+                  hintText: 'Enter your last name',
+                  prefixIcon: const Icon(Icons.person_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -193,27 +200,92 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
                     ),
                   ),
                 ),
-                keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your email';
+                    return 'Please enter your last name';
                   }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value.trim())) {
-                    return 'Please enter a valid email address';
+                  return null;
+                },
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 20),
+
+
+              // // Email Field
+              // TextFormField(
+              //   controller: _emailController,
+              //   decoration: InputDecoration(
+              //     labelText: 'Email Address *',
+              //     hintText: 'Enter your email',
+              //     prefixIcon: const Icon(Icons.email_outlined),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //     ),
+              //     enabledBorder: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //       borderSide: BorderSide(color: Colors.grey.shade300),
+              //     ),
+              //     focusedBorder: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //       borderSide: const BorderSide(
+              //         color: Color(0xFFFFA500),
+              //         width: 2,
+              //       ),
+              //     ),
+              //   ),
+              //   keyboardType: TextInputType.emailAddress,
+              //   validator: (value) {
+              //     if (value == null || value.trim().isEmpty) {
+              //       return 'Please enter your email';
+              //     }
+              //     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+              //         .hasMatch(value.trim())) {
+              //       return 'Please enter a valid email address';
+              //     }
+              //     return null;
+              //   },
+              // ),
+              // const SizedBox(height: 20),
+
+              // Date of Birth Field
+              TextFormField(
+                controller: _dobController,
+                readOnly: true,
+                onTap: _pickDateOfBirth,
+                decoration: InputDecoration(
+                  labelText: 'Date of Birth *',
+                  hintText: 'Select your date of birth',
+                  prefixIcon: const Icon(Icons.cake_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFFFA500),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please select your date of birth';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 20),
 
-              // Phone Number Field
-              TextFormField(
-                controller: _phoneController,
+              // Gender Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedGender,
                 decoration: InputDecoration(
-                  labelText: 'Phone Number *',
-                  hintText: 'Enter your phone number',
-                  prefixIcon: const Icon(Icons.phone_outlined),
+                  labelText: 'Gender *',
+                  prefixIcon: const Icon(Icons.wc_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -229,20 +301,60 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
                     ),
                   ),
                 ),
-                keyboardType: TextInputType.phone,
+                items: const [
+                  DropdownMenuItem(value: 'male', child: Text('Male')),
+                  DropdownMenuItem(value: 'female', child: Text('Female')),
+                  DropdownMenuItem(value: 'other', child: Text('Other')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedGender = value;
+                  });
+                },
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  // Basic phone validation - at least 10 digits
-                  final phoneDigits = value.replaceAll(RegExp(r'[^\d]'), '');
-                  if (phoneDigits.length < 10) {
-                    return 'Please enter a valid phone number';
+                  if (value == null || value.isEmpty) {
+                    return 'Please select your gender';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 30),
+              // const SizedBox(height: 20),
+              // // Phone Number Field
+              // TextFormField(
+              //   controller: _phoneController,
+              //   decoration: InputDecoration(
+              //     labelText: 'Phone Number *',
+              //     hintText: 'Enter your phone number',
+              //     prefixIcon: const Icon(Icons.phone_outlined),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //     ),
+              //     enabledBorder: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //       borderSide: BorderSide(color: Colors.grey.shade300),
+              //     ),
+              //     focusedBorder: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //       borderSide: const BorderSide(
+              //         color: Color(0xFFFFA500),
+              //         width: 2,
+              //       ),
+              //     ),
+              //   ),
+              //   keyboardType: TextInputType.phone,
+              //   validator: (value) {
+              //     if (value == null || value.trim().isEmpty) {
+              //       return 'Please enter your phone number';
+              //     }
+              //     // Basic phone validation - at least 10 digits
+              //     final phoneDigits = value.replaceAll(RegExp(r'[^\d]'), '');
+              //     if (phoneDigits.length < 10) {
+              //       return 'Please enter a valid phone number';
+              //     }
+              //     return null;
+              //   },
+              // ),
+               const SizedBox(height: 30),
 
               // Error Message
               if (_errorMessage != null)
@@ -272,15 +384,7 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
-                 // onPressed: _isLoading ? null : _submitForm,
-                 onPressed: (){
-                  // show coming soon snackbar
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Feature coming soon!'),
-                    ),
-                  );  
-                 },
+                  onPressed: isLoading ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFA500),
                     shape: RoundedRectangleBorder(
@@ -288,7 +392,7 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: _isLoading
+                  child: isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
@@ -316,3 +420,10 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
     );
   }
 }
+
+
+
+
+
+
+

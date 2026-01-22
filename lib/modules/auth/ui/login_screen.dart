@@ -6,7 +6,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 import 'package:linkschool/modules/common/custom_toaster.dart';
-import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 
 import 'package:provider/provider.dart';
 
@@ -72,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
         widget.onLoginSuccess();
         CustomToaster.toastSuccess(context, 'Success', 'Login successful!');
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', 'Login failed: $e');
+        CustomToaster.toastError(context, 'Error', 'Login failed');
         print('error:$e');
       } finally {
         if (mounted) setState(() => _isLoading = false);

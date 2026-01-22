@@ -11,6 +11,7 @@ class LessonProvider extends ChangeNotifier {
   String? _error;
   String? _currentCategoryId;
   String? _currentCourseId;
+  String? _currentCohortId;
 
   LessonProvider(this._lessonService);
 
@@ -21,6 +22,7 @@ class LessonProvider extends ChangeNotifier {
   String? get error => _error;
   String? get currentCategoryId => _currentCategoryId;
   String? get currentCourseId => _currentCourseId;
+  String? get currentCohortId => _currentCohortId;
 
   // Get lesson by id
   LessonModel? getLessonById(int id) {
@@ -36,26 +38,27 @@ class LessonProvider extends ChangeNotifier {
     return _resources.where((resource) => resource.lessonId == lessonId).toList();
   }
 
-  // Get lessons by course
+  // Get lessons by course - since all lessons are for current course, return all
   List<LessonModel> getLessonsByCourse(int courseId) {
-    return _lessons.where((lesson) => lesson.courseId == courseId).toList();
+    return _lessons;
   }
 
   // Load lessons with optional filters
   Future<void> loadLessons({
     String? categoryId,
     String? courseId,
+    required String cohortId,
   }) async {
     _isLoading = true;
     _error = null;
     _currentCategoryId = categoryId;
     _currentCourseId = courseId;
+    _currentCohortId = cohortId;
     notifyListeners();
 
     try {
       final response = await _lessonService.fetchLessons(
-        categoryId: categoryId,
-        courseId: courseId,
+       cohortId: cohortId,
       );
 
       if (response.success) {
@@ -80,10 +83,13 @@ class LessonProvider extends ChangeNotifier {
 
   // Refresh lessons (reload with current filters)
   Future<void> refreshLessons() async {
-    await loadLessons(
-      categoryId: _currentCategoryId,
-      courseId: _currentCourseId,
-    );
+    if (_currentCohortId != null) {
+      await loadLessons(
+        categoryId: _currentCategoryId,
+        courseId: _currentCourseId,
+        cohortId: _currentCohortId!,
+      );
+    }
   }
 
   // Clear all lessons
@@ -92,24 +98,16 @@ class LessonProvider extends ChangeNotifier {
     _resources = [];
     _currentCategoryId = null;
     _currentCourseId = null;
+    _currentCohortId = null;
     _error = null;
     notifyListeners();
   }
 
-  // Get unique course names
-  List<String> get uniqueCourseNames {
-    final courseNames = _lessons.map((lesson) => lesson.courseName).toSet().toList();
-    return courseNames;
-  }
+  // Get unique course names - since no courseName, return empty
+  List<String> get uniqueCourseNames => [];
 
-  // Get lessons count by course
-  Map<String, int> get lessonsCountByCourse {
-    final Map<String, int> counts = {};
-    for (var lesson in _lessons) {
-      counts[lesson.courseName] = (counts[lesson.courseName] ?? 0) + 1;
-    }
-    return counts;
-  }
+  // Get lessons count by course - since no courseName, return empty
+  Map<String, int> get lessonsCountByCourse => {};
 
   // Check if a lesson has video
   bool hasVideo(int lessonId) {
@@ -117,47 +115,24 @@ class LessonProvider extends ChangeNotifier {
     return lesson?.videoUrl.isNotEmpty ?? false;
   }
 
-  // Check if a lesson has material
+  // Check if a lesson has material - not in new data
   bool hasMaterial(int lessonId) {
-    final lesson = getLessonById(lessonId);
-    return lesson?.materialUrl.isNotEmpty ?? false;
+    return false;
   }
 
-  // Check if a lesson has assignment
+  // Check if a lesson has assignment - not in new data
   bool hasAssignment(int lessonId) {
-    final lesson = getLessonById(lessonId);
-    return lesson?.assignmentUrl.isNotEmpty ?? false;
+    return false;
   }
 
-  // Check if a lesson has quiz
+  // Check if a lesson has quiz - not in new data
   bool hasQuiz(int lessonId) {
-    final lesson = getLessonById(lessonId);
-    return lesson?.hasQuiz == 1;
+    return false;
   }
 
-  // Get upcoming lessons (lessons with future dates)
-  List<LessonModel> get upcomingLessons {
-    final now = DateTime.now();
-    return _lessons.where((lesson) {
-      try {
-        final lessonDate = DateTime.parse(lesson.date);
-        return lessonDate.isAfter(now);
-      } catch (e) {
-        return false;
-      }
-    }).toList();
-  }
+  // Get upcoming lessons - no date in new data
+  List<LessonModel> get upcomingLessons => [];
 
-  // Get past lessons
-  List<LessonModel> get pastLessons {
-    final now = DateTime.now();
-    return _lessons.where((lesson) {
-      try {
-        final lessonDate = DateTime.parse(lesson.date);
-        return lessonDate.isBefore(now);
-      } catch (e) {
-        return false;
-      }
-    }).toList();
-  }
+  // Get past lessons - no date in new data
+  List<LessonModel> get pastLessons => [];
 }

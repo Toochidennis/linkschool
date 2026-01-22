@@ -16,7 +16,10 @@ class AssignmentSubmissionService {
     required String name,
     required String email,
     required String phone,
+    required String lessonId,
     required String quizScore,
+    required String cohortId,
+    required String profileId,
     required List<Map<String, dynamic>> assignments,
   }) async {
     try {
@@ -26,7 +29,7 @@ class AssignmentSubmissionService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      final url = "$_baseUrl/project/submissions";
+      final url = "$_baseUrl/learning/$lessonId/assignment";
 
       print("📡 Submitting assignment → $url");
 
@@ -36,6 +39,8 @@ class AssignmentSubmissionService {
         "phone": phone,
         "quiz_score": quizScore,
         "assignment": assignments,
+        'cohort_id': cohortId,
+        'profile_id': profileId,
       };
 
       print("📦 Payload structure:");

@@ -729,7 +729,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedAccountType,
+                          initialValue: selectedAccountType,
                           decoration: const InputDecoration(
                             hintText: 'Select account type',
                             border: OutlineInputBorder(),

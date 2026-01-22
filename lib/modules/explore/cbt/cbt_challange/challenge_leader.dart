@@ -9,12 +9,12 @@ class ChallengeLeader extends StatefulWidget {
   final bool? fromChallengeCompletion; // New parameter to track if coming from challenge completion
 
   const ChallengeLeader({
-    Key? key,
+    super.key,
     this.fromChallenge,
     this.fromGameDashboard,
     this.challengeId,
     this.fromChallengeCompletion,
-  }) : super(key: key);
+  });
 
   @override
   State<ChallengeLeader> createState() => _ChallengeLeaderState();
@@ -216,7 +216,7 @@ class _ChallengeLeaderState extends State<ChallengeLeader> {
                               '',
                             ),
                           ))
-                      .toList(),
+                      ,
                 ],
               ),
             ),

@@ -31,17 +31,22 @@ class CourseResponse {
 
 class CourseService {
   final String baseUrl =
-      "https://linkskool.net/api/v3/public/learning/categories-and-courses";
+      "https://linkskool.net/api/v3/public/learning/programs";
 
-  Future<CourseResponse> getAllCategoriesAndCourses() async {
+  Future<CourseResponse> getAllCategoriesAndCourses({int? profileId, String? dateOfBirth}) async {
     try {
       final apiKey = EnvConfig.apiKey;
       if (apiKey.isEmpty) {
         throw Exception("API key not found in .env file");
       }
 
+      final uri = Uri.parse(baseUrl).replace(queryParameters: {
+        if (profileId != null) 'profile_id': profileId.toString(),
+        if (dateOfBirth != null) 'birth_date': dateOfBirth,
+      });
+    print("🛰️ Fetching categories and courses... $uri");
       final response = await http.get(
-        Uri.parse(baseUrl),
+        uri,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

@@ -94,7 +94,7 @@ class _PaymentHistorySeeAllScreenState
                   // Year filter
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: selectedYear,
+                      initialValue: selectedYear,
                       decoration: const InputDecoration(
                         labelText: "Year",
                         border: OutlineInputBorder(),
@@ -111,7 +111,7 @@ class _PaymentHistorySeeAllScreenState
                   // Term filter
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: selectedTerm,
+                      initialValue: selectedTerm,
                       decoration: const InputDecoration(
                         labelText: "Term",
                         border: OutlineInputBorder(),

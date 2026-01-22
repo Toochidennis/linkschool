@@ -2,6 +2,11 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/modules/explore/courses/create_user_profile_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:linkschool/modules/model/explore/courses/lesson_detail_model.dart';
+import '../../providers/explore/lesson_detail_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'quiz_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,6 +23,9 @@ import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import '../../providers/explore/assignment_submission_provider.dart';
+import 'package:flutter_html/flutter_html.dart';
+import '../../model/cbt_user_model.dart';
+import '../../providers/cbt_user_provider.dart';
 
 // Top-level function for compute isolate - encodes bytes to base64
 String _encodeToBase64(Uint8List bytes) {
@@ -36,6 +44,10 @@ class CourseDetailScreen extends StatefulWidget {
   final String? zoomUrl;
   final String? recordedUrl;
   final String? classDate;
+  final int? profileId;
+  final int? lessonId;
+  final String cohortId;
+
 
   const CourseDetailScreen({
     super.key,
@@ -50,6 +62,9 @@ class CourseDetailScreen extends StatefulWidget {
     this.zoomUrl,
     this.recordedUrl,
     this.classDate,
+    required this.cohortId,
+    this.profileId,
+    this.lessonId,
   });
 
   @override
@@ -78,6 +93,43 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? _pendingUsername;
   String? _pendingAssignmentFileName;
   String? _pendingAssignmentFileBase64;
+  // Lesson data fields
+  String? courseTitle;
+  String? courseDescription;
+  String? videoUrl;
+  String? assignmentUrl;
+  String? assignmentDescription;
+  String? materialUrl;
+  String? zoomUrl;
+  String? recordedUrl;
+  String? classDate;
+  bool _dataLoaded = false;
+  bool _hasVideo = false;
+  bool _requestSent = false;
+  CbtUserProfile? _activeProfile;
+  bool _loadedActiveProfile = false;
+
+  String get _displayTitle =>
+      courseTitle?.isNotEmpty == true ? courseTitle! : widget.courseTitle;
+  String get _displayDescription => courseDescription?.isNotEmpty == true
+      ? courseDescription!
+      : widget.courseDescription;
+  String? get _effectiveVideoUrl =>
+      videoUrl?.isNotEmpty == true ? videoUrl : widget.videoUrl;
+  String? get _effectiveMaterialUrl =>
+      materialUrl?.isNotEmpty == true ? materialUrl : widget.materialUrl;
+  String? get _effectiveAssignmentUrl =>
+      assignmentUrl?.isNotEmpty == true ? assignmentUrl : widget.assignmentUrl;
+  String? get _effectiveAssignmentDescription =>
+      assignmentDescription?.isNotEmpty == true
+          ? assignmentDescription
+          : widget.assignmentDescription;
+  String? get _effectiveZoomUrl =>
+      zoomUrl?.isNotEmpty == true ? zoomUrl : widget.zoomUrl;
+  String? get _effectiveRecordedUrl =>
+      recordedUrl?.isNotEmpty == true ? recordedUrl : widget.recordedUrl;
+  String? get _effectiveClassDate =>
+      classDate?.isNotEmpty == true ? classDate : widget.classDate;
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -88,100 +140,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
   // Assignment submission state
   bool _isAssignmentSubmitted = false;
-  bool _isSubmittingAssignment = false;
+  final bool _isSubmittingAssignment = false;
 
   final List<Map<String, dynamic>> _courseVideos = [
-    {
-      'title': 'Introduction to the Course',
-      'duration': '12:45',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      'isIntro': true,
-      'isCompleted': false,
-      'description':
-          'Welcome to the course! In this introduction, we\'ll cover what you\'ll learn, the prerequisites, and how to get the most out of this course.',
-    },
-    {
-      'title': 'Getting Started - Setup',
-      'duration': '8:30',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Learn how to set up your development environment.',
-    },
-    {
-      'title': 'Reading: Fundamentals of Structure',
-      'duration': '10 min read',
-      'type': 'reading',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Explore the building blocks of compelling content.',
-      'content':
-          '''Fundamentals of Structure\n\nA strong structure is the backbone of any compelling story. Understanding the fundamental elements is essential for creating engaging content.\n\nThe Three-Part Framework\n\nMost content follows a three-part framework:\n\nPart 1: Setup\nThis is where you introduce your topic and context. The setup establishes the foundation before the main content begins.\n\nPart 2: Development\nThe longest section, where the main ideas are explored. This is where understanding happens and concepts evolve.\n\nPart 3: Resolution\nThe final part brings everything together. All concepts are reinforced and key takeaways are emphasized.\n\nApplying These Principles\n\nAs you work through this course, remember that these are guidelines to help you learn effectively. Practice identifying these elements in what you study.''',
-    },
-    {
-      'title': 'Understanding the Basics',
-      'duration': '15:20',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Master the fundamental concepts you need to know.',
-    },
-    {
-      'title': 'Advanced Concepts',
-      'duration': '22:15',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Dive deeper into advanced techniques and best practices.',
-    },
-    {
-      'title': 'Reading: Best Practices Guide',
-      'duration': '8 min read',
-      'type': 'reading',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Understand key principles of effective learning.',
-      'content':
-          '''Best Practices Guide\n\nEffective learning requires understanding several fundamental principles that guide your progress.\n\nKey Learning Principles\n\nSeveral fundamental principles guide effective learning:\n\nActive Engagement\nEngage actively with the material. Don't just passively consume content - think critically and ask questions.\n\nConsistent Practice\nRegular practice reinforces learning. Short, consistent study sessions are more effective than cramming.\n\nReflection\nTake time to reflect on what you've learned. Consider how new concepts connect to what you already know.\n\nApplication\nApply what you learn in practical scenarios. Real-world application deepens understanding.\n\nPractical Implementation\n\nApply these principles by:\n1. Setting clear learning objectives\n2. Taking regular breaks\n3. Seeking feedback from others\n4. Reviewing and revising regularly\n5. Teaching others what you've learned\n\nRemember, effective learning balances understanding with application. Always prioritize comprehension over memorization.''',
-    },
-    {
-      'title': 'Practical Examples',
-      'duration': '18:40',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Apply what you\'ve learned with hands-on examples.',
-    },
-    {
-      'title': 'Common Pitfalls to Avoid',
-      'duration': '10:25',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Learn about common mistakes and how to avoid them.',
-    },
-    {
-      'title': 'Building Your First Project',
-      'duration': '25:30',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description': 'Put everything together in a complete project.',
-    },
+   
     {
       'title': 'Final Project and Next Steps',
       'duration': '16:50',
@@ -199,14 +161,74 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadSubmissionStatus();
+    _loadActiveProfile();
+    if (widget.courseTitle.isNotEmpty ||
+        widget.courseDescription.isNotEmpty ||
+        widget.videoUrl?.isNotEmpty == true) {
+      _seedContentFromWidget();
+    }
+    if (_courseVideos.isNotEmpty) {
+      _loadCompletionStatus();
+      _loadPendingAssignmentData();
+      _loadQuizData();
+    }
+    final initialVideoUrl = _effectiveVideoUrl;
+    if (initialVideoUrl != null && initialVideoUrl.isNotEmpty) {
+      _hasVideo = true;
+      _initializeVideo(initialVideoUrl);
+    }
+  }
+
+  void _seedContentFromWidget() {
+    final initialUrl = widget.videoUrl ?? '';
+    _courseVideos
+      ..clear()
+      ..add({
+        'title': widget.courseTitle,
+        'description': widget.courseDescription,
+        'url': initialUrl,
+        'type': initialUrl.isNotEmpty ? 'video' : 'reading',
+        'duration': '',
+        'content': widget.courseDescription,
+        'isCompleted': false,
+      });
+  }
+
+  void _applyLessonData(Lesson lesson) {
+    final resolvedVideoUrl =
+        lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
+    setState(() {
+      _dataLoaded = true;
+      courseTitle = lesson.title;
+      courseDescription = lesson.description;
+      videoUrl = resolvedVideoUrl;
+      assignmentUrl = lesson.assignmentUrl;
+      assignmentDescription = lesson.assignmentInstructions;
+      materialUrl = lesson.materialUrl;
+      zoomUrl = lesson.videoUrl;
+      recordedUrl = lesson.recordedVideoUrl;
+      classDate = lesson.lessonDate;
+      _hasVideo = resolvedVideoUrl.isNotEmpty;
+      _courseVideos
+        ..clear()
+        ..add({
+          'title': lesson.title,
+          'description': lesson.description,
+          'url': resolvedVideoUrl,
+          'type': _hasVideo ? 'video' : 'reading',
+          'duration': '',
+          'content': lesson.description,
+          'isCompleted': false,
+        });
+      _selectedVideoIndex = 0;
+    });
+
+    if (_hasVideo) {
+      _initializeVideo(resolvedVideoUrl);
+    }
     _loadCompletionStatus();
     _loadPendingAssignmentData();
-    _loadSubmissionStatus();
-    // Use provided video URL or fallback to hardcoded videos
-    final initialVideoUrl = widget.videoUrl?.isNotEmpty == true
-        ? widget.videoUrl!
-        : _courseVideos[0]['url'] as String;
-    _initializeVideo(initialVideoUrl);
     _loadQuizData();
   }
 
@@ -384,6 +406,245 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     }
   }
 
+  Future<void> _saveActiveProfileId(int? id) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (id != null) {
+      await prefs.setInt('active_profile_id', id);
+    } else {
+      await prefs.remove('active_profile_id');
+    }
+  }
+
+  Future<int?> _loadActiveProfileId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('active_profile_id');
+  }
+
+  Future<void> _loadActiveProfile() async {
+    if (_loadedActiveProfile) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedProfileId = prefs.getInt('active_profile_id');
+      if (savedProfileId != null) {
+        final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+        final profiles = cbtUserProvider.currentUser?.profiles ?? [];
+        if (profiles.isNotEmpty) {
+          final profile = profiles.firstWhere(
+            (p) => p.id == savedProfileId,
+            orElse: () => profiles.first,
+          );
+          setState(() {
+            _activeProfile = profile;
+          });
+        }
+      }
+      setState(() => _loadedActiveProfile = true);
+    } catch (e) {
+      print('Error loading active profile: $e');
+    }
+  }
+
+  String _profileName(CbtUserProfile profile) {
+    final first = profile.firstName?.trim() ?? '';
+    final last = profile.lastName?.trim() ?? '';
+    final name = "$first $last".trim();
+    if (name.isNotEmpty) return name;
+    if (profile.id != null) return "Profile ${profile.id}";
+   
+    return 'Profile';
+  }
+
+  String _profileInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+  }
+
+  Widget _avatarWidget({String? imageUrl, required String name, double radius = 20}) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey.shade200,
+        backgroundImage: NetworkImage(imageUrl),
+      );
+    }
+
+    final initials = _profileInitials(name);
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Colors.grey.shade300,
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: radius * 0.6,
+        ),
+      ),
+    );
+  }
+
+  void _showAccountSwitcherDialog(BuildContext context, dynamic user, {Function(CbtUserProfile)? onProfileSelected}) {
+    final profiles = (user?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
+    final activeProfileId = _activeProfile?.id;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Colors.white,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Switch Profile',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (profiles.isNotEmpty)
+                  Column(
+                    children: profiles.map((profile) {
+                      final name = _profileName(profile);
+                      final subtitle = user.email.toString();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: _buildAccountItem(
+                          name: name,
+                          email: subtitle,
+                          imageUrl: profile.avatar,
+                          isActive: activeProfileId == profile.id,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              _activeProfile = profile;
+                            });
+                            _saveActiveProfileId(profile.id);
+                            onProfileSelected?.call(profile);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 24),
+                // Add New Profile Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      // Navigate to create profile screen
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CreateUserProfileScreen(
+                            userId: user.id.toString(),
+
+                          ),
+                        ),
+                      );
+                      // If profile was created successfully, refresh user data
+                      if (result == true && mounted) {
+                        // Refresh user list if needed and select the newly created profile
+                        final updatedUser = Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+                        final profiles = (updatedUser?.profiles ?? []);
+                        setState(() {
+                          if (profiles.isNotEmpty) {
+                            _activeProfile = profiles.last;
+                            _saveActiveProfileId(_activeProfile?.id);
+                            onProfileSelected?.call(_activeProfile!);
+                          } else {
+                            _activeProfile = null;
+                            _saveActiveProfileId(null);
+                          }
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('Add New Profile'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: Colors.grey.shade300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      foregroundColor: Colors.black87,
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAccountItem({
+    required String name,
+    required String email,
+    String? imageUrl,
+    required bool isActive,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.grey.shade100 : Colors.transparent,
+          border: isActive ? Border.all(color: Colors.grey.shade200) : null,
+        ),
+        child: Row(
+          children: [
+            _avatarWidget(imageUrl: imageUrl, name: name, radius: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isActive)
+              const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _prepareAndPrintPayload({
     required int score,
     required String? assignmentFileName,
@@ -405,7 +666,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       "email": emailController.text,
       "phone": phoneController.text,
       'name': username,
-      'course_title': widget.courseTitle,
+      'course_title': _displayTitle,
       'lesson_title': _courseVideos[_selectedVideoIndex]['title'],
       'timestamp': DateTime.now().toIso8601String(),
     };
@@ -440,8 +701,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   /// Priority: Check recorded_url first, then zoom_url
   Map<String, dynamic> _getZoomStatus() {
     final hasRecordedUrl =
-        widget.recordedUrl != null && widget.recordedUrl!.isNotEmpty;
-    final hasZoomUrl = widget.zoomUrl != null && widget.zoomUrl!.isNotEmpty;
+        _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
+    final hasZoomUrl = _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
 
     // If neither URL exists, return unavailable
     if (!hasRecordedUrl && !hasZoomUrl) {
@@ -459,24 +720,24 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         'status': 'recorded',
         'message': 'Watch the recorded video.',
         'buttonText': 'Watch Record video',
-        'url': widget.recordedUrl,
+        'url': _effectiveRecordedUrl,
       };
     }
 
     // PRIORITY 2: Check zoom URL with date logic
     if (hasZoomUrl) {
       // If no date provided, assume class is available
-      if (widget.classDate == null || widget.classDate!.isEmpty) {
+      if (_effectiveClassDate == null || _effectiveClassDate!.isEmpty) {
         return {
           'status': 'available',
           'message': 'Join the  class',
           'buttonText': 'Join class',
-          'url': widget.zoomUrl,
+          'url': _effectiveZoomUrl,
         };
       }
 
       try {
-        final classDateTime = DateTime.parse(widget.classDate!);
+        final classDateTime = DateTime.parse(_effectiveClassDate!);
         final now = DateTime.now();
 
         // Assuming class duration is 2 hours (you can make this configurable)
@@ -501,7 +762,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             'status': 'ongoing',
             'message': 'Class is ongoing. Join now!',
             'buttonText': 'Join class',
-            'url': widget.zoomUrl,
+            'url': _effectiveZoomUrl,
           };
         }
 
@@ -518,7 +779,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           'status': 'available',
           'message': 'Join the class',
           'buttonText': 'Join class',
-          'url': widget.zoomUrl,
+          'url': _effectiveZoomUrl,
         };
       }
     }
@@ -891,24 +1152,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   void _showSubmitAssignmentModal(BuildContext context) {
-    int selectedProfileIndex = 0; // Default to first profile
+    // Get active profile
+    final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final user = cbtUserProvider.currentUser;
+    CbtUserProfile? modalActiveProfile = _activeProfile ?? user?.profiles.firstWhere((p) => true, orElse: () => CbtUserProfile(id: 0, firstName: 'User', lastName: '', avatar: null));
     String? selectedFileName;
     String? selectedFilePath;
     String? selectedFileBase64;
-
-    // Available profiles
-    final List<Map<String, String>> profiles = [
-      {
-        'name': 'John Doe',
-        'email': 'john.doe@example.com',
-        'phone': '+1234567890',
-      },
-      {
-        'name': 'Rich Brown',
-        'email': 'richardB324@mail.com',
-        'phone': '+0987654321',
-      },
-    ];
 
     showGeneralDialog(
       context: context,
@@ -952,63 +1202,64 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
-                            'Submit Assignment',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
-                            ),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Submit Assignment',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            
+                            ],
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Select the profile to submit as:',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Profile Selection List
-                          Container(
-                            constraints: const BoxConstraints(maxHeight: 300),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  // Profile 1 - Primary
-                                  _buildProfileItem(
-                                    name: 'John Doe',
-                                    email: 'john.doe@example.com',
-                                    phone: '+1234567890',
-                                    imageUrl: null,
-                                    isSelected: selectedProfileIndex == 0,
-                                    onTap: () {
-                                      setModalState(() {
-                                        selectedProfileIndex = 0;
-                                      });
-                                    },
-                                  ),
-                                  const SizedBox(height: 12),
-
-                                  // Profile 2 - Secondary
-                                  _buildProfileItem(
-                                    name: 'Rich Brown',
-                                    email: 'richardB324@mail.com',
-                                    phone: '+0987654321',
-                                    imageUrl: null,
-                                    isSelected: selectedProfileIndex == 1,
-                                    onTap: () {
-                                      setModalState(() {
-                                        selectedProfileIndex = 1;
-                                      });
-                                    },
-                                  ),
-                                ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                          
+                              const Text(
+                                'Submitting as:',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                  height: 1.5,
+                                ),
                               ),
-                            ),
+
+                                TextButton.icon(
+                                onPressed: () {
+                                  _showAccountSwitcherDialog(context, user, onProfileSelected: (profile) {
+                                    setModalState(() {
+                                      modalActiveProfile = profile;
+                                    });
+                                  });
+                                },
+                                icon: const Icon(Icons.swap_horiz, size: 18),
+                                label: const Text('Change Profile'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF6366F1),
+                                  textStyle: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+
+                          // Active Profile Display
+                          _buildProfileItem(
+                            name: _profileName(modalActiveProfile!),
+                            email: user?.email ?? '',
+                            phone: user?.phone ?? '',
+                            imageUrl: modalActiveProfile!.avatar,
+                            isSelected: true,
+                            onTap: () {}, // No tap since it's display only
                           ),
                           const SizedBox(height: 16),
                           // PDF Upload Button
@@ -1204,11 +1455,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                 child: ElevatedButton(
                                   onPressed: () async {
                                     // Get selected profile data
-                                    final selectedProfile =
-                                        profiles[selectedProfileIndex];
-                                    final name = selectedProfile['name']!;
-                                    final phone = selectedProfile['phone']!;
-                                    final email = selectedProfile['email']!;
+                                    final name = _profileName(modalActiveProfile!);
+                                    final phone = user?.phone ?? '';
+                                    final email = user?.email;
                                     // Check if assignment file is selected
                                     if (selectedFileName == null ||
                                         selectedFileBase64 == null) {
@@ -1315,6 +1564,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                             builder: (context) => QuizScreen(
                                               courseTitle: widget.courseTitle,
                                               lessonTitle: videoTitle,
+                                         
+                                              lessonId: widget.lessonId!,
                                             ),
                                           ),
                                         );
@@ -1394,10 +1645,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                                       final success =
                                           await provider.submitAssignment(
                                         name: name,
-                                        email: email ,// You can add email field to modal if needed
+                                        email: email ?? '', // You can add email field to modal if needed
                                         phone:
-                                            "08099999999", // You can add phone field to modal if needed
+                                            phone ?? '', // You can add phone field to modal if needed
                                         quizScore: _quizScore.toString(),
+                                        lessonId: widget.lessonId.toString(),
+                                        cohortId: widget.cohortId,
+                                        profileId: widget.profileId.toString(),
                                         assignments: [
                                           {
                                             'file_name': selectedFileName!,
@@ -1719,194 +1973,236 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     return null;
   }
 
-  Future<void> _downloadMaterial(String materialUrl) async {
-    try {
-      // Request storage permission
-      var status = await Permission.storage.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Storage permission denied')),
-          );
-        }
-        return;
-      }
-
-      // Show loading dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Row(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text('Downloading materials...'),
-              ],
-            ),
+ Future<void> _downloadMaterial(String materialUrl) async {
+  try {
+    // No permission needed for app-specific storage on Android 10+
+    // Remove the permission check entirely
+    
+    // Show loading dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Downloading materials...'),
+            ],
           ),
-        );
+        ),
+      );
+    }
+
+    final response = await http.get(Uri.parse("https://linkskool.net/$materialUrl"));
+    if (response.statusCode == 200) {
+      final downloadsDir = await _getDownloadsDirectory();
+      if (downloadsDir == null) {
+        throw Exception('Could not access Downloads directory');
+      }
+      
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
       }
 
-      final response = await http.get(Uri.parse(materialUrl));
-      if (response.statusCode == 200) {
-        final downloadsDir = await _getDownloadsDirectory();
-        if (downloadsDir == null) {
-          throw Exception('Could not access Downloads directory');
-        }
-        
-        if (!await downloadsDir.exists()) {
-          await downloadsDir.create(recursive: true);
-        }
+      final fileName = 'Material_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${downloadsDir.path}/$fileName');
+      await file.writeAsBytes(response.bodyBytes, flush: true);
 
-        final fileName =
-            'Material_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        final file = File('${downloadsDir.path}/$fileName');
-        await file.writeAsBytes(response.bodyBytes, flush: true);
-
-        if (mounted) {
-          Navigator.pop(context); // Close loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Downloaded to: ${file.path}'),
-              duration: const Duration(seconds: 3),
-              backgroundColor: const Color(0xFF4CAF50),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to download material'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Download failed: $e'),
+            content: Text('Downloaded to: ${file.path}'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: const Color(0xFF4CAF50),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to download material'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
+  } catch (e) {
+    if (mounted) {
+      // Make sure dialog is showing before trying to pop
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context); // Close loading dialog
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+}
 
-  Future<void> _downloadAssignment(String assignmentUrl) async {
-    try {
-      // Request storage permission
-      var status = await Permission.storage.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Storage permission denied')),
-          );
-        }
-        return;
-      }
-
-      // Show loading dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Row(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text('Downloading assignment...'),
-              ],
-            ),
+ Future<void> _downloadAssignment(String assignmentUrl) async {
+  try {
+    // No permission needed - remove the wrong permission check
+    
+    // Show loading dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Downloading assignment...'),
+            ],
           ),
-        );
+        ),
+      );
+    }
+
+    final response = await http.get(Uri.parse("https://linkskool.net/$assignmentUrl"));
+    if (response.statusCode == 200) {
+      final downloadsDir = await _getDownloadsDirectory();
+      if (downloadsDir == null) {
+        throw Exception('Could not access Downloads directory');
+      }
+      
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
       }
 
-      final response = await http.get(Uri.parse(assignmentUrl));
-      if (response.statusCode == 200) {
-        final downloadsDir = await _getDownloadsDirectory();
-        if (downloadsDir == null) {
-          throw Exception('Could not access Downloads directory');
-        }
-        
-        if (!await downloadsDir.exists()) {
-          await downloadsDir.create(recursive: true);
-        }
+      final fileName = 'Assignment_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${downloadsDir.path}/$fileName');
+      await file.writeAsBytes(response.bodyBytes, flush: true);
 
-        final fileName =
-            'Assignment_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        final file = File('${downloadsDir.path}/$fileName');
-        await file.writeAsBytes(response.bodyBytes, flush: true);
-
-        if (mounted) {
-          Navigator.pop(context); // Close loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Downloaded to Downloads folder'),
-              duration: Duration(seconds: 3),
-              backgroundColor: Color(0xFF4CAF50),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to download assignment'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download failed: $e'),
+          const SnackBar(
+            content: Text('Downloaded to Downloads folder'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Color(0xFF4CAF50),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to download assignment'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
+  } catch (e) {
+    if (mounted) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context); // Close loading dialog
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+}
 
   @override
+  @override
   Widget build(BuildContext context) {
-    final currentVideo = _courseVideos[_selectedVideoIndex];
+    return ChangeNotifierProvider<LessonDetailProvider>(
+      create: (_) => LessonDetailProvider(),
+      child: Consumer<LessonDetailProvider>(
+        builder: (context, provider, child) {
+          final hasLessonRequest =
+              widget.profileId != null && widget.lessonId != null;
+              print("lesson: ${widget.lessonId}");
+              print("profile: ${widget.profileId}");
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: _handleBackButton,
-        ),
-      ),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildVideoPlayer(),
-            const SizedBox(height: 10),
-            ..._buildSheetContent(currentVideo),
-          ],
-        ),
+          if (!_requestSent && hasLessonRequest && !provider.isLoading) {
+            _requestSent = true;
+            provider.fetchLessonDetail(
+              lessonId: widget.lessonId!,
+              profileId: widget.profileId!,
+            );
+          }
+
+          final lesson = provider.lessonDetailData?.lesson;
+          if (lesson != null && !_dataLoaded) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _applyLessonData(lesson);
+              }
+            });
+          }
+
+          if (provider.isLoading && hasLessonRequest && !_dataLoaded) {
+            return Scaffold(
+              appBar: AppBar(title: Text('Loading...')),
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (provider.errorMessage != null && hasLessonRequest && !_dataLoaded) {
+            return Scaffold(
+              appBar: AppBar(title: Text('Error')),
+              body: Center(child: Text('Error: ${provider.errorMessage}')),
+            );
+          }
+
+          if (lesson == null && hasLessonRequest && !_dataLoaded) {
+            return Scaffold(
+              appBar: AppBar(title: Text('No Data')),
+              body: Center(child: Text('No lesson data available')),
+            );
+          }
+
+          final currentVideo = _courseVideos.isNotEmpty
+              ? _courseVideos[_selectedVideoIndex]
+              : {
+                  'title': _displayTitle,
+                  'description': _displayDescription,
+                  'url': _effectiveVideoUrl ?? '',
+                };
+
+          return Scaffold(
+            extendBodyBehindAppBar: true,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: _handleBackButton,
+              ),
+            ),
+            backgroundColor: Colors.white,
+            body: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildVideoPlayer(),
+                  const SizedBox(height: 10),
+                  ..._buildSheetContent(currentVideo),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
-
   List<Widget> _buildSheetContent(Map<String, dynamic> currentVideo) {
     return [
       // Video Title and Description
@@ -1916,7 +2212,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.courseTitle,
+              _displayTitle,
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -1963,6 +2259,21 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   Widget _buildVideoPlayer() {
+    if (!_hasVideo) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          width: double.infinity,
+          height: 240,
+          color: Colors.black,
+          alignment: Alignment.center,
+          child: const Text(
+            'No video available',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
@@ -2174,7 +2485,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         children: [
           AnimatedCrossFade(
             firstChild: Text(
-              widget.courseDescription,
+              _displayDescription,
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.grey.shade700,
@@ -2184,7 +2495,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
               overflow: TextOverflow.ellipsis,
             ),
             secondChild: Text(
-              widget.courseDescription,
+              _displayDescription,
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.grey.shade700,
@@ -2236,7 +2547,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       const SizedBox(height: 24),
 
       // Course Materials Card - Only show if materialUrl exists
-      if (widget.materialUrl != null && widget.materialUrl!.isNotEmpty) ...[
+      if (_effectiveMaterialUrl != null && _effectiveMaterialUrl!.isNotEmpty) ...[
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -2297,7 +2608,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => _downloadMaterial(widget.materialUrl!),
+                  onPressed: () => _downloadMaterial(_effectiveMaterialUrl!),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
@@ -2323,8 +2634,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       ],
 
       // Join/Watch Button with Zoom-style banner - Show if zoom URL or recorded URL exists
-      if ((widget.zoomUrl != null && widget.zoomUrl!.isNotEmpty) ||
-          (widget.recordedUrl != null && widget.recordedUrl!.isNotEmpty)) ...[
+      if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
+          (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty)) ...[
         Builder(
           builder: (context) {
             final zoomStatus = _getZoomStatus();
@@ -2492,7 +2803,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         const SizedBox(height: 24),
 
         // Download Assignment Card
-        if (widget.assignmentUrl != null && widget.assignmentUrl!.isNotEmpty)
+        if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -2540,14 +2851,33 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                 ),
                 const SizedBox(height: 12),
                 // Assignment description
-                Text(
-                  widget.assignmentDescription ??
+                Html(
+                  data: _effectiveAssignmentDescription ??
                       'Download the file below and complete the assignment as instructed.',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(13),
+                      color: Colors.black87,
+                      lineHeight: LineHeight(1.4),
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                    ),
+                    "p": Style(
+                      margin: Margins(bottom: Margin(8)),
+                    ),
+                    "ul": Style(
+                      margin: Margins(bottom: Margin(8)),
+                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                    ),
+                    "ol": Style(
+                      margin: Margins(bottom: Margin(8)),
+                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                    ),
+                    "li": Style(
+                      margin: Margins(bottom: Margin(2)),
+                      padding: HtmlPaddings.zero,
+                    ),
+                  },
                 ),
                 const SizedBox(height: 16),
                 // Buttons Row
@@ -2557,7 +2887,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () =>
-                            _previewAssignment(widget.assignmentUrl!),
+                            _previewAssignment(_effectiveAssignmentUrl!),
                         icon: const Icon(Icons.visibility, size: 18),
                         label: const Text('Preview'),
                         style: OutlinedButton.styleFrom(
@@ -2575,7 +2905,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () =>
-                            _downloadAssignment(widget.assignmentUrl!),
+                            _downloadAssignment(_effectiveAssignmentUrl!),
                         icon: const Icon(Icons.download, size: 18),
                         label: const Text('Download'),
                         style: ElevatedButton.styleFrom(
@@ -2596,8 +2926,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           ),
 
         // Submit Assignment Card - Only show if assignmentUrl exists
-        if (widget.assignmentUrl != null &&
-            widget.assignmentUrl!.isNotEmpty) ...[
+        if (_effectiveAssignmentUrl != null &&
+            _effectiveAssignmentUrl!.isNotEmpty) ...[
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
@@ -2856,6 +3186,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                         builder: (context) => QuizScreen(
                           courseTitle: widget.courseTitle,
                           lessonTitle: videoTitle,
+                          lessonId: widget.lessonId!,
                         ),
                       ),
                     );
@@ -3547,7 +3878,7 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
 
   Future<void> _downloadPdf() async {
     try {
-      final response = await http.get(Uri.parse(widget.assignmentUrl));
+      final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
       if (response.statusCode == 200) {
         final dir = await getTemporaryDirectory();
         final file = File('${dir.path}/assignment_preview.pdf');
@@ -3578,68 +3909,61 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     }
   }
 
-  Future<void> _downloadToDevice() async {
-    try {
-      var status = await Permission.storage.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Storage permission denied')),
-          );
-        }
-        return;
-      }
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Downloading...'),
-            ],
-          ),
+Future<void> _downloadToDevice() async {
+  try {
+    // Option 1: No permission needed (recommended for Android 10+)
+    // Just proceed directly to download
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Downloading...'),
+          ],
         ),
-      );
+      ),
+    );
 
-      final response = await http.get(Uri.parse(widget.assignmentUrl));
-      if (response.statusCode == 200) {
-        final downloadsDir = await _getDownloadsDirectory();
-        if (downloadsDir == null) {
-          throw Exception('Could not access Downloads directory');
-        }
-        
-        if (!await downloadsDir.exists()) {
-          await downloadsDir.create(recursive: true);
-        }
-
-        final fileName =
-            '${widget.assignmentTitle.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        final file = File('${downloadsDir.path}/$fileName');
-        await file.writeAsBytes(response.bodyBytes, flush: true);
-
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Downloaded to Downloads folder'),
-              duration: Duration(seconds: 3),
-              backgroundColor: Color(0xFF4CAF50),
-            ),
-          );
-        }
+    final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
+    if (response.statusCode == 200) {
+      final downloadsDir = await _getDownloadsDirectory();
+      if (downloadsDir == null) {
+        throw Exception('Could not access Downloads directory');
       }
-    } catch (e) {
+      
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
+      }
+
+      final fileName =
+          '${widget.assignmentTitle.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${downloadsDir.path}/$fileName');
+      await file.writeAsBytes(response.bodyBytes, flush: true);
+
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: $e')),
+          const SnackBar(
+            content: Text('Downloaded to Downloads folder'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Color(0xFF4CAF50),
+          ),
         );
       }
     }
+  } catch (e) {
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download failed: $e')),
+      );
+    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -3742,3 +4066,5 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     );
   }
 }
+
+

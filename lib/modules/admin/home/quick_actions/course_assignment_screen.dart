@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/home/level_class_model.dart';
 import 'package:linkschool/modules/providers/admin/home/add_course_provider.dart';
@@ -445,7 +444,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
                       if (!isLast) const SizedBox(height: 16),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),

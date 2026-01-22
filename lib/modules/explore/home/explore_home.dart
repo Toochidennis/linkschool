@@ -31,10 +31,20 @@ class ExploreHome extends StatefulWidget {
   State<ExploreHome> createState() => _ExploreHomeState();
 }
 
-class _ExploreHomeState extends State<ExploreHome> with AutomaticKeepAliveClientMixin {
+class _ExploreHomeState extends State<ExploreHome> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _bounceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _bounceAnimation;
+
   late ScrollController _controller;
   bool _showSearchBar = true;
   bool isLoading = true;
+
+  // Track which button is currently pressed for visual feedback
+  int? _pressedButtonIndex;
 
   // Keep this screen alive when switching tabs/navigation
   @override
@@ -72,6 +82,46 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   @override
   void initState() {
     super.initState();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+    );
+
+    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+
+    // Add mounted checks
+    _fadeController.forward();
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _slideController.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _bounceController.forward();
+    });
+
     _controller = ScrollController();
     _controller.addListener(_onScroll);
 
@@ -89,9 +139,127 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
   @override
   void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _bounceController.dispose();
     _controller.removeListener(_onScroll);
     _controller.dispose();
     super.dispose();
+  }
+
+  Widget _buildAnimatedCard({
+    required Widget child,
+    required int index,
+  }) {
+    // Calculate interval with proper bounds
+    final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
+    final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
+
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _slideController,
+              curve: Interval(
+                intervalStart,
+                intervalEnd,
+                curve: Curves.elasticOut,
+              ),
+            )),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required String label,
+    required String title,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color borderColor,
+    required VoidCallback onTap,
+    required int index,
+  }) {
+    return AnimatedBuilder(
+      animation: _bounceAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _bounceAnimation.value,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(color: borderColor, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: backgroundColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 800 + (index * 200)),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            label,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Urbanist',
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Icon(
+                            icon,
+                            size: 24,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   _navigatorAllNews() {
@@ -223,32 +391,35 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           slivers: [
             const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
             SliverToBoxAdapter(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.text2Light.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+              child: _buildAnimatedCard(
+                index: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.text2Light.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.explore_rounded,
+                          color: AppColors.text2Light,
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.explore_rounded,
-                        color: AppColors.text2Light,
-                        size: 20,
+                      const SizedBox(width: 8),
+                      Text(
+                        'Explore',
+                        style: AppTextStyles.normal600(
+                          fontSize: 20,
+                          color: AppColors.text2Light,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Explore',
-                      style: AppTextStyles.normal600(
-                        fontSize: 20,
-                        color: AppColors.text2Light,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -264,16 +435,20 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final item = exploreItemsList[index];
-                    return exploreButtonItem(
-                      backgroundColor: item.backgroundColor,
-                      borderColor: item.backgroundColor,
-                      label: item.label,
-                      iconPath: item.iconPath,
-                      subtitle: item.subtitle,
-                      destination: item.destination,
-                      onTap: item.label == 'Videos'
-                          ? _showLevelSubjectSelector
-                          : null,
+                    return _buildAnimatedCard(
+                      index: index + 1,
+                      child: exploreButtonItem(
+                        backgroundColor: item.backgroundColor,
+                        borderColor: item.backgroundColor,
+                        label: item.label,
+                        iconPath: item.iconPath,
+                        subtitle: item.subtitle,
+                        destination: item.destination,
+                        onTap: item.label == 'Videos'
+                            ? _showLevelSubjectSelector
+                            : null,
+                        index: index,
+                      ),
                     );
                   },
                   childCount: exploreItemsList.length,
@@ -281,32 +456,35 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               ),
             ),
             SliverToBoxAdapter(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.text2Light.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+              child: _buildAnimatedCard(
+                index: 3,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.text2Light.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.gamepad_rounded,
+                          color: AppColors.text2Light,
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.gamepad_rounded,
-                        color: AppColors.text2Light,
-                        size: 20,
+                      const SizedBox(width: 8),
+                      Text(
+                        'Recommendations',
+                        style: AppTextStyles.normal600(
+                          fontSize: 20,
+                          color: AppColors.text2Light,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Recommendations',
-                      style: AppTextStyles.normal600(
-                        fontSize: 20,
-                        color: AppColors.text2Light,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -315,155 +493,167 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             // Announcements carousel
             if (announcementProvider.isLoading)
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: Skeletonizer(
-                    enabled: true,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12.0),
-                          child: Container(
-                            height: 180,
-                            width: double.infinity,
-                            color: Colors.grey[300],
+                child: _buildAnimatedCard(
+                  index: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Skeletonizer(
+                      enabled: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12.0),
+                            child: Container(
+                              height: 180,
+                              width: double.infinity,
+                              color: Colors.grey[300],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12.0),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(8, 0, 8.0, 0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      height: 16,
-                                      width: 200,
-                                      color: Colors.grey[300],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Container(
-                                      height: 12,
-                                      color: Colors.grey[300],
-                                    ),
-                                  ],
+                          const SizedBox(height: 12.0),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8, 0, 8.0, 0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        height: 16,
+                                        width: 200,
+                                        color: Colors.grey[300],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        height: 12,
+                                        color: Colors.grey[300],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                            Container(
-                              width: 80,
-                              height: 35,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(8),
+                              Container(
+                                width: 80,
+                                height: 35,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               )
             else if (announcementProvider.publishedAnnouncements.isEmpty)
               SliverToBoxAdapter(
-                child: Container(
-                  height: 265.0,
-                  margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.campaign_outlined,
-                            size: 48, color: Colors.grey.shade400),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No announcements available',
-                          style: AppTextStyles.normal500(
-                            fontSize: 14.0,
-                            color: Colors.grey.shade600,
+                child: _buildAnimatedCard(
+                  index: 4,
+                  child: Container(
+                    height: 265.0,
+                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.campaign_outlined,
+                              size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No announcements available',
+                            style: AppTextStyles.normal500(
+                              fontSize: 14.0,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               )
             else
               SliverToBoxAdapter(
-                child: CarouselSlider(
-                  items: announcementProvider.publishedAnnouncements
-                      .map((announcement) {
-                    return _buildAnnouncementCard(
-                      announcement: announcement,
-                    );
-                  }).toList(),
-                  options: CarouselOptions(
-                    height: 265.0,
-                    padEnds: false,
-                    viewportFraction: 0.95,
-                    autoPlay: true,
-                    enableInfiniteScroll:
-                        announcementProvider.publishedAnnouncements.length > 1,
-                    scrollDirection: Axis.horizontal,
+                child: _buildAnimatedCard(
+                  index: 4,
+                  child: CarouselSlider(
+                    items: announcementProvider.publishedAnnouncements
+                        .map((announcement) {
+                      return _buildAnnouncementCard(
+                        announcement: announcement,
+                      );
+                    }).toList(),
+                    options: CarouselOptions(
+                      height: 265.0,
+                      padEnds: false,
+                      viewportFraction: 0.95,
+                      autoPlay: true,
+                      enableInfiniteScroll:
+                          announcementProvider.publishedAnnouncements.length > 1,
+                      scrollDirection: Axis.horizontal,
+                    ),
                   ),
                 ),
               ),
             SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.text2Light.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+              child: _buildAnimatedCard(
+                index: 5,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.text2Light.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.article_rounded,
+                              color: AppColors.text2Light,
+                              size: 20,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.article_rounded,
+                          const SizedBox(width: 8),
+                          Text(
+                            'News',
+                            style: AppTextStyles.normal600(
+                              fontSize: 20,
+                              color: AppColors.text2Light,
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: _navigatorAllNews,
+                        child: const Text(
+                          'See all',
+                          style: TextStyle(
+                            decoration: TextDecoration.underline,
                             color: AppColors.text2Light,
-                            size: 20,
+                            fontFamily: 'Urbanist',
+                            fontWeight: FontWeight.w500,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'News',
-                          style: AppTextStyles.normal600(
-                            fontSize: 20,
-                            color: AppColors.text2Light,
-                          ),
-                        ),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: _navigatorAllNews,
-                      child: const Text(
-                        'See all',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: AppColors.text2Light,
-                          fontFamily: 'Urbanist',
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -473,22 +663,25 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                   final news = newsProvider.latestNews[index];
 
                   Duration difference = detemethods(news.date_posted);
-                  return GestureDetector(
-                      onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NewsDetails(
-                                  news: news, time: formatDuration(difference)),
+                  return _buildAnimatedCard(
+                    index: index + 6,
+                    child: GestureDetector(
+                        onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NewsDetails(
+                                    news: news, time: formatDuration(difference)),
+                              ),
                             ),
-                          ),
-                      child: _buildNewsItem(
-                        title: news.title,
-                        newsContent: news.content,
-                        time: formatDuration(difference),
-                        imageUrl: news.imageUrl,
-                        authorName: news.author_name,
-                        isRecommended: news.recommended == 1,
-                      ));
+                        child: _buildNewsItem(
+                          title: news.title,
+                          newsContent: news.content,
+                          time: formatDuration(difference),
+                          imageUrl: news.imageUrl,
+                          authorName: news.author_name,
+                          isRecommended: news.recommended == 1,
+                        )),
+                  );
                 },
                 childCount: newsProvider.latestNews.length,
               ),
@@ -745,71 +938,110 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     Widget? destination,
     Color? textColor,
     VoidCallback? onTap,
+    required int index,
   }) {
-    return GestureDetector(
-      onTap: () {
-        if (onTap != null) {
-          onTap();
-        } else if (destination != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => destination),
-          );
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(16.0),
-          border: Border.all(color: borderColor, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: backgroundColor.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: textColor ?? Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Urbanist',
+    return AnimatedBuilder(
+      animation: _bounceAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _bounceAnimation.value,
+          child: GestureDetector(
+            onTap: () async {
+              // Set pressed state to show visual feedback
+              setState(() {
+                _pressedButtonIndex = index;
+              });
+
+              // Wait a short delay to show the pressed color
+              await Future.delayed(const Duration(milliseconds: 150));
+
+              // Clear pressed state
+              setState(() {
+                _pressedButtonIndex = null;
+              });
+
+              // Execute the navigation or custom onTap
+              if (onTap != null) {
+                onTap();
+              } else if (destination != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => destination),
+                );
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: _pressedButtonIndex == index
+                    ? backgroundColor.withOpacity(0.7) // Darker color when pressed
+                    : backgroundColor,
+                borderRadius: BorderRadius.circular(16.0),
+                border: Border.all(color: borderColor, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: _pressedButtonIndex == index
+                        ? backgroundColor.withOpacity(0.5)
+                        : backgroundColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                SvgPicture.asset(
-                  iconPath,
-                  width: 20,
-                  height: 20,
-                  colorFilter: ColorFilter.mode(
-                    textColor ?? Colors.white,
-                    BlendMode.srcIn,
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: 1),
+                    duration: Duration(milliseconds: 800 + (index * 200)),
+                    curve: Curves.elasticOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: value,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              label,
+                              style: TextStyle(
+                                color: textColor ?? Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Urbanist',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SvgPicture.asset(
+                              iconPath,
+                              width: 20,
+                              height: 20,
+                              colorFilter: ColorFilter.mode(
+                                textColor ?? Colors.white,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Urbanist',
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Urbanist',
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -978,3 +1210,5 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     );
   }
 }
+
+

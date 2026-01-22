@@ -88,6 +88,7 @@ class _StaffDashboardState extends State<StaffDashboard> {
           NavigationItem(
             iconPath: 'assets/icons/portal.svg',
             label: 'Explore',
+            flipIcon: true,
               iconWidth: 24.0,
         iconHeight: 25.0,
             color: const Color(0xFF1E3A8A),

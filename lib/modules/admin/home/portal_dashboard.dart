@@ -190,6 +190,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
             label: 'Explore',
                 iconWidth: 24.0,
         iconHeight: 25.0,
+        flipIcon: true,
             color: const Color(0xFF1E3A8A),
           ),
           // NavigationItem(

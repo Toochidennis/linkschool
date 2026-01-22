@@ -946,26 +946,31 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
 
     if (iconPath.contains('upload') || extension.isNotEmpty) {
       // Document types
-      if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].contains(extension))
+      if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].contains(extension)) {
         return 'pdf';
+      }
       // Spreadsheet types
       if (['xls', 'xlsx', 'csv', 'ods'].contains(extension)) return 'pdf';
       // Presentation types
       if (['ppt', 'pptx', 'odp'].contains(extension)) return 'pdf';
       // Image types
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension))
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
         return 'image';
+      }
       // Video types
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension))
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
         return 'video';
+      }
 
       return 'file';
     }
 
-    if (iconPath.contains('camera') || iconPath.contains('take_photo'))
+    if (iconPath.contains('camera') || iconPath.contains('take_photo')) {
       return 'image';
-    if (iconPath.contains('video') || iconPath.contains('record_video'))
+    }
+    if (iconPath.contains('video') || iconPath.contains('record_video')) {
       return 'video';
+    }
 
     if (extension.isNotEmpty) {
       if ([
@@ -982,11 +987,15 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
         'ppt',
         'pptx',
         'odp'
-      ].contains(extension)) return 'pdf';
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension))
+      ].contains(extension)) {
+        return 'pdf';
+      }
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
         return 'image';
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension))
+      }
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
         return 'video';
+      }
     }
 
     return 'file'; // Default fallback

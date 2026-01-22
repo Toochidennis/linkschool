@@ -18,6 +18,9 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     required String email,
     required String phone,
     required String quizScore,
+    required String lessonId,
+    required String cohortId,
+    required String profileId,
     required List<Map<String, dynamic>> assignments,
   }) async {
     print("🚀 AssignmentSubmissionProvider: submitAssignment called");
@@ -38,6 +41,9 @@ class AssignmentSubmissionProvider with ChangeNotifier {
         phone: phone,
         quizScore: quizScore,
         assignments: assignments,
+        lessonId: lessonId,
+        cohortId: cohortId,
+        profileId: profileId,
       );
 
       print("✅ Service returned success: $result");

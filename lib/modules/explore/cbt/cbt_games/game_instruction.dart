@@ -10,13 +10,13 @@ class GameInstructionsScreen extends StatefulWidget {
   final int examTypeId;
 
   const GameInstructionsScreen({
-    Key? key,
+    super.key,
     required this.subject,
     required this.topics,
     required this.topicIds,
     required this.courseId,
     required this.examTypeId,
-  }) : super(key: key);
+  });
 
   @override
   State<GameInstructionsScreen> createState() => _GameInstructionsScreenState();
@@ -485,7 +485,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -641,7 +641,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

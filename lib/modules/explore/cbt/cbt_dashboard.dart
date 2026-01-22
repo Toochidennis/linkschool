@@ -1,7 +1,6 @@
-import 'dart:math';
+﻿import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart';
 import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
@@ -19,6 +18,8 @@ import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/services/user_profile_update_service.dart';
+import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class CBTDashboard extends StatefulWidget {
@@ -36,13 +37,26 @@ class CBTDashboard extends StatefulWidget {
 }
 
 class _CBTDashboardState extends State<CBTDashboard>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   final _subscriptionService = CbtSubscriptionService();
   final _authService = FirebaseAuthService();
 
-  // 🚀 Cache subscription status to avoid repeated checks
+  bool _wasLoading = true;
+
+  // ðŸš€ Cache subscription status to avoid repeated checks
   bool? _cachedCanTakeTest;
   bool _isCheckingSubscription = false;
+  bool _didCheckProfileModal = false;
+
+  // Animation controllers for card animations
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _bounceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _bounceAnimation;
+  bool _animationTriggered = false;
+  String? _pressedBoardCode;
+
 
   @override
   bool get wantKeepAlive => true;
@@ -50,6 +64,29 @@ class _CBTDashboardState extends State<CBTDashboard>
   @override
   void initState() {
     super.initState();
+
+    // Initialize animation controllers
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CBTProvider>().loadBoards();
       _preloadSubscriptionStatus(); // Pre-cache subscription status
@@ -64,6 +101,36 @@ class _CBTDashboardState extends State<CBTDashboard>
         Provider.of<CbtUserProvider>(context, listen: false);
     cbtUserProvider.refreshCurrentUser();
 
+    // Show profile modal once after sign-in/payment if phone is missing
+    if (!_didCheckProfileModal) {
+      _didCheckProfileModal = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final user = cbtUserProvider.currentUser;
+        if (user != null && cbtUserProvider.hasPaid && (user.phone == null || user.phone!.trim().isEmpty)) {
+          await UserProfileUpdateModal.show(
+            context,
+            user: user,
+            onSave: ({required String phone, required String gender, required String birthDate}) async {
+              final profileService = UserProfileUpdateService();
+              await profileService.updateUserPhone(
+                userId: user.id!,
+                firstName: user.name!.split(' ').first,
+                lastName: user.name!.split(' ').last,
+                phone: phone,
+                attempt: user.attempt.toString(),
+                email: user.email,
+                gender: gender,
+                birthDate: birthDate,
+              );
+              await cbtUserProvider.refreshCurrentUser();
+            },
+          );
+        }
+      });
+    }
+
+
     // Listen for payment reference changes to update state
     cbtUserProvider.paymentReferenceNotifier.addListener(() {
       final reference = cbtUserProvider.paymentReferenceNotifier.value;
@@ -71,11 +138,83 @@ class _CBTDashboardState extends State<CBTDashboard>
         // User has paid, update cache and state
         _cachedCanTakeTest = true;
         if (mounted) setState(() {});
+
+        final user = cbtUserProvider.currentUser;
+        if (user != null && (user.phone == null || user.phone!.trim().isEmpty)) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (!mounted) return;
+            await UserProfileUpdateModal.show(
+              context,
+              user: user,
+              onSave: ({required String phone, required String gender, required String birthDate}) async {
+                final profileService = UserProfileUpdateService();
+                await profileService.updateUserPhone(
+                  userId: user.id!,
+                  firstName: user.name!.split(' ').first,
+                  lastName: user.name!.split(' ').last,
+                  phone: phone,
+                  attempt: user.attempt.toString(),
+                  email: user.email,
+                  gender: gender,
+                  birthDate: birthDate,
+                );
+                await cbtUserProvider.refreshCurrentUser();
+              },
+            );
+          });
+        }
       }
     });
   }
 
-  /// 🔥 PRE-LOAD subscription status to avoid UI blocking
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+ Widget _buildAnimatedCard({
+  required Widget child,
+  required int index,
+}) {
+  final start = (index * 0.06).clamp(0.0, 0.85);
+  final end = (start + 0.25).clamp(0.0, 1.0);
+
+  final fadeAnim = CurvedAnimation(
+    parent: _fadeController,
+    curve: Interval(start, end, curve: Curves.easeOut),
+  );
+
+  final slideAnim = CurvedAnimation(
+    parent: _slideController,
+    curve: Interval(start, end, curve: Curves.elasticOut),
+  );
+
+  final bounceAnim = CurvedAnimation(
+    parent: _bounceController,
+    curve: Interval(start, end, curve: Curves.elasticOut),
+  );
+
+  return FadeTransition(
+    opacity: fadeAnim,
+    child: SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.12),
+        end: Offset.zero,
+      ).animate(slideAnim),
+      child: ScaleTransition(
+        // Increase scale delta so the bounce is visible
+        scale: Tween<double>(begin: 0.8, end: 1.0).animate(bounceAnim),
+        child: child,
+      ),
+    ),
+  );
+}
+
+
+  /// ðŸ”¥ PRE-LOAD subscription status to avoid UI blocking
   Future<void> _preloadSubscriptionStatus() async {
     try {
       final hasPaid = await _subscriptionService.hasPaid();
@@ -87,11 +226,11 @@ class _CBTDashboardState extends State<CBTDashboard>
         });
       }
     } catch (e) {
-      print('❌ Error preloading subscription: $e');
+      print('âŒ Error preloading subscription: $e');
     }
   }
 
-  /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
+  /// âš¡ OPTIMIZED: Non-blocking subscription check with cache and user data
   Future<bool> _checkSubscriptionBeforeTest() async {
     if (_isCheckingSubscription) return false;
 
@@ -135,7 +274,7 @@ class _CBTDashboardState extends State<CBTDashboard>
           amount: settings.amount,
           discountRate: settings.discountRate,
           onSubscribed: () {
-            print('✅ User subscribed from CBT Dashboard');
+            print('âœ… User subscribed from CBT Dashboard');
             _cachedCanTakeTest = true; // Update cache
             if (mounted) {
               setState(() {});
@@ -146,7 +285,7 @@ class _CBTDashboardState extends State<CBTDashboard>
 
       return false;
     } catch (e) {
-      print('❌ Subscription check error: $e');
+      print('âŒ Subscription check error: $e');
       return false;
     } finally {
       if (mounted) {
@@ -169,6 +308,45 @@ class _CBTDashboardState extends State<CBTDashboard>
           : null,
       body: Consumer<CBTProvider>(
         builder: (context, provider, child) {
+
+        final loading = provider.isLoading;
+
+// If we enter loading again, allow replay next time
+if (!_wasLoading && loading) {
+  _animationTriggered = false;
+
+  // Optional: reset controllers so they don't stay at 1.0 during loading
+  _fadeController.reset();
+  _slideController.reset();
+  _bounceController.reset();
+}
+
+// When loading finishes, start animations AFTER the first real-content frame
+if (_wasLoading && !loading && !_animationTriggered) {
+  _animationTriggered = true;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+
+    _fadeController
+      ..reset()
+      ..forward();
+
+    _slideController
+      ..reset()
+      ..forward();
+
+    _bounceController
+      ..reset()
+      ..forward();
+  });
+}
+
+_wasLoading = loading;
+
+
+         
+
           return Skeletonizer(
             enabled: provider.isLoading,
             child: Container(
@@ -265,180 +443,212 @@ class _CBTDashboardState extends State<CBTDashboard>
               ),
             ),
           ),
-          ...provider.boards.map((board) {
-            return _buildBoardCard(
-              board: board,
-              backgroundColor: Colors.transparent, // Not used anymore
-              provider: provider,
+          ...provider.boards.asMap().entries.map((entry) {
+            final index = entry.key;
+            final board = entry.value;
+            return _buildAnimatedCard(
+              index: index,
+              child: _buildBoardCard(
+                board: board,
+                backgroundColor: Colors.transparent, // Not used anymore
+                provider: provider,
+              ),
+
+              
             );
-          }).toList(),
+
+            
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildBoardCard({
-    required dynamic board,
-    required Color backgroundColor,
-    required CBTProvider provider,
-  }) {
-    // Get unique color for this board based on its code
-    final boardColor = _getBoardColor(board.boardCode);
-    final shortName = board.shortName ?? board.boardCode;
+ Widget _buildBoardCard({
+  required dynamic board,
+  required Color backgroundColor,
+  required CBTProvider provider,
+}) {
+  final boardColor = _getBoardColor(board.boardCode);
+  final shortName = board.shortName ?? board.boardCode;
 
-    return GestureDetector(
-      onTap: () => _handleBoardTap(board, provider),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12.0),
-        child: Container(
-          height: 150,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.transparent,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              Container(
-                width: double.infinity,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  color: boardColor.withOpacity(0.15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: boardColor.withOpacity(0.18),
-                      blurRadius: 18,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Icon and Badge Row
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: boardColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.school,
-                            size: 24,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Short name badge
-                        Text(
-                          shortName,
-                          style: AppTextStyles.normal700P(
-                            fontSize: 16.0,
-                            color: boardColor,
-                            height: 1.0,
-                          ),
-                        ),
-                      ],
-                    ),
+  final isPressed = _pressedBoardCode == board.boardCode;
 
-                    // Title and Start Button
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          board.title,
-                          style: AppTextStyles.normal700P(
-                            fontSize: 16.0,
-                            color: AppColors.text4Light,
-                            height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: boardColor,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: boardColor.withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: TextButton(
-                                onPressed: () =>
-                                    _handleBoardTap(board, provider),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 8,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Start',
-                                      style: AppTextStyles.normal700P(
-                                        fontSize: 14,
-                                        color: Colors.white,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12.0),
+    child: Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias, // âœ… important for ripple + overlay
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        splashColor: boardColor.withOpacity(0.18),
+        highlightColor: boardColor.withOpacity(0.10),
+        onTap: () async {
+          // âœ… instant visual feedback
+          setState(() => _pressedBoardCode = board.boardCode);
 
-              // Loading overlay when checking subscription
-              if (_isCheckingSubscription)
+          // short delay so user sees it before modal/navigation
+          await Future.delayed(const Duration(milliseconds: 120));
+          if (!mounted) return;
+
+          setState(() => _pressedBoardCode = null);
+
+          await _handleBoardTap(board, provider);
+        },
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 120),
+          scale: isPressed ? 0.98 : 1.0, // âœ… subtle press-down effect
+          child: SizedBox(
+            height: 150,
+            child: Stack(
+              children: [
+                // Background
                 Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                      ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: boardColor.withOpacity(0.15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: boardColor.withOpacity(0.18),
+                          blurRadius: 18,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-            ],
+
+                // âœ… Press overlay (this is what makes it obvious)
+                if (isPressed)
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: boardColor.withOpacity(0.12),
+                      ),
+                    ),
+                  ),
+
+                // Content
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: boardColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.school,
+                              size: 24,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            shortName,
+                            style: AppTextStyles.normal700P(
+                              fontSize: 16.0,
+                              color: boardColor,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            board.title,
+                            style: AppTextStyles.normal700P(
+                              fontSize: 16.0,
+                              color: AppColors.text4Light,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: boardColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: boardColor.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: TextButton(
+                                  onPressed: () async {
+                                    setState(() => _pressedBoardCode = board.boardCode);
+                                    await Future.delayed(const Duration(milliseconds: 120));
+                                    if (!mounted) return;
+                                    setState(() => _pressedBoardCode = null);
+
+                                    await _handleBoardTap(board, provider);
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 8,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Text('Start',style: TextStyle(
+                                        color: Colors.white
+                                      ),),
+                                      SizedBox(width: 6),
+                                      Icon(Icons.arrow_forward_rounded, size: 16,color: Colors.white),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (_isCheckingSubscription)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Color _getBoardColor(String boardCode) {
     final Map<String, Color> boardColors = {
@@ -475,7 +685,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     }
   }
 
-  /// ⚡ OPTIMIZED: Non-blocking board tap handler
+  /// âš¡ OPTIMIZED: Non-blocking board tap handler
   Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {
     // Check subscription asynchronously
     final canProceed = await _checkSubscriptionBeforeTest();
@@ -530,20 +740,20 @@ class _CBTDashboardState extends State<CBTDashboard>
         onChallenge: () async {
           Navigator.pop(context);
 
-          // ⚡ Challenge Module: Check if user is signed in and has paid
+          // âš¡ Challenge Module: Check if user is signed in and has paid
           // Does NOT check free trial limits - only checks active subscription
           final cbtuserProvider =
               Provider.of<CbtUserProvider>(context, listen: false);
           final isSignedIn = await _authService.isUserSignedUp();
           final hasPaid = cbtuserProvider.hasPaid;
 
-          print('\n🎯 Challenge Module Access Check:');
+          print('\nðŸŽ¯ Challenge Module Access Check:');
           print('   - User signed in: $isSignedIn');
           print('   - Has paid: $hasPaid');
 
           // If not signed in or not paid, show enforcement dialog
           if (!isSignedIn || !hasPaid) {
-            print('   ❌ Challenge access denied - showing enforcement dialog');
+            print('   âŒ Challenge access denied - showing enforcement dialog');
 
             final settings = await CbtSettingsHelper.getSettings();
             if (!mounted) return;
@@ -557,7 +767,7 @@ class _CBTDashboardState extends State<CBTDashboard>
                 amount: settings.amount,
                 discountRate: settings.discountRate,
                 onSubscribed: () {
-                  print('✅ User subscribed for Challenge module');
+                  print('âœ… User subscribed for Challenge module');
                   if (mounted) {
                     setState(() {});
                   }
@@ -568,7 +778,7 @@ class _CBTDashboardState extends State<CBTDashboard>
           }
 
           // User is signed in and has paid, proceed to challenge
-          print('   ✅ Challenge access granted - proceeding');
+          print('   âœ… Challenge access granted - proceeding');
           final cbtProvider = Provider.of<CBTProvider>(context, listen: false);
           final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
 
@@ -1261,3 +1471,5 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
+
+

@@ -24,8 +24,11 @@ class CategoryModel {
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    // support both 'program_id' and 'id'
+    final int idVal = json['program_id'] ?? json['id'] ?? 0;
+
     return CategoryModel(
-      id: json['id'] ?? 0,
+      id: idVal,
       name: json['name'] ?? "",
       short: json['short'] ?? "",
       available: json['available'] ?? 0,
@@ -39,7 +42,6 @@ class CategoryModel {
           [],
     );
   }
-
   Map<String, dynamic> toJson() {
     return {
       'id': id,
