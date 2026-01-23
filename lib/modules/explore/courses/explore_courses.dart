@@ -87,9 +87,9 @@ bool _animationTriggered = false;
       if (mounted) _bounceController.forward();
     });
 
-    // Fetch categories and courses when the widget is initialized
+    // Initial load: attempt to use persisted active profile id and birthdate
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
+      _initialLoadCourses();
     });
 
     _searchController.addListener(() {
@@ -173,6 +173,7 @@ bool _animationTriggered = false;
           id: category.id,
           name: category.name,
           short: category.short,
+          description: category.description,
           available: category.available,
           isFree: category.isFree,
           limit: category.limit,
@@ -503,7 +504,7 @@ bool _animationTriggered = false;
                             setState(() {
                               _activeProfile = profile;
                             });
-                            _saveActiveProfileId(profile.id);
+                            _saveActiveProfileId(profile.id, birthDate: profile.birthDate);
                           },
                         ),
                       );
@@ -534,7 +535,7 @@ bool _animationTriggered = false;
                         setState(() {
                           if (profiles.isNotEmpty) {
                             _activeProfile = profiles.last;
-                            _saveActiveProfileId(_activeProfile?.id);
+                            _saveActiveProfileId(_activeProfile?.id, birthDate: _activeProfile?.birthDate);
                           } else {
                             _activeProfile = null;
                             _saveActiveProfileId(null);
@@ -696,12 +697,22 @@ bool _animationTriggered = false;
     return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
   }
 
-  Future<void> _saveActiveProfileId(int? id) async {
+  Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
     final prefs = await SharedPreferences.getInstance();
     if (id != null) {
       await prefs.setInt('active_profile_id', id);
+      if (birthDate != null) {
+        await prefs.setString('active_profile_dob', birthDate);
+      } else {
+        await prefs.remove('active_profile_dob');
+      }
     } else {
       await prefs.remove('active_profile_id');
+      await prefs.remove('active_profile_dob');
+      // Also clear provider persisted values
+      if (mounted) {
+        Provider.of<ExploreCourseProvider>(context, listen: false).clearPersistedProfile();
+      }
     }
   }
 
@@ -710,6 +721,34 @@ bool _animationTriggered = false;
     return prefs.getInt('active_profile_id');
   }
 
+  Future<String?> _loadActiveProfileDob() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('active_profile_dob');
+  }
+
+  Future<void> _initialLoadCourses() async {
+    final courseProvider = Provider.of<ExploreCourseProvider>(context, listen: false);
+    final savedId = await _loadActiveProfileId();
+    final savedDob = await _loadActiveProfileDob();
+
+    // If we have both id and dob persisted, use them; otherwise do a normal fetch
+    if (savedId != null && savedDob != null) {
+      // Try to resolve a local profile object for UI; if not found we still use persisted values
+      final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      final profiles = (cbtUserProvider.currentUser?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
+      final savedProfile = profiles.isNotEmpty ? (profiles.firstWhere((p) => p.id == savedId, orElse: () => profiles.first)) : null;
+      if (savedProfile != null) {
+        setState(() {
+          _activeProfile = savedProfile;
+        });
+      }
+      await courseProvider.fetchCategoriesAndCourses(profileId: savedId, dateOfBirth: savedDob);
+    } else {
+      await courseProvider.fetchCategoriesAndCourses();
+    }
+
+    _loadedActiveProfile = true;
+  }
   Widget _avatarWidget({String? imageUrl, required String name, double radius = 20}) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return CircleAvatar(
@@ -877,19 +916,16 @@ bool _animationTriggered = false;
       _loadedActiveProfile = true;
       _loadActiveProfileId().then((savedId) {
         if (savedId != null && mounted) {
-          final savedProfile = profiles.where((p) => p.id == savedId).isNotEmpty
-              ? profiles.firstWhere((p) => p.id == savedId)
-              : null;
+          CbtUserProfile? savedProfile;
+          try {
+            savedProfile = profiles.firstWhere((p) => p.id == savedId);
+          } catch (e) {
+            savedProfile = null;
+          }
           if (savedProfile != null) {
             setState(() {
               _activeProfile = savedProfile;
             });
-            if (mounted) {
-              context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-                profileId: savedProfile.id,
-                dateOfBirth: savedProfile.birthDate,
-              );
-            }
           }
         }
       });
@@ -1393,6 +1429,8 @@ _wasLoading = loading;
             MaterialPageRoute(
               builder: (context) => CourseDescriptionScreen(
                 profileId: _activeProfile?.id,
+                firstName: _activeProfile?.firstName,
+                lastName: _activeProfile?.lastName,
 
                 course: course,
                 categoryName: category.name,
@@ -1401,6 +1439,7 @@ _wasLoading = loading;
                 cohortId: course.cohortId.toString(),
                 providerSubtitle: 'Powered By Digital Dreams',
                 categoryColor: _getCategoryColor(course.category),
+                hasEnrolled: course.isEnrolled,
               ),
             ),
           );

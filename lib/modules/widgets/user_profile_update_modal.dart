@@ -47,9 +47,9 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
   bool _isSaving = false;
 
   static const _genderOptions = <String>[
-    'Male',
-    'Female',
-    "Others"
+    'male',
+    'female',
+    "others"
   ];
 
   @override

@@ -29,7 +29,7 @@ class AssignmentSubmissionService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      final url = "$_baseUrl/learning/$lessonId/assignment";
+      final url = "$_baseUrl/learning/lessons/$lessonId/assignments";
 
       print("📡 Submitting assignment → $url");
 

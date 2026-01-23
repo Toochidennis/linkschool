@@ -24,4 +24,48 @@ class EnrollmentProvider  extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+
+  // payment service
+  Future<void> processEnrollmentPayment(Map<String, dynamic> paymentData, String cohortId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+   
+      await _enrollmentService.enrollmentPayment(paymentData, cohortId);
+
+    } catch (e) {
+      throw Exception("Error in provider while processing enrollment payment: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+void updateTrialViewsSilently(Map<String, dynamic> trialData, int courseId) {
+    _enrollmentService.updateTrialView(trialData, courseId).catchError((e) {
+      debugPrint("Silent trial update failed: $e");
+    });
+  }
+  //  update trial views
+  Future<bool> updateTrialViews(Map<String, dynamic> trialData, int courseId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final response = await _enrollmentService.updateTrialView(trialData, courseId);
+      // Optionally inspect `response` for success details
+      return true;
+    } catch (e) {
+      // Don't throw to keep caller in control; log and return false
+      print("Error in provider while updating trial views: $e");
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }
+
+
+

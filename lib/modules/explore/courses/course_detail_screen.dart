@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/modules/explore/courses/create_user_profile_screen.dart';
+import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/explore/courses/lesson_detail_model.dart';
 import '../../providers/explore/lesson_detail_provider.dart';
@@ -406,12 +407,22 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     }
   }
 
-  Future<void> _saveActiveProfileId(int? id) async {
+  Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
     final prefs = await SharedPreferences.getInstance();
     if (id != null) {
       await prefs.setInt('active_profile_id', id);
+      if (birthDate != null) {
+        await prefs.setString('active_profile_dob', birthDate);
+      } else {
+        await prefs.remove('active_profile_dob');
+      }
     } else {
       await prefs.remove('active_profile_id');
+      await prefs.remove('active_profile_dob');
+      // Clear provider persisted values as well
+      if (mounted) {
+        Provider.of<ExploreCourseProvider>(context, listen: false).clearPersistedProfile();
+      }
     }
   }
 
@@ -527,7 +538,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                             setState(() {
                               _activeProfile = profile;
                             });
-                            _saveActiveProfileId(profile.id);
+                            _saveActiveProfileId(profile.id, birthDate: profile.birthDate);
                             onProfileSelected?.call(profile);
                           },
                         ),
@@ -559,7 +570,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                         setState(() {
                           if (profiles.isNotEmpty) {
                             _activeProfile = profiles.last;
-                            _saveActiveProfileId(_activeProfile?.id);
+                            _saveActiveProfileId(_activeProfile?.id, birthDate: _activeProfile?.birthDate);
                             onProfileSelected?.call(_activeProfile!);
                           } else {
                             _activeProfile = null;
@@ -2288,6 +2299,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                     player: YoutubePlayer(
                       controller: _youtubeController!,
                       showVideoProgressIndicator: true,
+                      
                       progressIndicatorColor: const Color(0xFF6366F1),
                       progressColors: const ProgressBarColors(
                         playedColor: Color(0xFF6366F1),

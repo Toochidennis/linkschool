@@ -19,6 +19,9 @@ class CourseModel {
   final bool isEnrolled;
   final bool isCompleted;
   final String? enrollmentStatus;
+  final String? paymentStatus; // payment status from API (e.g., "paid", "pending")
+  final int? lessonsTaken; // number of lessons taken
+  final String? trialExpiryDate; // new: expiry date string from API (ISO 8601)
 
   CourseModel({
     required this.id,
@@ -39,6 +42,9 @@ class CourseModel {
     required this.isEnrolled,
     required this.isCompleted,
     required this.enrollmentStatus,
+    this.paymentStatus,
+    this.lessonsTaken,
+    this.trialExpiryDate,
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +80,9 @@ class CourseModel {
       isEnrolled: json['is_enrolled'] ?? false,
       isCompleted: json['is_completed'] ?? false,
       enrollmentStatus: json['enrollment_status']?.toString(),
+      paymentStatus: json['payment_status']?.toString(),
+      lessonsTaken: json['lessons_taken'] is int ? json['lessons_taken'] : (json['lessons_taken'] != null ? int.tryParse(json['lessons_taken'].toString()) : null),
+      trialExpiryDate: json['trial_expiry_date']?.toString(),
     );
   }
 
@@ -99,6 +108,9 @@ class CourseModel {
       'is_enrolled': isEnrolled,
       'is_completed': isCompleted,
       'enrollment_status': enrollmentStatus,
+      'payment_status': paymentStatus,
+      'lessons_taken': lessonsTaken,
+      'trial_expiry_date': trialExpiryDate,
     };
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/services/explore/courses/course_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ExploreCourseProvider with ChangeNotifier {
   List<CategoryModel> _categories = [];
@@ -74,18 +75,37 @@ class ExploreCourseProvider with ChangeNotifier {
 
   final CourseService _courseService = CourseService();
 
+  /// Fetch categories and courses. If [profileId] and [dateOfBirth] are not
+  /// provided this method will try to use any persisted values saved in
+  /// SharedPreferences. When explicit values are provided they will be
+  /// persisted for subsequent calls.
   Future<void> fetchCategoriesAndCourses({int? profileId, String? dateOfBirth}) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
     try {
-      final response = await _courseService.getAllCategoriesAndCourses(profileId: profileId, dateOfBirth: dateOfBirth);
-      _categories = response.categories.reversed.toList();
+      final prefs = await SharedPreferences.getInstance();
 
-      // Reverse courses in each category to show most recent first
-      // for (var category in _categories) {
-      //   category.courses = category.courses.reversed.toList();
-      // }
+      int? usedProfileId = profileId;
+      String? usedDob = dateOfBirth;
+
+      // If no explicit params, attempt to load persisted values
+      if ((usedProfileId == null || usedDob == null)) {
+        final savedId = prefs.getInt('active_profile_id');
+        final savedDob = prefs.getString('active_profile_dob');
+        if (savedId != null) usedProfileId ??= savedId;
+        if (savedDob != null) usedDob ??= savedDob;
+        if (savedId != null || savedDob != null) {
+          print('🔁 Using persisted profile values: id=$usedProfileId dob=$usedDob');
+        }
+      } else {
+        // Persist provided values for future calls
+        if (profileId != null) await prefs.setInt('active_profile_id', profileId);
+        if (dateOfBirth != null) await prefs.setString('active_profile_dob', dateOfBirth);
+      }
+
+      final response = await _courseService.getAllCategoriesAndCourses(profileId: usedProfileId, dateOfBirth: usedDob);
+      _categories = response.categories.reversed.toList();
 
       // Log the fetched data for debugging
       print('✅ Fetched ${_categories.length} categories');
@@ -102,4 +122,16 @@ class ExploreCourseProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Clear any persisted profile id and birthdate
+  Future<void> clearPersistedProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('active_profile_id');
+    await prefs.remove('active_profile_dob');
+    print('🧹 Cleared persisted profile id/dob');
+  }
+
+
+  // payment service
+ 
 }

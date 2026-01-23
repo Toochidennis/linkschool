@@ -101,7 +101,25 @@ class _QuizScreenState extends State<QuizScreen> {
               title: Text(widget.courseTitle),
             ),
             body: Center(
-              child: Text('Error: ${provider.error}'),
+              child: Container(
+                height: 100,
+                width: 300,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    'Oops! Something went wrong',
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             ),
           );
         }

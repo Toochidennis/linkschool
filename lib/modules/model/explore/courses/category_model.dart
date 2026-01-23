@@ -4,6 +4,8 @@ class CategoryModel {
   final int id;
   final String name;
   final String short;
+  final String description; // NEW
+  final String? imageUrl; // NEW
   final int available;
   final int isFree;
   final int limit;
@@ -15,6 +17,8 @@ class CategoryModel {
     required this.id,
     required this.name,
     required this.short,
+    required this.description,
+    this.imageUrl,
     required this.available,
     required this.isFree,
     required this.limit,
@@ -31,6 +35,8 @@ class CategoryModel {
       id: idVal,
       name: json['name'] ?? "",
       short: json['short'] ?? "",
+      description: json['description'] ?? "",
+      imageUrl: json['image_url'],
       available: json['available'] ?? 0,
       isFree: json['is_free'] ?? 0,
       limit: json['limit'] ?? 0,
@@ -53,6 +59,8 @@ class CategoryModel {
       'start_date': startDate,
       'end_date': endDate,
       'courses': courses.map((course) => course.toJson()).toList(),
+      'description': description,
+      'image_url': imageUrl,
     };
   }
 

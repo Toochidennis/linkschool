@@ -3,11 +3,14 @@ import 'package:provider/provider.dart';
 import 'course_detail_screen.dart';
 import 'reading_lesson_screen.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io' show Platform, Directory, File;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'course_payment_dialog.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final String courseTitle;
@@ -20,6 +23,12 @@ class CourseContentScreen extends StatefulWidget {
   final int categoryId;
   final String cohortId;
   final int? profileId;
+  final String courseName;
+  final String lessonImage;
+  final String? trialType;
+  final int trialValue;
+  final int? lessonsTaken;
+  final int? cohortCost;
 
   const CourseContentScreen({
     super.key,
@@ -33,6 +42,12 @@ class CourseContentScreen extends StatefulWidget {
     this.category = 'COURSE',
     this.categoryColor = const Color(0xFF6366F1),
     this.profileId,
+     required this.courseName,
+     required this.lessonImage,
+     this.trialType,
+     this.trialValue = 0,
+     this.lessonsTaken,
+     this.cohortCost,
   });
 
   @override
@@ -42,12 +57,49 @@ class CourseContentScreen extends StatefulWidget {
 class _CourseContentScreenState extends State<CourseContentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _localLessonsTaken = 0;
+
+  String _trialViewsKey() {
+    final profileId = widget.profileId;
+    return "trial_views_${profileId ?? 'guest'}_${widget.courseId}";
+  }
+
+  Future<void> _initTrialViewsCounter() async {
+    // Always start local counter at 0 when no saved value exists,
+    // regardless of what the server reports.
+    final prefs = await SharedPreferences.getInstance();
+    final int? stored = prefs.getInt(_trialViewsKey());
+
+    int effective;
+    if (stored == null) {
+      // No local stored value: initialize to 0 (first tap becomes 1).
+      effective = 0;
+      await prefs.setInt(_trialViewsKey(), effective);
+    } else {
+      // Do NOT merge server and stored counts — prefer the saved local count.
+      effective = stored;
+    }
+
+    if (mounted) {
+      setState(() {
+        _localLessonsTaken = effective;
+      });
+    }
+  }
+
+  Future<void> _saveTrialViewsCounter(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_trialViewsKey(), value);
+  }
+
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadCompletionStatus();
+    _localLessonsTaken = 0; // start at 0 by default regardless of server
+    _initTrialViewsCounter();
     // Fetch lessons for this course
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LessonProvider>().loadLessons(
@@ -216,7 +268,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.courseTitle,
+          widget.courseName,
           style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
@@ -325,54 +377,45 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Course Description Card
-                  Container(
+                    // Course banner with lesson image
+                    Container(
                     margin: const EdgeInsets.only(bottom: 20),
-                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
                       boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'About this course',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                          ),
+                    clipBehavior: Clip.antiAlias,
+                    child: AspectRatio(
+                      aspectRatio: 16 / 7,
+                      child: Image.network(
+                      widget.lessonImage,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                        child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.courseDescription,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey.shade700,
-                            height: 1.5,
-                          ),
+                      ),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                        color: Colors.grey.shade100,
+                        child: const Center(
+                          child: CircularProgressIndicator(),
                         ),
-                        const SizedBox(height: 16),
-                        // Course stats
-                        Row(
-                          children: [
-                            _buildStatItem(
-                              Icons.play_circle_outline,
-                              '${lessons.length} lessons',
-                            ),
-                          ],
-                        ),
-                      ],
+                        );
+                      },
+                      ),
                     ),
-                  ),
+                    ),
+                    // Course Description Card
+                 
                   // "Course Content" header
                   const Padding(
                     padding: EdgeInsets.only(bottom: 12),
@@ -397,6 +440,93 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             return GestureDetector(
               onTap: () async {
                 if (isVideo) {
+                  // Check if this is a trial course with views-based trial
+                  final isTrialCourse = widget.trialType?.toLowerCase() == 'views' && widget.trialValue > 0;
+                  final currentLessonsTaken = _localLessonsTaken;
+                  bool shouldPromptAfterView = false;
+
+                  if (isTrialCourse) {
+                    try {
+                      final enrollmentProvider =
+                          context.read<EnrollmentProvider>();
+
+                      // Log tracing info: saved (prefs), local, server and trialValue
+                      final prefs = await SharedPreferences.getInstance();
+                      final savedPrefs = prefs.getInt(_trialViewsKey()) ?? 0;
+                      final serverTaken = widget.lessonsTaken ?? 0;
+                      debugPrint('🔔 Lesson tap debug → savedPrefs: $savedPrefs, local: $currentLessonsTaken, server: $serverTaken, trialValue: ${widget.trialValue}');
+
+                      // If trial already exhausted, prompt payment and do not update or navigate
+                      if (currentLessonsTaken >= widget.trialValue) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Your trial views have been exhausted. Please complete payment to continue.')),
+                          );
+
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (dialogContext) => CoursePaymentDialog(
+                              amount: widget.cohortCost ?? 5000, // fallback amount
+                              onPaymentSuccess: () {
+                                Navigator.of(dialogContext).pop();
+                                // Navigate to lesson after payment
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CourseDetailScreen(
+                                      courseTitle: lesson.title,
+                                      courseName: widget.courseTitle,
+                                      courseDescription: lesson.description,
+                                      provider: widget.provider,
+                                      videoUrl: lesson.videoUrl,
+                                      assignmentUrl: null,
+                                      assignmentDescription: null,
+                                      materialUrl: null,
+                                      zoomUrl: null,
+                                      recordedUrl: null,
+                                      classDate: null,
+                                      profileId: widget.profileId,
+                                      lessonId: lesson.id,
+                                      cohortId: widget.cohortId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              onPaymentCompleted: (reference, amountPaid) {
+                                // Handle payment completion
+                                print('Payment completed: $reference, Amount: $amountPaid');
+                              },
+                            ),
+                          );
+                        }
+
+                        return; // Don't navigate to lesson
+                      }
+
+                      // Otherwise increment views and persist before allowing the view
+                      final newLessonsTaken = currentLessonsTaken + 1;
+                      // Only prompt after view when user exceeds allowed trial views (i.e., next tap would be blocked).
+                      shouldPromptAfterView = newLessonsTaken > widget.trialValue;
+
+                      setState(() {
+                        _localLessonsTaken = newLessonsTaken;
+                      });
+                      await _saveTrialViewsCounter(newLessonsTaken);
+
+                      if (widget.profileId != null) {
+                        enrollmentProvider.updateTrialViewsSilently({
+                          'profile_id': widget.profileId,
+                          'course_id': widget.cohortId,
+                          'lessons_taken': newLessonsTaken,
+                        }, widget.cohortId as int);
+                      }
+                    } catch (e) {
+                      print('Error updating trial views: $e');
+                      // Continue to lesson if update fails
+                    }
+                  }
+
                   // Navigate to video lesson screen with lesson data
                   await Navigator.push(
                     context,
@@ -420,6 +550,21 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                     ),
                   );
                   await _loadCompletionStatus();
+                  if (shouldPromptAfterView && mounted) {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (dialogContext) => CoursePaymentDialog(
+                        amount: widget.cohortCost ?? 5000, // fallback amount
+                        onPaymentSuccess: () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                        onPaymentCompleted: (reference, amountPaid) {
+                          print('Payment completed: $reference, Amount: $amountPaid');
+                        },
+                      ),
+                    );
+                  }
                 } else {
                   // No action for lessons without video
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -501,7 +646,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Lesson ${lesson.displayOrder}',
+                                  'Lesson ${lessonIndex}',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey.shade600,
@@ -872,7 +1017,10 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: (){
+            Navigator.pop(context);
+            Navigator.pop(context);
+          },
         ),
         title: Text(
           widget.materialTitle,
@@ -937,3 +1085,29 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
