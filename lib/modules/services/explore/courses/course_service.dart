@@ -19,7 +19,7 @@ class CourseResponse {
 
   factory CourseResponse.fromJson(Map<String, dynamic> json) {
     return CourseResponse(
-      statusCode: json['statusCode'] ?? 200,
+      statusCode: json['statusCode'],
       success: json['success'] ?? false,
       message: json['message'] ?? "",
       categories: (json['data'] as List<dynamic>?)
@@ -34,7 +34,7 @@ class CourseService {
   final String baseUrl =
       "https://linkskool.net/api/v3/public/learning/programs";
   final String _enrollmentBaseUrl =
-      "https://linkskool.net/api/v3/public/learnnig/cohorts";
+      "https://linkskool.net/api/v3/public/learning/cohorts";
 
   Future<CourseResponse> getAllCategoriesAndCourses({int? profileId, String? dateOfBirth}) async {
     try {
@@ -83,7 +83,7 @@ class CourseService {
     try {
       final apiKey = EnvConfig.apiKey;
 
-      final uri = Uri.parse("$_enrollmentBaseUrl/$cohortId/enrollements/is-enrolled")
+      final uri = Uri.parse("$_enrollmentBaseUrl/$cohortId/enrollments/is-enrolled")
           .replace(queryParameters: {
         'profile_id': profileId.toString(),
       });
@@ -99,7 +99,11 @@ class CourseService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
+
+        debugPrint("Enrollment Check Response: $jsonData");
+
         final data = jsonData['data'] as Map<String, dynamic>?;
+
         return data?['is_enrolled'] == true;
       }
 

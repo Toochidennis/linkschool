@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/services/explore/courses/course_service.dart';
@@ -57,15 +57,14 @@ class ExploreCourseProvider with ChangeNotifier {
       int? usedProfileId = profileId;
       String? usedDob = dateOfBirth;
 
-      if ((usedProfileId == null || usedDob == null)) {
-        final savedId = prefs.getInt('active_profile_id');
-        final savedDob = prefs.getString('active_profile_dob');
-        if (savedId != null) usedProfileId ??= savedId;
-        if (savedDob != null) usedDob ??= savedDob;
-      } else {
-        if (profileId != null) await prefs.setInt('active_profile_id', profileId);
-        if (dateOfBirth != null) await prefs.setString('active_profile_dob', dateOfBirth);
-      }
+      final savedId = prefs.getInt('active_profile_id');
+      final savedDob = prefs.getString('active_profile_dob');
+
+      usedProfileId ??= savedId;
+      usedDob ??= savedDob;
+
+      if (profileId != null) await prefs.setInt('active_profile_id', profileId);
+      if (dateOfBirth != null) await prefs.setString('active_profile_dob', dateOfBirth);
 
       final response = await _courseService.getAllCategoriesAndCourses(
         profileId: usedProfileId,
@@ -86,3 +85,4 @@ class ExploreCourseProvider with ChangeNotifier {
     await prefs.remove('active_profile_dob');
   }
 }
+

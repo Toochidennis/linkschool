@@ -58,6 +58,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _localLessonsTaken = 0;
+  final Set<int> _completedLessonIds = {};
 
   String _trialViewsKey() {
     final profileId = widget.profileId;
@@ -85,9 +86,39 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     }
   }
 
-  Future<void> _saveTrialViewsCounter(int value) async {
+  
+  String _completedLessonsKey() {
+    final profileId = widget.profileId;
+    return "completed_lessons__";
+  }
+
+  Future<void> _loadCompletedLessons() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_trialViewsKey(), value);
+    final stored = prefs.getStringList(_completedLessonsKey()) ?? [];
+    if (mounted) {
+      setState(() {
+        _completedLessonIds
+          ..clear()
+          ..addAll(stored.map(int.parse));
+      });
+    }
+  }
+
+  Future<void> _saveCompletedLessons() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _completedLessonsKey(),
+      _completedLessonIds.map((id) => id.toString()).toList(),
+    );
+  }
+
+  void _markLessonCompleted(int lessonId) {
+    if (_completedLessonIds.add(lessonId)) {
+      _saveCompletedLessons();
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   @override
@@ -97,6 +128,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     _loadCompletionStatus();
     _localLessonsTaken = 0; // start at 0 by default regardless of server
     _initTrialViewsCounter();
+    _loadCompletedLessons();
     // Fetch lessons for this course
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LessonProvider>().loadLessons(
@@ -253,22 +285,16 @@ class _CourseContentScreenState extends State<CourseContentScreen>
 
   @override
   Widget build(BuildContext context) {
+    const imageHeight = 240.0;
     return Scaffold(
       backgroundColor: Colors.white,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          widget.courseName,
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
         ),
       ),
       body: RefreshIndicator(
@@ -279,34 +305,64 @@ class _CourseContentScreenState extends State<CourseContentScreen>
         },
         child: Column(
           children: [
-            // Top banner image
-            AspectRatio(
-              aspectRatio: 16 / 7,
-              child: Image.network(
-                widget.lessonImage,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.grey.shade200,
-                  child: const Center(
-                    child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+            Stack(
+              children: [
+                SizedBox(
+                  height: imageHeight,
+                  width: double.infinity,
+                  child: Image.network(
+                    widget.lessonImage,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child:
+                            Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                      ),
+                    ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: Colors.grey.shade100,
+                        child: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    },
                   ),
                 ),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: Colors.grey.shade100,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.05),
+                          Colors.black.withOpacity(0.65),
+                        ],
+                      ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Text(
+                    widget.courseName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
             ),
-        
-            // Course Content title and tabs
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -348,8 +404,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 ],
               ),
             ),
-        
-            // Tab pages
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -364,7 +418,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       ),
     );
   }
-
   Widget _buildLessonsTab() {
     return Consumer<LessonProvider>(
       builder: (context, lessonProvider, child) {
@@ -417,6 +470,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
           itemCount: lessons.length,
           itemBuilder: (context, index) {
             final lesson = lessons[index];
+            final isCompleted = _completedLessonIds.contains(lesson.id);
             final isVideo = lesson.videoUrl.isNotEmpty;
             final hasReading = false;
             return GestureDetector(
@@ -478,6 +532,9 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                                       profileId: widget.profileId,
                                       lessonId: lesson.id,
                                       cohortId: widget.cohortId,
+                                      lessons: lessons,
+                                      lessonIndex: index,
+                                      onLessonCompleted: _markLessonCompleted,
                                     ),
                                   ),
                                 );
@@ -503,7 +560,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       setState(() {
                         _localLessonsTaken = newLessonsTaken;
                       });
-                      await _saveTrialViewsCounter(newLessonsTaken);
+                      //await _saveTrialViewsCounter(newLessonsTaken);
 
                       if (widget.profileId != null) {
                         enrollmentProvider.updateTrialViewsSilently({
@@ -537,6 +594,9 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                         profileId: widget.profileId,
                         lessonId: lesson.id,
                         cohortId: widget.cohortId,
+                                      lessons: lessons,
+                                      lessonIndex: index,
+                                      onLessonCompleted: _markLessonCompleted,
                       ),
                     ),
                   );
@@ -570,98 +630,112 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 }
               },
               child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey.shade200,
-                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Checkbox/Indicator
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          border: Border.all(
-                            color: Colors.grey.shade400,
-                            width: 2,
-                          ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCompleted
+                            ? const Color(0xFF10B981)
+                            : Colors.white,
+                        border: Border.all(
+                          color: isCompleted
+                              ? const Color(0xFF10B981)
+                              : Colors.grey.shade400,
+                          width: 2,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      // Lesson details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  lesson.title,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black87,
-                                    height: 1.3,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  lesson.description,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.grey.shade600,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
+                      child: isCompleted
+                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          : null,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Lesson ${index + 1}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  isVideo
-                                      ? Icons.play_circle_outline
-                                      : hasReading
-                                          ? Icons.article_outlined
-                                          : Icons.description_outlined,
-                                  size: 16,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            lesson.title,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            lesson.description,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey.shade600,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Icon(
+                                isVideo
+                                    ? Icons.play_circle_outline
+                                    : hasReading
+                                        ? Icons.article_outlined
+                                        : Icons.description_outlined,
+                                size: 18,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isVideo ? 'Video lesson' : 'Lesson content',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                   color: Colors.grey.shade600,
                                 ),
-                                const SizedBox(width: 4),
-                                // Text(
-                                //   'Lesson ${lessonIndex}',
-                                //   style: TextStyle(
-                                //     fontSize: 12,
-                                //     color: Colors.grey.shade600,
-                                //   ),
-                                // ),
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      // Arrow icon
-                      Icon(
-                        Icons.chevron_right,
-                        color: Colors.grey.shade400,
-                        size: 24,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey.shade400,
+                      size: 24,
+                    ),
+                  ],
                 ),
               ),
             );
@@ -1082,3 +1156,9 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
     );
   }
 }
+
+
+
+
+
+

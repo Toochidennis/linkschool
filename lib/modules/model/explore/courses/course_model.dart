@@ -1,5 +1,6 @@
-class CourseModel {
+﻿class CourseModel {
   final int id;
+  final int? programId;
   final String courseName;
   final String description;
   final String imageUrl;
@@ -19,6 +20,7 @@ class CourseModel {
 
   CourseModel({
     required this.id,
+    this.programId,
     required this.courseName,
     required this.description,
     required this.imageUrl,
@@ -36,7 +38,7 @@ class CourseModel {
     this.trialExpiryDate,
   });
 
-  factory CourseModel.fromJson(Map<String, dynamic> json) {
+  factory CourseModel.fromJson(Map<String, dynamic> json, {int? programIdOverride}) {
     final int idVal = json['course_id'] ?? json['id'] ?? 0;
 
     double parseCost(dynamic val) {
@@ -47,6 +49,7 @@ class CourseModel {
     }
 
     return CourseModel(
+      programId: programIdOverride ?? json['program_id'] as int?,
       id: idVal,
       courseName: json['course_name'] ?? "",
       description: json['description'] ?? "",
@@ -77,6 +80,7 @@ class CourseModel {
   Map<String, dynamic> toJson() {
     return {
       'course_id': id,
+      'program_id': programId,
       'course_name': courseName,
       'description': description,
       'image_url': imageUrl,
@@ -107,3 +111,6 @@ class CourseModel {
 
   String get priceLabel => isFree ? 'FREE' : 'PAID';
 }
+
+
+

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:linkschool/modules/services/explore/courses/enrollment_service.dart';
 
 class EnrollmentProvider  extends ChangeNotifier {
@@ -27,6 +27,19 @@ class EnrollmentProvider  extends ChangeNotifier {
 
 
   // payment service
+  Future<bool> checkPaymentStatus({
+    required String cohortId,
+    required int profileId,
+  }) async {
+    try {
+      return await _enrollmentService.fetchPaymentStatus(
+        cohortId: cohortId,
+        profileId: profileId,
+      );
+    } catch (e) {
+      throw Exception("Error in provider while checking payment status: $e");
+    }
+  }
   Future<void> processEnrollmentPayment(Map<String, dynamic> paymentData, String cohortId) async {
     try {
       _isLoading = true;
@@ -66,6 +79,7 @@ void updateTrialViewsSilently(Map<String, dynamic> trialData, int courseId) {
     }
   }
 }
+
 
 
 

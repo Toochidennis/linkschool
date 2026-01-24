@@ -7,6 +7,7 @@ import 'package:linkschool/modules/explore/courses/create_user_profile_screen.da
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/explore/courses/lesson_detail_model.dart';
+import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
 import '../../providers/explore/lesson_detail_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'quiz_screen.dart';
@@ -47,6 +48,9 @@ class CourseDetailScreen extends StatefulWidget {
   final String? classDate;
   final int? profileId;
   final int? lessonId;
+  final List<LessonModel>? lessons;
+  final int? lessonIndex;
+  final ValueChanged<int>? onLessonCompleted;
   final String cohortId;
 
 
@@ -66,6 +70,9 @@ class CourseDetailScreen extends StatefulWidget {
     required this.cohortId,
     this.profileId,
     this.lessonId,
+    this.lessons,
+    this.lessonIndex,
+    this.onLessonCompleted,
   });
 
   @override
@@ -194,6 +201,126 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         'content': widget.courseDescription,
         'isCompleted': false,
       });
+  }
+
+  bool get _hasLessonNavigation =>
+      widget.lessons != null && widget.lessonIndex != null;
+
+  void _navigateToLesson(int targetIndex) {
+    if (!_hasLessonNavigation) return;
+    final lessons = widget.lessons!;
+    if (targetIndex < 0 || targetIndex >= lessons.length) return;
+    final lesson = lessons[targetIndex];
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CourseDetailScreen(
+          courseTitle: lesson.title,
+          courseName: widget.courseName,
+          courseDescription: lesson.description,
+          provider: widget.provider,
+          videoUrl: lesson.videoUrl,
+          assignmentUrl: null,
+          assignmentDescription: null,
+          materialUrl: null,
+          zoomUrl: null,
+          recordedUrl: null,
+          classDate: null,
+          cohortId: widget.cohortId,
+          profileId: widget.profileId,
+          lessonId: lesson.id,
+          lessons: lessons,
+          lessonIndex: targetIndex,
+          onLessonCompleted: widget.onLessonCompleted,
+        ),
+      ),
+    );
+  }
+
+  void _completeLesson() {
+    final lessonId = widget.lessonId;
+    if (lessonId != null) {
+      widget.onLessonCompleted?.call(lessonId);
+    }
+    if (_hasLessonNavigation &&
+        widget.lessonIndex! < (widget.lessons!.length - 1)) {
+      _navigateToLesson(widget.lessonIndex! + 1);
+      return;
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lesson marked as complete')),
+      );
+    }
+  }
+
+  Widget _buildLessonNavigationBar() {
+    final hasNav = _hasLessonNavigation;
+    final currentIndex = widget.lessonIndex ?? 0;
+    final hasPrev = hasNav && currentIndex > 0;
+    final hasNext = hasNav && currentIndex < (widget.lessons!.length - 1);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: hasPrev ? () => _navigateToLesson(currentIndex - 1) : null,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: Colors.grey.shade300),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Previous'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _completeLesson,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFA500),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(hasNext ? 'Complete & Next' : 'Complete'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: hasNext ? () => _navigateToLesson(currentIndex + 1) : null,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: Colors.grey.shade300),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Next'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _applyLessonData(Lesson lesson) {
@@ -2199,6 +2326,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
               ),
             ),
             backgroundColor: Colors.white,
+            bottomNavigationBar: _buildLessonNavigationBar(),
             body: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -4078,5 +4206,10 @@ Future<void> _downloadToDevice() async {
     );
   }
 }
+
+
+
+
+
 
 

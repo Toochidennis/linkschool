@@ -39,6 +39,37 @@ class CreateUserProfileProvider extends ChangeNotifier {
     }
   }
 
+  Future<List<CbtUserProfile>> fetchUserProfiles(String userId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final responseJson =
+          await _createUserProfileService.fetchUserProfiles(userId);
+
+      final data = responseJson['data'];
+      if (data == null) throw Exception('No profile data returned from server');
+
+      List<CbtUserProfile> profiles = [];
+      if (data is List) {
+        profiles = data
+            .map((e) => CbtUserProfile.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else if (data is Map<String, dynamic>) {
+        profiles = [CbtUserProfile.fromJson(data)];
+      } else {
+        throw Exception('Unexpected profile data format');
+      }
+
+      return profiles;
+    } catch (e) {
+      throw Exception("Error in provider while fetching profiles: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Delete user profile
   Future<void> deleteUserProfile(String profileId) async {
     try {
@@ -54,5 +85,6 @@ class CreateUserProfileProvider extends ChangeNotifier {
     }
   }
 }
+
 
 

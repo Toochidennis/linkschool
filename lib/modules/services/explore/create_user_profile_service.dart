@@ -51,6 +51,40 @@ class CreateUserProfileService {
   }
 
 
+  Future<Map<String, dynamic>> fetchUserProfiles(String userId) async {
+    try {
+      final apiKey = EnvConfig.apiKey;
+
+      if (apiKey.isEmpty) {
+        throw Exception("API KEY not found");
+      }
+
+      final uri = Uri.parse("$baseUrl/learning/profiles").replace(queryParameters: {
+        'user_id': userId,
+      });
+      print("📡 fetching profiles → $uri");
+
+      final response = await http.get(
+        uri,
+        headers: {
+          "Accept": "application/json",
+          "X-API-KEY": apiKey,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        print("❌ Failed to fetch profiles");
+        print("📦 Response: ${response.body}");
+        throw Exception("Failed: ${response.body}");
+      }
+
+      final decoded = json.decode(response.body);
+      return decoded;
+    } catch (e) {
+      throw Exception("Error fetching profiles: $e");
+    }
+  }
+
   // Delete user profile
   Future<void> deleteUserProfile(String profileId) async {
     // Implementation for deleting user profile
@@ -90,3 +124,4 @@ class CreateUserProfileService {
   }
 
 }
+

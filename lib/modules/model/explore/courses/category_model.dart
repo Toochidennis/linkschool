@@ -1,4 +1,4 @@
-import 'package:linkschool/modules/model/explore/courses/course_model.dart';
+﻿import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 
 class CategoryModel {
   final int id;
@@ -24,7 +24,7 @@ class CategoryModel {
       description: json['description'] ?? "",
       imageUrl: json['image_url'],
       courses: (json['courses'] as List<dynamic>?)
-              ?.map((item) => CourseModel.fromJson(item))
+              ?.map((item) => CourseModel.fromJson(item, programIdOverride: idVal))
               .toList() ??
           [],
     );
@@ -40,3 +40,6 @@ class CategoryModel {
     };
   }
 }
+
+
+

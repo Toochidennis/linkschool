@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
@@ -21,10 +21,10 @@ class EnrollmentService {
       }
       // learning/cohorts/2/enrollments
       final url = "$baseUrl/learning/cohorts/$cohortId/enrollments";
-      print("📡 creating enrollment → $url");
+      print("ðŸ“¡ creating enrollment â†’ $url");
 
       final payload = enrollmentData.map((key, value) => MapEntry(key, value.toString()));
-      print("📦 Payload: $payload");
+      print("ðŸ“¦ Payload: $payload");
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -35,19 +35,19 @@ class EnrollmentService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to enroll user");
-        print("📦 Response: ${response.body}");
+        print("âŒ Failed to enroll user");
+        print("ðŸ“¦ Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
 
       } else {
-        print("✅ user enrollment  successfully");
-        print("📦 Response: ${response.body}");
+        print("âœ… user enrollment  successfully");
+        print("ðŸ“¦ Response: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return decoded;
     } catch (e) {
-      print("❌ Error enrolling user: $e");
+      print("âŒ Error enrolling user: $e");
         throw Exception("Error enrolling user: $e");
       }
   }
@@ -69,10 +69,10 @@ class EnrollmentService {
       }
       // learning/cohorts/2/enrollments
       final url = "$baseUrl/learning/cohorts/$cohortId/enrollments/payment";
-      print("📡 creating payment → $url");
+      print("ðŸ“¡ creating payment â†’ $url");
 
       final payload = paymentData.map((key, value) => MapEntry(key, value.toString()));
-      print("📦 Payload: $payload");
+      print("ðŸ“¦ Payload: $payload");
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -83,23 +83,64 @@ class EnrollmentService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to process payment");
-        print("📦 Response: ${response.body}");
+        print("âŒ Failed to process payment");
+        print("ðŸ“¦ Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
 
       } else {
-        print("✅ payment processed successfully");
-        print("📦 Response: ${response.body}");
+        print("âœ… payment processed successfully");
+        print("ðŸ“¦ Response: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return decoded;
     } catch (e) {
-      print("❌ Error processing payment: $e");
+      print("âŒ Error processing payment: $e");
         throw Exception("Error processing payment: $e");
       }
   }
 
+
+  Future<bool> fetchPaymentStatus({
+    required String cohortId,
+    required int profileId,
+  }) async {
+    try {
+      final apiKey = EnvConfig.apiKey;
+
+      if (apiKey.isEmpty) {
+        throw Exception("API KEY not found");
+      }
+
+      final uri = Uri.parse(
+        "$baseUrl/learning/cohorts/$cohortId/enrollments/payment-status",
+      ).replace(queryParameters: {
+        "profile_id": profileId.toString(),
+      });
+      print("📡 fetching payment status → $uri");
+
+      final response = await http.get(
+        uri,
+        headers: {
+          "Accept": "application/json",
+          "X-API-KEY": apiKey,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        print("❌ Failed to fetch payment status");
+        print("📦 Response: ${response.body}");
+        throw Exception("Failed: ${response.body}");
+      }
+
+      final decoded = json.decode(response.body);
+      final data = decoded['data'] as Map<String, dynamic>?;
+      return data?['payment_status'] == true;
+    } catch (e) {
+      print("❌ Error fetching payment status: $e");
+      throw Exception("Error fetching payment status: $e");
+    }
+  }
   // updating view trials 
   Future<Map<String, dynamic>> updateTrialView(   Map<String, dynamic> trialData,   int cohortId,
   ) async {
@@ -112,10 +153,10 @@ class EnrollmentService {
       }
       // learning/courses/2/trial-views
       final url = "$baseUrl/learning/courses/$cohortId/enrollments/lessons-taken";
-      print("📡 updating trial view → $url");
+      print("ðŸ“¡ updating trial view â†’ $url");
 
       final payload = trialData.map((key, value) => MapEntry(key, value.toString()));
-      print("📦 Payload: $payload");
+      print("ðŸ“¦ Payload: $payload");
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -126,19 +167,19 @@ class EnrollmentService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to update trial view");
-        print("📦 Response: ${response.body}");
+        print("âŒ Failed to update trial view");
+        print("ðŸ“¦ Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
 
       } else {
-        print("✅ trial view updated successfully");
-        print("📦 Response: ${response.body}");
+        print("âœ… trial view updated successfully");
+        print("ðŸ“¦ Response: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return decoded;
     } catch (e) {
-      print("❌ Error updating trial view: $e");
+      print("âŒ Error updating trial view: $e");
         throw Exception("Error updating trial view: $e");
       }
   }
@@ -146,5 +187,6 @@ class EnrollmentService {
  
 
 }
+
 
 
