@@ -121,6 +121,12 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
           final cohort = provider.cohort!;
           final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
+          final isFree = widget.course.isFree;
+          final trialType = (widget.course.trialType ?? '').toLowerCase();
+          final int trialValue = widget.course.trialValue;
+          final bool hasValidTrial = trialValue > 0 &&
+              (trialType == 'views' || trialType == 'days');
+          final String displayCost = _formatCostDisplay(cohort.cost);
           return Scaffold(
             backgroundColor: Colors.white,
             body: RefreshIndicator(
@@ -381,8 +387,57 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                     "Key concepts and practical applications"),
                                 _buildObjectiveItem(
                                     "Industry-relevant skills and best practices"),                              ],
-                              const SizedBox(
-                                  height: 100), // Space for bottom button
+                              const SizedBox(height: 24),
+
+                              const Text(
+                                'Cohort timeline',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildInfoCard(
+                                      'Start date',
+                                      _formatDate(cohort.startDate),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildInfoCard(
+                                      'End date',
+                                      _formatDate(cohort.endDate),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              const Text(
+                                'Pricing',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (isFree) ...[
+                                _buildPricingRow('Cost', 'Free'),
+                              ] else ...[
+                                _buildPricingRow('Cost', displayCost),
+                                if (hasValidTrial)
+                                  _buildPricingRow(
+                                    'Trial',
+                                    trialType == 'views'
+                                        ? ' views'
+                                        : ' days',
+                                  ),
+                              ],
+                              const SizedBox(height: 100), // Space for bottom button
                             ],
                           ),
                         ),
@@ -411,415 +466,42 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                         width: double.infinity,
                         height: 54,
                         child: Builder(builder: (buttonContext) {
-                          
-                          final trialType =
-                              (widget.course.trialType ?? '').toLowerCase();
-                          final int trialValue = widget.course.trialValue;
-                          final int? lessonsTaken = widget.course.lessonsTaken;
-                          DateTime? parsedExpiry;
-                          if (widget.course.trialExpiryDate != null) {
-                            parsedExpiry =
-                                DateTime.tryParse(widget.course.trialExpiryDate!);
-                          }
-              
-                          String buttonLabel;
-                          if (widget.hasEnrolled == true) {
-                            buttonLabel = 'Start Now';
-                          } else if (widget.course.hasTrial) {
-                            if (trialType == 'views') {
-                              buttonLabel = 'Trial (${trialValue} views)';
-                            } else if (trialType == 'days' &&
-                                parsedExpiry != null) {
-                              buttonLabel =
-                                  'Trial ends ${DateFormat('d MMM').format(parsedExpiry)}';
-                            } else {
-                              buttonLabel = 'Trial (${trialValue})';
-                            }
-                          } else if (!widget.course.isFree) {
-                            buttonLabel = 'Enroll Now';
-                          } else {
-                            // WITH NAIRA SIGN
-                            buttonLabel = 'Enroll Now  ₦  ${cohort.cost}';
-                          }
-              
+                          final String enrollmentType = isFree
+                              ? 'free'
+                              : (hasValidTrial ? 'trial' : 'paid');
+                          final bool showPaidLabel = !isFree && !hasValidTrial;
+
                           return ElevatedButton(
-                              onPressed: enrollmentProvider.isLoading
-                                  ? null
-                                  : () async {
-                                      // Already enrolled -> start
-                                      if (widget.hasEnrolled == true) {
-                                        // If enrolled, guard against expired trials / missing payments
-                                        final now = DateTime.now();
-                                        final trialTypeLocal =
-                                            (widget.course.trialType ?? '')
-                                                .toLowerCase();
-                                        final parsedExpiryLocal = widget
-                                                    .course.trialExpiryDate !=
-                                                null
-                                            ? DateTime.tryParse(
-                                                widget.course.trialExpiryDate!)
-                                            : null;
-              
-                                        // days-based expiry check (if equal OR after -> treat as expired)
-                                        if (trialTypeLocal == 'days' &&
-                                            parsedExpiryLocal != null) {
-                                          final expiryLocal =
-                                              parsedExpiryLocal.toLocal();
-                                          final expired =
-                                              now.isAfter(expiryLocal) ||
-                                                  (now.year == expiryLocal.year &&
-                                                      now.month ==
-                                                          expiryLocal.month &&
-                                                      now.day == expiryLocal.day);
-                                          if (expired) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Your trial has expired. Please complete payment to continue.')),
-                                            );
-              
-                                            double costDouble = double.parse(
-                                                cohort.cost
-                                                    .replaceAll('₦', '')
-                                                    .replaceAll(',', ''));
-                                            showDialog(
-                                              context: context,
-                                              builder: (dialogContext) =>
-                                                  CoursePaymentDialog(
-                                                amount: costDouble.toInt(),
-                                                onPaymentSuccess: () {},
-                                                onPaymentCompleted: (reference,
-                                                    amountPaid) async {
-                                                  final enrollmentData = {
-                                                    "profile_id":
-                                                        widget.profileId ?? 0,
-                                                    "course_id":
-                                                        widget.course.id ?? 0,
-                                                    "course_name":
-                                                        widget.course.courseName,
-                                                    "program_id":
-                                                        widget.categoryId ?? 0,
-                                                    "first_name":
-                                                        widget.firstName ?? "",
-                                                    "last_name":
-                                                        widget.lastName ?? "",
-                                                    "enrollment_type": "paid",
-                                                    "cohort_name": cohort.title,
-                                                    "reference": reference,
-                                                    "amount": amountPaid,
-                                                  };
-              
-                                                  try {
-                                                    await enrollmentProvider
-                                                        .processEnrollmentPayment(
-                                                            enrollmentData,
-                                                            widget.cohortId);
-              
-                                                    if (mounted) {
-                                                      Navigator.pushReplacement(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              CourseContentScreen(
-                                                            lessonImage: () {
-                                                              String url = cohort
-                                                                      .imageUrl
-                                                                      .isNotEmpty
-                                                                  ? cohort
-                                                                      .imageUrl
-                                                                  : widget.course
-                                                                      .imageUrl;
-                                                              return url
-                                                                      .startsWith(
-                                                                          'https')
-                                                                  ? url
-                                                                  : "https://linkskool.net/$url";
-                                                            }(),
-                                                            cohortId:
-                                                                widget.cohortId,
-                                                            courseTitle:
-                                                                cohort.title,
-                                                            courseDescription:
-                                                                cohort
-                                                                    .description,
-                                                            provider:
-                                                                widget.provider,
-                                                            courseId:
-                                                                widget.course.id,
-                                                            courseName:
-                                                                cohort.courseName,
-                                                            categoryId:
-                                                                widget.categoryId,
-                                                            providerSubtitle: widget
-                                                                .providerSubtitle,
-                                                            category: widget.categoryName.toUpperCase(),
-                                                            categoryColor: widget
-                                                                .categoryColor,
-                                                            profileId:
-                                                                widget.profileId,
-                                                            trialType: widget
-                                                                .course.trialType,
-                                                            trialValue: widget
-                                                                .course
-                                                                .trialValue,
-                                                            lessonsTaken: widget
-                                                                .course
-                                                                .lessonsTaken,
-                                                            cohortCost:
-                                                                (double.parse(cohort
-                                                                        .cost
-                                                                        .replaceAll(
-                                                                            '₦',
-                                                                            '')
-                                                                        .replaceAll(
-                                                                            ',',
-                                                                            '')))
-                                                                    .toInt(),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  } catch (e) {
-                                                    if (mounted) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                'Enrollment failed: $e')),
-                                                      );
-                                                    }
-                                                  }
-                                                },
-                                              ),
-                                            );
-              
-                                            return;
-                                          }
-                                        }
-              
-                                        // views-based trial exhaustion
-                                        if (trialTypeLocal == 'views' &&
-                                            widget.course.trialValue > 0 &&
-                                            (widget.course.lessonsTaken ?? 0) >=
-                                                widget.course.trialValue) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                                content: Text(
-                                                    'Your trial views have been exhausted. Please complete payment to continue.')),
-                                          );
-              
-                                          double costDouble = double.parse(cohort
-                                              .cost
-                                              .replaceAll('₦', '')
-                                              .replaceAll(',', ''));
-                                          showDialog(
-                                            context: context,
-                                            builder: (dialogContext) =>
-                                                CoursePaymentDialog(
-                                              amount: costDouble.toInt(),
-                                              onPaymentSuccess: () {},
-                                              onPaymentCompleted:
-                                                  (reference, amountPaid) async {
-                                                final enrollmentData = {
-                                                  "profile_id":
-                                                      widget.profileId ?? 0,
-                                                  "course_id":
-                                                      widget.course.id ?? 0,
-                                                  "course_name":
-                                                      widget.course.courseName,
-                                                  "program_id":
-                                                      widget.categoryId ?? 0,
-                                                  "first_name":
-                                                      widget.firstName ?? "",
-                                                  "last_name":
-                                                      widget.lastName ?? "",
-                                                  "enrollment_type": "paid",
-                                                  "cohort_name": cohort.title,
-                                                  "reference": reference,
-                                                  "amount": amountPaid,
-                                                };
-              
-                                                try {
-                                                  await enrollmentProvider
-                                                      .processEnrollmentPayment(
-                                                          enrollmentData,
-                                                          widget.cohortId);
-              
-                                                  if (mounted) {
-                                                    Navigator.pushReplacement(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            CourseContentScreen(
-                                                          lessonImage: () {
-                                                            String url = cohort
-                                                                    .imageUrl
-                                                                    .isNotEmpty
-                                                                ? cohort.imageUrl
-                                                                : widget.course
-                                                                    .imageUrl;
-                                                            return url.startsWith(
-                                                                    'https')
-                                                                ? url
-                                                                : "https://linkskool.net/$url";
-                                                          }(),
-                                                          cohortId:
-                                                              widget.cohortId,
-                                                          courseTitle:
-                                                              cohort.title,
-                                                          courseDescription:
-                                                              cohort.description,
-                                                          provider:
-                                                              widget.provider,
-                                                          courseId:
-                                                              widget.course.id,
-                                                          courseName:
-                                                              cohort.courseName,
-                                                          categoryId:
-                                                              widget.categoryId,
-                                                          providerSubtitle: widget
-                                                              .providerSubtitle,
-                                                          category: widget.categoryName.toUpperCase(),
-                                                          categoryColor: widget
-                                                              .categoryColor,
-                                                          profileId:
-                                                              widget.profileId,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                } catch (e) {
-                                                  if (mounted) {
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      SnackBar(
-                                                          content: Text(
-                                                              'Enrollment failed: $e')),
-                                                    );
-                                                  }
-                                                }
-                                              },
-                                            ),
-                                          );
-              
-                                          return;
-                                        }
-              
-                                        // If course is paid and payment_status is not 'paid', prompt to pay
-                                        if (!widget.course.isFree &&
-                                            (widget.course.paymentStatus ==
-                                                    null ||
-                                                widget.course.paymentStatus
-                                                        ?.toLowerCase() !=
-                                                    'paid')) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                                content: Text(
-                                                    'Payment is required to access this course.')),
-                                          );
-              
-                                          double costDouble = double.parse(cohort
-                                              .cost
-                                              .replaceAll('₦', '')
-                                              .replaceAll(',', ''));
-                                          showDialog(
-                                            context: context,
-                                            builder: (dialogContext) =>
-                                                CoursePaymentDialog(
-                                              amount: costDouble.toInt(),
-                                              onPaymentSuccess: () {},
-                                              onPaymentCompleted:
-                                                  (reference, amountPaid) async {
-                                                final enrollmentData = {
-                                                  "profile_id":
-                                                      widget.profileId ?? 0,
-                                                  "course_id":
-                                                      widget.course.id ?? 0,
-                                                  "course_name":
-                                                      widget.course.courseName,
-                                                  "program_id":
-                                                      widget.categoryId ?? 0,
-                                                  "first_name":
-                                                      widget.firstName ?? "",
-                                                  "last_name":
-                                                      widget.lastName ?? "",
-                                                  "enrollment_type": "paid",
-                                                  "cohort_name": cohort.title,
-                                                  "reference": reference,
-                                                  "amount": amountPaid,
-                                                };
-              
-                                                try {
-                                                  await enrollmentProvider
-                                                      .processEnrollmentPayment(
-                                                          enrollmentData,
-                                                          widget.cohortId);
-              
-                                                  if (mounted) {
-                                                    Navigator.pushReplacement(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            CourseContentScreen(
-                                                          lessonImage: () {
-                                                            String url = cohort
-                                                                    .imageUrl
-                                                                    .isNotEmpty
-                                                                ? cohort.imageUrl
-                                                                : widget.course
-                                                                    .imageUrl;
-                                                            return url.startsWith(
-                                                                    'https')
-                                                                ? url
-                                                                : "https://linkskool.net/$url";
-                                                          }(),
-                                                          cohortId:
-                                                              widget.cohortId,
-                                                          courseTitle:
-                                                              cohort.title,
-                                                          courseDescription:
-                                                              cohort.description,
-                                                          provider:
-                                                              widget.provider,
-                                                          courseId:
-                                                              widget.course.id,
-                                                          courseName:
-                                                              cohort.courseName,
-                                                          categoryId:
-                                                              widget.categoryId,
-                                                          providerSubtitle: widget
-                                                              .providerSubtitle,
-                                                          category: widget.categoryName.toUpperCase(),
-                                                          categoryColor: widget
-                                                              .categoryColor,
-                                                          profileId:
-                                                              widget.profileId,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                } catch (e) {
-                                                  if (mounted) {
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      SnackBar(
-                                                          content: Text(
-                                                              'Enrollment failed: $e')),
-                                                    );
-                                                  }
-                                                }
-                                              },
-                                            ),
-                                          );
-              
-                                          return;
-                                        }
-              
-                                        // otherwise navigate to content
+                            onPressed: enrollmentProvider.isLoading
+                                ? null
+                                : () async {
+                                    DateTime? trialEndDate;
+                                    if (enrollmentType == 'trial' &&
+                                        trialType == 'days' &&
+                                        trialValue > 0) {
+                                      trialEndDate = DateTime.now().add(
+                                          Duration(days: trialValue));
+                                    }
+
+                                    final enrollmentData = {
+                                      "profile_id": widget.profileId ?? 0,
+                                      "course_id": widget.course.id,
+                                      "course_name": widget.course.courseName,
+                                      "program_id": widget.categoryId,
+                                      "first_name": widget.firstName ?? "",
+                                      "last_name": widget.lastName,
+                                      "enrollment_type": enrollmentType,
+                                      "cohort_name": cohort.title,
+                                      if (trialEndDate != null)
+                                        "trial_expiry_date":
+                                            trialEndDate.toIso8601String(),
+                                    };
+
+                                    try {
+                                      await enrollmentProvider.enrollUser(
+                                          enrollmentData, widget.cohortId);
+
+                                      if (mounted) {
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
@@ -832,526 +514,88 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                                         : widget.course.imageUrl;
                                                 return url.startsWith('https')
                                                     ? url
-                                                    : "https://linkskool.net/$url";
+                                                    : "https://linkskool.net/";
                                               }(),
-                                              courseName: cohort.courseName,
                                               cohortId: widget.cohortId,
                                               courseTitle: cohort.title,
                                               courseDescription:
                                                   cohort.description,
                                               provider: widget.provider,
                                               courseId: widget.course.id,
+                                              courseName: cohort.courseName,
                                               categoryId: widget.categoryId,
                                               providerSubtitle:
                                                   widget.providerSubtitle,
                                               category: widget.categoryName
                                                   .toUpperCase(),
-                                              categoryColor: widget.categoryColor,
+                                              categoryColor:
+                                                  widget.categoryColor,
                                               profileId: widget.profileId,
                                               trialType: widget.course.trialType,
                                               trialValue:
                                                   widget.course.trialValue,
                                               lessonsTaken:
                                                   widget.course.lessonsTaken,
+                                              cohortCost:
+                                                  _parseCostToInt(cohort.cost),
                                             ),
                                           ),
                                         );
                                       }
-              
-                                      // Free course enroll directly
-                                      if (widget.course.isFree) {
-                                        final enrollmentData = {
-                                          "profile_id": widget.profileId ?? 0,
-                                          "course_id": widget.course.id ?? 0,
-                                          "course_name": widget.course.courseName,
-                                          "program_id": widget.categoryId ?? 0,
-                                          "first_name": widget.firstName ?? "",
-                                          "last_name": widget.lastName ?? "",
-                                          "enrollment_type": "free",
-                                          "cohort_name": cohort.title,
-                                        };
-              
-                                        try {
-                                          await enrollmentProvider.enrollUser(
-                                              enrollmentData, widget.cohortId);
-              
-                                          if (mounted) {
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    CourseContentScreen(
-                                                  lessonImage: () {
-                                                    String url = cohort
-                                                            .imageUrl.isNotEmpty
-                                                        ? cohort.imageUrl
-                                                        : widget.course.imageUrl;
-                                                    return url.startsWith('https')
-                                                        ? url
-                                                        : "https://linkskool.net/$url";
-                                                  }(),
-                                                  cohortId: widget.cohortId,
-                                                  courseTitle: cohort.title,
-                                                  courseDescription:
-                                                      cohort.description,
-                                                  provider: widget.provider,
-                                                  courseId: widget.course.id,
-                                                  courseName: cohort.courseName,
-                                                  categoryId: widget.categoryId,
-                                                  providerSubtitle:
-                                                      widget.providerSubtitle,
-                                                  category: widget.categoryName
-                                                      .toUpperCase(),
-                                                  categoryColor:
-                                                      widget.categoryColor,
-                                                  profileId: widget.profileId,
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        } catch (e) {
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      'Enrollment failed: $e')),
-                                            );
-                                          }
-                                        }
-              
-                                        return;
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Enrollment failed: ')),
+                                        );
                                       }
-              
-                                      // Course with trial logic
-                                      if (widget.course.hasTrial) {
-                                        final now = DateTime.now();
-              
-                                        // If the trial is by days and expiry exists, check expiry (equal or after -> expired)
-                                        if (trialType == 'days' &&
-                                            parsedExpiry != null) {
-                                          final expiryLocal =
-                                              parsedExpiry.toLocal();
-                                          final expired =
-                                              now.isAfter(expiryLocal) ||
-                                                  (now.year == expiryLocal.year &&
-                                                      now.month ==
-                                                          expiryLocal.month &&
-                                                      now.day == expiryLocal.day);
-                                          if (expired) {
-                                            // trial expired -> prompt payment
-                                            ScaffoldMessenger.of(buttonContext)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Your trial has expired. Please complete payment to continue.')),
-                                            );
-              
-                                            // show payment dialog
-                                            double costDouble = double.parse(
-                                                cohort.cost
-                                                    .replaceAll('₦', '')
-                                                    .replaceAll(',', ''));
-                                            showDialog(
-                                              context: context,
-                                              builder: (dialogContext) =>
-                                                  CoursePaymentDialog(
-                                                amount: costDouble.toInt(),
-                                                onPaymentSuccess: () {},
-                                                onPaymentCompleted: (reference,
-                                                    amountPaid) async {
-                                                  final enrollmentData = {
-                                                    "profile_id":
-                                                        widget.profileId ?? 0,
-                                                    "course_id":
-                                                        widget.course.id ?? 0,
-                                                    "course_name":
-                                                        widget.course.courseName,
-                                                    "program_id":
-                                                        widget.categoryId ?? 0,
-                                                    "first_name":
-                                                        widget.firstName ?? "",
-                                                    "last_name":
-                                                        widget.lastName ?? "",
-                                                    "enrollment_type": "paid",
-                                                    "cohort_name": cohort.title,
-                                                    "reference": reference,
-                                                    "amount": amountPaid,
-                                                  };
-              
-                                                  try {
-                                                    await enrollmentProvider
-                                                        .processEnrollmentPayment(
-                                                            enrollmentData,
-                                                            widget.cohortId);
-              
-                                                    if (mounted) {
-                                                      Navigator.pushReplacement(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              CourseContentScreen(
-                                                            lessonImage: () {
-                                                              String url = cohort
-                                                                      .imageUrl
-                                                                      .isNotEmpty
-                                                                  ? cohort
-                                                                      .imageUrl
-                                                                  : widget.course
-                                                                      .imageUrl;
-                                                              return url
-                                                                      .startsWith(
-                                                                          'https')
-                                                                  ? url
-                                                                  : "https://linkskool.net/$url";
-                                                            }(),
-                                                            cohortId:
-                                                                widget.cohortId,
-                                                            courseTitle:
-                                                                cohort.title,
-                                                            courseDescription:
-                                                                cohort
-                                                                    .description,
-                                                            provider:
-                                                                widget.provider,
-                                                            courseId:
-                                                                widget.course.id,
-                                                            courseName:
-                                                                cohort.courseName,
-                                                            categoryId:
-                                                                widget.categoryId,
-                                                            providerSubtitle: widget
-                                                                .providerSubtitle,
-                                                            category: widget.categoryName.toUpperCase(),
-                                                            categoryColor: widget
-                                                                .categoryColor,
-                                                            profileId:
-                                                                widget.profileId,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  } catch (e) {
-                                                    if (mounted) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                'Enrollment failed: $e')),
-                                                      );
-                                                    }
-                                                  }
-                                                },
-                                              ),
-                                            );
-              
-                                            return;
-                                          }
-                                        }
-                                          // print trial valus
-                                          print('Trial Type: $trialType, Trial Value: ${widget.course.trialValue}, Lessons Taken: ${widget.course.lessonsTaken}');
-                                        // If trial is by views, check lessons taken
-                                        if (trialType == 'views' &&
-                                            widget.course.trialValue > 0) {
-                                          if ((lessonsTaken ?? 0) >=
-                                              widget.course.trialValue) {
-                                            // views exhausted -> prompt payment
-                                            ScaffoldMessenger.of(buttonContext)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Your trial views have been exhausted. Please complete payment to continue.')),
-                                            );
-              
-                                            double costDouble = double.parse(
-                                                cohort.cost
-                                                    .replaceAll('₦', '')
-                                                    .replaceAll(',', ''));
-                                            showDialog(
-                                              context: context,
-                                              builder: (dialogContext) =>
-                                                  CoursePaymentDialog(
-                                                amount: costDouble.toInt(),
-                                                onPaymentSuccess: () {},
-                                                onPaymentCompleted: (reference,
-                                                    amountPaid) async {
-                                                  final enrollmentData = {
-                                                    "profile_id":
-                                                        widget.profileId ?? 0,
-                                                    "course_id":
-                                                        widget.course.id ?? 0,
-                                                    "course_name":
-                                                        widget.course.courseName,
-                                                    "program_id":
-                                                        widget.categoryId ?? 0,
-                                                    "first_name":
-                                                        widget.firstName ?? "",
-                                                    "last_name":
-                                                        widget.lastName ?? "",
-                                                    "enrollment_type": "paid",
-                                                    "cohort_name": cohort.title,
-                                                    "reference": reference,
-                                                    "amount": amountPaid,
-                                                  };
-              
-                                                  try {
-                                                    await enrollmentProvider
-                                                        .processEnrollmentPayment(
-                                                            enrollmentData,
-                                                            widget.cohortId);
-              
-                                                    if (mounted) {
-                                                      Navigator.pushReplacement(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              CourseContentScreen(
-                                                            lessonImage: () {
-                                                              String url = cohort
-                                                                      .imageUrl
-                                                                      .isNotEmpty
-                                                                  ? cohort
-                                                                      .imageUrl
-                                                                  : widget.course
-                                                                      .imageUrl;
-                                                              return url
-                                                                      .startsWith(
-                                                                          'https')
-                                                                  ? url
-                                                                  : "https://linkskool.net/$url";
-                                                            }(),
-                                                            cohortId:
-                                                                widget.cohortId,
-                                                            courseTitle:
-                                                                cohort.title,
-                                                            courseDescription:
-                                                                cohort
-                                                                    .description,
-                                                            provider:
-                                                                widget.provider,
-                                                            courseId:
-                                                                widget.course.id,
-                                                            courseName:
-                                                                cohort.courseName,
-                                                            categoryId:
-                                                                widget.categoryId,
-                                                            providerSubtitle: widget
-                                                                .providerSubtitle,
-                                                            category: widget.categoryName.toUpperCase(),
-                                                            categoryColor: widget
-                                                                .categoryColor,
-                                                            profileId:
-                                                                widget.profileId,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  } catch (e) {
-                                                    if (mounted) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                'Enrollment failed: $e')),
-                                                      );
-                                                    }
-                                                  }
-                                                },
-                                              ),
-                                            );
-              
-                                            return;
-                                          }
-                                        }
-              
-                                        // Otherwise allow trial enrollment (include trial metadata)
-                                        DateTime? trialEndDate;
-                                        if (trialType == 'days' &&
-                                            widget.course.trialValue > 0) {
-                                          trialEndDate = DateTime.now().add(
-                                              Duration(
-                                                  days:
-                                                      widget.course.trialValue));
-                                        }
-              
-                                        final enrollmentData = {
-                                          "profile_id": widget.profileId ?? 0,
-                                          "course_id": widget.course.id ?? 0,
-                                          "course_name": widget.course.courseName,
-                                          "program_id": widget.categoryId ?? 0,
-                                          "first_name": widget.firstName ?? "",
-                                          "last_name": widget.lastName ?? "",
-                                          "enrollment_type": "trial",
-                                          "cohort_name": cohort.title,
-                                          if (trialEndDate != null)
-                                            "trial_expiry_date":
-                                                trialEndDate.toIso8601String(),
-                                        };
-              
-                                        try {
-                                          await enrollmentProvider.enrollUser(
-                                              enrollmentData, widget.cohortId);
-              
-                                          if (mounted) {
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    CourseContentScreen(
-                                                  lessonImage: () {
-                                                    String url = cohort
-                                                            .imageUrl.isNotEmpty
-                                                        ? cohort.imageUrl
-                                                        : widget.course.imageUrl;
-                                                    return url.startsWith('https')
-                                                        ? url
-                                                        : "https://linkskool.net/$url";
-                                                  }(),
-                                                  cohortId: widget.cohortId,
-                                                  courseTitle: cohort.title,
-                                                  courseDescription:
-                                                      cohort.description,
-                                                  provider: widget.provider,
-                                                  courseId: widget.course.id,
-                                                  courseName: cohort.courseName,
-                                                  categoryId: widget.categoryId,
-                                                  providerSubtitle:
-                                                      widget.providerSubtitle,
-                                                  category: widget.categoryName
-                                                      .toUpperCase(),
-                                                  categoryColor:
-                                                      widget.categoryColor,
-                                                  profileId: widget.profileId,
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        } catch (e) {
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      'Enrollment failed: $e')),
-                                            );
-                                          }
-                                        }
-              
-                                        return;
-                                      }
-              
-                                      // Paid course, show payment dialog
-                                      double costDouble = double.parse(cohort.cost
-                                          .replaceAll('₦', '')
-                                          .replaceAll(',', ''));
-                                      showDialog(
-                                        context: context,
-                                        builder: (dialogContext) =>
-                                            CoursePaymentDialog(
-                                          amount: costDouble
-                                              .toInt(), // Parse cost to int
-                                          onPaymentSuccess: () {
-                                            // Dialog handles success
-                                          },
-                                          onPaymentCompleted:
-                                              (reference, amountPaid) async {
-                                            final enrollmentData = {
-                                              "profile_id": widget.profileId ?? 0,
-                                              "course_id": widget.course.id ?? 0,
-                                              "course_name":
-                                                  widget.course.courseName,
-                                              "program_id":
-                                                  widget.categoryId ?? 0,
-                                              "first_name":
-                                                  widget.firstName ?? "",
-                                              "last_name": widget.lastName ?? "",
-                                              "enrollment_type": "paid",
-                                              "cohort_name": cohort.title,
-                                              "reference": reference,
-                                              "amount": amountPaid,
-                                            };
-              
-                                            try {
-                                              await enrollmentProvider
-                                                  .processEnrollmentPayment(
-                                                      enrollmentData,
-                                                      widget.cohortId);
-              
-                                              // Success, navigate directly
-                                              if (mounted) {
-                                                Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        CourseContentScreen(
-                                                      lessonImage: () {
-                                                        String url = cohort
-                                                                .imageUrl
-                                                                .isNotEmpty
-                                                            ? cohort.imageUrl
-                                                            : widget
-                                                                .course.imageUrl;
-                                                        return url.startsWith(
-                                                                'https')
-                                                            ? url
-                                                            : "https://linkskool.net/$url";
-                                                      }(),
-                                                      cohortId: widget.cohortId,
-                                                      courseTitle: cohort.title,
-                                                      courseDescription:
-                                                          cohort.description,
-                                                      provider: widget.provider,
-                                                      courseId: widget.course.id,
-                                                      courseName:
-                                                          cohort.courseName,
-                                                      categoryId:
-                                                          widget.categoryId,
-                                                      providerSubtitle:
-                                                          widget.providerSubtitle,
-                                                      category: widget.categoryName.toUpperCase(),
-                                                      categoryColor:
-                                                          widget.categoryColor,
-                                                      profileId: widget.profileId,
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                            } catch (e) {
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                      content: Text(
-                                                          'Enrollment failed: $e')),
-                                                );
-                                              }
-                                            }
-                                          },
-                                        ),
-                                      );
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFFA500),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFA500),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: enrollmentProvider.isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    )
-                                  : Text(
-                                      buttonLabel,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
+                              elevation: 0,
+                            ),
+                            child: enrollmentProvider.isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  )
+                                : showPaidLabel
+                                    ? Text.rich(
+                                        TextSpan(
+                                          text: 'Enroll Now (',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: displayCost,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                            const TextSpan(text: ')'),
+                                          ],
+                                        ),
+                                      )
+                                    : Text(
+                                        isFree
+                                            ? 'Enroll Now'
+                                            : 'Start Free Trial',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                    ));
+                          );
                         }),
                       ),
                     ),
@@ -1392,5 +636,105 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     );
   }
 }
+  Widget _buildInfoCard(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildPricingRow(String label, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  String _formatDate(String raw) {
+    if (raw.isEmpty) return 'TBD';
+    try {
+      final parsed = DateTime.parse(raw).toLocal();
+      return DateFormat('d MMM, yyyy').format(parsed);
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  String _formatCostDisplay(String raw) {
+    const naira = '\u20A6';
+    const legacy1 = '\u00E2\u201A\u00A6';
+    const legacy2 = '\u0192,\u0130';
+    final cleaned = raw
+        .replaceAll(legacy1, naira)
+        .replaceAll(legacy2, naira)
+        .trim();
+    if (cleaned.isEmpty) return '';
+    if (cleaned.contains(naira)) return cleaned;
+    return naira + cleaned;
+  }
+
+  int _parseCostToInt(String raw) {
+    const naira = '\u20A6';
+    const legacy1 = '\u00E2\u201A\u00A6';
+    const legacy2 = '\u0192,\u0130';
+    final cleaned = raw
+        .replaceAll(legacy1, '')
+        .replaceAll(legacy2, '')
+        .replaceAll(naira, '')
+        .replaceAll(',', '')
+        .trim();
+    return int.tryParse(cleaned) ?? 0;
+  }
+}
 
