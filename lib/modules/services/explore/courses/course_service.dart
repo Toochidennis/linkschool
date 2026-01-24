@@ -104,6 +104,8 @@ class CourseService {
 
         final data = jsonData['data'] as Map<String, dynamic>?;
 
+        debugPrint("Is Enrolled: ${data?['is_enrolled']}");
+
         return data?['is_enrolled'] == true;
       }
 

@@ -1552,6 +1552,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
                   categoryId: course.programId ?? category.id,
                   provider: category.name,
                   cohortId: course.cohortId.toString(),
+                  isFree: course.isFree,
+                  trialExpiryDate: course.trialExpiryDate,
                   providerSubtitle: 'Powered By Digital Dreams',
                   categoryColor: _getCategoryColor(category.name),
                   hasEnrolled: isEnrolled,
@@ -1580,10 +1582,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
               }
             }
 
-            if (!isPaid) {
-              openDescription();
-              return;
-            }
+            // if (!isPaid) {
+            //   openDescription();
+            //   return;
+            // }
             final imageUrl = course.imageUrl.startsWith('https')
                 ? course.imageUrl
                 : "https://linkskool.net/${course.imageUrl}";
@@ -1593,6 +1595,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
                 builder: (context) => CourseContentScreen(
                   lessonImage: imageUrl,
                   cohortId: course.cohortId.toString(),
+                  isFree: course.isFree,
+                  trialExpiryDate: course.trialExpiryDate,
                   courseTitle: course.courseName,
                   courseDescription: course.description,
                   provider: category.name,
@@ -1846,6 +1850,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         ));
   }
 }
+
 
 
 

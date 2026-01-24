@@ -135,7 +135,20 @@ class EnrollmentService {
 
       final decoded = json.decode(response.body);
       final data = decoded['data'] as Map<String, dynamic>?;
-      return data?['payment_status'] == true;
+      final statusValue = data?['payment_status'];
+      if (statusValue is bool) {
+        return statusValue;
+      }
+      if (statusValue is num) {
+        return statusValue == 1;
+      }
+      if (statusValue is String) {
+        final normalized = statusValue.toLowerCase();
+        return normalized == 'paid' ||
+            normalized == 'true' ||
+            normalized == '1';
+      }
+      return false;
     } catch (e) {
       print("❌ Error fetching payment status: $e");
       throw Exception("Error fetching payment status: $e");
@@ -187,6 +200,7 @@ class EnrollmentService {
  
 
 }
+
 
 
 

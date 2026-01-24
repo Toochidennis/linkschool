@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'course_detail_screen.dart';
+import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
 import 'reading_lesson_screen.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
@@ -22,6 +23,8 @@ class CourseContentScreen extends StatefulWidget {
   final int courseId;
   final int categoryId;
   final String cohortId;
+  final bool isFree;
+  final String? trialExpiryDate;
   final int? profileId;
   final String courseName;
   final String lessonImage;
@@ -38,6 +41,8 @@ class CourseContentScreen extends StatefulWidget {
     required this.courseId,
     required this.categoryId,
     required this.cohortId,
+    required this.isFree,
+    this.trialExpiryDate,
     this.providerSubtitle = 'Powered By Digital Dreams',
     this.category = 'COURSE',
     this.categoryColor = const Color(0xFF6366F1),
@@ -58,7 +63,89 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _localLessonsTaken = 0;
+  bool _hasPaid = false;
   final Set<int> _completedLessonIds = {};
+  int _resolvedCohortCost() {
+    final cost = widget.cohortCost ?? 0;
+    return cost;
+  }
+
+  bool _isTrialDaysExpired() {
+    final expiry = widget.trialExpiryDate;
+    if (expiry == null || expiry.trim().isEmpty) {
+      return false;
+    }
+    try {
+      final expiryDate = DateTime.parse(expiry).toLocal();
+      return expiryDate.isBefore(DateTime.now());
+    } catch (e) {
+      return false;
+    }
+  }
+
+  bool _isViewsTrialExhausted() {
+    return (widget.trialType?.toLowerCase() == 'views') &&
+        widget.trialValue > 0 &&
+        _localLessonsTaken >= widget.trialValue;
+  }
+
+  void _showPaymentDialog({
+    required LessonModel lesson,
+    required List<LessonModel> lessons,
+    required int index,
+    bool navigateOnSuccess = true,
+  }) {
+    if (!mounted) return;
+    final amount = _resolvedCohortCost();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => CoursePaymentDialog(
+        amount: amount,
+        onPaymentSuccess: () {
+          Navigator.of(dialogContext).pop();
+          if (navigateOnSuccess && lesson.videoUrl.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CourseDetailScreen(
+                  courseTitle: lesson.title,
+                  courseName: widget.courseTitle,
+                  courseDescription: lesson.description,
+                  provider: widget.provider,
+                  videoUrl: lesson.videoUrl,
+                  assignmentUrl: null,
+                  assignmentDescription: null,
+                  materialUrl: null,
+                  zoomUrl: null,
+                  recordedUrl: null,
+                  classDate: null,
+                  profileId: widget.profileId,
+                  lessonId: lesson.id,
+                  cohortId: widget.cohortId,
+                  lessons: lessons,
+                  lessonIndex: index,
+                  onLessonCompleted: _markLessonCompleted,
+                ),
+              ),
+            );
+          }
+        },
+        onPaymentCompleted: (reference, amountPaid) async {
+          final paid = await _refreshPaymentStatus();
+          if (!paid && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Payment not confirmed yet. Please try again.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return paid;
+        },
+      ),
+    );
+  }
 
   String _trialViewsKey() {
     final profileId = widget.profileId;
@@ -69,15 +156,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     final prefs = await SharedPreferences.getInstance();
     final int? stored = prefs.getInt(_trialViewsKey());
 
-    int effective;
-    if (stored == null) {
-      // No local stored value: initialize to 0 (first tap becomes 1).
-      effective = 0;
-      await prefs.setInt(_trialViewsKey(), effective);
-      
-    } else {
-      effective = stored;
+    int effective = stored ?? 0;
+    final serverTaken = widget.lessonsTaken ?? 0;
+    if (serverTaken > effective) {
+      effective = serverTaken;
     }
+    await prefs.setInt(_trialViewsKey(), effective);
 
     if (mounted) {
       setState(() {
@@ -87,9 +171,32 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   }
 
   
+  Future<bool> _refreshPaymentStatus() async {
+    if (widget.isFree || widget.profileId == null) {
+      _hasPaid = true;
+      return true;
+    }
+
+    try {
+      final paid = await context.read<EnrollmentProvider>().checkPaymentStatus(
+            cohortId: widget.cohortId,
+            profileId: widget.profileId!,
+          );
+      if (mounted) {
+        setState(() {
+          _hasPaid = paid;
+        });
+      } else {
+        _hasPaid = paid;
+      }
+      return paid;
+    } catch (e) {
+      return false;
+    }
+  }
   String _completedLessonsKey() {
     final profileId = widget.profileId;
-    return "completed_lessons__";
+    return "completed_lessons_${profileId ?? 'guest'}_${widget.courseId}";
   }
 
   Future<void> _loadCompletedLessons() async {
@@ -121,7 +228,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     }
   }
 
-  @override
+    @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
@@ -134,6 +241,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       context.read<LessonProvider>().loadLessons(
             cohortId: widget.cohortId,
           );
+      _refreshPaymentStatus();
     });
   }
 
@@ -277,13 +385,13 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     }
   }
 
-  @override
+    @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     const imageHeight = 240.0;
     return Scaffold(
@@ -475,157 +583,122 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             final hasReading = false;
             return GestureDetector(
               onTap: () async {
-                print ('Tapped lesson: ${lesson.title}');
-                if (isVideo) {
-                  // Check if this is a trial course with views-based trial
-                  final isTrialCourse =
-                      widget.trialType?.toLowerCase() == 'views' &&
-                          widget.trialValue > 0;
-                  final currentLessonsTaken = _localLessonsTaken;
-                  bool shouldPromptAfterView = false;
-
-                  if (isTrialCourse) {
-                    try {
-                      final enrollmentProvider =
-                          context.read<EnrollmentProvider>();
-
-                      // Log tracing info: saved (prefs), local, server and trialValue
-                      final prefs = await SharedPreferences.getInstance();
-                      final savedPrefs = prefs.getInt(_trialViewsKey()) ?? 0;
-                      final serverTaken = widget.lessonsTaken ?? 0;
-                      
-                       print(   '🔔 Lesson tap debug → savedPrefs: $savedPrefs, local: $currentLessonsTaken, server: $serverTaken, trialValue: ${widget.trialValue}');
-
-                      // If trial already exhausted, prompt payment and do not update or navigate
-                      if (currentLessonsTaken >= widget.trialValue) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'Your trial views have been exhausted. Please complete payment to continue.')),
-                          );
-
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (dialogContext) => CoursePaymentDialog(
-                              amount:
-                                  widget.cohortCost ?? 5000, // fallback amount
-                              onPaymentSuccess: () {
-                                Navigator.of(dialogContext).pop();
-                                // Navigate to lesson after payment
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CourseDetailScreen(
-                                      courseTitle: lesson.title,
-                                      courseName: widget.courseTitle,
-                                      courseDescription: lesson.description,
-                                      provider: widget.provider,
-                                      videoUrl: lesson.videoUrl,
-                                      assignmentUrl: null,
-                                      assignmentDescription: null,
-                                      materialUrl: null,
-                                      zoomUrl: null,
-                                      recordedUrl: null,
-                                      classDate: null,
-                                      profileId: widget.profileId,
-                                      lessonId: lesson.id,
-                                      cohortId: widget.cohortId,
-                                      lessons: lessons,
-                                      lessonIndex: index,
-                                      onLessonCompleted: _markLessonCompleted,
-                                    ),
-                                  ),
-                                );
-                              },
-                              onPaymentCompleted: (reference, amountPaid) {
-                                // Handle payment completion
-                                print(
-                                    'Payment completed: $reference, Amount: $amountPaid');
-                              },
-                            ),
-                          );
-                        }
-
-                        return; // Don't navigate to lesson
-                      }
-
-                      // Otherwise increment views and persist before allowing the view
-                      final newLessonsTaken = currentLessonsTaken + 1;
-                      // Only prompt after view when user exceeds allowed trial views (i.e., next tap would be blocked).
-                      shouldPromptAfterView =
-                          newLessonsTaken > widget.trialValue;
-
-                      setState(() {
-                        _localLessonsTaken = newLessonsTaken;
-                      });
-                      //await _saveTrialViewsCounter(newLessonsTaken);
-
-                      if (widget.profileId != null) {
-                        enrollmentProvider.updateTrialViewsSilently({
-                          'profile_id': widget.profileId,
-                          'course_id': widget.cohortId,
-                          'lessons_taken': newLessonsTaken,
-                        }, widget.cohortId as int);
-                      }
-                    } catch (e) {
-                      print('Error updating trial views: $e');
-                      // Continue to lesson if update fails
-                    }
-                  }
-
-                  // Navigate to video lesson screen with lesson data
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CourseDetailScreen(
-                        courseTitle: lesson.title,
-                        courseName: widget.courseTitle,
-                        courseDescription: lesson.description,
-                        provider: widget.provider,
-                        videoUrl: lesson.videoUrl,
-                        assignmentUrl: null,
-                        assignmentDescription: null,
-                        materialUrl: null,
-                        zoomUrl: null,
-                        recordedUrl: null,
-                        classDate: null,
-                        profileId: widget.profileId,
-                        lessonId: lesson.id,
-                        cohortId: widget.cohortId,
-                                      lessons: lessons,
-                                      lessonIndex: index,
-                                      onLessonCompleted: _markLessonCompleted,
-                      ),
-                    ),
-                  );
-                  // print trial data after returning
-                  print('Returned from lesson. Current local lessons taken: $_localLessonsTaken');
-                  print('widget.lessonsTaken: ${widget.lessonsTaken}');
-                  print('shouldPromptAfterView: $shouldPromptAfterView');
-                  await _loadCompletionStatus();
-                  if (shouldPromptAfterView && mounted) {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (dialogContext) => CoursePaymentDialog(
-                        amount: widget.cohortCost ?? 0, // fallback amount
-                        onPaymentSuccess: () {
-                          Navigator.of(dialogContext).pop();
-                        },
-                        onPaymentCompleted: (reference, amountPaid) {
-                          print(
-                              'Payment completed: $reference, Amount: $amountPaid');
-                        },
-                      ),
+                final trialType = widget.trialType?.toLowerCase();
+                if (!widget.isFree && !_hasPaid) {
+                  if ((trialType == 'days' || trialType == 'day') &&
+                      _isTrialDaysExpired()) {
+                    _showPaymentDialog(
+                      lesson: lesson,
+                      lessons: lessons,
+                      index: index,
                     );
+                    return;
                   }
-                } else {
-                  // No action for lessons without video
+                  if (trialType == 'views' && _isViewsTrialExhausted()) {
+                    _showPaymentDialog(
+                      lesson: lesson,
+                      lessons: lessons,
+                      index: index,
+                    );
+                    return;
+                  }
+                }
+
+                if (!isVideo) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text('No content available for this lesson')),
+                      content: Text('No content available for this lesson'),
+                    ),
+                  );
+                  return;
+                }
+
+                final isTrialCourse = !widget.isFree &&
+                    !_hasPaid &&
+                    trialType == 'views' &&
+                    widget.trialValue > 0;
+                final currentLessonsTaken = _localLessonsTaken;
+                bool shouldPromptAfterView = false;
+
+                if (isTrialCourse) {
+                  try {
+                    final enrollmentProvider =
+                        context.read<EnrollmentProvider>();
+                    final prefs = await SharedPreferences.getInstance();
+                    final savedPrefs = prefs.getInt(_trialViewsKey()) ?? 0;
+
+                    if (currentLessonsTaken >= widget.trialValue) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Your trial views have been exhausted. Please complete payment to continue.',
+                            ),
+                          ),
+                        );
+                        _showPaymentDialog(
+                          lesson: lesson,
+                          lessons: lessons,
+                          index: index,
+                        );
+                      }
+                      return;
+                    }
+
+                    final newLessonsTaken = currentLessonsTaken + 1;
+                    shouldPromptAfterView = newLessonsTaken > widget.trialValue;
+
+                    setState(() {
+                      _localLessonsTaken = newLessonsTaken;
+                    });
+                    if (savedPrefs < newLessonsTaken) {
+                      await prefs.setInt(_trialViewsKey(), newLessonsTaken);
+                    }
+
+                    if (widget.profileId != null) {
+                      enrollmentProvider.updateTrialViewsSilently({
+                        'profile_id': widget.profileId,
+                        'course_id': widget.courseId,
+                        'lessons_taken': newLessonsTaken,
+                      }, widget.courseId);
+                    }
+                  } catch (e) {
+                    // Continue to lesson if update fails
+                  }
+                }
+
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CourseDetailScreen(
+                      courseTitle: lesson.title,
+                      courseName: widget.courseTitle,
+                      courseDescription: lesson.description,
+                      provider: widget.provider,
+                      videoUrl: lesson.videoUrl,
+                      assignmentUrl: null,
+                      assignmentDescription: null,
+                      materialUrl: null,
+                      zoomUrl: null,
+                      recordedUrl: null,
+                      classDate: null,
+                      profileId: widget.profileId,
+                      lessonId: lesson.id,
+                      cohortId: widget.cohortId,
+                      lessons: lessons,
+                      lessonIndex: index,
+                      onLessonCompleted: _markLessonCompleted,
+                    ),
+                  ),
+                );
+
+                await _loadCompletionStatus();
+                if (shouldPromptAfterView && mounted) {
+                  _showPaymentDialog(
+                    lesson: lesson,
+                    lessons: lessons,
+                    index: index,
+                    navigateOnSuccess: false,
                   );
                 }
               },
@@ -638,7 +711,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                   border: Border.all(color: Colors.grey.shade200),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -745,161 +818,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     );
   }
 
-  Widget _buildStatItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: const Color(0xFFFFA500),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _getReadingContent(int lessonIndex) {
-    // Sample reading content - you can customize this based on lesson index
-    final Map<int, String> readingContents = {
-      2: '''Fundamentals of Narrative Structure
-
-A strong narrative structure is the backbone of any compelling story. Whether you're writing a novel, screenplay, or short story, understanding the fundamental elements that make up a narrative is essential for creating engaging content.
-
-The Three-Act Structure
-
-The most widely used narrative framework is the three-act structure, which divides a story into three distinct parts:
-
-Act 1: Setup
-This is where you introduce your characters, setting, and the central conflict. The setup establishes the "normal world" before the main action begins. By the end of Act 1, an inciting incident should occur that propels the protagonist into the main story.
-
-Act 2: Confrontation
-The longest section of your story, Act 2 is where the protagonist faces obstacles and challenges. This is where character development happens, relationships evolve, and the stakes are raised. The midpoint often introduces a major revelation or twist that changes the direction of the story.
-
-Act 3: Resolution
-The final act brings the story to its climax and resolution. All conflicts are addressed, character arcs are completed, and loose ends are tied up. This is where the protagonist faces their biggest challenge and emerges transformed.
-
-Key Elements of Narrative
-
-Beyond structure, several key elements work together to create a cohesive narrative:
-
-Character Development
-Characters should be multi-dimensional with clear motivations, flaws, and growth arcs. Readers connect with characters who feel real and relatable.
-
-Conflict
-Every story needs conflict - whether internal (character vs. self), external (character vs. character/nature/society), or both. Conflict drives the plot forward and creates tension.
-
-Theme
-The underlying message or central idea of your story. Themes give depth and meaning to your narrative beyond the surface plot.
-
-Pacing
-The rhythm and speed at which your story unfolds. Good pacing balances action, dialogue, and description to maintain reader engagement.
-
-Applying These Principles
-
-As you craft your own narratives, remember that these are guidelines, not rigid rules. The best stories often play with structure and conventions in creative ways. However, understanding these fundamentals gives you a solid foundation from which to experiment and innovate.
-
-Practice identifying these elements in stories you love, and consciously apply them in your own writing. With time and experience, crafting compelling narratives will become second nature.''',
-      4: '''Best Practices in Visual Communication
-
-Visual communication is a powerful tool for conveying complex ideas quickly and effectively. In our increasingly visual world, understanding how to communicate through images, graphics, and design is essential for storytellers, marketers, and content creators.
-
-The Power of Visual Hierarchy
-
-Visual hierarchy is the arrangement of elements in order of importance. It guides the viewer's eye through your content in a deliberate sequence.
-
-Size and Scale
-Larger elements naturally draw more attention. Use size strategically to emphasize key information and create a clear focal point.
-
-Color and Contrast
-High contrast draws the eye. Use contrasting colors to highlight important elements and create visual interest. Complementary colors create vibrant combinations, while analogous colors provide harmony.
-
-Typography
-Font choice, size, and weight all contribute to hierarchy. Headlines should be bold and prominent, while body text should be readable and unobtrusive.
-
-Principles of Effective Design
-
-Several fundamental principles guide effective visual communication:
-
-Balance
-Distribute visual weight evenly across your design. Symmetrical balance creates formality and stability, while asymmetrical balance adds dynamism and interest.
-
-Proximity
-Group related elements together. This creates organization and helps viewers understand relationships between different pieces of information.
-
-Alignment
-Align elements to create clean, organized layouts. Even invisible alignment creates subconscious order that makes designs more professional and easier to navigate.
-
-Repetition
-Repeat design elements (colors, fonts, shapes) throughout your work to create consistency and unity. This builds brand recognition and visual cohesion.
-
-White Space
-Don't be afraid of empty space. White space (or negative space) gives your design room to breathe and prevents visual overwhelm. It can be just as important as the elements themselves.
-
-Color Psychology
-
-Colors evoke emotional responses and carry cultural meanings:
-
-- Red: Energy, passion, urgency, danger
-- Blue: Trust, calm, professionalism, stability
-- Green: Growth, health, nature, harmony
-- Yellow: Optimism, warmth, attention, caution
-- Purple: Luxury, creativity, wisdom, mystery
-- Orange: Enthusiasm, friendliness, confidence
-
-Choose colors that align with your message and audience expectations.
-
-Typography Best Practices
-
-Font selection significantly impacts readability and tone:
-
-- Use no more than 2-3 different fonts in a single design
-- Pair contrasting fonts (e.g., serif with sans-serif)
-- Ensure sufficient contrast between text and background
-- Maintain appropriate line spacing (1.5x font size is standard)
-- Limit line length to 50-75 characters for optimal readability
-
-Visual Storytelling Techniques
-
-When using visuals to tell stories:
-
-Show, Don't Tell
-Let images convey emotion and action rather than relying on text explanations. A powerful photograph or illustration can communicate what would take paragraphs to describe.
-
-Create Narrative Flow
-Arrange visual elements to guide viewers through your story. Use directional cues (arrows, eye gaze, leading lines) to create movement through your composition.
-
-Use Metaphor and Symbolism
-Visual metaphors can convey complex concepts quickly. A lightbulb for ideas, a path for journey, chains for connection - these visual shortcuts create instant understanding.
-
-Practical Application
-
-Apply these principles by:
-1. Starting with a clear objective for each visual
-2. Sketching rough layouts before digital creation
-3. Seeking feedback from others
-4. Iterating and refining based on responses
-5. Studying effective designs in your field
-
-Remember, effective visual communication balances aesthetics with functionality. Beautiful design that doesn't communicate clearly has failed its purpose. Always prioritize clarity and purpose over decoration.''',
-    };
-
-    return readingContents[lessonIndex] ??
-        '''Sample Reading Content
-
-This is a placeholder reading content for this lesson. In a real application, this would contain the actual educational content, with proper formatting, images, and interactive elements.
-
-The content would be comprehensive, well-structured, and designed to provide valuable learning experiences for students taking this course.
-
-Key topics would be covered in detail, with examples, exercises, and additional resources to help students master the subject matter.''';
-  }
 
   Widget _buildMaterialsTab() {
     return Consumer<LessonProvider>(
@@ -1039,7 +957,7 @@ class _MaterialPreviewScreen extends StatefulWidget {
     required this.materialTitle,
   });
 
-  @override
+    @override
   State<_MaterialPreviewScreen> createState() => _MaterialPreviewScreenState();
 }
 
@@ -1048,7 +966,7 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
   bool _isLoading = true;
   String? _error;
 
-  @override
+    @override
   void initState() {
     super.initState();
     _downloadFile();
@@ -1079,7 +997,7 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
     }
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -1156,6 +1074,13 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
     );
   }
 }
+
+
+
+
+
+
+
 
 
 

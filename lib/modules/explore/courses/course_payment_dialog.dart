@@ -10,7 +10,7 @@ import 'package:provider/provider.dart';
 class CoursePaymentDialog extends StatefulWidget {
   final int amount;
   final VoidCallback onPaymentSuccess;
-  final Function(String reference, int amountPaid) onPaymentCompleted;
+  final Future<bool> Function(String reference, int amountPaid) onPaymentCompleted;
 
   const CoursePaymentDialog({
     super.key,
@@ -98,7 +98,7 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Pay ₦${widget.amount} to enroll in this course',
+                    'Pay NGN ${widget.amount} to enroll in this course',
                     style: AppTextStyles.normal400(
                       fontSize: 16,
                       color: AppColors.text7Light,
@@ -113,7 +113,7 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '₦${widget.amount}',
+                      'NGN ${widget.amount}',
                       style: AppTextStyles.normal700(
                         fontSize: 28,
                         color: AppColors.eLearningBtnColor1,
@@ -181,8 +181,8 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
       final reference = 'COURSE_${DateTime.now().millisecondsSinceEpoch}';
       final amountInKobo = widget.amount * 100;
 
-      print('💳 Initiating Paystack payment...');
-      print('Amount: ₦${widget.amount}');
+      print('Initiating Paystack payment...');
+      print('Amount: NGN ${widget.amount}');
       print('Email: $email');
       print('Reference: $reference');
 
@@ -206,7 +206,7 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
           'amount_naira': widget.amount,
         },
         onSuccess: (callback) async {
-          print('✅ Payment successful: ${callback.reference}');
+          print('Payment successful: ${callback.reference}');
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -216,15 +216,29 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
               ),
             );
 
-            // Call the completion callback with reference and amount
-            widget.onPaymentCompleted(callback.reference, widget.amount);
+            final paymentConfirmed = await widget.onPaymentCompleted(
+              callback.reference,
+              widget.amount,
+            );
+
+            if (!paymentConfirmed) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Payment not confirmed yet. Please try again.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+              return;
+            }
 
             Navigator.of(context).pop(); // Close dialog
             widget.onPaymentSuccess();
           }
         },
         onCancelled: (callback) {
-          print('❌ Payment cancelled');
+          print('Payment cancelled');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -250,3 +264,9 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
     }
   }
 }
+
+
+
+
+
+

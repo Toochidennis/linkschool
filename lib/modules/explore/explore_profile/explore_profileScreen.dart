@@ -9,6 +9,7 @@ import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 // Add this import for the payment dialog
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
@@ -804,23 +805,30 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     );
   }
 
-  void _showPrivacyDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Privacy Policy'),
-          content: Text(
-              'Your privacy is important to us. We collect and use your data responsibly.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('OK'),
-            ),
-          ],
+  Future<void> _showPrivacyDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Persist a flag so this dialog does not open again
+    await prefs.setBool('privacy_dialog_disabled', true);
+
+    final Uri url = Uri.parse('https://linkschoolonline.com/privacy-policy');
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open privacy policy')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening privacy policy: $e')),
         );
-      },
-    );
+      }
+    }
   }
 
   void _showTermsDialog() {

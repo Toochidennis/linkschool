@@ -2,12 +2,10 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/modules/explore/courses/create_user_profile_screen.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/explore/courses/lesson_detail_model.dart';
-import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
 import '../../providers/explore/lesson_detail_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'quiz_screen.dart';
@@ -19,7 +17,6 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io' show Platform, Directory, File;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
@@ -28,6 +25,7 @@ import '../../providers/explore/assignment_submission_provider.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../model/cbt_user_model.dart';
 import '../../providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
 
 // Top-level function for compute isolate - encodes bytes to base64
 String _encodeToBase64(Uint8List bytes) {
@@ -48,10 +46,10 @@ class CourseDetailScreen extends StatefulWidget {
   final String? classDate;
   final int? profileId;
   final int? lessonId;
+  final String cohortId;
   final List<LessonModel>? lessons;
   final int? lessonIndex;
-  final ValueChanged<int>? onLessonCompleted;
-  final String cohortId;
+  final void Function(int lessonId)? onLessonCompleted;
 
 
   const CourseDetailScreen({
@@ -998,7 +996,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     _youtubeController = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
-        autoPlay: true,
+        autoPlay: false,
         mute: false,
         enableCaption: true,
         controlsVisibleAtStart: true,
@@ -2326,7 +2324,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
               ),
             ),
             backgroundColor: Colors.white,
-            bottomNavigationBar: _buildLessonNavigationBar(),
             body: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
