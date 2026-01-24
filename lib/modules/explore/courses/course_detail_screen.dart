@@ -871,7 +871,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     _youtubeController = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
-        autoPlay: false,
+        autoPlay: true,
         mute: false,
         enableCaption: true,
         controlsVisibleAtStart: true,

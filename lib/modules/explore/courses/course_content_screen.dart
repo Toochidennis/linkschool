@@ -42,12 +42,12 @@ class CourseContentScreen extends StatefulWidget {
     this.category = 'COURSE',
     this.categoryColor = const Color(0xFF6366F1),
     this.profileId,
-     required this.courseName,
-     required this.lessonImage,
-     this.trialType,
-     this.trialValue = 0,
-     this.lessonsTaken,
-     this.cohortCost,
+    required this.courseName,
+    required this.lessonImage,
+    this.trialType,
+    this.trialValue = 0,
+    this.lessonsTaken,
+    this.cohortCost,
   });
 
   @override
@@ -65,8 +65,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   }
 
   Future<void> _initTrialViewsCounter() async {
-    // Always start local counter at 0 when no saved value exists,
-    // regardless of what the server reports.
     final prefs = await SharedPreferences.getInstance();
     final int? stored = prefs.getInt(_trialViewsKey());
 
@@ -75,8 +73,8 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       // No local stored value: initialize to 0 (first tap becomes 1).
       effective = 0;
       await prefs.setInt(_trialViewsKey(), effective);
+      
     } else {
-      // Do NOT merge server and stored counts — prefer the saved local count.
       effective = stored;
     }
 
@@ -91,7 +89,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_trialViewsKey(), value);
   }
-
 
   @override
   void initState() {
@@ -109,8 +106,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   }
 
   Future<void> _loadCompletionStatus() async {
-    // Placeholder for completion status tracking
-    // This can be implemented later with a proper state management solution
     setState(() {});
   }
 
@@ -133,19 +128,19 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       // For Android, use the public Downloads folder
       final downloadsPath = '/storage/emulated/0/Download';
       final downloadsDir = Directory(downloadsPath);
-      
+
       // Check if the directory exists, if not try alternative paths
       if (await downloadsDir.exists()) {
         return downloadsDir;
       }
-      
+
       // Try alternative path (some devices use different paths)
       final altPath = '/sdcard/Download';
       final altDir = Directory(altPath);
       if (await altDir.exists()) {
         return altDir;
       }
-      
+
       // If neither exists, create the standard one
       try {
         await downloadsDir.create(recursive: true);
@@ -200,7 +195,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
         if (downloadsDir == null) {
           throw Exception('Could not access Downloads directory');
         }
-        
+
         if (!await downloadsDir.exists()) {
           await downloadsDir.create(recursive: true);
         }
@@ -275,47 +270,97 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             fontWeight: FontWeight.w600,
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(20),
-          child: Column(
-            children: [
-              // Tabs
-              Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade200),
-                  ),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  labelColor: const Color(0xFFFFA500),
-                  unselectedLabelColor: Colors.grey.shade600,
-                  indicatorColor: const Color(0xFFFFA500),
-                  indicatorWeight: 3,
-                  labelStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: const [
-                    Tab(text: 'Lessons'),
-                    Tab(text: 'Materials'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildLessonsTab(),
-          _buildMaterialsTab(),
-        ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await context.read<LessonProvider>().loadLessons(
+                cohortId: widget.cohortId,
+              );
+        },
+        child: Column(
+          children: [
+            // Top banner image
+            AspectRatio(
+              aspectRatio: 16 / 7,
+              child: Image.network(
+                widget.lessonImage,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Colors.grey.shade200,
+                  child: const Center(
+                    child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                  ),
+                ),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    color: Colors.grey.shade100,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                },
+              ),
+            ),
+        
+            // Course Content title and tabs
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Course Content',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey.shade200),
+                      ),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: const Color(0xFFFFA500),
+                      unselectedLabelColor: Colors.grey.shade600,
+                      indicatorColor: const Color(0xFFFFA500),
+                      indicatorWeight: 3,
+                      labelStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      tabs: const [
+                        Tab(text: 'Lessons'),
+                        Tab(text: 'Materials'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        
+            // Tab pages
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildLessonsTab(),
+                  _buildMaterialsTab(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -369,79 +414,19 @@ class _CourseContentScreenState extends State<CourseContentScreen>
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: lessons.length + 1, // +1 for the description header
+          itemCount: lessons.length,
           itemBuilder: (context, index) {
-            // First item is the course description
-            if (index == 0) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Course Description Card
-                    // Course banner with lesson image
-                    Container(
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                      ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: AspectRatio(
-                      aspectRatio: 16 / 7,
-                      child: Image.network(
-                      widget.lessonImage,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: Colors.grey.shade200,
-                        child: const Center(
-                        child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                        ),
-                      ),
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                        color: Colors.grey.shade100,
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        );
-                      },
-                      ),
-                    ),
-                    ),
-                    // Course Description Card
-                 
-                  // "Course Content" header
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      'Course Content',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }
-
-            // Adjust index for lessons
-            final lessonIndex = index - 1;
-            final lesson = lessons[lessonIndex];
+            final lesson = lessons[index];
             final isVideo = lesson.videoUrl.isNotEmpty;
             final hasReading = false;
             return GestureDetector(
               onTap: () async {
+                print ('Tapped lesson: ${lesson.title}');
                 if (isVideo) {
                   // Check if this is a trial course with views-based trial
-                  final isTrialCourse = widget.trialType?.toLowerCase() == 'views' && widget.trialValue > 0;
+                  final isTrialCourse =
+                      widget.trialType?.toLowerCase() == 'views' &&
+                          widget.trialValue > 0;
                   final currentLessonsTaken = _localLessonsTaken;
                   bool shouldPromptAfterView = false;
 
@@ -454,20 +439,24 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       final prefs = await SharedPreferences.getInstance();
                       final savedPrefs = prefs.getInt(_trialViewsKey()) ?? 0;
                       final serverTaken = widget.lessonsTaken ?? 0;
-                      debugPrint('🔔 Lesson tap debug → savedPrefs: $savedPrefs, local: $currentLessonsTaken, server: $serverTaken, trialValue: ${widget.trialValue}');
+                      
+                       print(   '🔔 Lesson tap debug → savedPrefs: $savedPrefs, local: $currentLessonsTaken, server: $serverTaken, trialValue: ${widget.trialValue}');
 
                       // If trial already exhausted, prompt payment and do not update or navigate
                       if (currentLessonsTaken >= widget.trialValue) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Your trial views have been exhausted. Please complete payment to continue.')),
+                            const SnackBar(
+                                content: Text(
+                                    'Your trial views have been exhausted. Please complete payment to continue.')),
                           );
 
                           showDialog(
                             context: context,
                             barrierDismissible: false,
                             builder: (dialogContext) => CoursePaymentDialog(
-                              amount: widget.cohortCost ?? 5000, // fallback amount
+                              amount:
+                                  widget.cohortCost ?? 5000, // fallback amount
                               onPaymentSuccess: () {
                                 Navigator.of(dialogContext).pop();
                                 // Navigate to lesson after payment
@@ -495,7 +484,8 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                               },
                               onPaymentCompleted: (reference, amountPaid) {
                                 // Handle payment completion
-                                print('Payment completed: $reference, Amount: $amountPaid');
+                                print(
+                                    'Payment completed: $reference, Amount: $amountPaid');
                               },
                             ),
                           );
@@ -507,7 +497,8 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       // Otherwise increment views and persist before allowing the view
                       final newLessonsTaken = currentLessonsTaken + 1;
                       // Only prompt after view when user exceeds allowed trial views (i.e., next tap would be blocked).
-                      shouldPromptAfterView = newLessonsTaken > widget.trialValue;
+                      shouldPromptAfterView =
+                          newLessonsTaken > widget.trialValue;
 
                       setState(() {
                         _localLessonsTaken = newLessonsTaken;
@@ -549,18 +540,23 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       ),
                     ),
                   );
+                  // print trial data after returning
+                  print('Returned from lesson. Current local lessons taken: $_localLessonsTaken');
+                  print('widget.lessonsTaken: ${widget.lessonsTaken}');
+                  print('shouldPromptAfterView: $shouldPromptAfterView');
                   await _loadCompletionStatus();
                   if (shouldPromptAfterView && mounted) {
                     showDialog(
                       context: context,
                       barrierDismissible: false,
                       builder: (dialogContext) => CoursePaymentDialog(
-                        amount: widget.cohortCost ?? 5000, // fallback amount
+                        amount: widget.cohortCost ?? 0, // fallback amount
                         onPaymentSuccess: () {
                           Navigator.of(dialogContext).pop();
                         },
                         onPaymentCompleted: (reference, amountPaid) {
-                          print('Payment completed: $reference, Amount: $amountPaid');
+                          print(
+                              'Payment completed: $reference, Amount: $amountPaid');
                         },
                       ),
                     );
@@ -568,7 +564,8 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 } else {
                   // No action for lessons without video
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No content available for this lesson')),
+                    const SnackBar(
+                        content: Text('No content available for this lesson')),
                   );
                 }
               },
@@ -645,13 +642,13 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                                   color: Colors.grey.shade600,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  'Lesson ${lessonIndex}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
+                                // Text(
+                                //   'Lesson ${lessonIndex}',
+                                //   style: TextStyle(
+                                //     fontSize: 12,
+                                //     color: Colors.grey.shade600,
+                                //   ),
+                                // ),
                               ],
                             ),
                           ],
@@ -1017,7 +1014,7 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: (){
+          onPressed: () {
             Navigator.pop(context);
             Navigator.pop(context);
           },
@@ -1085,29 +1082,3 @@ class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

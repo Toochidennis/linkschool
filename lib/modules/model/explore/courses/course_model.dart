@@ -3,13 +3,7 @@ class CourseModel {
   final String courseName;
   final String description;
   final String imageUrl;
-  final String category;
-  final String slogan;
-  final String icon;
-  final String email;
-  final bool hasContent;
 
-  // New fields from API
   final bool hasActiveCohort;
   final int? cohortId;
   final bool isFree;
@@ -19,20 +13,15 @@ class CourseModel {
   final bool isEnrolled;
   final bool isCompleted;
   final String? enrollmentStatus;
-  final String? paymentStatus; // payment status from API (e.g., "paid", "pending")
-  final int? lessonsTaken; // number of lessons taken
-  final String? trialExpiryDate; // new: expiry date string from API (ISO 8601)
+  final String? paymentStatus;
+  final int? lessonsTaken;
+  final String? trialExpiryDate;
 
   CourseModel({
     required this.id,
     required this.courseName,
     required this.description,
     required this.imageUrl,
-    required this.category,
-    required this.slogan,
-    required this.icon,
-    required this.email,
-    required this.hasContent,
     required this.hasActiveCohort,
     required this.cohortId,
     required this.isFree,
@@ -48,10 +37,8 @@ class CourseModel {
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
-    // support both 'course_id' and 'id'
     final int idVal = json['course_id'] ?? json['id'] ?? 0;
 
-    // normalize cost to double
     double parseCost(dynamic val) {
       if (val == null) return 0.0;
       if (val is num) return val.toDouble();
@@ -64,41 +51,35 @@ class CourseModel {
       courseName: json['course_name'] ?? "",
       description: json['description'] ?? "",
       imageUrl: json['image_url'] ?? "",
-      category: json['category'] ?? "",
-      slogan: json['slogan'] ?? "",
-      icon: json['icon'] ?? "",
-      email: json['email'] ?? "",
-      hasContent: json['has_content'] ?? false,
-
-      // new fields
       hasActiveCohort: json['has_active_cohort'] ?? false,
       cohortId: json['cohort_id'],
       isFree: (json['is_free'] == true) || (json['is_free'] == 1),
-      trialType: json['trial_type'] != null ? json['trial_type'].toString() : null,
-      trialValue: (json['trial_value'] ?? 0) is int ? (json['trial_value'] ?? 0) : (int.tryParse((json['trial_value'] ?? 0).toString()) ?? 0),
+      trialType: json['trial_type']?.toString(),
+      trialValue: json['trial_value'] is int
+          ? json['trial_value']
+          : (json['trial_value'] != null
+              ? int.tryParse(json['trial_value'].toString()) ?? 0
+              : 0),
       cost: parseCost(json['cost']),
       isEnrolled: json['is_enrolled'] ?? false,
       isCompleted: json['is_completed'] ?? false,
       enrollmentStatus: json['enrollment_status']?.toString(),
       paymentStatus: json['payment_status']?.toString(),
-      lessonsTaken: json['lessons_taken'] is int ? json['lessons_taken'] : (json['lessons_taken'] != null ? int.tryParse(json['lessons_taken'].toString()) : null),
+      lessonsTaken: json['lessons_taken'] is int
+          ? json['lessons_taken']
+          : (json['lessons_taken'] != null
+              ? int.tryParse(json['lessons_taken'].toString())
+              : null),
       trialExpiryDate: json['trial_expiry_date']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'course_id': id,
       'course_name': courseName,
       'description': description,
       'image_url': imageUrl,
-      'category': category,
-      'slogan': slogan,
-      'icon': icon,
-      'email': email,
-      'has_content': hasContent,
-
-      // new fields
       'has_active_cohort': hasActiveCohort,
       'cohort_id': cohortId,
       'is_free': isFree,
@@ -114,14 +95,13 @@ class CourseModel {
     };
   }
 
-  // Convenience helpers
   bool get hasTrial => (trialType != null && trialValue > 0);
 
   String get trialLabel {
     if (!hasTrial) return '';
     final t = trialType?.toLowerCase();
     if (t == 'days' || t == 'day') return '${trialValue}d trial';
-    if (t == 'percentage' || t == 'percent') return 'Trial ${trialValue}%';
+    if (t == 'percentage' || t == 'percent') return 'Trial $trialValue%';
     return 'Trial ${trialValue.toString()}';
   }
 

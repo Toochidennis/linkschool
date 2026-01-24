@@ -10,8 +10,10 @@ import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
+import 'package:linkschool/modules/services/explore/courses/course_service.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'course_description_screen.dart';
+import 'course_content_screen.dart';
 import 'create_user_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -143,7 +145,6 @@ bool _animationTriggered = false;
   // Helper method to filter courses based on search query and selected category
   List<CategoryModel> _getFilteredCategories(
       List<CategoryModel> allCategories) {
-    // 1. First filter by category if any are selected
     List<CategoryModel> categoryFiltered;
     if (_selectedCategoryIds.isEmpty) {
       categoryFiltered = List.from(allCategories);
@@ -153,40 +154,74 @@ bool _animationTriggered = false;
           .toList();
     }
 
-    // 2. Then filter courses inside each category by search query
+    List<CategoryModel> searchFiltered;
     if (_searchQuery.isEmpty) {
-      return categoryFiltered;
+      searchFiltered = categoryFiltered;
+    } else {
+      searchFiltered = [];
+      final lowerQuery = _searchQuery.toLowerCase();
+
+      for (var category in categoryFiltered) {
+        final matchingCourses = category.courses.where((course) {
+          return course.courseName.toLowerCase().contains(lowerQuery) ||
+              course.description.toLowerCase().contains(lowerQuery);
+        }).toList();
+
+        if (matchingCourses.isNotEmpty) {
+          searchFiltered.add(CategoryModel(
+            id: category.id,
+            name: category.name,
+            description: category.description,
+            imageUrl: category.imageUrl,
+            courses: matchingCourses,
+          ));
+        }
+      }
     }
 
-    List<CategoryModel> searchFiltered = [];
-    final lowerQuery = _searchQuery.toLowerCase();
+    return _groupEnrolledCourses(searchFiltered);
+  }
 
-    for (var category in categoryFiltered) {
-      final matchingCourses = category.courses.where((course) {
-        return course.courseName.toLowerCase().contains(lowerQuery) ||
-            course.description.toLowerCase().contains(lowerQuery);
-      }).toList();
+  List<CategoryModel> _groupEnrolledCourses(List<CategoryModel> categories) {
+    final List<CourseModel> enrolledCourses = [];
+    final List<CategoryModel> remainingCategories = [];
 
-      if (matchingCourses.isNotEmpty) {
-        // Create a copy of the category with only matching courses
-        searchFiltered.add(CategoryModel(
+    for (final category in categories) {
+      final enrolled =
+          category.courses.where((course) => course.isEnrolled).toList();
+      final notEnrolled =
+          category.courses.where((course) => !course.isEnrolled).toList();
+
+      if (enrolled.isNotEmpty) {
+        enrolledCourses.addAll(enrolled);
+      }
+
+      if (notEnrolled.isNotEmpty) {
+        remainingCategories.add(CategoryModel(
           id: category.id,
           name: category.name,
-          short: category.short,
           description: category.description,
-          available: category.available,
-          isFree: category.isFree,
-          limit: category.limit,
-          startDate: category.startDate,
-          endDate: category.endDate,
-          courses: matchingCourses,
+          imageUrl: category.imageUrl,
+          courses: notEnrolled,
         ));
       }
     }
 
-    return searchFiltered;
-  }
+    if (enrolledCourses.isEmpty) {
+      return remainingCategories;
+    }
 
+    return [
+      CategoryModel(
+        id: -1,
+        name: 'Enrolled Courses',
+        description: '',
+        imageUrl: null,
+        courses: enrolledCourses,
+      ),
+      ...remainingCategories,
+    ];
+  }
   void _showFilterBottomSheet(List<CategoryModel> categories) {
     // Local state for the bottom sheet
     Set<int> tempSelectedIds = Set.from(_selectedCategoryIds);
@@ -735,7 +770,7 @@ bool _animationTriggered = false;
     if (savedId != null && savedDob != null) {
       // Try to resolve a local profile object for UI; if not found we still use persisted values
       final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-      final profiles = (cbtUserProvider.currentUser?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
+      final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
       final savedProfile = profiles.isNotEmpty ? (profiles.firstWhere((p) => p.id == savedId, orElse: () => profiles.first)) : null;
       if (savedProfile != null) {
         setState(() {
@@ -1095,13 +1130,14 @@ _wasLoading = loading;
             }
 
             return Column(
-              children: filteredCategories.map((category) {
+              children: filteredCategories.asMap().entries.map((entry) {
+                  final category = entry.value;
                 if (category.courses.isEmpty) {
                   return const SizedBox.shrink();
                 }
 
                 return _buildAnimatedCard(
-                  index: courseProvider.categories.indexOf(category) + 2,
+                  index: entry.key + 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1423,6 +1459,49 @@ _wasLoading = loading;
             return;
           }
 
+          final profileId = _activeProfile?.id;
+          bool isEnrolled = course.isEnrolled;
+          if (!isEnrolled && profileId != null && course.cohortId != null) {
+            try {
+              isEnrolled = await CourseService().checkIsEnrolled(
+                cohortId: course.cohortId!,
+                profileId: profileId,
+              );
+            } catch (e) {
+              // If verification fails, fall back to showing the course description.
+            }
+          }
+
+          if (isEnrolled) {
+            final imageUrl = course.imageUrl.startsWith('https')
+                ? course.imageUrl
+                : "https://linkskool.net/${course.imageUrl}";
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CourseContentScreen(
+                  lessonImage: imageUrl,
+                  cohortId: course.cohortId.toString(),
+                  courseTitle: course.courseName,
+                  courseDescription: course.description,
+                  provider: category.name,
+                  courseId: course.id,
+                  courseName: course.courseName,
+                  categoryId: category.id,
+                  providerSubtitle: 'Powered By Digital Dreams',
+                  category: category.name.toUpperCase(),
+                  categoryColor: _getCategoryColor(category.name),
+                  profileId: _activeProfile?.id,
+                  trialType: course.trialType,
+                  trialValue: course.trialValue,
+                  lessonsTaken: course.lessonsTaken,
+                  cohortCost: course.cost.toInt(),
+                ),
+              ),
+            );
+            return;
+          }
+
           // Navigate to course description if signed in
           Navigator.push(
             context,
@@ -1438,7 +1517,7 @@ _wasLoading = loading;
                 provider: category.name,
                 cohortId: course.cohortId.toString(),
                 providerSubtitle: 'Powered By Digital Dreams',
-                categoryColor: _getCategoryColor(course.category),
+                categoryColor: _getCategoryColor(category.name),
                 hasEnrolled: course.isEnrolled,
               ),
             ),
@@ -1673,6 +1752,14 @@ _wasLoading = loading;
         ));
   }
 }
+
+
+
+
+
+
+
+
 
 
 
