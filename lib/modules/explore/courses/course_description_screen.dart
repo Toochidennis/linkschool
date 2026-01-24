@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'course_content_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
@@ -121,9 +120,9 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
           final cohort = provider.cohort!;
           final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
-          final isFree = widget.course.isFree;
-          final trialType = (widget.course.trialType ?? '').toLowerCase();
-          final int trialValue = widget.course.trialValue;
+          final isFree = cohort.isFree == 1;
+          final trialType = cohort.trialType.toLowerCase();
+          final int trialValue = cohort.trialValue;
           final bool hasValidTrial = trialValue > 0 &&
               (trialType == 'views' || trialType == 'days');
           final String displayCost = _formatCostDisplay(cohort.cost);
@@ -389,6 +388,27 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                     "Industry-relevant skills and best practices"),                              ],
                               const SizedBox(height: 24),
 
+                              if (isFree) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981)
+                                        .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Text(
+                                    'Free',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ] else
+                                const SizedBox(height: 24),
                               const Text(
                                 'Cohort timeline',
                                 style: TextStyle(
@@ -432,9 +452,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                 if (hasValidTrial)
                                   _buildPricingRow(
                                     'Trial',
-                                    trialType == 'views'
-                                        ? ' views'
-                                        : ' days',
+                                    trialType == 'views' ? '$trialValue views' : '$trialValue days',
                                   ),
                               ],
                               const SizedBox(height: 100), // Space for bottom button
@@ -475,6 +493,99 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                             onPressed: enrollmentProvider.isLoading
                                 ? null
                                 : () async {
+                                    if (enrollmentType == 'paid') {
+                                      final amount = _parseCostToInt(cohort.cost);
+                                      showDialog(
+                                        context: context,
+                                        builder: (dialogContext) =>
+                                            CoursePaymentDialog(
+                                          amount: amount,
+                                          onPaymentSuccess: () {},
+                                          onPaymentCompleted:
+                                              (reference, amountPaid) async {
+                                            final enrollmentData = {
+                                              "profile_id": widget.profileId ?? 0,
+                                              "course_id": widget.course.id ?? 0,
+                                              "course_name":
+                                                  widget.course.courseName,
+                                              "program_id":
+                                                  widget.categoryId ?? 0,
+                                              "first_name":
+                                                  widget.firstName ?? "",
+                                              "last_name": widget.lastName ?? "",
+                                              "enrollment_type": "paid",
+                                              "cohort_name": cohort.title,
+                                              "reference": reference,
+                                              "amount": amountPaid,
+                                            };
+
+                                            try {
+                                              await enrollmentProvider
+                                                  .processEnrollmentPayment(
+                                                      enrollmentData,
+                                                      widget.cohortId);
+
+                                              if (mounted) {
+                                                Navigator.pushReplacement(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        CourseContentScreen(
+                                                      lessonImage: () {
+                                                        String url = cohort
+                                                                .imageUrl
+                                                                .isNotEmpty
+                                                            ? cohort.imageUrl
+                                                            : widget
+                                                                .course.imageUrl;
+                                                        return url.startsWith(
+                                                                'https')
+                                                            ? url
+                                                            : "https://linkskool.net/$url";
+                                                      }(),
+                                                      cohortId: widget.cohortId,
+                                                      courseTitle: cohort.title,
+                                                      courseDescription:
+                                                          cohort.description,
+                                                      provider: widget.provider,
+                                                      courseId: widget.course.id,
+                                                      courseName:
+                                                          cohort.courseName,
+                                                      categoryId:
+                                                          widget.categoryId,
+                                                      providerSubtitle:
+                                                          widget.providerSubtitle,
+                                                      category: widget.categoryName
+                                                          .toUpperCase(),
+                                                      categoryColor:
+                                                          widget.categoryColor,
+                                                      profileId: widget.profileId,
+                                                      trialType:
+                                                          widget.course.trialType,
+                                                      trialValue: cohort.trialValue,
+                                                      lessonsTaken:
+                                                          widget.course.lessonsTaken,
+                                                      cohortCost: amount,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'Enrollment failed: $e')),
+                                                );
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      );
+                                      return;
+                                    }
+
                                     DateTime? trialEndDate;
                                     if (enrollmentType == 'trial' &&
                                         trialType == 'days' &&
@@ -484,12 +595,12 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                     }
 
                                     final enrollmentData = {
-                                      "profile_id": widget.profileId ?? 0,
+                                      "profile_id": widget.profileId,
                                       "course_id": widget.course.id,
                                       "course_name": widget.course.courseName,
                                       "program_id": widget.categoryId,
                                       "first_name": widget.firstName ?? "",
-                                      "last_name": widget.lastName,
+                                      "last_name": widget.lastName ?? "",
                                       "enrollment_type": enrollmentType,
                                       "cohort_name": cohort.title,
                                       if (trialEndDate != null)
@@ -508,13 +619,13 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                             builder: (context) =>
                                                 CourseContentScreen(
                                               lessonImage: () {
-                                                String url =
-                                                    cohort.imageUrl.isNotEmpty
-                                                        ? cohort.imageUrl
-                                                        : widget.course.imageUrl;
+                                                String url = cohort
+                                                        .imageUrl.isNotEmpty
+                                                    ? cohort.imageUrl
+                                                    : widget.course.imageUrl;
                                                 return url.startsWith('https')
                                                     ? url
-                                                    : "https://linkskool.net/";
+                                                    : "https://linkskool.net/$url";
                                               }(),
                                               cohortId: widget.cohortId,
                                               courseTitle: cohort.title,
@@ -531,9 +642,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                               categoryColor:
                                                   widget.categoryColor,
                                               profileId: widget.profileId,
-                                              trialType: widget.course.trialType,
-                                              trialValue:
-                                                  widget.course.trialValue,
+                                              trialType: cohort.trialType,
+                                              trialValue: cohort.trialValue,
                                               lessonsTaken:
                                                   widget.course.lessonsTaken,
                                               cohortCost:
@@ -548,7 +658,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                             .showSnackBar(
                                           SnackBar(
                                               content: Text(
-                                                  'Enrollment failed: ')),
+                                                  'Enrollment failed: $e')),
                                         );
                                       }
                                     }
@@ -561,9 +671,27 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                               elevation: 0,
                             ),
                             child: enrollmentProvider.isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        'Processing...',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
                                   )
                                 : showPaidLabel
                                     ? Text.rich(
@@ -597,6 +725,102 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                       ),
                           );
                         }),
+                      ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'Enrollment failed: ')),
+                                                );
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    DateTime? trialEndDate;
+                                    if (enrollmentType == 'trial' &&
+                                        trialType == 'days' &&
+                                        trialValue > 0) {
+                                      trialEndDate = DateTime.now().add(
+                                          Duration(days: trialValue));
+                                    }
+
+                                    final enrollmentData = {
+                                      "profile_id": widget.profileId ?? 0,
+                                      "course_id": widget.course.id ?? 0,
+                                      "course_name": widget.course.courseName,
+                                      "program_id": widget.categoryId ?? 0,
+                                      "first_name": widget.firstName ?? "",
+                                      "last_name": widget.lastName ?? "",
+                                      "enrollment_type": enrollmentType,
+                                      "cohort_name": cohort.title,
+                                      if (trialEndDate != null)
+                                        "trial_expiry_date":
+                                            trialEndDate.toIso8601String(),
+                                    };
+
+                                    try {
+                                      await enrollmentProvider.enrollUser(
+                                          enrollmentData, widget.cohortId);
+
+                                      if (mounted) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CourseContentScreen(
+                                              lessonImage: () {
+                                                String url = cohort
+                                                        .imageUrl.isNotEmpty
+                                                    ? cohort.imageUrl
+                                                    : widget.course.imageUrl;
+                                                return url.startsWith('https')
+                                                    ? url
+                                                    : "https://linkskool.net/$url";
+                                              }(),
+                                              cohortId: widget.cohortId,
+                                              courseTitle: cohort.title,
+                                              courseDescription:
+                                                  cohort.description,
+                                              provider: widget.provider,
+                                              courseId: widget.course.id,
+                                              courseName: cohort.courseName,
+                                              categoryId: widget.categoryId,
+                                              providerSubtitle:
+                                                  widget.providerSubtitle,
+                                              category: widget.categoryName
+                                                  .toUpperCase(),
+                                              categoryColor:
+                                                  widget.categoryColor,
+                                              profileId: widget.profileId,
+                                              trialType: cohort.trialType,
+                                              trialValue: cohort.trialValue,
+                                              lessonsTaken:
+                                                  widget.course.lessonsTaken,
+                                              cohortCost:
+                                                  _parseCostToInt(cohort.cost),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Enrollment failed: ')),
+                                        );
+                                      }
+                                    }
+                                  },
                       ),
                     ),
                   )
@@ -635,7 +859,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
       ),
     );
   }
-}
+
   Widget _buildInfoCard(String label, String value) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -701,6 +925,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
       ),
     );
   }
+
   String _formatDate(String raw) {
     if (raw.isEmpty) return 'TBD';
     try {
@@ -737,4 +962,19 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     return int.tryParse(cleaned) ?? 0;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

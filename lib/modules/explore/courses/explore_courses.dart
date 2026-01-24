@@ -1459,9 +1459,9 @@ _wasLoading = loading;
             return;
           }
 
-          final profileId = _activeProfile?.id;
-          bool isEnrolled = course.isEnrolled;
-          if (!isEnrolled && profileId != null && course.cohortId != null) {
+                    final profileId = _activeProfile?.id;
+          bool isEnrolled = false;
+          if (profileId != null && course.cohortId != null) {
             try {
               isEnrolled = await CourseService().checkIsEnrolled(
                 cohortId: course.cohortId!,
@@ -1518,7 +1518,7 @@ _wasLoading = loading;
                 cohortId: course.cohortId.toString(),
                 providerSubtitle: 'Powered By Digital Dreams',
                 categoryColor: _getCategoryColor(category.name),
-                hasEnrolled: course.isEnrolled,
+                hasEnrolled: isEnrolled,
               ),
             ),
           );
@@ -1752,6 +1752,7 @@ _wasLoading = loading;
         ));
   }
 }
+
 
 
 
