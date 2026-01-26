@@ -222,8 +222,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 
       // Keys used by CbtUserProvider
       final cbtKeys = ['cbt_current_user', 'cbt_payment_reference'];
+      // Keys used by Explore Courses active profile
+      final profileKeys = ['active_profile_id', 'active_profile_dob'];
 
-      for (final k in [...authKeys, ...cbtKeys]) {
+      for (final k in [...authKeys, ...cbtKeys, ...profileKeys]) {
         if (prefs.containsKey(k)) await prefs.remove(k);
       }
 

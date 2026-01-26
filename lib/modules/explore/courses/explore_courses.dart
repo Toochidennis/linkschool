@@ -50,7 +50,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
   @override
   void initState() {
     super.initState();
-
+    // ... your animation setup ...
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -63,36 +63,28 @@ class _ExploreCoursesState extends State<ExploreCourses>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
-
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
     );
-
     _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
     );
-
-    // Add mounted checks
     _fadeController.forward();
-
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _slideController.forward();
     });
-
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) _bounceController.forward();
     });
 
-    // Initial load: attempt to use persisted active profile id and birthdate
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initialLoadCourses();
+      _bootstrapScreen();
     });
 
     _searchController.addListener(() {
@@ -100,6 +92,66 @@ class _ExploreCoursesState extends State<ExploreCourses>
         _searchQuery = _searchController.text;
       });
     });
+  }
+
+  Future<void> _bootstrapScreen() async {
+    if (!mounted) return;
+
+    // 1) Make sure currentUser is fresh (so profiles exist)
+    final cbtUserProvider = context.read<CbtUserProvider>();
+    await cbtUserProvider.refreshCurrentUser();
+
+    final user = cbtUserProvider.currentUser;
+    if (user == null) {
+      // Not signed in, just load courses without profile
+      await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
+      _loadedActiveProfile = true;
+      return;
+    }
+
+    // 2) Fetch profiles immediately (NOT on tap)
+    try {
+      final profileProvider = context.read<CreateUserProfileProvider>();
+      final profiles = await profileProvider.fetchUserProfiles(user.id.toString());
+      if (profiles.isNotEmpty) {
+        await cbtUserProvider.replaceProfiles(profiles);
+      }
+    } catch (e) {
+      debugPrint("Failed to fetch profiles on load: $e");
+    }
+
+    // 3) Resolve active profile (saved -> match -> fallback to first)
+    final savedId = await _loadActiveProfileId();
+    final savedDob = await _loadActiveProfileDob();
+
+    final updatedProfiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+
+    CbtUserProfile? selected;
+    if (savedId != null) {
+      try {
+        selected = updatedProfiles.firstWhere((p) => p.id == savedId);
+      } catch (_) {
+        selected = null;
+      }
+    }
+    selected ??= updatedProfiles.isNotEmpty ? updatedProfiles.first : null;
+
+    if (!mounted) return;
+
+    setState(() {
+      _activeProfile = selected;
+      _loadedActiveProfile = true;
+    });
+
+    // 4) Persist if needed + load courses using selected profile
+    if (selected?.id != null) {
+      await _saveActiveProfileId(selected!.id, birthDate: selected.birthDate);
+    }
+
+    await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+          profileId: selected?.id ?? savedId,
+          dateOfBirth: selected?.birthDate ?? savedDob,
+        );
   }
 
   @override
@@ -806,36 +858,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
     return prefs.getString('active_profile_dob');
   }
 
-  Future<void> _initialLoadCourses() async {
-    final courseProvider =
-        Provider.of<ExploreCourseProvider>(context, listen: false);
-    final savedId = await _loadActiveProfileId();
-    final savedDob = await _loadActiveProfileDob();
-
-    // If we have any persisted profile data, use it; otherwise do a normal fetch
-    if (savedId != null || savedDob != null) {
-      // Try to resolve a local profile object for UI; if not found we still use persisted values
-      final cbtUserProvider =
-          Provider.of<CbtUserProvider>(context, listen: false);
-      final profiles =
-          cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
-      final savedProfile = profiles.isNotEmpty && savedId != null
-          ? (profiles.firstWhere((p) => p.id == savedId,
-              orElse: () => profiles.first))
-          : null;
-      if (savedProfile != null) {
-        setState(() {
-          _activeProfile = savedProfile;
-        });
-      }
-      await courseProvider.fetchCategoriesAndCourses(
-          profileId: savedId, dateOfBirth: savedDob);
-    } else {
-      await courseProvider.fetchCategoriesAndCourses();
-    }
-
-    _loadedActiveProfile = true;
-  }
 
   Widget _avatarWidget(
       {String? imageUrl, required String name, double radius = 20}) {

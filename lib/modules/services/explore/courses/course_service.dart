@@ -45,6 +45,9 @@ class CourseService {
         if (dateOfBirth != null) 'birth_date': dateOfBirth,
       });
 
+
+      print("🔔 Fetching categories and courses from: $uri");
+
       final response = await http.get(
         uri,
         headers: {

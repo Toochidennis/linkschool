@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
+import 'package:linkschool/modules/model/cbt_user_model.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/services/user_profile_update_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
 import 'course_content_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -56,6 +60,107 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     super.initState();
     _cohortProvider = CohortProvider(CohortService());
     _cohortProvider.loadCohort(widget.cohortId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncActiveProfileAndUpdateUser();
+    });
+  }
+
+  Future<void> _syncActiveProfileAndUpdateUser() async {
+    if (!mounted) return;
+    final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final user = cbtUserProvider.currentUser;
+    if (user == null) return;
+
+    final profiles = user.profiles;
+    final savedId = await _loadActiveProfileId();
+    final targetId = widget.profileId ?? savedId;
+    CbtUserProfile? activeProfile;
+
+    if (profiles.isNotEmpty) {
+      if (targetId != null) {
+        activeProfile = profiles.firstWhere(
+          (profile) => profile.id == targetId,
+          orElse: () => profiles.first,
+        );
+      } else {
+        activeProfile = profiles.first;
+      }
+    }
+
+    if (widget.profileId != null) {
+      await _saveActiveProfileId(widget.profileId,
+          birthDate: activeProfile?.birthDate);
+    } else if (activeProfile?.id != null) {
+      await _saveActiveProfileId(activeProfile!.id,
+          birthDate: activeProfile.birthDate);
+    }
+
+    final userId = user.id;
+    final phone = user.phone?.trim() ?? '';
+    final email = user.email.trim();
+    final firstName = _resolveFirstName(user);
+    final lastName = _resolveLastName(user);
+    final gender = activeProfile?.gender?.trim() ?? '';
+    final birthDate = activeProfile?.birthDate?.trim() ?? '';
+
+    if (userId == null ||
+        phone.isEmpty ||
+        email.isEmpty ||
+        firstName.isEmpty ||
+        lastName.isEmpty ||
+        gender.isEmpty ||
+        birthDate.isEmpty) {
+      return;
+    }
+
+    try {
+      await UserProfileUpdateService().updateUserPhone(
+        userId: userId,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        attempt: user.attempt.toString(),
+        email: email,
+        gender: gender,
+        birthDate: birthDate,
+      );
+    } catch (_) {
+      // Silent failure
+    }
+  }
+
+  String _resolveFirstName(CbtUserModel user) {
+    final explicit = user.first_name?.trim();
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    final name = user.name?.trim() ?? '';
+    if (name.isEmpty) return '';
+    return name.split(' ').first;
+  }
+
+  String _resolveLastName(CbtUserModel user) {
+    final explicit = user.last_name?.trim();
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    final name = user.name?.trim() ?? '';
+    if (name.isEmpty) return '';
+    final parts = name.split(' ');
+    return parts.length > 1 ? parts.sublist(1).join(' ') : '';
+  }
+
+  Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (id != null) {
+      await prefs.setInt('active_profile_id', id);
+      if (birthDate != null) {
+        await prefs.setString('active_profile_dob', birthDate);
+      } else {
+        await prefs.remove('active_profile_dob');
+      }
+    }
+  }
+
+  Future<int?> _loadActiveProfileId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('active_profile_id');
   }
 
   @override
@@ -679,13 +784,46 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                       try {
                                         await enrollmentProvider.enrollUser(
                                             enrollmentData, widget.cohortId);
+
+                                        // Navigate to Course Content screen after successful enrollment
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Enrollment successful'),
+                                              backgroundColor: Color(0xFF4CAF50),
+                                            ),
+                                          );
+
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => CourseContentScreen(
+                                                courseTitle: cohort.courseName,
+                                                courseDescription: cohort.description,
+                                                provider: widget.provider,
+                                                courseId: cohort.courseId,
+                                                categoryId: widget.categoryId,
+                                                cohortId: widget.cohortId,
+                                                isFree: isFree,
+                                                trialExpiryDate: widget.trialExpiryDate,
+                                                profileId: widget.profileId,
+                                                courseName: cohort.courseName,
+                                                lessonImage: cohort.imageUrl.isNotEmpty ? cohort.imageUrl : widget.course.imageUrl,
+                                                trialType: cohort.trialType,
+                                                trialValue: cohort.trialValue,
+                                                lessonsTaken: 0,
+                                                cohortCost: _parseCostToInt(cohort.cost),
+                                              ),
+                                            ),
+                                          );
+                                        }
                                       } catch (e) {
                                         if (mounted) {
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             SnackBar(
-                                              content: Text(
-                                                  'Enrollment failed: $e'),
+                                              content: Text('Enrollment failed: $e'),
                                             ),
                                           );
                                         }
@@ -899,6 +1037,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     return parsedDouble.round();
   }
 }
+
 
 
 

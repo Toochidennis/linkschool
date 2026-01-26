@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
@@ -43,7 +43,7 @@ class _CBTDashboardState extends State<CBTDashboard>
 
   bool _wasLoading = true;
 
-  // ðŸš€ Cache subscription status to avoid repeated checks
+  // 🚀 Cache subscription status to avoid repeated checks
   bool? _cachedCanTakeTest;
   bool _isCheckingSubscription = false;
   bool _didCheckProfileModal = false;
@@ -96,11 +96,8 @@ class _CBTDashboardState extends State<CBTDashboard>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Always refresh user data when dashboard is shown
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
-    cbtUserProvider.refreshCurrentUser();
-
     // Show profile modal once after sign-in/payment if phone is missing
     if (!_didCheckProfileModal) {
       _didCheckProfileModal = true;
@@ -214,7 +211,7 @@ class _CBTDashboardState extends State<CBTDashboard>
 }
 
 
-  /// ðŸ”¥ PRE-LOAD subscription status to avoid UI blocking
+  /// 🔥 PRE-LOAD subscription status to avoid UI blocking
   Future<void> _preloadSubscriptionStatus() async {
     try {
       final hasPaid = await _subscriptionService.hasPaid();
@@ -226,11 +223,11 @@ class _CBTDashboardState extends State<CBTDashboard>
         });
       }
     } catch (e) {
-      print('âŒ Error preloading subscription: $e');
+      print('❌ Error preloading subscription: $e');
     }
   }
 
-  /// âš¡ OPTIMIZED: Non-blocking subscription check with cache and user data
+  /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
   Future<bool> _checkSubscriptionBeforeTest() async {
     if (_isCheckingSubscription) return false;
 
@@ -274,7 +271,7 @@ class _CBTDashboardState extends State<CBTDashboard>
           amount: settings.amount,
           discountRate: settings.discountRate,
           onSubscribed: () {
-            print('âœ… User subscribed from CBT Dashboard');
+            print('✅ User subscribed from CBT Dashboard');
             _cachedCanTakeTest = true; // Update cache
             if (mounted) {
               setState(() {});
@@ -285,7 +282,7 @@ class _CBTDashboardState extends State<CBTDashboard>
 
       return false;
     } catch (e) {
-      print('âŒ Subscription check error: $e');
+      print('❌ Subscription check error: $e');
       return false;
     } finally {
       if (mounted) {
@@ -479,13 +476,13 @@ _wasLoading = loading;
     child: Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias, // âœ… important for ripple + overlay
+      clipBehavior: Clip.antiAlias, // ✅ important for ripple + overlay
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         splashColor: boardColor.withOpacity(0.18),
         highlightColor: boardColor.withOpacity(0.10),
         onTap: () async {
-          // âœ… instant visual feedback
+          // ✅ instant visual feedback
           setState(() => _pressedBoardCode = board.boardCode);
 
           // short delay so user sees it before modal/navigation
@@ -498,7 +495,7 @@ _wasLoading = loading;
         },
         child: AnimatedScale(
           duration: const Duration(milliseconds: 120),
-          scale: isPressed ? 0.98 : 1.0, // âœ… subtle press-down effect
+          scale: isPressed ? 0.98 : 1.0, // ✅ subtle press-down effect
           child: SizedBox(
             height: 150,
             child: Stack(
@@ -520,7 +517,7 @@ _wasLoading = loading;
                   ),
                 ),
 
-                // âœ… Press overlay (this is what makes it obvious)
+                // ✅ Press overlay (this is what makes it obvious)
                 if (isPressed)
                   Positioned.fill(
                     child: DecoratedBox(
@@ -685,7 +682,7 @@ _wasLoading = loading;
     }
   }
 
-  /// âš¡ OPTIMIZED: Non-blocking board tap handler
+  /// ⚡ OPTIMIZED: Non-blocking board tap handler
   Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {
     // Check subscription asynchronously
     final canProceed = await _checkSubscriptionBeforeTest();
@@ -740,20 +737,20 @@ _wasLoading = loading;
         onChallenge: () async {
           Navigator.pop(context);
 
-          // âš¡ Challenge Module: Check if user is signed in and has paid
+          // ⚡ Challenge Module: Check if user is signed in and has paid
           // Does NOT check free trial limits - only checks active subscription
           final cbtuserProvider =
               Provider.of<CbtUserProvider>(context, listen: false);
           final isSignedIn = await _authService.isUserSignedUp();
           final hasPaid = cbtuserProvider.hasPaid;
 
-          print('\nðŸŽ¯ Challenge Module Access Check:');
+          print('\n🎯 Challenge Module Access Check:');
           print('   - User signed in: $isSignedIn');
           print('   - Has paid: $hasPaid');
 
           // If not signed in or not paid, show enforcement dialog
           if (!isSignedIn || !hasPaid) {
-            print('   âŒ Challenge access denied - showing enforcement dialog');
+            print('   ❌ Challenge access denied - showing enforcement dialog');
 
             final settings = await CbtSettingsHelper.getSettings();
             if (!mounted) return;
@@ -767,7 +764,7 @@ _wasLoading = loading;
                 amount: settings.amount,
                 discountRate: settings.discountRate,
                 onSubscribed: () {
-                  print('âœ… User subscribed for Challenge module');
+                  print('✅ User subscribed for Challenge module');
                   if (mounted) {
                     setState(() {});
                   }
@@ -778,7 +775,7 @@ _wasLoading = loading;
           }
 
           // User is signed in and has paid, proceed to challenge
-          print('   âœ… Challenge access granted - proceeding');
+          print('   ✅ Challenge access granted - proceeding');
           final cbtProvider = Provider.of<CBTProvider>(context, listen: false);
           final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
 
@@ -1471,5 +1468,7 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
+
+
 
 

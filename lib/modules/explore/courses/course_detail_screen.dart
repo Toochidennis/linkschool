@@ -85,6 +85,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isVideoInitialized = false;
   bool _isYoutubeVideo = false;
   bool _showControls = true;
+  String? _videoError;
   int _selectedVideoIndex = 0;
   late TabController _tabController;
   double _playbackSpeed = 1.0;
@@ -136,6 +137,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       recordedUrl?.isNotEmpty == true ? recordedUrl : widget.recordedUrl;
   String? get _effectiveClassDate =>
       classDate?.isNotEmpty == true ? classDate : widget.classDate;
+       bool _isInitializing = false;
+       bool _hasAppliedLessonData = false;
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -146,6 +149,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
   // Assignment submission state
   bool _isAssignmentSubmitted = false;
+  String? _lastInitializedUrl;
   final bool _isSubmittingAssignment = false;
 
   final List<Map<String, dynamic>> _courseVideos = [
@@ -163,28 +167,35 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     },
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _loadSubmissionStatus();
-    _loadActiveProfile();
-    if (widget.courseTitle.isNotEmpty ||
-        widget.courseDescription.isNotEmpty ||
-        widget.videoUrl?.isNotEmpty == true) {
-      _seedContentFromWidget();
-    }
-    if (_courseVideos.isNotEmpty) {
-      _loadCompletionStatus();
-      _loadPendingAssignmentData();
-      _loadQuizData();
-    }
-    final initialVideoUrl = _effectiveVideoUrl;
-    if (initialVideoUrl != null && initialVideoUrl.isNotEmpty) {
-      _hasVideo = true;
-      _initializeVideo(initialVideoUrl);
-    }
+ @override
+void initState() {
+  super.initState();
+  _tabController = TabController(length: 3, vsync: this);
+  _loadSubmissionStatus();
+  _loadActiveProfile();
+  
+  // Only seed widget data, don't initialize video yet
+  if (widget.courseTitle.isNotEmpty ||
+      widget.courseDescription.isNotEmpty ||
+      widget.videoUrl?.isNotEmpty == true) {
+    _seedContentFromWidget();
   }
+  
+  if (_courseVideos.isNotEmpty) {
+    _loadCompletionStatus();
+    _loadPendingAssignmentData();
+    _loadQuizData();
+  }
+  
+  // Check if we have video URL from widget
+  final initialVideoUrl = _effectiveVideoUrl;
+  if (initialVideoUrl != null && initialVideoUrl.isNotEmpty) {
+    _hasVideo = true;
+  }
+  
+  // DON'T initialize video here - wait for lesson data
+  print('initState completed, waiting for lesson data...');
+}
 
   void _seedContentFromWidget() {
     final initialUrl = widget.videoUrl ?? '';
@@ -322,41 +333,63 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   void _applyLessonData(Lesson lesson) {
-    final resolvedVideoUrl =
-        lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
-    setState(() {
-      _dataLoaded = true;
-      courseTitle = lesson.title;
-      courseDescription = lesson.description;
-      videoUrl = resolvedVideoUrl;
-      assignmentUrl = lesson.assignmentUrl;
-      assignmentDescription = lesson.assignmentInstructions;
-      materialUrl = lesson.materialUrl;
-      zoomUrl = lesson.videoUrl;
-      recordedUrl = lesson.recordedVideoUrl;
-      classDate = lesson.lessonDate;
-      _hasVideo = resolvedVideoUrl.isNotEmpty;
-      _courseVideos
-        ..clear()
-        ..add({
-          'title': lesson.title,
-          'description': lesson.description,
-          'url': resolvedVideoUrl,
-          'type': _hasVideo ? 'video' : 'reading',
-          'duration': '',
-          'content': lesson.description,
-          'isCompleted': false,
-        });
-      _selectedVideoIndex = 0;
-    });
-
-    if (_hasVideo) {
-      _initializeVideo(resolvedVideoUrl);
-    }
-    _loadCompletionStatus();
-    _loadPendingAssignmentData();
-    _loadQuizData();
+  final resolvedVideoUrl =
+      lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
+  
+  print('=== APPLYING LESSON DATA ===');
+  print('Video URL: $resolvedVideoUrl');
+  print('Already applied: $_hasAppliedLessonData');
+  print('Last initialized URL: $_lastInitializedUrl');
+  
+  // Prevent applying the same lesson data twice
+  if (_hasAppliedLessonData && _lastInitializedUrl == resolvedVideoUrl) {
+    print('Same lesson already applied, skipping...');
+    return;
   }
+  
+  setState(() {
+    _dataLoaded = true;
+    _hasAppliedLessonData = true;
+    courseTitle = lesson.title;
+    courseDescription = lesson.description;
+    videoUrl = resolvedVideoUrl;
+    assignmentUrl = lesson.assignmentUrl;
+    assignmentDescription = lesson.assignmentInstructions;
+    materialUrl = lesson.materialUrl;
+    zoomUrl = lesson.videoUrl;
+    recordedUrl = lesson.recordedVideoUrl;
+    classDate = lesson.lessonDate;
+    _hasVideo = resolvedVideoUrl.isNotEmpty;
+    _courseVideos
+      ..clear()
+      ..add({
+        'title': lesson.title,
+        'description': lesson.description,
+        'url': resolvedVideoUrl,
+        'type': _hasVideo ? 'video' : 'reading',
+        'duration': '',
+        'content': lesson.description,
+        'isCompleted': false,
+      });
+    _selectedVideoIndex = 0;
+  });
+
+  // NOW initialize video after lesson data is applied
+  if (_hasVideo && resolvedVideoUrl.isNotEmpty) {
+    print('Lesson data applied, now initializing video...');
+    // Use post frame callback to ensure state is updated first
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isInitializing) {
+        _initializeVideo(resolvedVideoUrl);
+      }
+    });
+  }
+  
+  _loadCompletionStatus();
+  _loadPendingAssignmentData();
+  _loadQuizData();
+}
+
 
   Future<void> _loadCompletionStatus() async {
     final prefs = await SharedPreferences.getInstance();
@@ -821,17 +854,59 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
   /// Extract YouTube video ID from various YouTube URL formats
   String? extractYouTubeId(String url) {
-    final regExp = RegExp(
-      r'(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})',
-    );
-    final match = regExp.firstMatch(url);
-    return match?.group(1);
+    final sanitized = url.replaceAll(r'\/', '/').trim();
+    final converted = YoutubePlayer.convertUrlToId(sanitized);
+    if (converted != null && converted.isNotEmpty) {
+      return converted;
+    }
+
+    final uri = Uri.tryParse(sanitized);
+    if (uri == null) return null;
+
+    if (uri.host.contains('youtu.be')) {
+      return uri.pathSegments.isNotEmpty ? uri.pathSegments.last : null;
+    }
+
+    if (uri.host.contains('youtube.com') || uri.host.contains('m.youtube.com')) {
+      final vParam = uri.queryParameters['v'];
+      if (vParam != null && vParam.isNotEmpty) return vParam;
+      final segments = uri.pathSegments;
+      final idx = segments.indexWhere(
+        (s) => s == 'shorts' || s == 'embed' || s == 'live' || s == 'v',
+      );
+      if (idx != -1 && segments.length > idx + 1) {
+        return segments[idx + 1];
+      }
+    }
+
+    return null;
   }
 
   /// Check if URL is a YouTube video
-  bool isYouTubeUrl(String url) {
-    return url.contains('youtube.com') || url.contains('youtu.be');
+/// Check if URL is a YouTube video
+bool isYouTubeUrl(String url) {
+  if (url.isEmpty) return false;
+  
+  final sanitized = url.replaceAll(r'\/', '/').trim().toLowerCase();
+  
+  // Check for YouTube domain patterns
+  if (sanitized.contains('youtube.com') || 
+      sanitized.contains('youtu.be') ||
+      sanitized.contains('m.youtube.com') ||
+      sanitized.contains('youtube.com/shorts/') ||
+      sanitized.contains('youtube.com/live/') ||
+      sanitized.contains('youtube.com/embed/')) {
+    return true;
   }
+  
+  // Check if it's just a YouTube ID (11 characters)
+  if (sanitized.length == 11 && 
+      RegExp(r'^[a-za-z0-9_-]{11}$').hasMatch(sanitized)) {
+    return true;
+  }
+  
+  return false;
+}
 
   /// Determine the zoom class status based on date and recorded URL
   /// Priority: Check recorded_url first, then zoom_url
@@ -958,45 +1033,124 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     }
   }
 
-  Future<void> _initializeVideo(String url) async {
-    // Dispose previous controllers
-    await _videoController?.dispose();
-    _chewieController?.dispose();
-    _youtubeController?.dispose();
-
-    setState(() {
-      _isVideoInitialized = false;
-      _isYoutubeVideo = false;
-    });
-
-    try {
-      // Check if it's a YouTube video
-      if (isYouTubeUrl(url)) {
-        await _initializeYouTubePlayer(url);
-      } else {
-        await _initializeDirectVideoPlayer(url);
-      }
-    } catch (e) {
-      debugPrint('Error initializing video: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load video: $e')),
-        );
-      }
-    }
+Future<void> _initializeVideo(String url) async {
+  // Guard 1: Prevent multiple simultaneous initializations
+  if (_isInitializing) {
+    print('Already initializing video, skipping...');
+    return;
   }
-
-  Future<void> _initializeYouTubePlayer(String url) async {
-    final videoId = extractYouTubeId(url);
-
-    if (videoId == null) {
-      throw Exception('Invalid YouTube URL');
+  
+  // Guard 2: Don't re-initialize the same video
+  if (_lastInitializedUrl == url && _isVideoInitialized) {
+    print('Video already initialized with same URL, skipping...');
+    return;
+  }
+  
+  _isInitializing = true;
+  
+  print('=== DEBUG VIDEO INITIALIZATION ===');
+  print('URL: $url');
+  print('isYouTubeUrl check: ${isYouTubeUrl(url)}');
+  print('extractYouTubeId result: ${extractYouTubeId(url)}');
+  
+  try {
+    // Store old controllers
+    final oldYoutubeController = _youtubeController;
+    final oldVideoController = _videoController;
+    final oldChewieController = _chewieController;
+    
+    // Clear references FIRST
+    if (mounted) {
+      setState(() {
+        _youtubeController = null;
+        _videoController = null;
+        _chewieController = null;
+        _isVideoInitialized = false;
+        _isYoutubeVideo = false;
+        _videoError = null;
+      });
+    }
+    
+    // Wait for frame to render
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // Now dispose old controllers safely
+    if (oldYoutubeController != null) {
+      try {
+        oldYoutubeController.dispose();
+        print('Disposed old YouTube controller');
+      } catch (e) {
+        print('Error disposing YouTube controller: $e');
+      }
+    }
+    if (oldChewieController != null) {
+      try {
+        oldChewieController.dispose();
+        print('Disposed old Chewie controller');
+      } catch (e) {
+        print('Error disposing Chewie controller: $e');
+      }
+    }
+    if (oldVideoController != null) {
+      try {
+        await oldVideoController.dispose();
+        print('Disposed old video controller');
+      } catch (e) {
+        print('Error disposing video controller: $e');
+      }
     }
 
-    _youtubeController = YoutubePlayerController(
+    // Wait for disposal to complete
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    final sanitized = url.replaceAll(r'\/', '/').trim();
+    print('Sanitized URL: $sanitized');
+    
+    // Check if it's a YouTube video
+    if (isYouTubeUrl(sanitized)) {
+      print('Detected as YouTube URL');
+      await _initializeYouTubePlayer(sanitized);
+    } else {
+      print('Detected as regular video URL');
+      await _initializeDirectVideoPlayer(sanitized);
+    }
+    
+    // Mark URL as initialized
+    _lastInitializedUrl = url;
+    print('Video initialization completed successfully');
+    
+  } catch (e) {
+    print('Error initializing video: $e');
+    if (mounted) {
+      setState(() {
+        _isVideoInitialized = true;
+        _isYoutubeVideo = false;
+        _videoError = 'Failed to load video: ${e.toString()}';
+      });
+    }
+  } finally {
+    _isInitializing = false;
+  }
+}
+
+Future<void> _initializeYouTubePlayer(String url) async {
+  try {
+    final videoId = extractYouTubeId(url);
+    print('Extracted YouTube ID: $videoId');
+
+    if (videoId == null || videoId.isEmpty) {
+      throw Exception('Could not extract YouTube video ID from: $url');
+    }
+
+    if (videoId.length != 11) {
+      throw Exception('Invalid YouTube video ID length: $videoId');
+    }
+
+    // Create new controller
+    final controller = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
-        autoPlay: false,
+        autoPlay: true,
         mute: false,
         enableCaption: true,
         controlsVisibleAtStart: true,
@@ -1004,23 +1158,68 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       ),
     );
 
-    setState(() {
-      _isYoutubeVideo = true;
-      _isVideoInitialized = true;
+    // Add error listener
+    controller.addListener(() {
+      if (controller.value.hasError == true) {
+        print('YouTube player error: ${controller.value.metaData}');
+        if (mounted) {
+          setState(() {
+            _videoError = 'YouTube error: ${controller.value.metaData}';
+          });
+        }
+      }
     });
+
+    // Set everything in one setState
+    if (mounted) {
+      setState(() {
+        _youtubeController = controller;
+        _isYoutubeVideo = true;
+        _isVideoInitialized = true;
+        _videoError = null;
+      });
+    }
+    
+    print('YouTube player initialized successfully');
+    
+  } catch (e) {
+    print('Error initializing YouTube player: $e');
+    if (mounted) {
+      setState(() {
+        _isVideoInitialized = true;
+        _isYoutubeVideo = false;
+        _videoError = 'Failed to initialize YouTube player: $e';
+      });
+    }
+    throw Exception('Failed to initialize YouTube player: $e');
   }
+}
 
-  Future<void> _initializeDirectVideoPlayer(String url) async {
+Future<void> _initializeDirectVideoPlayer(String url) async {
+  try {
+    print('Initializing direct video player for URL: $url');
+    
+    if (url.contains('youtube') || url.contains('youtu.be')) {
+      throw Exception('This appears to be a YouTube URL. Please check your YouTube detection logic.');
+    }
+    
     _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
-
     await _videoController!.initialize();
+    await _videoController!.pause();
 
     _chewieController = ChewieController(
       videoPlayerController: _videoController!,
-      autoPlay: false,
+      autoPlay: true,
       looping: false,
       aspectRatio: 16 / 9,
-      placeholder: const Center(child: CircularProgressIndicator()),
+      placeholder: Container(
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF6366F1),
+          ),
+        ),
+      ),
       errorBuilder: (context, errorMessage) {
         return Center(
           child: Column(
@@ -1028,14 +1227,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             children: [
               const Icon(Icons.error_outline, color: Colors.white, size: 48),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Error loading video',
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 8),
               Text(
                 errorMessage,
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1054,7 +1253,15 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       _isYoutubeVideo = false;
       _isVideoInitialized = true;
     });
+    
+    print('Direct video player initialized successfully');
+    
+  } catch (e) {
+    print('Error initializing direct video player: $e');
+    throw Exception('Failed to initialize video: $e');
   }
+}
+
 
   void _hideControlsAfterDelay() {
     Future.delayed(const Duration(seconds: 3), () {
@@ -2393,73 +2600,125 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       ),
     ];
   }
-
-  Widget _buildVideoPlayer() {
-    if (!_hasVideo) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Container(
-          width: double.infinity,
-          height: 240,
-          color: Colors.black,
-          alignment: Alignment.center,
-          child: const Text(
-            'No video available',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
+Widget _buildVideoPlayer() {
+  if (_videoError != null) {
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
-        width: double.infinity,
-        height: 240,
         color: Colors.black,
-        child: Stack(children: [
-          // Video - Handle both YouTube and regular videos
-          if (_isVideoInitialized)
-            _isYoutubeVideo && _youtubeController != null
-                ? YoutubePlayerBuilder(
-                    player: YoutubePlayer(
-                      controller: _youtubeController!,
-                      showVideoProgressIndicator: true,
-                      
-                      progressIndicatorColor: const Color(0xFF6366F1),
-                      progressColors: const ProgressBarColors(
-                        playedColor: Color(0xFF6366F1),
-                        handleColor: Color(0xFF6366F1),
-                        backgroundColor: Colors.grey,
-                        bufferedColor: Colors.grey,
-                      ),
-                      onReady: () {},
-                    ),
-                    builder: (context, player) {
-                      return player;
-                    },
-                  )
-                : _chewieController != null &&
-                        _chewieController!
-                            .videoPlayerController.value.isInitialized
-                    ? AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: Chewie(controller: _chewieController!),
-                      )
-                    : const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF6366F1),
-                        ),
-                      )
-          else
-            const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF6366F1),
-              ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 48),
+            const SizedBox(height: 16),
+            const Text(
+              'Video Error',
+              style: TextStyle(color: Colors.white, fontSize: 18),
             ),
-        ]),
+            const SizedBox(height: 8),
+            Text(
+              _videoError!,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                final url = _effectiveVideoUrl;
+                if (url != null && url.isNotEmpty) {
+                  setState(() {
+                    _lastInitializedUrl = null; // Reset to allow re-init
+                  });
+                  _initializeVideo(url);
+                }
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  if (!_hasVideo) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        color: Colors.black,
+        alignment: Alignment.center,
+        child: const Text(
+          'No video available',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  // YouTube player
+  if (_isYoutubeVideo && _youtubeController != null) {
+    print('Rendering YouTube player with ID: ${_youtubeController!.initialVideoId}');
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: YoutubePlayerBuilder(
+        key: ValueKey(_youtubeController!.initialVideoId),
+        player: YoutubePlayer(
+          controller: _youtubeController!,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: const Color(0xFF6366F1),
+          progressColors: const ProgressBarColors(
+            playedColor: Color(0xFF6366F1),
+            handleColor: Color(0xFF6366F1),
+            backgroundColor: Colors.grey,
+            bufferedColor: Colors.grey,
+          ),
+          onReady: () {
+            print('YouTube player ready and visible');
+          },
+        ),
+        builder: (context, player) {
+          return player;
+        },
+      ),
+    );
+  }
+
+  // Direct video player
+  if (!_isYoutubeVideo && _chewieController != null && _isVideoInitialized) {
+    print('Rendering Chewie player');
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      key: ValueKey(_videoController.hashCode),
+      child: Chewie(controller: _chewieController!),
+    );
+  }
+
+  // Loading state - show while waiting for lesson data or video initialization
+  print('Showing loading state. hasAppliedData: $_hasAppliedLessonData, isInitializing: $_isInitializing, initialized: $_isVideoInitialized');
+  return AspectRatio(
+    aspectRatio: 16 / 9,
+    child: Container(
+      color: Colors.black,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              color: Color(0xFF6366F1),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _hasAppliedLessonData ? 'Loading video...' : 'Loading lesson data...',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 
   Widget _buildContentTab() {
     return ListView.builder(
