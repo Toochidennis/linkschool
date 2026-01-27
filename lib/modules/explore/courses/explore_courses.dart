@@ -95,64 +95,129 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Future<void> _bootstrapScreen() async {
-    if (!mounted) return;
+  if (!mounted) return;
 
-    // 1) Make sure currentUser is fresh (so profiles exist)
-    final cbtUserProvider = context.read<CbtUserProvider>();
-    await cbtUserProvider.refreshCurrentUser();
+  // 1) Make sure currentUser is fresh (so profiles exist)
+  final cbtUserProvider = context.read<CbtUserProvider>();
+  await cbtUserProvider.refreshCurrentUser();
 
-    final user = cbtUserProvider.currentUser;
-    if (user == null) {
-      // Not signed in, just load courses without profile
-      await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
-      _loadedActiveProfile = true;
-      return;
-    }
-
-    // 2) Fetch profiles immediately (NOT on tap)
-    try {
-      final profileProvider = context.read<CreateUserProfileProvider>();
-      final profiles = await profileProvider.fetchUserProfiles(user.id.toString());
-      if (profiles.isNotEmpty) {
-        await cbtUserProvider.replaceProfiles(profiles);
-      }
-    } catch (e) {
-      debugPrint("Failed to fetch profiles on load: $e");
-    }
-
-    // 3) Resolve active profile (saved -> match -> fallback to first)
-    final savedId = await _loadActiveProfileId();
-    final savedDob = await _loadActiveProfileDob();
-
-    final updatedProfiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
-
-    CbtUserProfile? selected;
-    if (savedId != null) {
-      try {
-        selected = updatedProfiles.firstWhere((p) => p.id == savedId);
-      } catch (_) {
-        selected = null;
-      }
-    }
-    selected ??= updatedProfiles.isNotEmpty ? updatedProfiles.first : null;
-
-    if (!mounted) return;
-
-    setState(() {
-      _activeProfile = selected;
-      _loadedActiveProfile = true;
-    });
-
-    // 4) Persist if needed + load courses using selected profile
-    if (selected?.id != null) {
-      await _saveActiveProfileId(selected!.id, birthDate: selected.birthDate);
-    }
-
-    await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-          profileId: selected?.id ?? savedId,
-          dateOfBirth: selected?.birthDate ?? savedDob,
-        );
+  final user = cbtUserProvider.currentUser;
+  if (user == null) {
+    // Not signed in, just load courses without profile
+    await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
+    _loadedActiveProfile = true;
+    return;
   }
+
+  // 2) Fetch profiles immediately (NOT on tap)
+  try {
+    final profileProvider = context.read<CreateUserProfileProvider>();
+    final profiles = await profileProvider.fetchUserProfiles(user.id.toString());
+    if (profiles.isNotEmpty) {
+      await cbtUserProvider.replaceProfiles(profiles);
+    }
+  } catch (e) {
+    debugPrint("Failed to fetch profiles on load: $e");
+  }
+
+  // 3) Resolve active profile (saved -> match -> fallback to first)
+  final savedId = await _loadActiveProfileId();
+  final savedDob = await _loadActiveProfileDob();
+
+  final updatedProfiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+
+  CbtUserProfile? selected;
+  if (savedId != null) {
+    try {
+      selected = updatedProfiles.firstWhere((p) => p.id == savedId);
+    } catch (_) {
+      selected = null;
+    }
+  }
+  selected ??= updatedProfiles.isNotEmpty ? updatedProfiles.first : null;
+
+  if (!mounted) return;
+
+  setState(() {
+    _activeProfile = selected;
+    _loadedActiveProfile = true;
+  });
+
+  // 4) Persist if needed + load courses using selected profile
+  if (selected?.id != null) {
+    await _saveActiveProfileId(selected!.id, birthDate: selected.birthDate);
+  }
+
+  // ✨ NEW: Check if phone is missing EVERY TIME user navigates to this page
+  if (widget.allowProfilePrompt && cbtUserProvider.isPhoneMissing) {
+    // Use addPostFrameCallback to ensure UI is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      
+      await UserProfileUpdateModal.show(
+        context,
+        user: cbtUserProvider.currentUser,
+        onSave: ({
+          required String phone,
+          required String gender,
+          required String birthDate,
+        }) async {
+          final profileService = UserProfileUpdateService();
+          final currentUser = cbtUserProvider.currentUser;
+          if (currentUser == null) return;
+          
+          try {
+            await profileService.updateUserPhone(
+              userId: currentUser.id!,
+              firstName: currentUser.name!.split(' ').first,
+              lastName: currentUser.name!.split(' ').last,
+              phone: phone,
+              attempt: currentUser.attempt.toString(),
+              email: currentUser.email,
+              gender: gender,
+              birthDate: birthDate,
+            );
+            await cbtUserProvider.refreshCurrentUser();
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Profile updated successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error updating profile: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+      );
+
+      // After modal is dismissed, check if phone is still missing
+      if (mounted && cbtUserProvider.isPhoneMissing) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Phone number is required to access courses'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+  }
+
+  await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+        profileId: selected?.id ?? savedId,
+        dateOfBirth: selected?.birthDate ?? savedDob,
+      );
+}
 
   @override
   void dispose() {
@@ -511,43 +576,100 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Future<void> _handleSignIn() async {
-    if (!mounted) return;
-    final authService = FirebaseAuthService();
-    try {
-      final userCredential = await authService.signInWithGoogle();
-      final user = userCredential?.user;
-      if (user != null) {
-        // Register user in backend via CbtUserProvider
-        final userProvider =
-            Provider.of<CbtUserProvider>(context, listen: false);
-        await userProvider.handleFirebaseSignUp(
-          email: user.email!,
-          name: user.displayName!,
-          profilePicture: user.photoURL ?? '',
+  if (!mounted) return;
+  final authService = FirebaseAuthService();
+  try {
+    final userCredential = await authService.signInWithGoogle();
+    final user = userCredential?.user;
+    if (user != null) {
+      // Register user in backend via CbtUserProvider
+      final userProvider =
+          Provider.of<CbtUserProvider>(context, listen: false);
+      await userProvider.handleFirebaseSignUp(
+        email: user.email!,
+        name: user.displayName!,
+        profilePicture: user.photoURL ?? '',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signed in successfully')),
         );
-        // Profile prompt is handled by CBT Dashboard after sign-in now.
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Signed in successfully')),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sign-in was cancelled')),
+
+        // ✨ NEW: Check if phone is missing after sign-in
+        final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+        await cbtUserProvider.refreshCurrentUser();
+        
+        if (widget.allowProfilePrompt && cbtUserProvider.isPhoneMissing) {
+          // Small delay to let the snackbar show first
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          if (!mounted) return;
+          
+          await UserProfileUpdateModal.show(
+            context,
+            user: cbtUserProvider.currentUser,
+            onSave: ({
+              required String phone,
+              required String gender,
+              required String birthDate,
+            }) async {
+              final profileService = UserProfileUpdateService();
+              final currentUser = cbtUserProvider.currentUser;
+              if (currentUser == null) return;
+              
+              try {
+                await profileService.updateUserPhone(
+                  userId: currentUser.id!,
+                  firstName: currentUser.name!.split(' ').first,
+                  lastName: currentUser.name!.split(' ').last,
+                  phone: phone,
+                  attempt: currentUser.attempt.toString(),
+                  email: currentUser.email,
+                  gender: gender,
+                  birthDate: birthDate,
+                );
+                await cbtUserProvider.refreshCurrentUser();
+                
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Profile updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error updating profile: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
           );
         }
       }
-    } catch (e) {
+    } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Error signing in: $e'),
-              backgroundColor: Colors.red),
+          const SnackBar(content: Text('Sign-in was cancelled')),
         );
       }
     }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Error signing in: $e'),
+            backgroundColor: Colors.red),
+      );
+    }
   }
+}
 
   Future<void> _showAccountSwitcherDialog(BuildContext context, dynamic user) async {
     final userId = user?.id;
@@ -1058,7 +1180,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
     }
 
     final displayName =
-        activeProfile != null ? _profileName(activeProfile) : 'User';
+        activeProfile != null ? _profileName(activeProfile) : '__';
 
     return Container(
       decoration: Constants.customBoxDecoration(context),
@@ -1146,7 +1268,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
                           onPressed: () {
-                            courseProvider.fetchCategoriesAndCourses();
+                            courseProvider.fetchCategoriesAndCourses(
+                              profileId: _activeProfile?.id,
+                              dateOfBirth: _activeProfile?.birthDate,
+                              forceRefresh: true,
+                            );
                           },
                           icon: const Icon(Icons.refresh, size: 18),
                           label: const Text('Retry'),
@@ -1251,11 +1377,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
             }
 
             return RefreshIndicator(
-                onRefresh: () async {
-                  await courseProvider.fetchCategoriesAndCourses(
-                    profileId: activeProfile?.id,
-                    dateOfBirth: activeProfile?.birthDate,
-                  );
+                  onRefresh: () async {
+    await context.read<ExploreCourseProvider>().refresh(
+      profileId: activeProfile?.id,
+      dateOfBirth: activeProfile?.birthDate,
+    );
 
                   if (courseProvider.errorMessage.isNotEmpty) {
                     if (!mounted) return;

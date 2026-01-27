@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UserProfileUpdateModal extends StatefulWidget {
   final Future<void> Function({
@@ -40,6 +41,10 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
 
   final _phoneController = TextEditingController();
   final _otherGenderController = TextEditingController();
+
+  bool _privacyAccepted = false;
+  static final Uri _privacyPolicyUri =
+      Uri.parse('https://linkschoolonline.com/privacy-policy');
 
   String? _selectedGender;
   DateTime? _birthDate;
@@ -96,6 +101,18 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
 
 
   Future<void> _submit() async {
+    if (!_privacyAccepted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Please agree to the privacy policy before saving your profile.'),
+          ),
+        );
+      }
+      return;
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isSaving = true);
@@ -119,6 +136,24 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _launchPrivacyPolicy() async {
+    try {
+      if (await canLaunchUrl(_privacyPolicyUri)) {
+        await launchUrl(_privacyPolicyUri, mode: LaunchMode.externalApplication);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open privacy policy.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening privacy policy: $e')),
+        );
+      }
     }
   }
 
@@ -149,6 +184,15 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
 
     // Dialog width that stays aligned across screens
     final maxWidth = 440.0;
+    final privacyTextStyle = theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ) ??
+        TextStyle(color: theme.colorScheme.onSurfaceVariant);
+    final privacyLinkStyle = privacyTextStyle.copyWith(
+      color: theme.colorScheme.primary,
+      fontWeight: FontWeight.w600,
+      decoration: TextDecoration.underline,
+    );
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -359,30 +403,49 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
 
                             const SizedBox(height: 25),
 
-                            // privacy note and checkbox
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                              Checkbox(
-                                value: true,
-                                onChanged: (bool? value) {
-                                  // Checkbox is always checked and disabled
-                                setState(() {
-                                  value = false;
-
-                                }
-                              );}),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                'Your information is safe and will not be shared publicly.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                Checkbox(
+                                  value: _privacyAccepted,
+                                  onChanged: (checked) {
+                                    setState(() {
+                                      _privacyAccepted = checked ?? false;
+                                    });
+                                  },
                                 ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    runSpacing: 2,
+                                    children: [
+                                      Text(
+                                        'I agree to the ',
+                                        style: privacyTextStyle,
+                                      ),
+                                      TextButton(
+                                        onPressed: _launchPrivacyPolicy,
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(0, 0),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          'Privacy Policy',
+                                          style: privacyLinkStyle,
+                                        ),
+                                      ),
+                                      Text(
+                                        ' and confirm my details are accurate.',
+                                        style: privacyTextStyle,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
                               ],
-                            )
+                            ),
                             
                           ],
                         ),
@@ -415,8 +478,9 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: FilledButton(
-                              onPressed: _isSaving ? null : _submit,
+                          child: FilledButton(
+                            onPressed:
+                                (_isSaving || !_privacyAccepted) ? null : _submit,
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(

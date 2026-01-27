@@ -15,7 +15,7 @@ class _SeeAllHistoryState extends State<SeeAllHistory> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Registration',
+          'Registrations',
           style: AppTextStyles.normal600(
               fontSize: 18.0, color: AppColors.primaryLight),
         ),

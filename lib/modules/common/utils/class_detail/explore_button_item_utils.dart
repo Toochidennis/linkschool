@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -20,50 +18,48 @@ class ExploreButtonItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding:
-            const EdgeInsets.only(top: 30.0, bottom: 15.0, left: 6, right: 8),
-        child: Container(
-          width: 110,
-          height: 80,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                offset: const Offset(0, 2),
-                blurRadius: 4,
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                offset: const Offset(0, -1),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.asset(
-                iconPath,
-                width: 25,
-                height: 25,
-                color: AppColors.backgroundLight,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.backgroundLight,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+      child: Material(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: SizedBox(
+            width: 120,
+            height: 90,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: SvgPicture.asset(
+                    iconPath,
+                    width: 22,
+                    height: 22,
+                    color: AppColors.backgroundLight,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.backgroundLight,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -180,7 +180,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       onSwitch: _handleSwitchFromExplore,
       selectedIndex: _selectedIndex,
       onTabSelected: _updateSelectedIndex,
-      isActive: _isExploreActive,
+     // isActive: _isExploreActive,
     );
   }
 

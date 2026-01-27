@@ -480,6 +480,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       final year = entry.key;
       final yearTerms = entry.value;
       // Display session as (year-1)/year
+
       final sessionYear = int.parse(year);
       final header = '${sessionYear - 1}/$year Session';
 
@@ -496,7 +497,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               ),
             ),
           ),
-          ...yearTerms.map((term) {
+          
+         ...yearTerms.asMap().entries.map((e) {
+  final index = e.key;
+  final term = e.value;
             String formattedTerm = term['termName'] ?? 'Unknown Term';
             double percent =
                 (term['averageScore'] ?? 0.0) / 100.0; // Normalize to 0.0-1.0
@@ -505,12 +509,14 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                 year == currentYear && term['termId'] == currentTermId;
             return TermRow(
               term: formattedTerm,
+              showTopBorder: index != 0, 
               percent:
                   percent.clamp(0.0, 1.0), // Ensure percent is between 0 and 1
               indicatorColor: AppColors.primaryLight,
               onTap: () => showTermOverlay(
                 context,
                 classId: widget.classId,
+                 
                 levelId: widget.levelId,
                 year: term['year'],
                 termId: term['termId'],

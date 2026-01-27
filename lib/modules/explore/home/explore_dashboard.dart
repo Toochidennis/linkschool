@@ -172,4 +172,3 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     );
   }
 }
-
