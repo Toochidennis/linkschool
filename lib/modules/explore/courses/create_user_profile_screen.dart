@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
+import 'package:linkschool/modules/model/cbt_user_model.dart';
 
 
 class CreateUserProfileScreen extends StatefulWidget {
   final String userId;
-  const CreateUserProfileScreen({super.key, required this.userId});
+  final CbtUserProfile? profile;
+  final CbtUserProfile? existingProfile;
+  const CreateUserProfileScreen({
+    super.key,
+    required this.userId,
+    this.profile,  this.existingProfile,
+  });
 
   @override
   State<CreateUserProfileScreen> createState() =>
@@ -38,6 +44,32 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
     _dobController.dispose();
     super.dispose();
   }
+
+  bool get _isEditing => widget.profile != null || widget.existingProfile != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use profile if available, fallback to existingProfile
+    final profile = widget.profile ?? widget.existingProfile;
+    if (profile != null) {
+      _firstNameController.text = profile.firstName ?? '';
+      _lastNameController.text = profile.lastName ?? '';
+     
+      
+      if (profile.birthDate != null && profile.birthDate!.isNotEmpty) {
+        _dobController.text = profile.birthDate!;
+        _selectedDob = DateTime.tryParse(profile.birthDate!);
+      }
+      
+      if (profile.gender != null && profile.gender!.isNotEmpty) {
+        _selectedGender = profile.gender!.toLowerCase();
+      }
+    }
+  }
+
+  // initialize profile details if editing existing profile
+  
 
   Future<void> _pickDateOfBirth() async {
     final now = DateTime.now();
@@ -69,27 +101,37 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
       "user_id": widget.userId,
       'first_name': _firstNameController.text.trim(),
       'last_name': _lastNameController.text.trim(),
-      // 'email': _emailController.text.trim(),
-    //  'phone': _phoneController.text.trim(),
       'birth_date': _dobController.text.trim(),
       'gender': _selectedGender,
     };
 
     try {
-      final profiles = await context
-          .read<CreateUserProfileProvider>()
-          .createUserProfile(profileData, widget.userId);
+      final provider = context.read<CreateUserProfileProvider>();
+      final profileToEdit = widget.profile ?? widget.existingProfile;
+  //  adding user id to profile data
+      final String userId = widget.userId;
+      profileData['user_id'] = userId;
+      final profiles = (_isEditing && profileToEdit?.id != null)
+          ? await provider.updateUserProfile(
+              profileToEdit!.id!.toString(),
+              profileData,
+              
+            )
+          : await provider.createUserProfile(profileData, widget.userId);
 
-      // Update CbtUserProvider with the returned profiles
-      final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      final cbtUserProvider =
+          Provider.of<CbtUserProvider>(context, listen: false);
       if (profiles.isNotEmpty) {
         await cbtUserProvider.replaceProfiles(profiles);
       }
 
       if (!mounted) return;
+      final successMessage = _isEditing
+          ? 'Profile updated successfully!'
+          : 'Profile created successfully!';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile created successfully!'),
+        SnackBar(
+          content: Text(successMessage),
           backgroundColor: Colors.green,
         ),
       );
@@ -97,7 +139,7 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to create profile: $e';
+        _errorMessage = 'Failed to create profile';
       });
     }
   }
@@ -105,6 +147,8 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<CreateUserProfileProvider>().isLoading;
+    final screenTitle = _isEditing ? 'Edit Profile' : 'Create New Profile';
+    final actionLabel = _isEditing ? 'Update Profile' : 'Create Profile';
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -114,9 +158,9 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Create New Profile',
-          style: TextStyle(
+        title: Text(
+          screenTitle,
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -402,9 +446,9 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Create Profile',
-                          style: TextStyle(
+                      : Text(
+                          actionLabel,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,

@@ -55,9 +55,7 @@ class CreateUserProfileService {
     try {
       final apiKey = EnvConfig.apiKey;
 
-      if (apiKey.isEmpty) {
-        throw Exception("API KEY not found");
-      }
+     
 
       final uri = Uri.parse("$baseUrl/learning/profiles").replace(queryParameters: {
         'user_id': userId,
@@ -122,6 +120,47 @@ class CreateUserProfileService {
       }
     
   }
+
+  // update user profile
+  Future<Map<String, dynamic>> updateUserProfile(
+  String profileId,
+  Map<String, dynamic> profileData,
+) async {
+  try {
+    final apiKey = EnvConfig.apiKey;
+    final url = "$baseUrl/learning/profiles/$profileId";
+
+    // If gender is null, some APIs hate that. Remove nulls.
+    profileData.removeWhere((k, v) => v == null);
+
+    final bodyJson = jsonEncode(profileData);
+
+    print("📡 updating profile → $url");
+    print("📦 Payload JSON: $bodyJson");
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-API-KEY": apiKey,
+      },
+      body: bodyJson,
+    );
+
+    print("📨 Status: ${response.statusCode}");
+    print("📨 Response: ${response.body}");
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed: ${response.body}");
+    }
+
+    return json.decode(response.body) as Map<String, dynamic>;
+  } catch (e) {
+    throw Exception("Error updating profile: $e");
+  }
+}
+
 
 }
 

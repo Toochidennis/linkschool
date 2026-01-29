@@ -386,6 +386,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                         MaterialPageRoute(
                                             builder: (context) =>
                                                 RegistrationScreen(
+                                                    className: widget.className,
                                                     classId: widget.classId)));
                                   },
                                 ),
@@ -454,80 +455,101 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   }
 
   List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
-    final groupedTerms = <String, List<Map<String, dynamic>>>{};
+  final groupedTerms = <String, List<Map<String, dynamic>>>{};
 
-    // Group terms by year
-    for (final term in terms) {
-      final year = term['year'].toString();
-      if (!groupedTerms.containsKey(year)) {
-        groupedTerms[year] = [];
-      }
-      groupedTerms[year]!.add(term);
-    }
-
-    // Determine the current year and term
-    final currentYear = groupedTerms.keys
-        .map(int.parse)
-        .reduce((a, b) => a > b ? a : b)
-        .toString();
-    final currentTerms = groupedTerms[currentYear] ?? [];
-    final currentTermId = currentTerms.isNotEmpty
-        ? currentTerms
-            .reduce((a, b) => (a['termId'] > b['termId']) ? a : b)['termId']
-        : 0;
-
-    return groupedTerms.entries.map((entry) {
-      final year = entry.key;
-      final yearTerms = entry.value;
-      // Display session as (year-1)/year
-
-      final sessionYear = int.parse(year);
-      final header = '${sessionYear - 1}/$year Session';
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(
-              header,
-              style: AppTextStyles.normal700(
-                fontSize: 18,
-                color: AppColors.primaryLight,
-              ),
-            ),
-          ),
-          
-         ...yearTerms.asMap().entries.map((e) {
-  final index = e.key;
-  final term = e.value;
-            String formattedTerm = term['termName'] ?? 'Unknown Term';
-            double percent =
-                (term['averageScore'] ?? 0.0) / 100.0; // Normalize to 0.0-1.0
-            // Check if this is the current term
-            bool isCurrentTerm =
-                year == currentYear && term['termId'] == currentTermId;
-            return TermRow(
-              term: formattedTerm,
-              showTopBorder: index != 0, 
-              percent:
-                  percent.clamp(0.0, 1.0), // Ensure percent is between 0 and 1
-              indicatorColor: AppColors.primaryLight,
-              onTap: () => showTermOverlay(
-                context,
-                classId: widget.classId,
-                 
-                levelId: widget.levelId,
-                year: term['year'],
-                termId: term['termId'],
-                termName: formattedTerm,
-                isCurrentTerm: isCurrentTerm,
-              ),
-            );
-          }),
-          const SizedBox(height: 10),
-        ],
-      );
-    }).toList();
+  // Group terms by year
+  for (final term in terms) {
+    final year = term['year'].toString();
+    groupedTerms.putIfAbsent(year, () => []);
+    groupedTerms[year]!.add(term);
   }
+
+  // Determine the current year and term
+  final currentYear = groupedTerms.keys
+      .map(int.parse)
+      .reduce((a, b) => a > b ? a : b)
+      .toString();
+
+  final currentTerms = groupedTerms[currentYear] ?? [];
+  final currentTermId = currentTerms.isNotEmpty
+      ? currentTerms
+          .reduce((a, b) => (a['termId'] > b['termId']) ? a : b)['termId']
+      : 0;
+
+  // Optional: sort sessions newest first
+  final sortedEntries = groupedTerms.entries.toList()
+    ..sort((a, b) => int.parse(b.key).compareTo(int.parse(a.key)));
+
+  return sortedEntries.map((entry) {
+    final year = entry.key;
+    final yearTerms = entry.value;
+
+    final sessionYear = int.parse(year);
+    final header = '${sessionYear - 1}/$year Session';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                header,
+                style: AppTextStyles.normal700(
+                  fontSize: 18,
+                  color: AppColors.primaryLight,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              ...yearTerms.asMap().entries.map((e) {
+                final index = e.key;
+                final term = e.value;
+
+                final formattedTerm = term['termName'] ?? 'Unknown Term';
+                final percent = ((term['averageScore'] ?? 0.0) / 100.0)
+                    .clamp(0.0, 1.0);
+
+                final isCurrentTerm =
+                    year == currentYear && term['termId'] == currentTermId;
+
+                return TermRow(
+                  term: formattedTerm,
+                  showTopBorder: index != 0,
+                  percent: percent,
+                  indicatorColor: AppColors.primaryLight,
+                  onTap: () => showTermOverlay(
+                    context,
+                    classId: widget.classId,
+                    levelId: widget.levelId,
+                    year: term['year'],
+                    termId: term['termId'],
+                    termName: formattedTerm,
+                    isCurrentTerm: isCurrentTerm,
+                  ),
+                );
+              }),
+
+              const SizedBox(height: 4),
+            ],
+          ),
+        ),
+      ),
+    );
+  }).toList();
+}
+
 }

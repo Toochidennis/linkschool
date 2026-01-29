@@ -873,6 +873,45 @@ class _ExploreCoursesState extends State<ExploreCourses>
               onSelected: (value) async {
                 if (value == 'edit') {
                   // handle edit
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateUserProfileScreen(
+                        userId: profile.userId.toString(),
+                        existingProfile: profile,
+                      ),
+                    ),
+                  );
+
+                  // If edit was successful, refresh profiles and close the modal
+                  if (result == true && mounted) {
+                    try {
+                      final profileProvider = Provider.of<CreateUserProfileProvider>(
+                          context,
+                          listen: false);
+                      final cbtUserProvider =
+                          Provider.of<CbtUserProvider>(context, listen: false);
+                      
+                      // Fetch updated profiles
+                      final userId = cbtUserProvider.currentUser?.id.toString();
+                      if (userId != null) {
+                        final updatedProfiles =
+                            await profileProvider.fetchUserProfiles(userId);
+                        if (updatedProfiles.isNotEmpty) {
+                          await cbtUserProvider.replaceProfiles(updatedProfiles);
+                        }
+                      }
+                      
+                      // Close the dialog to reflect changes
+                      Navigator.of(context).pop();
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error refreshing profiles: $e')),
+                        );
+                      }
+                    }
+                  }
                 } else if (value == 'delete') {
                   // handle delete
                   final profileProvider =
@@ -1161,23 +1200,23 @@ class _ExploreCoursesState extends State<ExploreCourses>
         }
       });
     }
-    if (_activeProfile == null && activeProfile != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() {
-          _activeProfile = activeProfile;
-        });
-        if (activeProfile?.id != null) {
-          _saveActiveProfileId(activeProfile!.id, birthDate: activeProfile!.birthDate);
-        }
-        if (mounted && activeProfile != null) {
-          context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-                profileId: activeProfile.id,
-                dateOfBirth: activeProfile.birthDate,
-              );
-        }
-      });
-    }
+    // if (_activeProfile == null && activeProfile != null) {
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     if (!mounted) return;
+    //     setState(() {
+    //       _activeProfile = activeProfile;
+    //     });
+    //     if (activeProfile?.id != null) {
+    //       _saveActiveProfileId(activeProfile!.id, birthDate: activeProfile!.birthDate);
+    //     }
+    //     if (mounted && activeProfile != null) {
+    //       context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+    //             profileId: activeProfile.id,
+    //             dateOfBirth: activeProfile.birthDate,
+    //           );
+    //     }
+    //   });
+    // }
 
     final displayName =
         activeProfile != null ? _profileName(activeProfile) : '__';

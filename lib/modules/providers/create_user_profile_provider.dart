@@ -84,6 +84,41 @@ class CreateUserProfileProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  //  update user profile
+  Future<List<CbtUserProfile>> updateUserProfile(
+      String profileId, Map<String, dynamic> profileData) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final responseJson =
+          await _createUserProfileService.updateUserProfile(
+              profileId, profileData);
+
+      final data = responseJson['data'];
+      if (data == null) throw Exception('No profile data returned from server');
+
+      List<CbtUserProfile> profiles = [];
+      if (data is List) {
+        profiles = data
+            .map((e) => CbtUserProfile.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else if (data is Map<String, dynamic>) {
+        profiles = [CbtUserProfile.fromJson(data)];
+      } else {
+        throw Exception('Unexpected profile data format');
+      }
+
+      return profiles;
+    } catch (e) {
+      throw Exception("Error in provider while updating profile: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+  
 }
 
 
