@@ -135,7 +135,12 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context, true);
+
+      final createdProfile = profiles.firstWhere(
+  (p) => p.firstName == _firstNameController.text.trim()
+);
+   Navigator.pop(context, createdProfile);
+
     } catch (e) {
       if (!mounted) return;
       setState(() {

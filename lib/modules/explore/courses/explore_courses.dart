@@ -40,6 +40,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
   bool _didCheckProfileModal = false;
   bool _loadedActiveProfile = false;
   CbtUserProfile? _activeProfile;
+  bool _navigating = false;
+
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -766,6 +768,14 @@ class _ExploreCoursesState extends State<ExploreCourses>
                         ),
                       );
                       // If profile was created successfully, refresh user data
+                      if (result is CbtUserProfile) {
+  setState(() => _activeProfile = result);
+  await _saveActiveProfileId(result.id, birthDate: result.birthDate);
+  await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+    profileId: result.id,
+    dateOfBirth: result.birthDate,
+  );
+}
                       if (result == true && mounted) {
                         // Refresh user list if needed and select the newly created profile
                         final updatedUser =
@@ -1601,6 +1611,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
   Widget _buildCompactCourseCard(CourseModel course, CategoryModel category) {
     return GestureDetector(
         onTap: () async {
+            if (_navigating) return;
+  _navigating = true;
           // Check if user is signed in
           final authService = FirebaseAuthService();
           final isSignedIn = await authService.isUserSignedUp();
@@ -1723,9 +1735,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
               );
             } catch (e) {
               // If verification fails, fall back to showing the course description.
-            }
+            }finally {
+              _navigating = false;
           }
-
+          }
           void openDescription() {
             Navigator.push(
               context,
