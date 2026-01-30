@@ -45,8 +45,8 @@ class CbtUserProvider with ChangeNotifier {
       // Load user from SharedPreferences
       final userJson = prefs.getString(_keyCurrentUser);
       if (userJson != null && userJson.isNotEmpty) {
-        final userData = json.decode(userJson);
-        _currentUser = CbtUserModel.fromJson(userData);
+     final userData = json.decode(userJson) as Map<String, dynamic>;
+_currentUser = CbtUserModel.fromJson(userData);
         print('✅ User loaded from SharedPreferences: ${_currentUser?.email}');
 
         final cachedProfiles = await _loadProfilesFromPreferences();
@@ -91,30 +91,22 @@ class CbtUserProvider with ChangeNotifier {
   // 💾 SAVE USER TO SHARED PREFERENCES
   // =========================================================================
   Future<void> _saveUserToPreferences(CbtUserModel user) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      // Save user details (profiles stored separately)
-      final userJson = json.encode({
-        'user': {
-          'id': user.id,
-          'username': user.username,
-          'name': user.name,
-          'email': user.email,
-          'phone': user.phone ,
-          'profile_picture': user.profilePicture,
-          'attempt': user.attempt,
-          'subscribed': user.subscribed,
-          'reference': user.reference,
-          'created_at': user.createdAt,
-        },
-      });
-      await prefs.setString(_keyCurrentUser, userJson);
+  try {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Save user directly (no wrapper)
+    await prefs.setString(_keyCurrentUser, json.encode(user.toJson()));
+
+    // Only overwrite cached profiles if backend returned them
+    if (user.profiles.isNotEmpty) {
       await _saveProfilesToPreferences(user.profiles);
-      print('✅ User saved to SharedPreferences: ${user.email}');
-    } catch (e) {
-      print('❌ Error saving user to SharedPreferences: $e');
     }
+
+    print('✅ User saved to SharedPreferences: ${user.email}');
+  } catch (e) {
+    print('❌ Error saving user to SharedPreferences: $e');
   }
+}
 
   // =========================================================================
   // 👥 PROFILES - Save/Load helper methods
@@ -216,6 +208,13 @@ class CbtUserProvider with ChangeNotifier {
 
         // Save to SharedPreferences
         await _saveUserToPreferences(user);
+        final cachedProfiles = await _loadProfilesFromPreferences();
+if ((user.profiles).isEmpty && cachedProfiles.isNotEmpty) {
+  _currentUser = user.copyWith(profiles: cachedProfiles);
+} else {
+  _currentUser = user;
+}
+await _saveUserToPreferences(_currentUser!);
 
         // Update payment reference if user has paid
         if (user.reference != null && user.reference!.isNotEmpty) {

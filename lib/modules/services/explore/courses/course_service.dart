@@ -42,7 +42,7 @@ class CourseService {
 
       final uri = Uri.parse(baseUrl).replace(queryParameters: {
         if (profileId != null) 'profile_id': profileId.toString(),
-        if (dateOfBirth != null) 'birth_date': dateOfBirth,
+     //   if (dateOfBirth != null) 'birth_date': dateOfBirth,
       });
 
 

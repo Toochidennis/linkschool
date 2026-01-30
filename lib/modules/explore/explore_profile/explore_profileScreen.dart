@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 // Add this import for the payment dialog
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
+import 'package:linkschool/modules/model/cbt_user_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -107,6 +109,21 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     });
   }
 
+  Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (id != null) {
+      await prefs.setInt('active_profile_id', id);
+      if (birthDate != null) {
+        await prefs.setString('active_profile_dob', birthDate);
+      } else {
+        await prefs.remove('active_profile_dob');
+      }
+    } else {
+      await prefs.remove('active_profile_id');
+      await prefs.remove('active_profile_dob');
+    }
+  }
+
   Future<void> _handleSignIn() async {
     if (!mounted) return;
     try {
@@ -114,13 +131,45 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       final user = userCredential?.user;
       if (user != null) {
         // Register user in backend via CbtUserProvider
-        final userProvider =
+        final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
-        await userProvider.handleFirebaseSignUp(
+        await cbtUserProvider.handleFirebaseSignUp(
           email: user.email ?? '',
           name: user.displayName ?? '',
           profilePicture: user.photoURL ?? '',
         );
+        
+        // Refresh current user to get updated data
+        await cbtUserProvider.refreshCurrentUser();
+        if (!mounted) return;
+        
+        final updatedUser = cbtUserProvider.currentUser;
+        
+        // Fetch profiles if user exists
+        if (updatedUser != null) {
+          try {
+            final profileProvider =
+                Provider.of<CreateUserProfileProvider>(context, listen: false);
+            final profiles =
+                await profileProvider.fetchUserProfiles(updatedUser.id.toString());
+            if (profiles.isNotEmpty) {
+              await cbtUserProvider.replaceProfiles(profiles);
+            }
+          } catch (e) {
+            debugPrint("Failed to fetch profiles after sign-in: $e");
+          }
+        }
+        
+        if (!mounted) return;
+        
+        // Set and save active profile
+        final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+        CbtUserProfile? activeProfile = profiles.isNotEmpty ? profiles.first : null;
+        
+        if (activeProfile?.id != null) {
+          await _saveActiveProfileId(activeProfile!.id, birthDate: activeProfile.birthDate);
+        }
+        
         setState(() {
           _currentUser = user;
           _isSignedIn = true;

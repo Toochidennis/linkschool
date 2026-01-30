@@ -41,6 +41,9 @@ class _ExploreCoursesState extends State<ExploreCourses>
   bool _loadedActiveProfile = false;
   CbtUserProfile? _activeProfile;
   bool _navigating = false;
+  bool _isBootstrapping = false;
+  late final CbtUserProvider _cbtUserProvider;
+  int? _lastUserId;
 
 
   final ScrollController _scrollController = ScrollController();
@@ -85,6 +88,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
       if (mounted) _bounceController.forward();
     });
 
+    _cbtUserProvider = context.read<CbtUserProvider>();
+    _lastUserId = _cbtUserProvider.currentUser?.id;
+    _cbtUserProvider.addListener(_handleUserChange);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _bootstrapScreen();
     });
@@ -96,66 +103,78 @@ class _ExploreCoursesState extends State<ExploreCourses>
     });
   }
 
-  Future<void> _bootstrapScreen() async {
-  if (!mounted) return;
-
-  // 1) Make sure currentUser is fresh (so profiles exist)
-  final cbtUserProvider = context.read<CbtUserProvider>();
-  await cbtUserProvider.refreshCurrentUser();
-
-  final user = cbtUserProvider.currentUser;
-  if (user == null) {
-    // Not signed in, just load courses without profile
-    await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
-    _loadedActiveProfile = true;
-    return;
-  }
-
-  // 2) Fetch profiles immediately (NOT on tap)
+Future<void> _bootstrapScreen() async {
+  if (!mounted || _isBootstrapping) return;
+  _isBootstrapping = true;
   try {
-    final profileProvider = context.read<CreateUserProfileProvider>();
-    final profiles = await profileProvider.fetchUserProfiles(user.id.toString());
-    if (profiles.isNotEmpty) {
-      await cbtUserProvider.replaceProfiles(profiles);
-    }
-  } catch (e) {
-    debugPrint("Failed to fetch profiles on load: $e");
-  }
+    final cbtUserProvider = context.read<CbtUserProvider>();
 
-  // 3) Resolve active profile (saved -> match -> fallback to first)
-  final savedId = await _loadActiveProfileId();
-  final savedDob = await _loadActiveProfileDob();
+    // 1) Refresh current user
+    await cbtUserProvider.refreshCurrentUser();
+    if (!mounted) return;
 
-  final updatedProfiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+    final user = cbtUserProvider.currentUser;
 
-  CbtUserProfile? selected;
-  if (savedId != null) {
-    try {
-      selected = updatedProfiles.firstWhere((p) => p.id == savedId);
-    } catch (_) {
-      selected = null;
-    }
-  }
-  selected ??= updatedProfiles.isNotEmpty ? updatedProfiles.first : null;
-
-  if (!mounted) return;
-
-  setState(() {
-    _activeProfile = selected;
-    _loadedActiveProfile = true;
-  });
-
-  // 4) Persist if needed + load courses using selected profile
-  if (selected?.id != null) {
-    await _saveActiveProfileId(selected!.id, birthDate: selected.birthDate);
-  }
-
-  // ✨ NEW: Check if phone is missing EVERY TIME user navigates to this page
-  if (widget.allowProfilePrompt && cbtUserProvider.isPhoneMissing) {
-    // Use addPostFrameCallback to ensure UI is ready
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // If not signed in: load public courses and exit
+    if (user == null) {
+      await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
       if (!mounted) return;
-      
+      setState(() {
+        _loadedActiveProfile = true;
+        _activeProfile = null;
+      });
+      return;
+    }
+
+    // 2) Fetch profiles immediately
+    try {
+      final profileProvider = context.read<CreateUserProfileProvider>();
+      final profiles =
+          await profileProvider.fetchUserProfiles(user.id.toString());
+      if (profiles.isNotEmpty) {
+        await cbtUserProvider.replaceProfiles(profiles);
+      }
+    } catch (e) {
+      debugPrint("Failed to fetch profiles on load: $e");
+    }
+
+    if (!mounted) return;
+
+    // 3) Resolve active profile
+    final savedId = await _loadActiveProfileId();
+    final savedDob = await _loadActiveProfileDob();
+
+    final updatedProfiles =
+        cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+
+    CbtUserProfile? selected;
+    if (savedId != null) {
+      try {
+        selected = updatedProfiles.firstWhere((p) => p.id == savedId);
+      } catch (_) {
+        selected = null;
+      }
+    }
+    selected ??= updatedProfiles.isNotEmpty ? updatedProfiles.first : null;
+
+    if (!mounted) return;
+
+    setState(() {
+      _activeProfile = selected;
+      _loadedActiveProfile = true;
+    });
+
+    // 4) Persist selection if needed
+    if (selected?.id != null) {
+      await _saveActiveProfileId(selected!.id, birthDate: selected.birthDate);
+    }
+
+    // 5) Phone modal: show ONCE per screen session, not repeatedly
+    if (widget.allowProfilePrompt &&
+        cbtUserProvider.isPhoneMissing &&
+        !_didCheckProfileModal) {
+      _didCheckProfileModal = true;
+
       await UserProfileUpdateModal.show(
         context,
         user: cbtUserProvider.currentUser,
@@ -167,7 +186,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
           final profileService = UserProfileUpdateService();
           final currentUser = cbtUserProvider.currentUser;
           if (currentUser == null) return;
-          
+
           try {
             await profileService.updateUserPhone(
               userId: currentUser.id!,
@@ -179,31 +198,33 @@ class _ExploreCoursesState extends State<ExploreCourses>
               gender: gender,
               birthDate: birthDate,
             );
+
             await cbtUserProvider.refreshCurrentUser();
-            
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile updated successfully'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            }
+            if (!mounted) return;
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
           } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Error updating profile: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error updating profile: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
         },
       );
 
-      // After modal is dismissed, check if phone is still missing
-      if (mounted && cbtUserProvider.isPhoneMissing) {
+      // After modal: if still missing, warn and stop (optional)
+      await cbtUserProvider.refreshCurrentUser();
+      if (!mounted) return;
+
+      if (cbtUserProvider.isPhoneMissing) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Phone number is required to access courses'),
@@ -211,18 +232,35 @@ class _ExploreCoursesState extends State<ExploreCourses>
             duration: Duration(seconds: 3),
           ),
         );
+        // You can return here if you want to block course access entirely:
+        // return;
       }
-    });
-  }
+    }
 
-  await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-        profileId: selected?.id ?? savedId,
-        dateOfBirth: selected?.birthDate ?? savedDob,
-      );
+    // 6) Load courses (always runs)
+    await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+          profileId: selected?.id ?? savedId,
+          dateOfBirth: selected?.birthDate ?? savedDob,
+        );
+  } finally {
+    _isBootstrapping = false;
+  }
 }
+
+  void _handleUserChange() {
+    final userId = _cbtUserProvider.currentUser?.id;
+    if (userId != _lastUserId) {
+      _lastUserId = userId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _bootstrapScreen();
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _cbtUserProvider.removeListener(_handleUserChange);
     _fadeController.dispose();
     _slideController.dispose();
     _bounceController.dispose();
@@ -632,6 +670,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                   birthDate: birthDate,
                 );
                 await cbtUserProvider.refreshCurrentUser();
+
                 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -654,6 +693,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
             },
           );
         }
+
+       await _bootstrapScreen();
+if (!mounted) return;
+setState(() {});
       }
     } else {
       if (mounted) {
@@ -757,9 +800,9 @@ class _ExploreCoursesState extends State<ExploreCourses>
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      Navigator.pop(context);
+                      
                       // Navigate to create profile screen
-                      final result = await Navigator.push(
+                      final result = await Navigator.push<CbtUserProfile>(
                         context,
                         MaterialPageRoute(
                           builder: (context) => CreateUserProfileScreen(
@@ -768,39 +811,15 @@ class _ExploreCoursesState extends State<ExploreCourses>
                         ),
                       );
                       // If profile was created successfully, refresh user data
-                      if (result is CbtUserProfile) {
-  setState(() => _activeProfile = result);
-  await _saveActiveProfileId(result.id, birthDate: result.birthDate);
-  await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-    profileId: result.id,
-    dateOfBirth: result.birthDate,
-  );
-}
-                      if (result == true && mounted) {
-                        // Refresh user list if needed and select the newly created profile
-                        final updatedUser =
-                            Provider.of<CbtUserProvider>(context, listen: false)
-                                .currentUser;
-                        final profiles = (updatedUser?.profiles ?? []);
-                        CbtUserProfile? selectedProfile;
-                        setState(() {
-                          if (profiles.isNotEmpty) {
-                            selectedProfile = profiles.last;
-                            _activeProfile = selectedProfile;
-                            _saveActiveProfileId(_activeProfile?.id,
-                                birthDate: _activeProfile?.birthDate);
-                          } else {
-                            _activeProfile = null;
-                            _saveActiveProfileId(null);
-                          }
-                        });
-                        if (selectedProfile?.id != null) {
-                          context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-                            profileId: selectedProfile!.id,
-                            dateOfBirth: selectedProfile!.birthDate,
-                          );
-                        }
+                      if (mounted) {
+                        setState(() => _activeProfile = result);
+                        await _saveActiveProfileId(result!.id, birthDate: result.birthDate);
+                        await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+                          profileId: result.id,
+                          dateOfBirth: result.birthDate,
+                        );
                       }
+                      Navigator.pop(context);
                     },
                     icon: const Icon(Icons.add, size: 20),
                     label: const Text('Add New Profile'),
@@ -1033,17 +1052,40 @@ class _ExploreCoursesState extends State<ExploreCourses>
   Widget _avatarWidget(
       {String? imageUrl, required String name, double radius = 20}) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
+      final colors = [
+        Colors.blue.shade300,
+        Colors.purple.shade300,
+        Colors.pink,
+        Colors.orange,
+        Colors.teal,
+        Colors.indigo,
+      ];
+      final randomColor = colors[name.hashCode % colors.length];
+      
       return CircleAvatar(
         radius: radius,
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: randomColor,
         backgroundImage: NetworkImage(imageUrl),
       );
     }
 
+ final colors = [
+        Colors.blue.shade300,
+        Colors.purple.shade300,
+        Colors.pink,
+        Colors.orange,
+        Colors.teal,
+        Colors.indigo,
+      ];
+      final randomColor = colors[name.hashCode % colors.length];
+      
+    
+
+
     final initials = _profileInitials(name);
     return CircleAvatar(
       radius: radius,
-      backgroundColor: Colors.grey.shade300,
+      backgroundColor: randomColor,
       child: Text(
         initials,
         style: TextStyle(
@@ -1194,21 +1236,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
     activeProfile ??= firstProfile;
     if (!_loadedActiveProfile && profiles.isNotEmpty) {
       _loadedActiveProfile = true;
-      _loadActiveProfileId().then((savedId) {
-        if (savedId != null && mounted) {
-          CbtUserProfile? savedProfile;
-          try {
-            savedProfile = profiles.firstWhere((p) => p.id == savedId);
-          } catch (e) {
-            savedProfile = null;
-          }
-          if (savedProfile != null) {
-            setState(() {
-              _activeProfile = savedProfile;
-            });
-          }
-        }
-      });
+  
     }
     // if (_activeProfile == null && activeProfile != null) {
     //   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1617,11 +1645,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
           final authService = FirebaseAuthService();
           final isSignedIn = await authService.isUserSignedUp();
 
-          if (!isSignedIn) {
-            // Show sign-in dialog if not signed in
-            _showSignInDialog();
-            return;
-          }
+         if (!isSignedIn) {
+  _navigating = false;
+  _showSignInDialog();
+  return;
+}
 
           // Before navigating, ensure phone is present; if missing show modal
           final cbtUserProvider =
