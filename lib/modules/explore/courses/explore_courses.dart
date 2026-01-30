@@ -44,6 +44,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
   bool _isBootstrapping = false;
   late final CbtUserProvider _cbtUserProvider;
   int? _lastUserId;
+  CourseModel? _pendingCourse;
+  CategoryModel? _pendingCategory;
+   bool _isShowingAccountSwitcher = false; 
+  
 
 
   final ScrollController _scrollController = ScrollController();
@@ -103,7 +107,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
     });
   }
 
-Future<void> _bootstrapScreen() async {
+  
+  Future<void> _bootstrapScreen() async {
   if (!mounted || _isBootstrapping) return;
   _isBootstrapping = true;
   try {
@@ -246,7 +251,6 @@ Future<void> _bootstrapScreen() async {
     _isBootstrapping = false;
   }
 }
-
   void _handleUserChange() {
     final userId = _cbtUserProvider.currentUser?.id;
     if (userId != _lastUserId) {
@@ -616,136 +620,204 @@ Future<void> _bootstrapScreen() async {
   }
 
   Future<void> _handleSignIn() async {
-  if (!mounted) return;
-  final authService = FirebaseAuthService();
-  try {
-    final userCredential = await authService.signInWithGoogle();
-    final user = userCredential?.user;
-    if (user != null) {
-      // Register user in backend via CbtUserProvider
-      final userProvider =
-          Provider.of<CbtUserProvider>(context, listen: false);
-      await userProvider.handleFirebaseSignUp(
-        email: user.email!,
-        name: user.displayName!,
-        profilePicture: user.photoURL ?? '',
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Signed in successfully')),
+    if (!mounted) return;
+    final authService = FirebaseAuthService();
+    try {
+      final userCredential = await authService.signInWithGoogle();
+      final user = userCredential?.user;
+      if (user != null) {
+        final userProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
+        await userProvider.handleFirebaseSignUp(
+          email: user.email!,
+          name: user.displayName!,
+          profilePicture: user.photoURL ?? '',
         );
 
-        // ✨ NEW: Check if phone is missing after sign-in
-        final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-        await cbtUserProvider.refreshCurrentUser();
-        
-        if (widget.allowProfilePrompt && cbtUserProvider.isPhoneMissing) {
-          // Small delay to let the snackbar show first
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          if (!mounted) return;
-          
-          await UserProfileUpdateModal.show(
-            context,
-            user: cbtUserProvider.currentUser,
-            onSave: ({
-              required String phone,
-              required String gender,
-              required String birthDate,
-            }) async {
-              final profileService = UserProfileUpdateService();
-              final currentUser = cbtUserProvider.currentUser;
-              if (currentUser == null) return;
-              
-              try {
-                await profileService.updateUserPhone(
-                  userId: currentUser.id!,
-                  firstName: currentUser.name!.split(' ').first,
-                  lastName: currentUser.name!.split(' ').last,
-                  phone: phone,
-                  attempt: currentUser.attempt.toString(),
-                  email: currentUser.email,
-                  gender: gender,
-                  birthDate: birthDate,
-                );
-                await cbtUserProvider.refreshCurrentUser();
-
-                
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Profile updated successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error updating profile: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Signed in successfully')),
           );
-        }
 
-       await _bootstrapScreen();
+          final cbtUserProvider =
+              Provider.of<CbtUserProvider>(context, listen: false);
+          await cbtUserProvider.refreshCurrentUser();
+
+          if (widget.allowProfilePrompt && cbtUserProvider.isPhoneMissing) {
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (!mounted) return;
+
+            await UserProfileUpdateModal.show(
+              context,
+              user: cbtUserProvider.currentUser,
+              onSave: ({
+                required String phone,
+                required String gender,
+                required String birthDate,
+              }) async {
+                final profileService = UserProfileUpdateService();
+                final currentUser = cbtUserProvider.currentUser;
+                if (currentUser == null) return;
+
+                try {
+                  await profileService.updateUserPhone(
+                    userId: currentUser.id!,
+                    firstName: currentUser.name!.split(' ').first,
+                    lastName: currentUser.name!.split(' ').last,
+                    phone: phone,
+                    attempt: currentUser.attempt.toString(),
+                    email: currentUser.email,
+                    gender: gender,
+                    birthDate: birthDate,
+                  );
+                  await cbtUserProvider.refreshCurrentUser();
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile updated successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error updating profile: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            );
+          }
+
+         await _bootstrapScreen();
 if (!mounted) return;
-setState(() {});
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sign-in was cancelled')),
-        );
-      }
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Error signing in: $e'),
-            backgroundColor: Colors.red),
-      );
-    }
+
+// Get the active profile that was just set in _bootstrapScreen
+
+final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+final savedId = await _loadActiveProfileId();
+CbtUserProfile? activeProfile;
+
+if (savedId != null) {
+  try {
+    activeProfile = profiles.firstWhere((p) => p.id == savedId);
+  } catch (_) {
+    activeProfile = null;
   }
 }
+activeProfile ??= profiles.isNotEmpty ? profiles.first : null;
 
-  Future<void> _showAccountSwitcherDialog(BuildContext context, dynamic user) async {
-    final userId = user?.id;
-    if (userId == null) {
-      return;
-    }
+// Update the widget's _activeProfile
+setState(() {
+  _activeProfile = activeProfile;
+});
 
+debugPrint('After bootstrap - _pendingCourse: ${_pendingCourse?.courseName}');
+debugPrint('After bootstrap - _pendingCategory: ${_pendingCategory?.name}');
+debugPrint('After bootstrap - _activeProfile: ${_activeProfile?.id}');
+
+// Check enrollment status before resuming pending course selection
+if (_pendingCourse != null && _pendingCategory != null) {
+  debugPrint('Entering enrollment check block');
+  final profileId = _activeProfile?.id;
+  debugPrint('Profile ID: $profileId');
+  debugPrint('Cohort ID: ${_pendingCourse!.cohortId}');
+  
+  if (profileId != null && _pendingCourse!.cohortId != null) {
+    debugPrint('About to check enrollment...');
     try {
-      final profileProvider =
-          Provider.of<CreateUserProfileProvider>(context, listen: false);
-      final profiles =
-          await profileProvider.fetchUserProfiles(userId.toString());
-      if (profiles.isNotEmpty) {
-        await Provider.of<CbtUserProvider>(context, listen: false)
-            .replaceProfiles(profiles);
+      final isEnrolled = await CourseService().checkIsEnrolled(
+        cohortId: _pendingCourse!.cohortId!,
+        profileId: profileId,
+      );
+      debugPrint('Enrollment check after sign-in: isEnrolled=$isEnrolled for course ${_pendingCourse!.courseName}');
+    } catch (e) {
+      debugPrint('Error checking enrollment after sign-in: $e');
+    }
+  } else {
+    debugPrint('Skipped enrollment check - profileId: $profileId, cohortId: ${_pendingCourse!.cohortId}');
+  }
+} else {
+  debugPrint('Skipped enrollment check - _pendingCourse: $_pendingCourse, _pendingCategory: $_pendingCategory');
+}
+
+await _resumePendingCourseSelection();
+          }
+          
+       
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sign-in was cancelled')),
+          );
+        }
       }
     } catch (e) {
-      debugPrint("Failed to fetch profiles: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error signing in: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
 
-    final dialogUser =
-        Provider.of<CbtUserProvider>(context, listen: false).currentUser ?? user;
-    final profiles = (dialogUser?.profiles as List<CbtUserProfile>?) ??
-        <CbtUserProfile>[];
-    final activeProfileId = _activeProfile?.id;
-    showDialog(
+ Future<void> _showAccountSwitcherDialog(BuildContext context, dynamic user) async {
+  // Prevent multiple dialogs from opening
+  if (_isShowingAccountSwitcher) {
+    debugPrint('Dialog already showing, ignoring tap');
+    return;
+  }
+  
+  _isShowingAccountSwitcher = true;
+  debugPrint('Opening account switcher dialog, flag set to: $_isShowingAccountSwitcher');
+
+  final userId = user?.id;
+  if (userId == null) {
+    _isShowingAccountSwitcher = false;
+    return;
+  }
+
+  try {
+    final profileProvider =
+        Provider.of<CreateUserProfileProvider>(context, listen: false);
+    final profiles =
+        await profileProvider.fetchUserProfiles(userId.toString());
+    if (profiles.isNotEmpty) {
+      await Provider.of<CbtUserProvider>(context, listen: false)
+          .replaceProfiles(profiles);
+    }
+  } catch (e) {
+    debugPrint("Failed to fetch profiles: $e");
+    _isShowingAccountSwitcher = false;
+    return;
+  }
+
+  if (!mounted) {
+    _isShowingAccountSwitcher = false;
+    return;
+  }
+
+  final dialogUser =
+      Provider.of<CbtUserProvider>(context, listen: false).currentUser ?? user;
+  final profiles = (dialogUser?.profiles as List<CbtUserProfile>?) ??
+      <CbtUserProfile>[];
+  final activeProfileId = _activeProfile?.id;
+  
+  try {
+    await showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) {
         return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           backgroundColor: Colors.white,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16),
           child: Padding(
@@ -795,13 +867,10 @@ setState(() {});
                     }).toList(),
                   ),
                 const SizedBox(height: 24),
-                // Add New Profile Button
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      
-                      // Navigate to create profile screen
                       final result = await Navigator.push<CbtUserProfile>(
                         context,
                         MaterialPageRoute(
@@ -810,16 +879,17 @@ setState(() {});
                           ),
                         ),
                       );
-                      // If profile was created successfully, refresh user data
-                      if (mounted) {
+                      if (mounted && result != null) {
                         setState(() => _activeProfile = result);
-                        await _saveActiveProfileId(result!.id, birthDate: result.birthDate);
+                        await _saveActiveProfileId(result.id, birthDate: result.birthDate);
                         await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
                           profileId: result.id,
                           dateOfBirth: result.birthDate,
                         );
                       }
-                      Navigator.pop(context);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
                     },
                     icon: const Icon(Icons.add, size: 20),
                     label: const Text('Add New Profile'),
@@ -843,9 +913,268 @@ setState(() {});
         );
       },
     );
+  } finally {
+    debugPrint('Account switcher dialog closed');
+    debugPrint('Flag before reset: $_isShowingAccountSwitcher');
+    
+    // Add a small delay to ensure the dialog animation completes
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    _isShowingAccountSwitcher = false;
+    debugPrint('Flag after reset: $_isShowingAccountSwitcher');
   }
+}
+  
+  void _setPendingCourseSelection(
+      CourseModel course,
+      CategoryModel category,
+    ) {
+      _pendingCourse = course;
+      _pendingCategory = category;
+    }
 
-  Widget _buildAccountItem({
+  void _clearPendingCourseSelection() {
+      _pendingCourse = null;
+      _pendingCategory = null;
+    }
+
+  Future<void> _resumePendingCourseSelection() async {
+      final pendingCourse = _pendingCourse;
+      final pendingCategory = _pendingCategory;
+      if (pendingCourse == null || pendingCategory == null) return;
+
+      _clearPendingCourseSelection();
+      await _handleCourseTap(pendingCourse, pendingCategory);
+    }
+
+  Future<void> _handleCourseTap(CourseModel course, CategoryModel category) async {
+      if (_navigating) return;
+      _navigating = true;
+      try {
+        final authService = FirebaseAuthService();
+        final isSignedIn = await authService.isUserSignedUp();
+
+        if (!isSignedIn) {
+          _setPendingCourseSelection(course, category);
+          _showSignInDialog();
+          return;
+        }
+
+        final cbtUserProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
+        if (cbtUserProvider.isPhoneMissing) {
+          await UserProfileUpdateModal.show(
+            context,
+            user: cbtUserProvider.currentUser,
+            onSave: (
+                {required String phone,
+                required String gender,
+                required String birthDate}) async {
+              final profileService = UserProfileUpdateService();
+              final user = cbtUserProvider.currentUser;
+              if (user == null) return;
+              await profileService.updateUserPhone(
+                userId: user.id!,
+                firstName: user.name!.split(' ').first,
+                lastName: user.name!.split(' ').last,
+                phone: phone,
+                attempt: user.attempt.toString(),
+                email: user.email,
+                gender: gender,
+                birthDate: birthDate,
+              );
+              await cbtUserProvider.refreshCurrentUser();
+            },
+          );
+
+          if (cbtUserProvider.isPhoneMissing) {
+            return;
+          }
+        }
+
+        if (!course.hasActiveCohort) {
+          showDialog(
+            context: context,
+            builder: (context) => Center(
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.info_outline,
+                        color: Colors.orange, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No Active Cohort',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'There is no active cohort for this course.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFA500),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('OK'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+
+          return;
+        }
+
+        final profileId = _activeProfile?.id;
+        bool isEnrolled = false;
+
+        if (profileId != null && course.cohortId != null) {
+          try {
+            isEnrolled = await CourseService().checkIsEnrolled(
+              cohortId: course.cohortId!,
+              profileId: profileId,
+            );
+          } catch (e) {
+            // If verification fails, fall back to showing the course description.
+          }
+        }
+
+        if (isEnrolled) {
+          bool isPaid = true;
+          if (!course.isFree) {
+            if (profileId == null || course.cohortId == null) {
+              isPaid = false;
+            } else {
+              try {
+                isPaid = await context
+                    .read<EnrollmentProvider>()
+                    .checkPaymentStatus(
+                      cohortId: course.cohortId!.toString(),
+                      profileId: profileId,
+                    );
+              } catch (e) {
+                final status = (course.paymentStatus ?? '').toLowerCase();
+                isPaid = status == 'paid' ||
+                    status == 'true' ||
+                    status == '1';
+              }
+            }
+          }
+
+          final imageUrl = course.imageUrl.startsWith('https')
+              ? course.imageUrl
+              : "https://linkskool.net/${course.imageUrl}";
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CourseContentScreen(
+                lessonImage: imageUrl,
+                cohortId: course.cohortId.toString(),
+                isFree: course.isFree,
+                trialExpiryDate: course.trialExpiryDate,
+                courseTitle: course.courseName,
+                courseDescription: course.description,
+                provider: category.name,
+                courseId: course.id,
+                courseName: course.courseName,
+                categoryId: course.programId ?? category.id,
+                providerSubtitle: 'Powered By Digital Dreams',
+                category: category.name.toUpperCase(),
+                categoryColor: _getCategoryColor(category.name),
+                profileId: _activeProfile?.id,
+                trialType: course.trialType,
+                trialValue: course.trialValue,
+                lessonsTaken: course.lessonsTaken,
+                cohortCost: course.cost.toInt(),
+              ),
+            ),
+          );
+          return;
+        }
+
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CourseDescriptionScreen(
+              profileId: _activeProfile?.id,
+              firstName: _activeProfile?.firstName,
+              lastName: _activeProfile?.lastName,
+              course: course,
+              categoryName: category.name,
+              categoryId: course.programId ?? category.id,
+              provider: category.name,
+              cohortId: course.cohortId.toString(),
+              isFree: course.isFree,
+              trialExpiryDate: course.trialExpiryDate,
+              providerSubtitle: 'Powered By Digital Dreams',
+              categoryColor: _getCategoryColor(category.name),
+              hasEnrolled: isEnrolled,
+            ),
+          ),
+        );
+      } finally {
+        _navigating = false;
+      }
+    }
+
+    Widget _profileSwitcherBadge() {
+  return Container(
+    width: 20,
+    height: 20,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: const Icon(
+      Icons.keyboard_arrow_down,
+      size: 18,
+      color: Colors.black87,
+    ),
+  );
+}
+
+    Widget _buildAccountItem({
     required CbtUserProfile profile,
     required String name,
     required String email,
@@ -1485,18 +1814,32 @@ setState(() {});
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0, vertical: 8.0),
-                            child: GestureDetector(
-                              onTap: () async {
-                                  await _showAccountSwitcherDialog(context, user);
-                                },
-                              child: Row(
-                                children: [
-                                  _avatarWidget(
-                                    imageUrl: activeProfile?.avatar,
-                                    name: displayName,
-                                    radius: 24,
-                                  ),
-                                  const SizedBox(width: 12),
+                              child: GestureDetector(
+                                onTap: () async {
+    if (_isShowingAccountSwitcher) {
+      debugPrint('Dialog already showing, ignoring tap');
+      return;
+    }
+    await _showAccountSwitcherDialog(context, user);
+  },
+                                child: Row(
+                                  children: [
+                                    Stack(
+  clipBehavior: Clip.none,
+  children: [
+    _avatarWidget(
+      imageUrl: activeProfile?.avatar,
+      name: displayName,
+      radius: 24,
+    ),
+    Positioned(
+      bottom: -2,
+      right: -2,
+      child: _profileSwitcherBadge(),
+    ),
+  ],
+),
+                                    const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -1638,216 +1981,8 @@ setState(() {});
 
   Widget _buildCompactCourseCard(CourseModel course, CategoryModel category) {
     return GestureDetector(
-        onTap: () async {
-            if (_navigating) return;
-  _navigating = true;
-          // Check if user is signed in
-          final authService = FirebaseAuthService();
-          final isSignedIn = await authService.isUserSignedUp();
-
-         if (!isSignedIn) {
-  _navigating = false;
-  _showSignInDialog();
-  return;
-}
-
-          // Before navigating, ensure phone is present; if missing show modal
-          final cbtUserProvider =
-              Provider.of<CbtUserProvider>(context, listen: false);
-          if (cbtUserProvider.isPhoneMissing) {
-            // Show profile modal and block navigation until filled
-            await UserProfileUpdateModal.show(
-              context,
-              user: cbtUserProvider.currentUser,
-              onSave: (
-                  {required String phone,
-                  required String gender,
-                  required String birthDate}) async {
-                final profileService = UserProfileUpdateService();
-                final user = cbtUserProvider.currentUser;
-                if (user == null) return;
-                await profileService.updateUserPhone(
-                  userId: user.id!,
-                  firstName: user.name!.split(' ').first,
-                  lastName: user.name!.split(' ').last,
-                  phone: phone,
-                  attempt: user.attempt.toString(),
-                  email: user.email,
-                  gender: gender,
-                  birthDate: birthDate,
-                );
-                await cbtUserProvider.refreshCurrentUser();
-              },
-            );
-
-            // Recheck phone after modal
-            if (cbtUserProvider.isPhoneMissing) {
-              return; // still missing - don't proceed
-            }
-          }
-
-          // Check if course has active cohort
-          if (!course.hasActiveCohort) {
-            showDialog(
-              context: context,
-              builder: (context) => Center(
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  margin: const EdgeInsets.symmetric(horizontal: 32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.info_outline,
-                          color: Colors.orange, size: 48),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No Active Cohort',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'There is no active cohort for this course.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFA500),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: const Text('OK'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-
-            return;
-          }
-
-          final profileId = _activeProfile?.id;
-          bool isEnrolled = false; 
-          if (profileId != null && course.cohortId != null) {
-            try {
-              isEnrolled = await CourseService().checkIsEnrolled(
-                cohortId: course.cohortId!,
-                profileId: profileId,
-              );
-            } catch (e) {
-              // If verification fails, fall back to showing the course description.
-            }finally {
-              _navigating = false;
-          }
-          }
-          void openDescription() {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CourseDescriptionScreen(
-                  profileId: _activeProfile?.id,
-                  firstName: _activeProfile?.firstName,
-                  lastName: _activeProfile?.lastName,
-                  course: course,
-                  categoryName: category.name,
-                  categoryId: course.programId ?? category.id,
-                  provider: category.name,
-                  cohortId: course.cohortId.toString(),
-                  isFree: course.isFree,
-                  trialExpiryDate: course.trialExpiryDate,
-                  providerSubtitle: 'Powered By Digital Dreams',
-                  categoryColor: _getCategoryColor(category.name),
-                  hasEnrolled: isEnrolled,
-                ),
-              ),
-            );
-          }
-
-          if (isEnrolled) {
-            bool isPaid = true;
-            if (!course.isFree) {
-              if (profileId == null || course.cohortId == null) {
-                isPaid = false;
-              } else {
-                try {
-                  isPaid = await context
-                      .read<EnrollmentProvider>()
-                      .checkPaymentStatus(
-                        cohortId: course.cohortId!.toString(),
-                        profileId: profileId,
-                      );
-                } catch (e) {
-                  final status = (course.paymentStatus ?? '').toLowerCase();
-                  isPaid = status == 'paid' || status == 'true' || status == '1';
-                }
-              }
-            }
-
-            // if (!isPaid) {
-            //   openDescription();
-            //   return;
-            // }
-            final imageUrl = course.imageUrl.startsWith('https')
-                ? course.imageUrl
-                : "https://linkskool.net/${course.imageUrl}";
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CourseContentScreen(
-                  lessonImage: imageUrl,
-                  cohortId: course.cohortId.toString(),
-                  isFree: course.isFree,
-                  trialExpiryDate: course.trialExpiryDate,
-                  courseTitle: course.courseName,
-                  courseDescription: course.description,
-                  provider: category.name,
-                  courseId: course.id,
-                  courseName: course.courseName,
-                  categoryId: course.programId ?? category.id,
-                  providerSubtitle: 'Powered By Digital Dreams',
-                  category: category.name.toUpperCase(),
-                  categoryColor: _getCategoryColor(category.name),
-                  profileId: _activeProfile?.id,
-                  trialType: course.trialType,
-                  trialValue: course.trialValue,
-                  lessonsTaken: course.lessonsTaken,
-                  cohortCost: course.cost.toInt(),
-                ),
-              ),
-            );
-            return;
-          }
-          openDescription();
-          return;
-        },
-        child: Container(
+      onTap: () => _handleCourseTap(course, category),
+      child: Container(
           width: 240,
           margin: const EdgeInsets.only(right: 12),
           decoration: BoxDecoration(

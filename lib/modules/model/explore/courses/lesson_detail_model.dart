@@ -55,7 +55,7 @@ class LessonDetailData {
 class Lesson {
   final int id;
   final String title;
-  final String description;
+  final String? description;
   final String goals;
   final String objectives;
   final String videoUrl;
@@ -67,12 +67,13 @@ class Lesson {
   final bool isFinalLesson;
   final int displayOrder;
   final String lessonDate;
-  final String assignmentDueDate;
+  final String? assignmentDueDate;
+  final bool hasQuiz;
 
   Lesson({
     required this.id,
     required this.title,
-    required this.description,
+    this.description,
     required this.goals,
     required this.objectives,
     required this.videoUrl,
@@ -84,14 +85,15 @@ class Lesson {
     required this.isFinalLesson,
     required this.displayOrder,
     required this.lessonDate,
-    required this.assignmentDueDate,
+    this.assignmentDueDate,
+    required this.hasQuiz,
   });
 
   factory Lesson.fromJson(Map<String, dynamic> json) {
     return Lesson(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
-      description: json['description'] ?? '',
+      description: json['description'],
       goals: json['goals'] ?? '',
       objectives: json['objectives'] ?? '',
       videoUrl: json['video_url'] ?? '',
@@ -103,7 +105,8 @@ class Lesson {
       isFinalLesson: json['is_final_lesson'] ?? false,
       displayOrder: json['display_order'] ?? 0,
       lessonDate: json['lesson_date'] ?? '',
-      assignmentDueDate: json['assignment_due_date'] ?? '',
+      assignmentDueDate: json['assignment_due_date'],
+      hasQuiz: json['has_quiz'] ?? false,
     );
   }
 
@@ -124,6 +127,7 @@ class Lesson {
       'display_order': displayOrder,
       'lesson_date': lessonDate,
       'assignment_due_date': assignmentDueDate,
+      'has_quiz': hasQuiz,
     };
   }
 }

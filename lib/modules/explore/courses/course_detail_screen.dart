@@ -115,6 +115,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _requestSent = false;
   CbtUserProfile? _activeProfile;
   bool _loadedActiveProfile = false;
+  bool _lessonHasQuiz = false;
+  bool _lessonHasAssignment = false;
 
   String get _displayTitle =>
       courseTitle?.isNotEmpty == true ? courseTitle! : widget.courseTitle;
@@ -360,6 +362,8 @@ void initState() {
     recordedUrl = lesson.recordedVideoUrl;
     classDate = lesson.lessonDate;
     _hasVideo = resolvedVideoUrl.isNotEmpty;
+    _lessonHasQuiz = lesson.hasQuiz;
+    _lessonHasAssignment = lesson.assignmentUrl.isNotEmpty;
     _courseVideos
       ..clear()
       ..add({
@@ -1801,121 +1805,151 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
                                     final name = _profileName(modalActiveProfile!);
                                     final phone = user?.phone ?? '';
                                     final email = user?.email;
-                                    // Check if assignment file is selected
-                                    if (selectedFileName == null ||
-                                        selectedFileBase64 == null) {
+                                    
+                                    // Check if lesson has both quiz and assignment
+                                    if (_lessonHasQuiz && _lessonHasAssignment) {
+                                      // Lesson requires quiz before assignment submission
+                                      if (!_quizTaken) {
+                                        // Check if assignment file is selected
+                                        if (selectedFileName == null ||
+                                            selectedFileBase64 == null) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  'Please upload your assignment file'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                      // Save pending data
+                                        await _savePendingAssignmentData(name,
+                                            selectedFileName, selectedFileBase64);
+                                        Navigator.pop(context);
+                                        // Show dialog to take quiz
+                                        final shouldTakeQuiz =
+                                            await showDialog<bool>(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                              ),
+                                              title: const Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.quiz,
+                                                    color: Color(0xFFFFA500),
+                                                    size: 28,
+                                                  ),
+                                                  SizedBox(width: 12),
+                                                  Text(
+                                                    'Take Quiz First',
+                                                    style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              content: const Text(
+                                                'You need to take the quiz before submitting your assignment. Your assignment details have been saved.',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  height: 1.5,
+                                                ),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context, false);
+                                                  },
+                                                  child: Text(
+                                                    'Later',
+                                                    style: TextStyle(
+                                                      color: Colors.grey.shade600,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context, true);
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        const Color(0xFFFFA500),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    'Take Quiz Now',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+
+                                        if (shouldTakeQuiz == true) {
+                                          // Navigate to quiz screen
+                                          final currentVideo =
+                                              _courseVideos[_selectedVideoIndex];
+                                          final videoTitle =
+                                              currentVideo['title'] as String;
+
+                                          final result =
+                                              await Navigator.push<int>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => QuizScreen(
+                                                courseTitle: widget.courseTitle,
+                                                lessonTitle: videoTitle,
+                                           
+                                                lessonId: widget.lessonId!,
+                                              ),
+                                            ),
+                                          );
+
+                                          // Reload quiz data
+                                          await _loadQuizData();
+                                        }
+                                        return;
+                                      }
+                                    } else if (!_lessonHasQuiz && _lessonHasAssignment) {
+                                      // Lesson has assignment but no quiz - allow submission with score 0
+                                      // Check if assignment file is selected
+                                      if (selectedFileName == null ||
+                                          selectedFileBase64 == null) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Please upload your assignment file'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                    } else {
+                                      // No assignment in this lesson
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                              'Please upload your assignment file'),
-                                          backgroundColor: Colors.red,
+                                              'No assignment available for this lesson'),
+                                          backgroundColor: Colors.orange,
                                         ),
                                       );
-                                      return;
-                                    }
-                                    // Check if quiz has been taken
-                                    if (!_quizTaken) {
-                                      // Save pending data
-                                      await _savePendingAssignmentData(name,
-                                          selectedFileName, selectedFileBase64);
-                                      Navigator.pop(context);
-                                      // Show dialog to take quiz
-                                      final shouldTakeQuiz =
-                                          await showDialog<bool>(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            title: const Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.quiz,
-                                                  color: Color(0xFFFFA500),
-                                                  size: 28,
-                                                ),
-                                                SizedBox(width: 12),
-                                                Text(
-                                                  'Take Quiz First',
-                                                  style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            content: const Text(
-                                              'You need to take the quiz before submitting your assignment. Your assignment details have been saved.',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context, false);
-                                                },
-                                                child: Text(
-                                                  'Later',
-                                                  style: TextStyle(
-                                                    color: Colors.grey.shade600,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context, true);
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      const Color(0xFFFFA500),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                ),
-                                                child: const Text(
-                                                  'Take Quiz Now',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-
-                                      if (shouldTakeQuiz == true) {
-                                        // Navigate to quiz screen
-                                        final currentVideo =
-                                            _courseVideos[_selectedVideoIndex];
-                                        final videoTitle =
-                                            currentVideo['title'] as String;
-
-                                        final result =
-                                            await Navigator.push<int>(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => QuizScreen(
-                                              courseTitle: widget.courseTitle,
-                                              lessonTitle: videoTitle,
-                                         
-                                              lessonId: widget.lessonId!,
-                                            ),
-                                          ),
-                                        );
-
-                                        // Reload quiz data
-                                        await _loadQuizData();
-                                      }
                                       return;
                                     }
 
@@ -1985,13 +2019,16 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
                                       final provider =
                                           AssignmentSubmissionProvider();
 
+                                      // Use 0 as score if no quiz was required/taken
+                                      final quizScoreToSubmit = _lessonHasQuiz ? _quizScore : 0;
+
                                       final success =
                                           await provider.submitAssignment(
                                         name: name,
                                         email: email ?? '', // You can add email field to modal if needed
                                         phone:
                                             phone ?? '', // You can add phone field to modal if needed
-                                        quizScore: _quizScore.toString(),
+                                        quizScore: quizScoreToSubmit.toString(),
                                         lessonId: widget.lessonId.toString(),
                                         cohortId: widget.cohortId,
                                         profileId: widget.profileId.toString(),
@@ -2462,90 +2499,146 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
   }
 }
 
+
+
   @override
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<LessonDetailProvider>(
-      create: (_) => LessonDetailProvider(),
-      child: Consumer<LessonDetailProvider>(
-        builder: (context, provider, child) {
-          final hasLessonRequest =
-              widget.profileId != null && widget.lessonId != null;
-              print("lesson: ${widget.lessonId}");
-              print("profile: ${widget.profileId}");
+Widget build(BuildContext context) {
+  return ChangeNotifierProvider<LessonDetailProvider>(
+    create: (_) => LessonDetailProvider(),
+    child: Consumer<LessonDetailProvider>(
+      builder: (context, provider, child) {
+        final hasLessonRequest =
+            widget.profileId != null && widget.lessonId != null;
+        print("lesson: ${widget.lessonId}");
+        print("profile: ${widget.profileId}");
 
-          if (!_requestSent && hasLessonRequest && !provider.isLoading) {
-            _requestSent = true;
-            provider.fetchLessonDetail(
-              lessonId: widget.lessonId!,
-              profileId: widget.profileId!,
-            );
-          }
-
-          final lesson = provider.lessonDetailData?.lesson;
-          if (lesson != null && !_dataLoaded) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _applyLessonData(lesson);
-              }
-            });
-          }
-
-          if (provider.isLoading && hasLessonRequest && !_dataLoaded) {
-            return Scaffold(
-              appBar: AppBar(title: Text('Loading...')),
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          if (provider.errorMessage != null && hasLessonRequest && !_dataLoaded) {
-            return Scaffold(
-              appBar: AppBar(title: Text('Error')),
-              body: Center(child: Text('Error: ${provider.errorMessage}')),
-            );
-          }
-
-          if (lesson == null && hasLessonRequest && !_dataLoaded) {
-            return Scaffold(
-              appBar: AppBar(title: Text('No Data')),
-              body: Center(child: Text('No lesson data available')),
-            );
-          }
-
-          final currentVideo = _courseVideos.isNotEmpty
-              ? _courseVideos[_selectedVideoIndex]
-              : {
-                  'title': _displayTitle,
-                  'description': _displayDescription,
-                  'url': _effectiveVideoUrl ?? '',
-                };
-
-          return Scaffold(
-            extendBodyBehindAppBar: true,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: _handleBackButton,
-              ),
-            ),
-            backgroundColor: Colors.white,
-            body: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildVideoPlayer(),
-                  const SizedBox(height: 10),
-                  ..._buildSheetContent(currentVideo),
-                ],
-              ),
-            ),
+        if (!_requestSent && hasLessonRequest && !provider.isLoading) {
+          _requestSent = true;
+          provider.fetchLessonDetail(
+            lessonId: widget.lessonId!,
+            profileId: widget.profileId!,
           );
-        },
-      ),
-    );
-  }
+        }
+
+        final lesson = provider.lessonDetailData?.lesson;
+        if (lesson != null && !_dataLoaded) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _applyLessonData(lesson);
+            }
+          });
+        }
+
+        if (provider.isLoading && hasLessonRequest && !_dataLoaded) {
+          return Scaffold(
+            appBar: AppBar(title: Text('Loading...')),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (provider.errorMessage != null && hasLessonRequest && !_dataLoaded) {
+          return Scaffold(
+            appBar: AppBar(title: Text('Error')),
+            body: Center(child: Text('Error: ${provider.errorMessage}')),
+          );
+        }
+
+        if (lesson == null && hasLessonRequest && !_dataLoaded) {
+          return Scaffold(
+            appBar: AppBar(title: Text('No Data')),
+            body: Center(child: Text('No lesson data available')),
+          );
+        }
+
+        final currentVideo = _courseVideos.isNotEmpty
+            ? _courseVideos[_selectedVideoIndex]
+            : {
+                'title': _displayTitle,
+                'description': _displayDescription,
+                'url': _effectiveVideoUrl ?? '',
+              };
+
+        return Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: _handleBackButton,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          body: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildVideoPlayer(),
+                      const SizedBox(height: 10),
+                      // Video Title
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _displayTitle,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1),
+                    ],
+                  ),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SliverTabBarDelegate(
+                    TabBar(
+                      controller: _tabController,
+                      labelColor: const Color(0xFF6366F1),
+                      isScrollable: false,
+                      unselectedLabelColor: Colors.grey.shade600,
+                      indicatorColor: const Color(0xFF6366F1),
+                      labelStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      tabs: const [
+                        Tab(text: 'Overview'),
+                        Tab(text: 'Quiz'),
+                        Tab(text: 'Assignments'),
+                      ],
+                    ),
+                  ),
+                ),
+              ];
+            },
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOverviewTab(),
+                _buildReviewsTab(),
+                _buildAssignmentsTab(currentVideo),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
+
   List<Widget> _buildSheetContent(Map<String, dynamic> currentVideo) {
     return [
       // Video Title and Description
@@ -2571,6 +2664,7 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
       // Tabs Section
       TabBar(
         controller: _tabController,
+        
         labelColor: const Color(0xFF6366F1),
         isScrollable: false,
         unselectedLabelColor: Colors.grey.shade600,
@@ -4462,6 +4556,36 @@ Future<void> _downloadToDevice() async {
     );
   }
 }
+
+class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar _tabBar;
+
+  _SliverTabBarDelegate(this._tabBar);
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      color: Colors.white,
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
+    return false;
+  }
+}
+
 
 
 
