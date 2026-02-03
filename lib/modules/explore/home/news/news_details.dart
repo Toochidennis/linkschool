@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:linkfy_text/linkfy_text.dart';
 // import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
 // import 'package:share_plus/share_plus.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
@@ -36,6 +38,14 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
 
+  // Banner Ad
+  BannerAd? _bannerAd;
+  bool _isBannerAdLoaded = false;
+
+  // Interstitial Ad
+  InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,10 +76,101 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
       });
       _animationController.forward();
     });
+
+    // Initialize banner ad
+    _loadBannerAd();
+    // Initialize interstitial ad
+    _loadInterstitialAd();
   }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: EnvConfig.googleBannerAdsApiKey,
+      size:  AdSize.mediumRectangle,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (Ad ad) {
+          if (mounted) {
+            setState(() {
+              _isBannerAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          ad.dispose();
+          if (mounted) {
+            setState(() {
+              _isBannerAdLoaded = false;
+            });
+          }
+        },
+        onAdOpened: (Ad ad) {},
+        onAdClosed: (Ad ad) {},
+        onAdImpression: (Ad ad) {},
+      ),
+    )..load();
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: EnvConfig.googleInterstitialAdsApiKey,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          _interstitialAd = ad;
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAdAndNavigateBack() {
+    if (_isInterstitialAdLoaded && _interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (InterstitialAd ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back after ad is dismissed
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+        onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back if ad fails to show
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+      );
+      _interstitialAd!.show();
+      // Reload for next back action
+      _loadInterstitialAd();
+    } else {
+      // If ad is not loaded, just navigate back
+      Navigator.pop(context);
+    }
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
+    _bannerAd?.dispose();
+    _interstitialAd?.dispose();
     super.dispose();
   }
 
@@ -192,7 +293,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                               size: 20,
                             ),
                           ),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => _showInterstitialAdAndNavigateBack(),
                         ),
                         actions: [
                           IconButton(
@@ -323,6 +424,24 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                           ),
                         ),
                       ),
+                      // space before ad
+                      SliverToBoxAdapter(
+                        child: SizedBox(height:  16),
+                      ),
+
+                      // Banner Ad - Displays after the image
+                      if (_isBannerAdLoaded)
+                        SliverToBoxAdapter(
+                          child: Container(
+                            color: Colors.white,
+                            alignment: Alignment.center,
+                            child: SizedBox(
+                              width: _bannerAd!.size.width.toDouble(),
+                              height: _bannerAd!.size.height.toDouble(),
+                              child: AdWidget(ad: _bannerAd!),
+                            ),
+                          ),
+                        ),
                       // ...existing code...
                       SliverToBoxAdapter(
                         child: Container(

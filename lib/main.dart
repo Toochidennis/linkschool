@@ -39,14 +39,14 @@ Future<void> main() async {
 
   // DEFERRED: Initialize MobileAds in background (not needed for launch)
   // This will run after the app is visible
-  Future.microtask(() async {
-    try {
-      await MobileAds.instance.initialize();
-      print('✅ MobileAds initialized in background');
-    } catch (e) {
-      print('⚠️ MobileAds initialization failed: $e');
-    }
-  });
+  // Future.microtask(() async {
+  //   try {
+  //     await MobileAds.instance.initialize();
+  //     print('✅ MobileAds initialized in background');
+  //   } catch (e) {
+  //     print('⚠️ MobileAds initialization failed: $e');
+  //   }
+  // });
 
   // await EnvConfig.init();
 
@@ -57,6 +57,7 @@ Future<void> main() async {
       statusBarBrightness: Brightness.dark,
     ),
   );
+   await MobileAds.instance.initialize();
   runApp(
     MultiProvider(
       providers: getAppProviders(),

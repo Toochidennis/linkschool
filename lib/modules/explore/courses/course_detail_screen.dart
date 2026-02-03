@@ -2,6 +2,8 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/courses/create_user_profile_screen.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:provider/provider.dart';
@@ -118,6 +120,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _lessonHasQuiz = false;
   bool _lessonHasAssignment = false;
 
+  // Interstitial Ad
+  InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdLoaded = false;
+
   String get _displayTitle =>
       courseTitle?.isNotEmpty == true ? courseTitle! : widget.courseTitle;
   String get _displayDescription => courseDescription?.isNotEmpty == true
@@ -197,6 +203,9 @@ void initState() {
   
   // DON'T initialize video here - wait for lesson data
   print('initState completed, waiting for lesson data...');
+  
+  // Initialize interstitial ad
+  _loadInterstitialAd();
 }
 
   void _seedContentFromWidget() {
@@ -212,6 +221,61 @@ void initState() {
         'content': widget.courseDescription,
         'isCompleted': false,
       });
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: EnvConfig.googleInterstitialAdsApiKey,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          _interstitialAd = ad;
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAdAndNavigateBack() {
+    if (_isInterstitialAdLoaded && _interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (InterstitialAd ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back after ad is dismissed
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+        onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back if ad fails to show
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+      );
+      _interstitialAd!.show();
+      // Reload for next back action
+      _loadInterstitialAd();
+    } else {
+      // If ad is not loaded, just navigate back
+      Navigator.pop(context);
+    }
   }
 
   bool get _hasLessonNavigation =>
@@ -1463,6 +1527,7 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     _videoController?.dispose();
     _chewieController?.dispose();
     _youtubeController?.dispose();
+    _interstitialAd?.dispose();
     _tabController.dispose();
 
     // Ensure system UI is restored when leaving this screen
@@ -1493,8 +1558,8 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
         overlays: SystemUiOverlay.values,
       );
     } else {
-      // In portrait: pop the screen
-      Navigator.pop(context);
+      // In portrait: show interstitial ad then pop the screen
+      _showInterstitialAdAndNavigateBack();
     }
   }
 
