@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/config/notification_service.dart';
 import 'package:linkschool/modules/explore/courses/create_user_profile_screen.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,7 @@ import 'dart:io' show Platform, Directory, File;
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
 import 'dart:convert';
 import '../../providers/explore/assignment_submission_provider.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -181,6 +183,8 @@ void initState() {
   _tabController = TabController(length: 3, vsync: this);
   _loadSubmissionStatus();
   _loadActiveProfile();
+
+
   
   // Only seed widget data, don't initialize video yet
   if (widget.courseTitle.isNotEmpty ||
@@ -2418,11 +2422,8 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     return null;
   }
 
- Future<void> _downloadMaterial(String materialUrl) async {
+Future<void> _downloadMaterial(String materialUrl) async {
   try {
-    // No permission needed for app-specific storage on Android 10+
-    // Remove the permission check entirely
-    
     // Show loading dialog
     if (mounted) {
       showDialog(
@@ -2457,6 +2458,8 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
+        
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Downloaded to: ${file.path}'),
@@ -2464,10 +2467,35 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
             backgroundColor: const Color(0xFF4CAF50),
           ),
         );
+
+      
+      }
+
+      // Open with system app chooser
+      try {
+        final result = await OpenFilex.open(
+          file.path,
+          type: "application/pdf",
+          uti: "com.adobe.pdf",
+        );
+        
+        if (result.type != ResultType.done && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open file: ${result.message}'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error opening file: $e');
       }
     } else {
       if (mounted) {
         Navigator.pop(context);
+        
+      
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to download material'),
@@ -2478,10 +2506,16 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     }
   } catch (e) {
     if (mounted) {
-      // Make sure dialog is showing before trying to pop
       if (Navigator.canPop(context)) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
       }
+      
+      // Show error notification
+      await NotificationService().showDownloadErrorNotification(
+        title: 'Download Error',
+        error: e.toString(),
+      );
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Download failed: $e'),
@@ -2492,10 +2526,8 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
   }
 }
 
- Future<void> _downloadAssignment(String assignmentUrl) async {
+Future<void> _downloadAssignment(String assignmentUrl) async {
   try {
-    // No permission needed - remove the wrong permission check
-    
     // Show loading dialog
     if (mounted) {
       showDialog(
@@ -2530,6 +2562,7 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Downloaded to Downloads folder'),
@@ -2537,10 +2570,44 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
             backgroundColor: Color(0xFF4CAF50),
           ),
         );
+
+        // Show notification
+        await NotificationService().showDownloadCompleteNotification(
+          title: 'Assignment Downloaded',
+          fileName: fileName,
+          filePath: file.path,
+        );
+      }
+
+      // Open with system app chooser
+      try {
+        final result = await OpenFilex.open(
+          file.path,
+          type: "application/pdf",
+          uti: "com.adobe.pdf",
+        );
+        
+        if (result.type != ResultType.done && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open file: ${result.message}'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error opening file: $e');
       }
     } else {
       if (mounted) {
         Navigator.pop(context);
+        
+        // Show error notification
+        await NotificationService().showDownloadErrorNotification(
+          title: 'Download Failed',
+          error: 'Failed to download assignment',
+        );
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to download assignment'),
@@ -2552,8 +2619,15 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
   } catch (e) {
     if (mounted) {
       if (Navigator.canPop(context)) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
       }
+      
+      // Show error notification
+      await NotificationService().showDownloadErrorNotification(
+        title: 'Download Error',
+        error: e.toString(),
+      );
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Download failed: $e'),
@@ -2563,7 +2637,6 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     }
   }
 }
-
 
 
   @override

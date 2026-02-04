@@ -58,6 +58,7 @@ Future<void> main() async {
     ),
   );
    await MobileAds.instance.initialize();
+   
   runApp(
     MultiProvider(
       providers: getAppProviders(),
