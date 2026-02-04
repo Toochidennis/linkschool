@@ -1,0 +1,2 @@
+C:/Users/ewoch/linkschool/android/app/.cxx/Debug/1len6h1o/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/ewoch/linkschool/android/app/.cxx/Debug/1len6h1o/armeabi-v7a/CMakeFiles/rebuild_cache.dir
