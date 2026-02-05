@@ -21,12 +21,10 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     required String lessonId,
     required String cohortId,
     required String profileId,
-    required List<Map<String, dynamic>> assignments,
+   List<Map<String, dynamic>>? assignments,
   }) async {
     print("🚀 AssignmentSubmissionProvider: submitAssignment called");
-    print("  - name: $name");
-    print("  - quiz_score: $quizScore");
-    print("  - assignments count: ${assignments.length}");
+
     
     _isSubmitting = true;
     _errorMessage = null;
@@ -35,12 +33,16 @@ class AssignmentSubmissionProvider with ChangeNotifier {
 
     try {
       print("📞 Calling service.submitAssignment...");
+      print("=====ssignment datas=====");
+      print("  - name: $name");
+    print("  - quiz_score: $quizScore");
+    print("  - assignments count: ${assignments?.length ?? 0}");
       final result = await _service.submitAssignment(
         name: name,
         email: email,
         phone: phone,
         quizScore: quizScore,
-        assignments: assignments,
+        assignments: assignments ?? [],
         lessonId: lessonId,
         cohortId: cohortId,
         profileId: profileId,

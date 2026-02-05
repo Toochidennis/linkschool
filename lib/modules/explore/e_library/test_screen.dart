@@ -12,6 +12,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'dart:convert';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 
 class TestScreen extends StatefulWidget {
   final String examTypeId;
@@ -67,6 +68,7 @@ class _TestScreenState extends State<TestScreen>
   void initState() {
     super.initState();
     remainingSeconds = widget.totalDurationInSeconds;
+    AdManager.instance.preload();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -129,8 +131,17 @@ class _TestScreenState extends State<TestScreen>
         onComplete: () {
           if (!mounted) return;
           Navigator.of(context).pop();
-          setState(() {
-            _isCountdownActive = false;
+          AdManager.instance
+              .showIfEligible(
+            context: context,
+            trigger: AdTrigger.topicStart,
+          )
+              .then((_) {
+            if (mounted) {
+              setState(() {
+                _isCountdownActive = false;
+              });
+            }
           });
 
           // Dialog will only show when Read More is clicked
@@ -1706,8 +1717,13 @@ class _TestScreenState extends State<TestScreen>
                       SizedBox(width: isLandscape ? 12 : 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             Navigator.of(context).pop();
+
+                            await AdManager.instance.showIfEligible(
+                              context: context,
+                              trigger: AdTrigger.resultNavigation,
+                            );
 
                             // After dialog closes, handle the navigation based on context
                             if (widget.onExamComplete != null &&

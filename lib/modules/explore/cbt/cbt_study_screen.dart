@@ -10,6 +10,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
 import 'dart:convert';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 
 class CBTStudyScreen extends StatefulWidget {
   final String subject;
@@ -45,6 +46,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   @override
   void initState() {
     super.initState();
+    AdManager.instance.preload();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -79,8 +81,17 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         onComplete: () {
           if (!mounted) return;
           Navigator.of(context).pop();
-          setState(() {
-            _isInitialCountdownComplete = true;
+          AdManager.instance
+              .showIfEligible(
+            context: context,
+            trigger: AdTrigger.topicStart,
+          )
+              .then((_) {
+            if (mounted) {
+              setState(() {
+                _isInitialCountdownComplete = true;
+              });
+            }
           });
         },
       ),
@@ -119,6 +130,13 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     // Use API explanation if available, otherwise will fall back to AI
     final apiExplanation =
         question.explanation.isNotEmpty ? question.explanation : null;
+
+    if (!isCorrect) {
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.questionFailure,
+      );
+    }
 
     // Show modal with loading state or cached/API explanation
     await _showExplanationModal(
@@ -175,7 +193,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     final hasMoreTopicsToLoad = provider.hasMoreTopics;
 
     if (isAtEndOfCurrentBatch && hasMoreTopicsToLoad) {
-      // Show countdown while loading next topic's questions
+      // Show ad for topic completion, then countdown for next topic
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.topicCompletion,
+      );
       _showNextTopicCountdown();
       return;
     }
@@ -185,6 +207,10 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
     if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
       // Study session complete
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.topicCompletion,
+      );
       setState(() {
         _isStudyComplete = true;
       });
@@ -204,6 +230,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         onComplete: () async {
           if (!mounted) return;
           Navigator.of(context).pop();
+
+          await AdManager.instance.showIfEligible(
+            context: context,
+            trigger: AdTrigger.topicStart,
+          );
 
           // Now fetch the next topic's questions
           final hasMore = await provider.nextQuestion();
@@ -252,8 +283,13 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         ),
         actions: [
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context); // Close dialog
+
+              await AdManager.instance.showIfEligible(
+                context: context,
+                trigger: AdTrigger.resultNavigation,
+              );
 
               // Navigate to progress dashboard
               Navigator.pushReplacement(

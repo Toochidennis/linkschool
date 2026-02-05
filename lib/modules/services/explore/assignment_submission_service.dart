@@ -33,15 +33,17 @@ class AssignmentSubmissionService {
 
       print("📡 Submitting assignment → $url");
 
-      final payload = {
+      final payload = <String, dynamic>{
         "name": name,
         "email": email,
         "phone": phone,
         "quiz_score": quizScore,
-        "assignment": assignments,
         'cohort_id': cohortId,
         'profile_id': profileId,
       };
+      if (assignments.isNotEmpty) {
+        payload["assignment"] = assignments;
+      }
 
       print("📦 Payload structure:");
       print("  - name: $name");

@@ -3,17 +3,28 @@ import 'package:provider/provider.dart';
 import 'quiz_summary_screen.dart';
 import '../../providers/explore/lesson_quiz_provider.dart';
 import '../../model/explore/lesson_quiz/lesson_quiz_model.dart';
+import '../../providers/explore/assignment_submission_provider.dart';
 
 class QuizScreen extends StatefulWidget {
   final String courseTitle;
   final String lessonTitle;
   final int lessonId;
+  final String cohortId;
+  final String profileId;
+  final String userName;
+  final String userEmail;
+  final String userPhone;
 
   const QuizScreen({
     super.key,
     required this.courseTitle,
     required this.lessonTitle,
     required this.lessonId,
+    required this.cohortId,
+    required this.profileId,
+    required this.userName,
+    required this.userEmail,
+    required this.userPhone,
   });
 
   @override
@@ -21,6 +32,8 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
+  bool _isSubmittingScore = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,9 +58,52 @@ class _QuizScreenState extends State<QuizScreen> {
     provider.nextQuestion();
   }
 
-  void _submitQuiz(BuildContext context) {
+  Future<void> _postQuizScore(int score) async {
+    if (_isSubmittingScore) return;
+    _isSubmittingScore = true;
+
+    final provider = AssignmentSubmissionProvider();
+    try {
+      await provider.submitAssignment(
+        name:widget.userName,
+        email: widget.userEmail,
+        phone: widget.userPhone,
+        quizScore: score.toString(),
+        lessonId: widget.lessonId.toString(),
+        cohortId: widget.cohortId,
+        profileId: widget.profileId,
+      
+      );
+
+      print('✅ ===== data to submit quiz score: =====');
+      print('Name: ${widget.userName}');
+      print('Email: ${widget.userEmail}');
+      print('Phone: ${widget.userPhone}');
+      print('Quiz Score: $score');
+      print('Lesson ID: ${widget.lessonId}');
+      print('Cohort ID: ${widget.cohortId}');
+      print('Profile ID: ${widget.profileId}');
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit quiz score: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      _isSubmittingScore = false;
+    }
+  }
+
+  Future<void> _submitQuiz(BuildContext context) async {
     final provider = Provider.of<LessonQuizProvider>(context, listen: false);
     final score = ((provider.calculateScore() / provider.totalQuestions) * 100).round();
+
+    // Post quiz score to assignment endpoint (no assignment files)
+    await _postQuizScore(score);
 
     // Navigate to summary screen
     Navigator.push(

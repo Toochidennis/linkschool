@@ -68,16 +68,25 @@ class LessonQuizProvider with ChangeNotifier {
     _selectedAnswers.clear();
     notifyListeners();
   }
-
-  int calculateScore() {
-    int correctAnswers = 0;
-    for (int i = 0; i < _quizzes.length; i++) {
-      if (_selectedAnswers[i] == _quizzes[i].correct.order) {
-        correctAnswers++;
-      }
+int calculateScore() {
+  int score = 0;
+  for (int i = 0; i < quizzes.length; i++) {
+    final selectedAnswer = selectedAnswers[i];
+    final correctAnswer = quizzes[i].correct.order;
+    
+    print('📊 Question $i: Selected=$selectedAnswer, Correct=$correctAnswer');
+    
+    if (selectedAnswer != null && selectedAnswer == correctAnswer) {
+      score++;
+      print('✅ Correct! Score: $score');
+    } else if (selectedAnswer != null) {
+      print('❌ Wrong. Selected option text: ${quizzes[i].options[selectedAnswer].text}');
+      print('   Correct option text: ${quizzes[i].correct.text}');
     }
-    return correctAnswers;
   }
+  print('🎯 Final Score: $score/$totalQuestions');
+  return score;
+}
 
   int get totalQuestions => _quizzes.length;
 }
