@@ -47,6 +47,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool? _cachedCanTakeTest;
   bool _isCheckingSubscription = false;
   bool _didCheckProfileModal = false;
+  bool _isShowingEntryPrompt = false;
 
   // Animation controllers for card animations
   late AnimationController _fadeController;
@@ -87,9 +88,12 @@ class _CBTDashboardState extends State<CBTDashboard>
       CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<CBTProvider>().loadBoards();
+      await _syncTrialSettingsOnEntry();
+      await _subscriptionService.setTrialStartDate();
       _preloadSubscriptionStatus(); // Pre-cache subscription status
+      await _maybeShowEntryPaymentPrompt();
     });
   }
 
@@ -172,7 +176,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     super.dispose();
   }
 
- Widget _buildAnimatedCard({
+  Widget _buildAnimatedCard({
   required Widget child,
   required int index,
 }) {
@@ -227,52 +231,101 @@ class _CBTDashboardState extends State<CBTDashboard>
     }
   }
 
+  Future<void> _syncTrialSettingsOnEntry() async {
+    try {
+      final settings = await CbtSettingsHelper.getSettings();
+      await _subscriptionService.setMaxFreeTests(settings.freeTrialDays);
+    } catch (e) {
+      print('Error syncing trial settings: $e');
+    }
+  }
+
+  Future<void> _maybeShowEntryPaymentPrompt() async {
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.hasPaid == true) return;
+
+    if (_isShowingEntryPrompt) return;
+    _isShowingEntryPrompt = true;
+
+    final settings = await CbtSettingsHelper.getSettings();
+    final remainingDays = await _subscriptionService.getRemainingFreeTests();
+    final trialExpired = await _subscriptionService.isTrialExpired();
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => SubscriptionEnforcementDialog(
+        isHardBlock: trialExpired,
+        remainingTests: remainingDays,
+        amount: settings.amount,
+        discountRate: settings.discountRate,
+        onSubscribed: () {
+          if (mounted) {
+            setState(() {
+              _cachedCanTakeTest = true;
+            });
+          }
+        },
+      ),
+    );
+    _isShowingEntryPrompt = false;
+  }
+
   /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
   Future<bool> _checkSubscriptionBeforeTest() async {
     if (_isCheckingSubscription) return false;
 
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
-    // Use user data to check if user has paid
     if (cbtUserProvider.hasPaid == true) {
       _cachedCanTakeTest = true;
-      return true;
-    }
-
-    // Use cached value if available (instant response)
-    if (_cachedCanTakeTest != null && _cachedCanTakeTest == true) {
       return true;
     }
 
     setState(() => _isCheckingSubscription = true);
 
     try {
-      final hasPaid = cbtUserProvider.hasPaid;
       final canTakeTest = await _subscriptionService.canTakeTest();
+      final trialExpired = await _subscriptionService.isTrialExpired();
       final remainingDays = await _subscriptionService.getRemainingFreeTests();
-
-      // Update cache
-      _cachedCanTakeTest = hasPaid || canTakeTest;
-
-      if (hasPaid || canTakeTest) {
-        return true;
-      }
-
-      // User must pay - show enforcement dialog
       final settings = await CbtSettingsHelper.getSettings();
       if (!mounted) return false;
 
-      await showDialog(
+      if (!canTakeTest || trialExpired) {
+        final allowProceed = await showDialog<bool>(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) => SubscriptionEnforcementDialog(
+            isHardBlock: true,
+            remainingTests: remainingDays,
+            amount: settings.amount,
+            discountRate: settings.discountRate,
+            onSubscribed: () {
+              print('User subscribed from CBT Dashboard');
+              _cachedCanTakeTest = true;
+              if (mounted) {
+                setState(() {});
+              }
+            },
+          ),
+        );
+        return allowProceed == true;
+      }
+
+      // Within trial: show soft prompt, then allow proceed
+      final allowProceed = await showDialog<bool>(
         context: context,
-        barrierDismissible: false,
+        barrierDismissible: true,
         builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: true,
+          isHardBlock: false,
           remainingTests: remainingDays,
           amount: settings.amount,
           discountRate: settings.discountRate,
           onSubscribed: () {
-            print('✅ User subscribed from CBT Dashboard');
-            _cachedCanTakeTest = true; // Update cache
+            print('User subscribed from CBT Dashboard');
+            _cachedCanTakeTest = true;
             if (mounted) {
               setState(() {});
             }
@@ -280,9 +333,9 @@ class _CBTDashboardState extends State<CBTDashboard>
         ),
       );
 
-      return false;
+      return allowProceed == true;
     } catch (e) {
-      print('❌ Subscription check error: $e');
+      print('Subscription check error: $e');
       return false;
     } finally {
       if (mounted) {
@@ -757,7 +810,7 @@ _wasLoading = loading;
 
             await showDialog(
               context: context,
-              barrierDismissible: false,
+              barrierDismissible: true,
               builder: (context) => SubscriptionEnforcementDialog(
                 isHardBlock: true,
                 remainingTests: 0, // Challenge doesn't use free trials
@@ -1094,7 +1147,9 @@ _wasLoading = loading;
               title: 'Test history',
               titleSize: 18.0,
               titleColor: AppColors.text4Light,
-              onPressed: () {
+              onPressed: () async {
+                final canProceed = await _checkSubscriptionBeforeTest();
+                if (!canProceed || !mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -1200,7 +1255,9 @@ _wasLoading = loading;
     required CBTProvider provider,
   }) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final canProceed = await _checkSubscriptionBeforeTest();
+        if (!canProceed || !mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1468,6 +1525,13 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
 
 
 

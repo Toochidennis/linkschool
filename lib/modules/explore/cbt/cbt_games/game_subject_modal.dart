@@ -248,37 +248,59 @@ class _GameSubjectModalState extends State<GameSubjectModal>
       return;
     }
 
-    // If not paid and can't take test (exceeded free limit)
-    if (!canTakeTest) {
-      print('   ❌ Gamify access denied - showing enforcement dialog');
-      if (!mounted) return;
+    // If not paid, show prompt (hard if trial expired)
+    final trialExpired = await _subscriptionService.isTrialExpired();
+    final settings = await CbtSettingsHelper.getSettings();
+    if (!mounted) return;
 
-      final settings = await CbtSettingsHelper.getSettings();
-      if (!mounted) return;
+    // if (!canTakeTest || trialExpired) {
+    //   print('   ❌ Gamify access denied - showing enforcement dialog');
+    //   final allowProceed = await showDialog<bool>(
+    //     context: context,
+    //     barrierDismissible: true,
+    //     builder: (context) => SubscriptionEnforcementDialog(
+    //       isHardBlock: true,
+    //       remainingTests: remainingTests,
+    //       amount: settings.amount,
+    //       discountRate: settings.discountRate,
+    //       onSubscribed: () async {
+    //         print('✅ User subscribed from Gamify module');
+    //         await userProvider.refreshCurrentUser();
+    //         if (mounted) {
+    //           setState(() {});
+    //         }
+    //       },
+    //     ),
+    //   );
+    //   if (allowProceed == true) {
+    //     _proceedWithGame();
+    //   }
+    //   return;
+    // }
 
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: true,
-          remainingTests: remainingTests,
-          amount: settings.amount,
-          discountRate: settings.discountRate,
-          onSubscribed: () async {
-            print('✅ User subscribed from Gamify module');
-            await userProvider.refreshCurrentUser();
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      );
-      return;
+    // Within trial: show soft prompt and allow proceed
+    final allowProceed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => SubscriptionEnforcementDialog(
+        isHardBlock: false,
+        remainingTests: remainingTests,
+        amount: settings.amount,
+        discountRate: settings.discountRate,
+        onSubscribed: () async {
+          print('✅ User subscribed from Gamify module');
+          await userProvider.refreshCurrentUser();
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+
+    if (allowProceed == true) {
+      print('   ✅ User can access game (within free limit)');
+      _proceedWithGame();
     }
-
-    // User can access game (within free limit)
-    print('   ✅ User can access game (within free limit)');
-    _proceedWithGame();
   }
 
   void _proceedWithGame() {
@@ -1366,3 +1388,4 @@ class ParticlePainter extends CustomPainter {
   @override
   bool shouldRepaint(ParticlePainter oldDelegate) => true;
 }
+

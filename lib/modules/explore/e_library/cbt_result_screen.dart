@@ -149,7 +149,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: !isHardBlock,
+      barrierDismissible: true,
       builder: (context) => SubscriptionEnforcementDialog(
         isHardBlock: isHardBlock,
         remainingTests: remainingTests,
@@ -300,7 +300,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => _ScorePopupDialog(
         totalScore: totalScore,
         totalQuestions: totalQuestions,
@@ -1941,3 +1941,9 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
     );
   }
 }
+
+
+
+
+
+

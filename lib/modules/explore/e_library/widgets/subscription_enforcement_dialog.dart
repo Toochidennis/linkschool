@@ -37,12 +37,14 @@ class _SubscriptionEnforcementDialogState
     extends State<SubscriptionEnforcementDialog>
     with SingleTickerProviderStateMixin {
   final _authService = FirebaseAuthService();
+  final TextEditingController _voucherController = TextEditingController();
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
   bool _isUserSignedIn = false;
   bool _isCheckingSignin = true;
-  bool _isProcessing = false; // ⚡ Single processing flag
+  bool _isProcessing = false; // Single processing flag
+  bool _showVoucher = false;
 
   @override
   void initState() {
@@ -70,10 +72,19 @@ class _SubscriptionEnforcementDialogState
       userProvider.paymentReferenceNotifier.addListener(() {
         if (userProvider.hasPaid == true && mounted) {
           widget.onSubscribed();
-          Navigator.of(context).pop();
+          _closeDialogWithResult(true);
         }
       });
     });
+  }
+
+  void _closeDialogWithResult(bool allowProceed) {
+    if (!mounted) return;
+    Navigator.of(context).pop(allowProceed);
+  }
+
+  void _closeDialog() {
+    _closeDialogWithResult(false);
   }
 
   Future<void> _checkSigninStatus() async {
@@ -88,7 +99,7 @@ class _SubscriptionEnforcementDialogState
         });
         // If user is signed in and has paid, immediately pop dialog
         if (isSignedIn && hasPaid) {
-          Navigator.of(context).pop();
+          _closeDialogWithResult(true);
         }
       }
     } catch (e) {
@@ -102,6 +113,7 @@ class _SubscriptionEnforcementDialogState
 
   @override
   void dispose() {
+    _voucherController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -109,7 +121,7 @@ class _SubscriptionEnforcementDialogState
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_isProcessing, // ⚡ Prevent dismissal during processing
+      canPop: !_isProcessing,
       child: OrientationBuilder(
         builder: (context, orientation) {
           final isLandscape = orientation == Orientation.landscape;
@@ -123,7 +135,7 @@ class _SubscriptionEnforcementDialogState
               borderRadius: BorderRadius.circular(16),
             ),
             insetPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             child: ScaleTransition(
               scale: _scaleAnimation,
               child: FadeTransition(
@@ -131,7 +143,7 @@ class _SubscriptionEnforcementDialogState
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: isLandscape ? 600 : 450,
-                    maxHeight: MediaQuery.of(context).size.height * 0.9,
+                    maxHeight: MediaQuery.of(context).size.height * 1,
                   ),
                   child: Container(
                     decoration: BoxDecoration(
@@ -149,7 +161,7 @@ class _SubscriptionEnforcementDialogState
                                 alignment: Alignment.topRight,
                                 child: IconButton(
                                   icon: const Icon(Icons.close),
-                                  onPressed: () => Navigator.of(context).pop(),
+                                  onPressed: _closeDialog,
                                 ),
                               ),
                             // Scrollable content
@@ -224,7 +236,7 @@ class _SubscriptionEnforcementDialogState
               color: AppColors.eLearningRedBtnColor,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
           Text(
             'Free Trial Ended',
             style: AppTextStyles.normal700(
@@ -319,51 +331,14 @@ class _SubscriptionEnforcementDialogState
           const SizedBox(height: 10),
           _buildFeaturesList(),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: (_isCheckingSignin || _isProcessing)
-                  ? null
-                  : _handleSubscribe,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.eLearningBtnColor1,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: _isCheckingSignin || _isProcessing
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isUserSignedIn ? Icons.payment : Icons.person_add,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isUserSignedIn
-                              ? 'Subscribe Now'
-                              : 'Sign Up & Subscribe',
-                          style: AppTextStyles.normal600(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+          _buildPaymentOrVoucherSection(
+            buttonLabel: _isUserSignedIn
+                ? 'Subscribe Now'
+                : 'Sign Up & Subscribe',
+            showNairaAmount: false,
           ),
+          const SizedBox(height: 12),
+          _buildContinueTrialButton(),
         ],
       ),
     );
@@ -410,63 +385,51 @@ class _SubscriptionEnforcementDialogState
           const SizedBox(height: 10),
           _buildFeaturesList(),
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: (_isCheckingSignin || _isProcessing)
-                  ? null
-                  : _handleSubscribe,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.eLearningBtnColor1,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: _isCheckingSignin || _isProcessing
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        NairaSvgIcon(
-                          color: Colors.white,
-                          width: 14,
-                          height: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _isUserSignedIn
-                              ? 'Pay ${widget.amount}'
-                              : 'Sign Up & Pay ${widget.amount}',
-                          style: AppTextStyles.normal600(
-                            fontSize: 15,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+          _buildPaymentOrVoucherSection(
+            buttonLabel: _isUserSignedIn
+                ? 'Pay ${widget.amount}'
+                : 'Sign Up & Pay ${widget.amount}',
+            showNairaAmount: true,
           ),
           const SizedBox(height: 12),
-          TextButton(
-            onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
-            child: Text(
-              'Maybe Later',
-              style: AppTextStyles.normal500(
-                fontSize: 14,
-                color: AppColors.text7Light,
-              ),
-            ),
-          ),
+          _buildContinueTrialButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContinueTrialButton() {
+    final label = widget.remainingTests <= 1
+          ?'Continue with Ads'
+          :'Continue Trial (${widget.remainingTests} days left)';
+
+        // ? 'Continue Trial (${widget.remainingTests} days left)'
+        // : ;
+        
+
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: _isProcessing
+            ? null
+            : () {
+                // TODO: hook ads flow here when needed.
+                _closeDialogWithResult(true);
+              },
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppColors.eLearningBtnColor1),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.normal600(
+            fontSize: 14,
+            color: AppColors.eLearningBtnColor1,
+          ),
+        ),
       ),
     );
   }
@@ -547,6 +510,7 @@ class _SubscriptionEnforcementDialogState
       'Unlimited CBT tests',
       'Detailed performance analytics',
       'Complete test history',
+      'Ad-free experience',
     ];
 
     return Container(
@@ -582,6 +546,289 @@ class _SubscriptionEnforcementDialogState
           );
         }).toList(),
       ),
+    );
+  }
+
+  Widget _buildPaymentOrVoucherSection({
+    required String buttonLabel,
+    required bool showNairaAmount,
+  }) {
+    if (!_showVoucher) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: (_isCheckingSignin || _isProcessing)
+                  ? null
+                  : _handleSubscribe,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.eLearningBtnColor1,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: _isCheckingSignin || _isProcessing
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (showNairaAmount) ...[
+                          NairaSvgIcon(
+                            color: Colors.white,
+                            width: 14,
+                            height: 14,
+                          ),
+                          const SizedBox(width: 4),
+                        ] else ...[
+                          Icon(
+                            _isUserSignedIn
+                                ? Icons.payment
+                                : Icons.person_add,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          buttonLabel,
+                          style: AppTextStyles.normal600(
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: Colors.grey.shade300,
+                  thickness: 1,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'OR',
+                  style: AppTextStyles.normal500(
+                    fontSize: 12,
+                    color: AppColors.text7Light,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: Colors.grey.shade300,
+                  thickness: 1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: (_isCheckingSignin || _isProcessing)
+                ? null
+                : () {
+                    setState(() => _showVoucher = true);
+                  },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.grey.shade300,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.confirmation_number_outlined,
+                    size: 20,
+                    color: AppColors.text7Light,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'I have a voucher code',
+                    style: AppTextStyles.normal600(
+                      fontSize: 15,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.grey.shade200,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.confirmation_number_rounded,
+                    size: 20,
+                    color: AppColors.eLearningBtnColor1,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Enter Voucher Code',
+                    style: AppTextStyles.normal600(
+                      fontSize: 15,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _voucherController,
+                textCapitalization: TextCapitalization.characters,
+                style: AppTextStyles.normal600(
+                  fontSize: 16,
+                  color: AppColors.text4Light,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'e.g., SAVE50',
+                  hintStyle: AppTextStyles.normal400(
+                    fontSize: 15,
+                    color: AppColors.text7Light,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.eLearningBtnColor1,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: (_isCheckingSignin || _isProcessing)
+                      ? null
+                      : () {
+                          final code = _voucherController.text.trim();
+                          if (code.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a voucher code'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Voucher validation coming soon'),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.eLearningBtnColor1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Apply Voucher',
+                    style: AppTextStyles.normal600(
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: (_isCheckingSignin || _isProcessing)
+              ? null
+              : () {
+                  setState(() => _showVoucher = false);
+                },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.arrow_back_rounded,
+                  size: 16,
+                  color: AppColors.text7Light,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Back to payment options',
+                  style: AppTextStyles.normal500(
+                    fontSize: 14,
+                    color: AppColors.text7Light,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -625,7 +872,7 @@ class _SubscriptionEnforcementDialogState
               ),
             );
             widget.onSubscribed();
-            //Navigator.of(context).pop(); // Dismiss dialog if already paid
+            //_closeDialogWithResult(true); // Dismiss dialog if already paid
           }
           return;
         }
@@ -782,7 +1029,24 @@ class _SubscriptionEnforcementDialogState
     );
 
     if (!widget.isHardBlock) {
-      Navigator.of(context).pop();
+      _closeDialogWithResult(false);
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -12,18 +12,32 @@ class CbtSubscriptionService {
       'cbt_user_email'; // Track which user's data this is
   static const String _keyTrialStartDate =
       'cbt_trial_start_date'; // Track when trial started
+  static const String _keyFreeTrialDays =
+      'cbt_free_trial_days'; // Sync trial days from settings
 
   // Dynamic values from API (with fallbacks)
-  int _freeTrialDays = 7; // Default 7 days
+  static int _freeTrialDays = 7; // Default 7 days
 
   /// Set the free trial days from API settings
-  void setMaxFreeTests(int freeTrialDays) {
-    _freeTrialDays = freeTrialDays > 0 ? freeTrialDays : 7;
-    print('🔧 Free trial period set to: $_freeTrialDays days');
+  Future<void> setMaxFreeTests(int freeTrialDays) async {
+    final normalized = freeTrialDays > 0 ? freeTrialDays : 7;
+    _freeTrialDays = normalized;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyFreeTrialDays, normalized);
+    print('Free trial period set to: $_freeTrialDays days');
   }
 
   /// Get the current free trial days
   int get maxFreeTests => _freeTrialDays;
+
+  Future<void> _ensureFreeTrialDaysLoaded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getInt(_keyFreeTrialDays);
+    if (stored != null && stored > 0 && stored != _freeTrialDays) {
+      _freeTrialDays = stored;
+      print('Loaded free trial days from cache: $_freeTrialDays');
+    }
+  }
 
   /// Get the trial start date
   Future<DateTime?> getTrialStartDate() async {
@@ -48,6 +62,7 @@ class CbtSubscriptionService {
 
   /// Check if trial period has expired
   Future<bool> isTrialExpired() async {
+    await _ensureFreeTrialDaysLoaded();
     final startDate = await getTrialStartDate();
     if (startDate == null) return false; // Trial hasn't started yet
 
@@ -209,6 +224,7 @@ class CbtSubscriptionService {
 
   /// Get remaining free trial days
   Future<int> getRemainingFreeTests() async {
+    await _ensureFreeTrialDaysLoaded();
     final isPaid = await hasPaid();
     if (isPaid) return -1; // -1 means unlimited
 
@@ -228,6 +244,7 @@ class CbtSubscriptionService {
 
   /// Get subscription status summary
   Future<Map<String, dynamic>> getSubscriptionStatus() async {
+    await _ensureFreeTrialDaysLoaded();
     return {
       'testCount': await getTestCount(),
       'hasPaid': await hasPaid(),
@@ -244,3 +261,6 @@ class CbtSubscriptionService {
     };
   }
 }
+
+
+

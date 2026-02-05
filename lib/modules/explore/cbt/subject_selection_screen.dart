@@ -539,38 +539,58 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
       return;
     }
 
-    // If not paid and can't take test (exceeded free limit)
-    if (!canTakeTest) {
-      print('❌ User must pay - showing enforcement dialog');
-      if (!mounted) return;
+    // If not paid, show prompt (hard if trial expired)
+    final trialExpired = await _subscriptionService.isTrialExpired();
+    final settings = await CbtSettingsHelper.getSettings();
+    if (!mounted) return;
 
-      final settings = await CbtSettingsHelper.getSettings();
-      if (!mounted) return;
+    // if (!canTakeTest || trialExpired) {
+    //   print('❌ User must pay - showing enforcement dialog');
+    //   final allowProceed = await showDialog<bool>(
+    //     context: context,
+    //     barrierDismissible: true,
+    //     builder: (context) => SubscriptionEnforcementDialog(
+    //       isHardBlock: true,
+    //       remainingTests: remainingTests,
+    //       amount: settings.amount,
+    //       discountRate: settings.discountRate,
+    //       onSubscribed: () async {
+    //         print('✅ User subscribed from Subject Selection');
+    //         // Refresh user data from backend
+    //         await userProvider.refreshCurrentUser();
+    //         if (mounted) {
+    //           setState(() {});
+    //         }
+    //       },
+    //     ),
+    //   );
+    //   if (allowProceed == true) {
+    //     _proceedWithTest();
+    //   }
+    //   return;
+    // }
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: true,
-          remainingTests: remainingTests,
-          amount: settings.amount,
-          discountRate: settings.discountRate,
-          onSubscribed: () async {
-            print('✅ User subscribed from Subject Selection');
-            // Refresh user data from backend
-            await userProvider.refreshCurrentUser();
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      );
-      return;
-    }
+    // Within trial: show soft prompt and allow proceed
+    // final allowProceed = await showDialog<bool>(
+    //   context: context,
+    //   barrierDismissible: true,
+    //   builder: (context) => SubscriptionEnforcementDialog(
+    //     isHardBlock: false,
+    //     remainingTests: remainingTests,
+    //     amount: settings.amount,
+    //     discountRate: settings.discountRate,
+    //     onSubscribed: () async {
+    //       print('✅ User subscribed from Subject Selection');
+    //       await userProvider.refreshCurrentUser();
+    //       if (mounted) {
+    //         setState(() {});
+    //       }
+    //     },
+    //   ),
+    // );
 
-    // User can take test (within free limit)
-    print('✅ User can take test (within free limit) - starting test');
-    _proceedWithTest();
+      _proceedWithTest();
+    
   }
 
   void _proceedWithTest() {
@@ -1422,3 +1442,4 @@ class SelectedSubject {
     return 'SelectedSubject{subject: $subjectName, subjectId: $subjectId, year: $year, examId: $examId}';
   }
 }
+
