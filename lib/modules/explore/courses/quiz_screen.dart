@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 import 'quiz_summary_screen.dart';
 import '../../providers/explore/lesson_quiz_provider.dart';
 import '../../model/explore/lesson_quiz/lesson_quiz_model.dart';
 import '../../providers/explore/assignment_submission_provider.dart';
+import 'package:linkschool/config/env_config.dart';
 
 class QuizScreen extends StatefulWidget {
   final String courseTitle;
@@ -33,14 +37,111 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   bool _isSubmittingScore = false;
+  bool _isMinor = false;
+  InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdLoaded = false;
 
   @override
   void initState() {
     super.initState();
+    _loadAgeGate();
+    _loadInterstitialAd();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<LessonQuizProvider>(context, listen: false);
       provider.loadQuizzes(widget.lessonId);
     });
+  }
+
+  Future<void> _loadAgeGate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dob = prefs.getString('active_profile_dob');
+      final age = _computeAgeFromBirthDate(dob);
+      setState(() {
+        _isMinor = age != null && age < 16;
+      });
+      if (_isMinor) {
+        _interstitialAd?.dispose();
+        _interstitialAd = null;
+        _isInterstitialAdLoaded = false;
+      }
+    } catch (_) {}
+  }
+
+  int? _computeAgeFromBirthDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final trimmed = raw.trim();
+    DateTime? dob = DateTime.tryParse(trimmed);
+    if (dob == null) {
+      final formats = [
+        DateFormat('yyyy-MM-dd'),
+        DateFormat('dd/MM/yyyy'),
+        DateFormat('MM/dd/yyyy'),
+      ];
+      for (final f in formats) {
+        try {
+          dob = f.parseStrict(trimmed);
+          break;
+        } catch (_) {}
+      }
+    }
+    if (dob == null) return null;
+    final now = DateTime.now();
+    int age = now.year - dob.year;
+    final hadBirthdayThisYear =
+        (now.month > dob.month) ||
+        (now.month == dob.month && now.day >= dob.day);
+    if (!hadBirthdayThisYear) age -= 1;
+    return age < 0 ? null : age;
+  }
+
+  void _loadInterstitialAd() {
+    if (_isMinor) return;
+    InterstitialAd.load(
+      adUnitId: EnvConfig.googleInterstitialAdsApiKey,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          _interstitialAd = ad;
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAdThen(VoidCallback onDone) {
+    if (_isMinor || !_isInterstitialAdLoaded || _interstitialAd == null) {
+      onDone();
+      return;
+    }
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (InterstitialAd ad) {
+        ad.dispose();
+        _interstitialAd = null;
+        _isInterstitialAdLoaded = false;
+        onDone();
+        _loadInterstitialAd();
+      },
+      onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+        ad.dispose();
+        _interstitialAd = null;
+        _isInterstitialAdLoaded = false;
+        onDone();
+        _loadInterstitialAd();
+      },
+    );
+    _interstitialAd!.show();
   }
 
   void _selectAnswer(BuildContext context, int optionIndex) {
@@ -105,35 +206,43 @@ class _QuizScreenState extends State<QuizScreen> {
     // Post quiz score to assignment endpoint (no assignment files)
     await _postQuizScore(score);
 
-    // Navigate to summary screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QuizSummaryScreen(
-          totalScore: score,
-          totalQuestions: provider.totalQuestions,
-          questions: provider.quizzes.map((quiz) => {
-            'question': quiz.questionText,
-            'options': quiz.options.map((opt) => opt.text).toList(),
-            'correctAnswer': quiz.correct.order,
-          }).toList(),
-          userAnswers: provider.selectedAnswers,
-          courseTitle: widget.courseTitle,
-          lessonTitle: widget.lessonTitle,
-          onRetake: () {
-            Navigator.pop(context); // Close summary
-            provider.resetQuiz();
-          },
-          onClose: () {
-            Navigator.pop(context); // Close summary
-            Navigator.pop(context, score); // Close quiz screen and return score
-          },
+    // Navigate to summary screen (show interstitial first)
+    _showInterstitialAdThen(() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => QuizSummaryScreen(
+            totalScore: score,
+            totalQuestions: provider.totalQuestions,
+            questions: provider.quizzes.map((quiz) => {
+              'question': quiz.questionText,
+              'options': quiz.options.map((opt) => opt.text).toList(),
+              'correctAnswer': quiz.correct.order,
+            }).toList(),
+            userAnswers: provider.selectedAnswers,
+            courseTitle: widget.courseTitle,
+            lessonTitle: widget.lessonTitle,
+            onRetake: () {
+              Navigator.pop(context); // Close summary
+              provider.resetQuiz();
+            },
+            onClose: () {
+              Navigator.pop(context); // Close summary
+              Navigator.pop(context, score); // Close quiz screen and return score
+            },
+          ),
         ),
-      ),
-    ).then((_) {
-      // When returning from summary, close the quiz screen and return score
-      Navigator.pop(context, score);
+      ).then((_) {
+        // When returning from summary, close the quiz screen and return score
+        Navigator.pop(context, score);
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _interstitialAd?.dispose();
+    super.dispose();
   }
 
   @override
