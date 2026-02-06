@@ -120,6 +120,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _loadedActiveProfile = false;
   bool _lessonHasQuiz = false;
   bool _lessonHasAssignment = false;
+  bool _isMinor = false;
 
   // Interstitial Ad
   InterstitialAd? _interstitialAd;
@@ -176,7 +177,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     },
   ];
 
- @override
+  @override
 void initState() {
   super.initState();
   _tabController = TabController(length: 3, vsync: this);
@@ -226,10 +227,81 @@ void initState() {
       });
   }
 
+
+  // calculate age range for ads 
+  
+
+  int? _computeAgeFromBirthDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final trimmed = raw.trim();
+    DateTime? dob;
+    try {
+      dob = DateTime.tryParse(trimmed);
+    } catch (_) {
+      dob = null;
+    }
+    if (dob == null) {
+      final formats = [
+        DateFormat('yyyy-MM-dd'),
+        DateFormat('dd/MM/yyyy'),
+        DateFormat('MM/dd/yyyy'),
+      ];
+      for (final f in formats) {
+        try {
+          dob = f.parseStrict(trimmed);
+          break;
+        } catch (_) {}
+      }
+    }
+    if (dob == null) return null;
+    final now = DateTime.now();
+    int age = now.year - dob.year;
+    final hadBirthdayThisYear =
+        (now.month > dob.month) ||
+        (now.month == dob.month && now.day >= dob.day);
+    if (!hadBirthdayThisYear) age -= 1;
+    print('Computed age: $age from birth date: $raw');
+    return age < 0 ? null : age;
+  }
+
+  void _applyAgeGate(String? birthDate) {
+    final age = _computeAgeFromBirthDate(birthDate);
+    final isMinor = age != null && age < 13;
+    print('Applying age gate. Birth date: $birthDate, Computed age: $age, Is minor: $isMinor');
+    if (_isMinor == isMinor) return;
+    setState(() {
+      _isMinor = isMinor;
+      // if (_isMinor) {
+      //   _interstitialAd?.dispose();
+      //   _interstitialAd = null;
+      //   _isInterstitialAdLoaded = false;
+      // }
+    });
+  }
+
+  
+
   void _loadInterstitialAd() {
+    
+    // if user is minor add non-personalized ads
+    final AdRequest request;
+     if (_isMinor == true) {
+    request = AdRequest(nonPersonalizedAds: true);
+
+  } else {
+
+    request = AdRequest();
+   
+  }
+  
+  
+  print('AdRequest created with nonPersonalizedAds: ${_isMinor}');
+  
+ 
+   
     InterstitialAd.load(
       adUnitId: EnvConfig.googleInterstitialAdsApiKey,
-      request: const AdRequest(),
+      request:request,
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {
           _interstitialAd = ad;
@@ -251,6 +323,10 @@ void initState() {
   }
 
   void _showInterstitialAdAndNavigateBack() {
+    // if (_isMinor) {
+    //   Navigator.pop(context);
+    //   return;
+    // }
     if (_isInterstitialAdLoaded && _interstitialAd != null) {
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (InterstitialAd ad) {
@@ -676,7 +752,12 @@ void initState() {
           setState(() {
             _activeProfile = profile;
           });
+          _applyAgeGate(profile.birthDate);
         }
+      }
+      if (_activeProfile == null) {
+        final dob = prefs.getString('active_profile_dob');
+        _applyAgeGate(dob);
       }
       setState(() => _loadedActiveProfile = true);
     } catch (e) {
@@ -768,6 +849,7 @@ void initState() {
                               _activeProfile = profile;
                             });
                             _saveActiveProfileId(profile.id, birthDate: profile.birthDate);
+                            _applyAgeGate(profile.birthDate);
                             onProfileSelected?.call(profile);
                           },
                         ),
@@ -800,10 +882,12 @@ void initState() {
                           if (profiles.isNotEmpty) {
                             _activeProfile = profiles.last;
                             _saveActiveProfileId(_activeProfile?.id, birthDate: _activeProfile?.birthDate);
+                            _applyAgeGate(_activeProfile?.birthDate);
                             onProfileSelected?.call(_activeProfile!);
                           } else {
                             _activeProfile = null;
                             _saveActiveProfileId(null);
+                            _applyAgeGate(null);
                           }
                         });
                       }
@@ -981,99 +1065,126 @@ bool isYouTubeUrl(String url) {
 
   /// Determine the zoom class status based on date and recorded URL
   /// Priority: Check recorded_url first, then zoom_url
-  Map<String, dynamic> _getZoomStatus() {
-    final hasRecordedUrl =
-        _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
-    final hasZoomUrl = _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
+ /// Determine the zoom class status based on date and recorded URL
+/// Priority: Check class date/time first, then fallback to recorded URL
+/// Determine the zoom class status based on date and recorded URL
+/// Priority: Check class date/time first, then fallback to recorded URL
+Map<String, dynamic> _getZoomStatus() {
+  final hasRecordedUrl =
+      _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
+  final hasZoomUrl = _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
 
-    // If neither URL exists, return unavailable
-    if (!hasRecordedUrl && !hasZoomUrl) {
-      return {
-        'status': 'unavailable',
-        'message': 'No Zoom class scheduled',
-        'buttonText': '',
-        'url': null,
-      };
-    }
-
-    // PRIORITY 1: If recorded URL exists, always show it first
-    if (hasRecordedUrl) {
-      return {
-        'status': 'recorded',
-        'message': 'Watch the recorded video.',
-        'buttonText': 'Watch Record video',
-        'url': _effectiveRecordedUrl,
-      };
-    }
-
-    // PRIORITY 2: Check zoom URL with date logic
-    if (hasZoomUrl) {
-      // If no date provided, assume class is available
-      if (_effectiveClassDate == null || _effectiveClassDate!.isEmpty) {
-        return {
-          'status': 'available',
-          'message': 'Join the  class',
-          'buttonText': 'Join class',
-          'url': _effectiveZoomUrl,
-        };
-      }
-
-      try {
-        final classDateTime = DateTime.parse(_effectiveClassDate!);
-        final now = DateTime.now();
-
-        // Assuming class duration is 2 hours (you can make this configurable)
-        final classEndTime = classDateTime.add(const Duration(hours: 3));
-
-        // Class hasn't started yet
-        if (now.isBefore(classDateTime)) {
-          final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
-          final dateStr = formatter.format(classDateTime);
-          return {
-            'status': 'scheduled',
-            'message': 'Class starts on $dateStr',
-            'buttonText': 'Scheduled',
-            'url': null,
-            'classDate': classDateTime,
-          };
-        }
-
-        // Class is ongoing
-        if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
-          return {
-            'status': 'ongoing',
-            'message': 'Class is ongoing. Join now!',
-            'buttonText': 'Join class',
-            'url': _effectiveZoomUrl,
-          };
-        }
-
-        // Class has ended but no recorded video
-        return {
-          'status': 'pending',
-          'message': 'Class has ended. Recorded video pending.',
-          'buttonText': 'Pending',
-          'url': null,
-        };
-      } catch (e) {
-        debugPrint('Error parsing class date: $e');
-        return {
-          'status': 'available',
-          'message': 'Join the class',
-          'buttonText': 'Join class',
-          'url': _effectiveZoomUrl,
-        };
-      }
-    }
-
-    // Fallback (should never reach here)
+  // If neither URL exists, return unavailable
+  if (!hasRecordedUrl && !hasZoomUrl) {
     return {
       'status': 'unavailable',
-      'message': 'No content available',
+      'message': 'No live class or recording available for this lesson.',
       'buttonText': '',
       'url': null,
     };
   }
+
+  // PRIORITY 1: Check zoom URL with date logic FIRST
+  if (hasZoomUrl) {
+    // If no date provided, assume class is available
+    if (_effectiveClassDate == null || _effectiveClassDate!.isEmpty) {
+      return {
+        'status': 'available',
+        'message': 'Join the live class session.',
+        'buttonText': 'Join Live Class',
+        'url': _effectiveZoomUrl,
+      };
+    }
+
+    try {
+      final classDateTime = DateTime.parse(_effectiveClassDate!);
+      final now = DateTime.now();
+
+      // Assuming class duration is 3 hours (you can make this configurable)
+      final classEndTime = classDateTime.add(const Duration(hours: 3));
+
+      // Class hasn't started yet
+      if (now.isBefore(classDateTime)) {
+        final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
+        final dateStr = formatter.format(classDateTime);
+        
+        // Calculate time until class starts
+        final difference = classDateTime.difference(now);
+        String timeUntil = '';
+        if (difference.inDays > 0) {
+          timeUntil = ' (in ${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'})';
+        } else if (difference.inHours > 0) {
+          timeUntil = ' (in ${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'})';
+        } else if (difference.inMinutes > 0) {
+          timeUntil = ' (in ${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'})';
+        }
+        
+        return {
+          'status': 'scheduled',
+          'message': 'Live class scheduled for $dateStr$timeUntil',
+          'buttonText': 'Scheduled',
+          'url': null,
+          'classDate': classDateTime,
+        };
+      }
+
+      // Class is ongoing
+      if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
+        return {
+          'status': 'ongoing',
+          'message': 'Live class is in progress! Join now to participate.',
+          'buttonText': 'Join Live Class',
+          'url': _effectiveZoomUrl,
+        };
+      }
+
+      // Class has ended - check if recorded video is available
+      if (hasRecordedUrl) {
+        return {
+          'status': 'recorded',
+          'message': 'Live class has ended. Watch the recorded session at your convenience.',
+          'buttonText': 'Watch Recorded Class',
+          'url': _effectiveRecordedUrl,
+        };
+      }
+
+      // Class has ended but no recorded video yet
+      return {
+        'status': 'pending',
+        'message': 'Live class has ended. The recorded session will be available soon. Check back later.',
+        'buttonText': 'Recording Pending',
+        'url': null,
+      };
+    } catch (e) {
+      debugPrint('Error parsing class date: $e');
+      // If date parsing fails but we have a Zoom URL, make it available
+      return {
+        'status': 'available',
+        'message': 'Join the live class session.',
+        'buttonText': 'Join Live Class',
+        'url': _effectiveZoomUrl,
+      };
+    }
+  }
+
+  // PRIORITY 2: If only recorded URL exists (no zoom URL), show it
+  if (hasRecordedUrl) {
+    return {
+      'status': 'recorded',
+      'message': 'This lesson is available as a recorded class. Watch it anytime.',
+      'buttonText': 'Watch Recorded Class',
+      'url': _effectiveRecordedUrl,
+    };
+  }
+
+  // Fallback (should never reach here)
+  return {
+    'status': 'unavailable',
+    'message': 'No content available for this lesson at the moment.',
+    'buttonText': '',
+    'url': null,
+  };
+}
 
   /// Launch URL in browser
   Future<void> _launchUrl(String url) async {
@@ -3123,144 +3234,203 @@ Widget _buildVideoPlayer() {
       ],
 
       // Join/Watch Button with Zoom-style banner - Show if zoom URL or recorded URL exists
-      if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
-          (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty)) ...[
-        Builder(
-          builder: (context) {
-            final zoomStatus = _getZoomStatus();
-            final status = zoomStatus['status'] as String;
-            final message = zoomStatus['message'] as String;
-            final buttonText = zoomStatus['buttonText'] as String;
-            final url = zoomStatus['url'] as String?;
+      // Join/Watch Button with class status banner
+if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
+    (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty)) ...[
+  Builder(
+    builder: (context) {
+      final zoomStatus = _getZoomStatus();
+      final status = zoomStatus['status'] as String;
+      final message = zoomStatus['message'] as String;
+      final buttonText = zoomStatus['buttonText'] as String;
+      final url = zoomStatus['url'] as String?;
 
-            // Determine button style and behavior based on status
-            Color backgroundColor;
-            Color iconColor;
-            bool isButtonEnabled;
+      // Determine button style and behavior based on status
+      Color backgroundColor;
+      Color iconColor;
+      IconData iconData;
+      bool isButtonEnabled;
+      String cardTitle;
 
-            switch (status) {
-              case 'scheduled':
-                backgroundColor = Colors.grey.shade300;
-                iconColor = Colors.grey.shade600;
-                isButtonEnabled = false;
-                break;
-              case 'ongoing':
-                backgroundColor = const Color(0xFF2D8CFF);
-                iconColor = Colors.white;
-                isButtonEnabled = true;
-                break;
-              case 'recorded':
-                backgroundColor = const Color(0xFF10B981);
-                iconColor = Colors.white;
-                isButtonEnabled = true;
-                break;
-              case 'pending':
-                backgroundColor = Colors.grey;
-                iconColor = Colors.white;
-                isButtonEnabled = false;
-                break;
-              case 'unavailable':
-              default:
-                backgroundColor = Colors.grey.shade300;
-                iconColor = Colors.grey.shade600;
-                isButtonEnabled = false;
-                break;
-            }
+      switch (status) {
+        case 'scheduled':
+          backgroundColor = Colors.grey.shade300;
+          iconColor = Colors.grey.shade600;
+          iconData = Icons.schedule;
+          isButtonEnabled = false;
+          cardTitle = 'Upcoming Live Class';
+          break;
+        case 'ongoing':
+          backgroundColor = const Color(0xFF2D8CFF);
+          iconColor = Colors.white;
+          iconData = Icons.videocam;
+          isButtonEnabled = true;
+          cardTitle = 'Live Class Now';
+          break;
+        case 'recorded':
+          backgroundColor = const Color(0xFF10B981);
+          iconColor = Colors.white;
+          iconData = Icons.play_circle_outline;
+          isButtonEnabled = true;
+          cardTitle = 'Recorded Class';
+          break;
+        case 'pending':
+          backgroundColor = Colors.blueGrey;
+          iconColor = Colors.white;
+          iconData = Icons.hourglass_empty;
 
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with Zoom logo
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: backgroundColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          status == 'recorded'
-                              ? Icons.play_circle_outline
-                              : Icons.video_camera_front,
-                          color: iconColor,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        status == 'recorded' ? 'Recording' : 'class',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: backgroundColor,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Message
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black87,
-                      height: 1.4,
-                    ),
-                  ),
-                  if (buttonText.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    // Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isButtonEnabled && url != null
-                            ? () => _launchUrl(url)
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: backgroundColor,
-                          foregroundColor: iconColor,
-                          disabledBackgroundColor: backgroundColor,
-                          disabledForegroundColor: iconColor,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          buttonText,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
+          isButtonEnabled = false;
+          cardTitle = 'Recorded video';
+          break;
+        case 'available':
+          backgroundColor = const Color(0xFF2D8CFF);
+          iconColor = Colors.white;
+          iconData = Icons.videocam;
+          isButtonEnabled = true;
+          cardTitle = 'Live Class';
+          break;
+        case 'unavailable':
+        default:
+          backgroundColor = Colors.grey.shade300;
+          iconColor = Colors.grey.shade600;
+          iconData = Icons.not_interested;
+          isButtonEnabled = false;
+          cardTitle = 'No Class Available';
+          break;
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-      ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with icon
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    iconData,
+                    color: iconColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    cardTitle,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: backgroundColor,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+                // Live indicator for ongoing classes
+                if (status == 'ongoing')
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Message
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+            ),
+            if (buttonText.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              // Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: isButtonEnabled && url != null
+                      ? () => _launchUrl(url)
+                      : null,
+                  icon: Icon(
+                    iconData,
+                    size: 20,
+                  ),
+                  label: Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: backgroundColor,
+                    foregroundColor: iconColor,
+                    disabledBackgroundColor: backgroundColor,
+                    disabledForegroundColor: iconColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: isButtonEnabled ? 2 : 0,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    },
+  ),
+  const SizedBox(height: 16),
+],
     ]);
   }
 

@@ -93,7 +93,7 @@ class _CBTDashboardState extends State<CBTDashboard>
       await _syncTrialSettingsOnEntry();
       await _subscriptionService.setTrialStartDate();
       _preloadSubscriptionStatus(); // Pre-cache subscription status
-      await _maybeShowEntryPaymentPrompt();
+   //   await _maybeShowEntryPaymentPrompt();
     });
   }
 
@@ -811,9 +811,7 @@ _wasLoading = loading;
             await showDialog(
               context: context,
               barrierDismissible: true,
-              builder: (context) => SubscriptionEnforcementDialog(
-                isHardBlock: true,
-                remainingTests: 0, // Challenge doesn't use free trials
+              builder: (context) => ChallengeAccessDialog(
                 amount: settings.amount,
                 discountRate: settings.discountRate,
                 onSubscribed: () {

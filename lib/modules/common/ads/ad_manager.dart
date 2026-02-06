@@ -72,8 +72,7 @@ class AdManager {
     if (tier == AdTier.paid) return false;
 
     if (tier == AdTier.freeTrial) {
-      return trigger == AdTrigger.topicStart ||
-          trigger == AdTrigger.topicCompletion ||
+      return  trigger == AdTrigger.topicCompletion ||
           trigger == AdTrigger.resultNavigation;
     }
 
