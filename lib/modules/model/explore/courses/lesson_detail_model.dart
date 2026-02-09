@@ -28,26 +28,24 @@ class LessonDetailResponse {
 
 class LessonDetailData {
   final Lesson lesson;
-  final Submission? submission;
+  final String? submissionUrl;
 
   LessonDetailData({
     required this.lesson,
-    this.submission,
+    this.submissionUrl,
   });
 
   factory LessonDetailData.fromJson(Map<String, dynamic> json) {
     return LessonDetailData(
       lesson: Lesson.fromJson(json['lesson'] ?? {}),
-      submission: json['submission'] != null
-          ? Submission.fromJson(json['submission'])
-          : null,
+      submissionUrl: json['submission'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'lesson': lesson.toJson(),
-      'submission': submission?.toJson(),
+      'submission': submissionUrl,
     };
   }
 }
@@ -99,7 +97,7 @@ class Lesson {
       videoUrl: json['video_url'] ?? '',
       recordedVideoUrl: json['recorded_video_url'] ?? '',
       materialUrl: json['material_url'] ?? '',
-      assignmentUrl: json['assignment_url'] ?? '',
+      assignmentUrl: json['assignment_url'],
       certificateUrl: json['certificate_url'],
       assignmentInstructions: json['assignment_instructions'] ?? '',
       isFinalLesson: json['is_final_lesson'] ?? false,
@@ -129,20 +127,5 @@ class Lesson {
       'assignment_due_date': assignmentDueDate,
       'has_quiz': hasQuiz,
     };
-  }
-}
-
-class Submission {
-  // Since the structure is not provided, using a flexible approach
-  final Map<String, dynamic>? data;
-
-  Submission({this.data});
-
-  factory Submission.fromJson(Map<String, dynamic> json) {
-    return Submission(data: json);
-  }
-
-  Map<String, dynamic> toJson() {
-    return data ?? {};
   }
 }

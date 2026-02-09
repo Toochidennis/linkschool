@@ -113,6 +113,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? assignmentDescription;
   String? materialUrl;
   String? certificateUrl;
+  String? submissionUrl;
   String? zoomUrl;
   String? recordedUrl;
   String? classDate;
@@ -141,6 +142,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       materialUrl?.isNotEmpty == true ? materialUrl : widget.materialUrl;
   bool get _shouldShowCertificate =>
       _isFinalLesson && certificateUrl?.isNotEmpty == true;
+  bool get _hasSubmittedAssignment =>
+      submissionUrl?.isNotEmpty == true;
   String? get _effectiveAssignmentUrl =>
       assignmentUrl?.isNotEmpty == true ? assignmentUrl : widget.assignmentUrl;
   String? get _effectiveAssignmentDescription =>
@@ -484,7 +487,7 @@ void initState() {
     );
   }
 
-  void _applyLessonData(Lesson lesson) {
+  void _applyLessonData(Lesson lesson, {String? submissionUrl}) {
   final resolvedVideoUrl =
       lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
   
@@ -509,6 +512,7 @@ void initState() {
     assignmentDescription = lesson.assignmentInstructions;
     materialUrl = lesson.materialUrl;
     certificateUrl = lesson.certificateUrl;
+    this.submissionUrl = submissionUrl;
     zoomUrl = lesson.videoUrl;
     recordedUrl = lesson.recordedVideoUrl;
     classDate = lesson.lessonDate;
@@ -2730,10 +2734,23 @@ Widget build(BuildContext context) {
         }
 
         final lesson = provider.lessonDetailData?.lesson;
+        final submissionUrl = provider.lessonDetailData?.submissionUrl;
+
         if (lesson != null && !_dataLoaded) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              _applyLessonData(lesson);
+              _applyLessonData(lesson, submissionUrl: submissionUrl);
+            }
+          });
+        }
+        if (submissionUrl != null &&
+            submissionUrl.isNotEmpty &&
+            submissionUrl != this.submissionUrl) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                this.submissionUrl = submissionUrl;
+              });
             }
           });
         }
@@ -3832,15 +3849,13 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isAssignmentSubmitted
-                        ? null
+                    onPressed: _hasSubmittedAssignment
+                        ? () => _previewAssignment(submissionUrl!)
                         : () {
                             _showSubmitAssignmentModal(context);
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isAssignmentSubmitted
-                          ? Colors.grey.shade400
-                          : const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF6366F1),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -3851,12 +3866,12 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (_isAssignmentSubmitted)
-                          const Icon(Icons.pending, size: 18),
-                        if (_isAssignmentSubmitted) const SizedBox(width: 8),
+                        if (_hasSubmittedAssignment)
+                          const Icon(Icons.visibility, size: 18),
+                        if (_hasSubmittedAssignment) const SizedBox(width: 8),
                         Text(
-                          _isAssignmentSubmitted
-                              ? 'Submission Pending'
+                          _hasSubmittedAssignment
+                              ? 'Preview Submitted Assignment'
                               : 'Submit Assignment',
                           style: const TextStyle(
                             fontSize: 15,
