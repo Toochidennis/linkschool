@@ -1,4 +1,5 @@
 import 'package:chewie/chewie.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -82,6 +83,7 @@ class CourseDetailScreen extends StatefulWidget {
 
 class _CourseDetailScreenState extends State<CourseDetailScreen>
     with SingleTickerProviderStateMixin {
+      static const platform = MethodChannel('com.linkskool.app/downloads');
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   YoutubePlayerController? _youtubeController;
@@ -110,6 +112,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? assignmentUrl;
   String? assignmentDescription;
   String? materialUrl;
+  String? certificateUrl;
   String? zoomUrl;
   String? recordedUrl;
   String? classDate;
@@ -120,6 +123,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _loadedActiveProfile = false;
   bool _lessonHasQuiz = false;
   bool _lessonHasAssignment = false;
+  bool _isFinalLesson = false;
   bool _isMinor = false;
 
   // Interstitial Ad
@@ -135,6 +139,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       videoUrl?.isNotEmpty == true ? videoUrl : widget.videoUrl;
   String? get _effectiveMaterialUrl =>
       materialUrl?.isNotEmpty == true ? materialUrl : widget.materialUrl;
+  bool get _shouldShowCertificate =>
+      _isFinalLesson && certificateUrl?.isNotEmpty == true;
   String? get _effectiveAssignmentUrl =>
       assignmentUrl?.isNotEmpty == true ? assignmentUrl : widget.assignmentUrl;
   String? get _effectiveAssignmentDescription =>
@@ -287,6 +293,7 @@ void initState() {
     final AdRequest request;
      if (_isMinor == true) {
     request = AdRequest(nonPersonalizedAds: true);
+     print('AdRequest created with nonPersonalizedAds: ${_isMinor}');
 
   } else {
 
@@ -295,7 +302,7 @@ void initState() {
   }
   
   
-  print('AdRequest created with nonPersonalizedAds: ${_isMinor}');
+ 
   
  
    
@@ -501,12 +508,14 @@ void initState() {
     assignmentUrl = lesson.assignmentUrl;
     assignmentDescription = lesson.assignmentInstructions;
     materialUrl = lesson.materialUrl;
+    certificateUrl = lesson.certificateUrl;
     zoomUrl = lesson.videoUrl;
     recordedUrl = lesson.recordedVideoUrl;
     classDate = lesson.lessonDate;
     _hasVideo = resolvedVideoUrl.isNotEmpty;
     _lessonHasQuiz = lesson.hasQuiz;
     _lessonHasAssignment = lesson.assignmentUrl.isNotEmpty;
+    _isFinalLesson = lesson.isFinalLesson;
     _courseVideos
       ..clear()
       ..add({
@@ -2362,6 +2371,35 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     }
   }
 
+  String _getFileNameFromUrl(String url) {
+  try {
+    // Remove query parameters if any
+    final uri = Uri.parse(url);
+    final pathSegments = uri.pathSegments;
+    
+    if (pathSegments.isNotEmpty) {
+      // Get the last segment (filename)
+      String filename = pathSegments.last;
+      
+      // Decode URL encoding (e.g., %20 -> space)
+      filename = Uri.decodeComponent(filename);
+      
+      // If no extension, add .pdf
+      if (!filename.toLowerCase().endsWith('.pdf')) {
+        filename = '$filename.pdf';
+      }
+      
+      return filename;
+    }
+  } catch (e) {
+    print('Error extracting filename: $e');
+  }
+  
+  // Fallback to timestamp-based name
+  return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+}
+
+
   Future<void> _previewAssignment(String assignmentUrl) async {
     // Navigate to a PDF preview screen
     Navigator.push(
@@ -2377,43 +2415,93 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
 
   // Helper function to get public Downloads directory
   Future<Directory?> _getDownloadsDirectory() async {
-    if (Platform.isAndroid) {
-      // For Android, use the public Downloads folder
-      final downloadsPath = '/storage/emulated/0/Download';
-      final downloadsDir = Directory(downloadsPath);
-      
-      // Check if the directory exists, if not try alternative paths
-      if (await downloadsDir.exists()) {
-        return downloadsDir;
+  if (Platform.isAndroid) {
+    // For Android, use app-specific external storage (no permission needed)
+    // This is accessible via Files app and won't be deleted when app is uninstalled
+    final dir = await getExternalStorageDirectory();
+    if (dir != null) {
+      // Use a public-like directory within app space
+      final downloadDir = Directory('${dir.path}/Downloads');
+      if (!await downloadDir.exists()) {
+        await downloadDir.create(recursive: true);
       }
-      
-      // Try alternative path (some devices use different paths)
-      final altPath = '/sdcard/Download';
-      final altDir = Directory(altPath);
-      if (await altDir.exists()) {
-        return altDir;
-      }
-      
-      // If neither exists, create the standard one
-      try {
-        await downloadsDir.create(recursive: true);
-        return downloadsDir;
-      } catch (e) {
-        // Fallback to external storage directory
-        final dir = await getExternalStorageDirectory();
-        return Directory('${dir!.path}/Download');
-      }
-    } else if (Platform.isIOS) {
-      // For iOS, use the app's documents directory
-      final dir = await getApplicationDocumentsDirectory();
-      return Directory('${dir.path}/Downloads');
+      return downloadDir;
     }
+  } else if (Platform.isIOS) {
+    final dir = await getApplicationDocumentsDirectory();
+    final downloadDir = Directory('${dir.path}/Downloads');
+    if (!await downloadDir.exists()) {
+      await downloadDir.create(recursive: true);
+    }
+    return downloadDir;
+  }
+  return null;
+}
+
+Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
+  if (!Platform.isAndroid) {
     return null;
   }
+  
+  try {
+    // Call native Android code to save to public Downloads
+    final String? result = await platform.invokeMethod(
+      'saveToDownloads',
+      {
+        'fileName': fileName,
+        'bytes': bytes,
+      },
+    );
+    return result;
+  } catch (e) {
+    print('Error saving to Downloads: $e');
+    return null;
+  }
+}
 
+
+
+Future<String?> _saveToDownloadsUsingMediaStore(
+  Uint8List bytes,
+  String fileName,
+) async {
+  if (!Platform.isAndroid) return null;
+  
+  try {
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+    
+    // Only use MediaStore for Android 10+
+    if (sdkInt >= 29) {
+      // Call native Android code to save file using MediaStore
+      final String? filePath = await platform.invokeMethod(
+        'saveToDownloads',
+        {
+          'fileName': fileName,
+          'bytes': bytes,
+        },
+      );
+      return filePath;
+    }
+  } catch (e) {
+    print('MediaStore save failed: $e');
+  }
+  return null;
+}
+Future<void> _openFileWithChooser(String filePath) async {
+  if (!Platform.isAndroid) return;
+  
+  try {
+    await platform.invokeMethod('openFile', {'filePath': filePath});
+  } catch (e) {
+    print('Error opening file: $e');
+  }
+}
+
+// Download Material - simplified version
 Future<void> _downloadMaterial(String materialUrl) async {
   try {
-    // Show loading dialog
+    // Show loading
     if (mounted) {
       showDialog(
         context: context,
@@ -2423,68 +2511,43 @@ Future<void> _downloadMaterial(String materialUrl) async {
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 20),
-              Text('Downloading materials...'),
+              Text('Downloading...'),
             ],
           ),
         ),
       );
     }
 
+    // Download file
     final response = await http.get(Uri.parse("https://linkskool.net/$materialUrl"));
+    
     if (response.statusCode == 200) {
-      final downloadsDir = await _getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw Exception('Could not access Downloads directory');
-      }
+      final fileName = _getFileNameFromUrl(materialUrl);
       
-      if (!await downloadsDir.exists()) {
-        await downloadsDir.create(recursive: true);
-      }
-
-      final fileName = 'Material_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${downloadsDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
+      // Save to Downloads
+      final savedPath = await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context); // Close loading
         
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Downloaded to: ${file.path}'),
-            duration: const Duration(seconds: 3),
-            backgroundColor: const Color(0xFF4CAF50),
-          ),
-        );
-
-      
-      }
-
-      // Open with system app chooser
-      try {
-        final result = await OpenFilex.open(
-          file.path,
-          type: "application/pdf",
-          uti: "com.adobe.pdf",
-        );
-        
-        if (result.type != ResultType.done && mounted) {
+        if (savedPath != null) {
+          // Open with system chooser immediately
+          await _openFileWithChooser(savedPath);
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open file: ${result.message}'),
-              backgroundColor: Colors.orange,
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
             ),
           );
         }
-      } catch (e) {
-        print('Error opening file: $e');
       }
     } else {
       if (mounted) {
         Navigator.pop(context);
-        
-      
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to download material'),
@@ -2494,16 +2557,12 @@ Future<void> _downloadMaterial(String materialUrl) async {
       }
     }
   } catch (e) {
+    print('Download error: $e');
     if (mounted) {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-      
-      
-      
+      if (Navigator.canPop(context)) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Download failed: $e'),
+          content: Text('Download failed: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -2511,9 +2570,9 @@ Future<void> _downloadMaterial(String materialUrl) async {
   }
 }
 
-Future<void> _downloadAssignment(String assignmentUrl) async {
+// Download Certificate - simplified version
+Future<void> _downloadCertificate(String certificateUrl) async {
   try {
-    // Show loading dialog
     if (mounted) {
       showDialog(
         context: context,
@@ -2523,7 +2582,75 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 20),
-              Text('Downloading assignment...'),
+              Text('Downloading...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final response =
+        await http.get(Uri.parse("https://linkskool.net/$certificateUrl"));
+
+    if (response.statusCode == 200) {
+      final fileName = _getFileNameFromUrl(certificateUrl);
+
+      final savedPath = await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        if (savedPath != null) {
+          await _openFileWithChooser(savedPath);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to download certificate'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    print('Download error: $e');
+    if (mounted) {
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Download failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
+// Download Assignment - simplified version
+Future<void> _downloadAssignment(String assignmentUrl) async {
+  try {
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Downloading...'),
             ],
           ),
         ),
@@ -2531,59 +2658,33 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
     }
 
     final response = await http.get(Uri.parse("https://linkskool.net/$assignmentUrl"));
+    
     if (response.statusCode == 200) {
-      final downloadsDir = await _getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw Exception('Could not access Downloads directory');
-      }
+ final fileName = _getFileNameFromUrl(assignmentUrl);
       
-      if (!await downloadsDir.exists()) {
-        await downloadsDir.create(recursive: true);
-      }
-
-      final fileName = 'Assignment_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${downloadsDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
+      final savedPath = await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Downloaded to Downloads folder'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Color(0xFF4CAF50),
-          ),
-        );
-
-      
-      }
-
-      // Open with system app chooser
-      try {
-        final result = await OpenFilex.open(
-          file.path,
-          type: "application/pdf",
-          uti: "com.adobe.pdf",
-        );
-        
-        if (result.type != ResultType.done && mounted) {
+        if (savedPath != null) {
+          // Open with system chooser immediately
+          await _openFileWithChooser(savedPath);
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open file: ${result.message}'),
-              backgroundColor: Colors.orange,
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
             ),
           );
         }
-      } catch (e) {
-        print('Error opening file: $e');
       }
     } else {
       if (mounted) {
         Navigator.pop(context);
-        
-        
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to download assignment'),
@@ -2593,22 +2694,19 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
       }
     }
   } catch (e) {
+    print('Download error: $e');
     if (mounted) {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-      
-      
-      
+      if (Navigator.canPop(context)) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Download failed: $e'),
+          content: Text('Download failed: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 }
+
 
 
   @override
@@ -3220,6 +3318,90 @@ Widget _buildVideoPlayer() {
                   ),
                   child: const Text(
                     'Download Materials',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+
+      // Certificate Card - Only show if final lesson and certificate URL exists
+      if (_shouldShowCertificate) ...[
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.workspace_premium,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Certificate',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFF59E0B),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Download your certificate of completion for this course.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _downloadCertificate(certificateUrl!),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Download Certificate',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -4531,6 +4713,25 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     return null;
   }
 
+  Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
+  if (!Platform.isAndroid) return null;
+  
+  try {
+    const platform = MethodChannel('com.linkskool.app/downloads');
+    final String? result = await platform.invokeMethod(
+      'saveToDownloads',
+      {
+        'fileName': fileName,
+        'bytes': bytes,
+      },
+    );
+    return result;
+  } catch (e) {
+    print('Error saving to Downloads: $e');
+    return null;
+  }
+}
+
   Future<void> _downloadPdf() async {
     try {
       final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
@@ -4564,11 +4765,30 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     }
   }
 
+  String _getFileNameFromUrl(String url) {
+  try {
+    final uri = Uri.parse(url);
+    final pathSegments = uri.pathSegments;
+    
+    if (pathSegments.isNotEmpty) {
+      String filename = pathSegments.last;
+      filename = Uri.decodeComponent(filename);
+      
+      if (!filename.toLowerCase().endsWith('.pdf')) {
+        filename = '$filename.pdf';
+      }
+      
+      return filename;
+    }
+  } catch (e) {
+    print('Error extracting filename: $e');
+  }
+  
+  return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+}
+
 Future<void> _downloadToDevice() async {
   try {
-    // Option 1: No permission needed (recommended for Android 10+)
-    // Just proceed directly to download
-    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -4584,40 +4804,53 @@ Future<void> _downloadToDevice() async {
     );
 
     final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
+    
     if (response.statusCode == 200) {
-      final downloadsDir = await _getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw Exception('Could not access Downloads directory');
-      }
+       final fileName = _getFileNameFromUrl(widget.assignmentUrl);
       
-      if (!await downloadsDir.exists()) {
-        await downloadsDir.create(recursive: true);
-      }
-
-      final fileName =
-          '${widget.assignmentTitle.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${downloadsDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
+      final savedPath = await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Downloaded to Downloads folder'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Color(0xFF4CAF50),
-          ),
-        );
-        await OpenFilex.open(file.path);
+        
+        if (savedPath != null) {
+          // Open with system chooser immediately
+          await _openFileWithChooser(savedPath);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   } catch (e) {
     if (mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: $e')),
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
+  }
+}
+
+
+Future<void> _openFileWithChooser(String filePath) async {
+  if (!Platform.isAndroid) return;
+  
+  try {
+    const platform = MethodChannel('com.linkskool.app/downloads');
+    await platform.invokeMethod('openFile', {'filePath': filePath});
+  } catch (e) {
+    print('Error opening file: $e');
   }
 }
 
