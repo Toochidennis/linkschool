@@ -174,7 +174,8 @@ DateTime? _lastPauseTime;
 
        RewardedAd? _rewardedAd;
 bool _isRewardedAdLoaded = false;
-bool _quizUnlocked = false;
+  bool _quizUnlocked = false;
+  String? _quizRetryMessage;
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -510,7 +511,7 @@ void _showRewardedAdAndUnlockQuiz() {
     // Ad not loaded, show error
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Ad not ready. Please try again in a moment.'),
+        content: Text('Ad not ready yet. Please try again.'),
         backgroundColor: Colors.orange,
       ),
     );
@@ -541,6 +542,16 @@ void _showUnlockQuizDialog() {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black87),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    tooltip: 'Close',
+                  ),
+                ),
                 // Lock Icon
                 Container(
                   width: 80,
@@ -570,7 +581,7 @@ void _showUnlockQuizDialog() {
                 
                 // Message
                 const Text(
-                  'Watch a short ad to unlock and retake this quiz.',
+                  'retaking quiz is locked watch a short ad to unlock and retake this quiz.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -613,60 +624,44 @@ void _showUnlockQuizDialog() {
                 const SizedBox(height: 24),
                 
                 // Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.grey.shade700,
-                          side: BorderSide(
-                            color: Colors.grey.shade400,
-                            width: 1.5,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (!_isRewardedAdLoaded || _rewardedAd == null) {
+                        Navigator.pop(context);
+                        setState(() {
+                          _quizRetryMessage =
+                              'Ad not ready yet. Please retry taking the quiz.';
+                        });
+                        _loadRewardedAd();
+                        return;
+                      }
+
+                      setState(() {
+                        _quizRetryMessage = null;
+                      });
+                      Navigator.pop(context);
+                      _showRewardedAdAndUnlockQuiz();
+                    },
+                    icon: const Icon(Icons.play_circle_outline, size: 20),
+                    label: const Text(
+                      'Watch Ad',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _showRewardedAdAndUnlockQuiz();
-                        },
-                        icon: const Icon(Icons.play_circle_outline, size: 20),
-                        label: const Text(
-                          'Watch Ad',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFA500),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFA500),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      elevation: 0,
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -4469,12 +4464,76 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                'Your current score of $_quizScore% does not meet the program\'s minimum threshold of 50%. Please retake the quiz to improve your score.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade800,
-                  height: 1.5,
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade800,
+                    height: 1.5,
+                  ),
+                  children: [
+                    const TextSpan(text: 'Your current score of '),
+                    TextSpan(
+                      text: '$_quizScore%',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const TextSpan(
+                      text:
+                          ' does not meet the program\'s minimum threshold of ',
+                    ),
+                    const TextSpan(
+                      text: '50%',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const TextSpan(
+                      text:
+                          '. Please retake the quiz to improve your score.',
+                    ),
+                  ],
+                ),
+              ),
+              if (_quizRetryMessage != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _quizRetryMessage!,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFEF5350),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
+                    if (isBelowThreshold && !_quizUnlocked) {
+                      _showUnlockQuizDialog();
+                      return;
+                    }
+
+                    // Otherwise, navigate to quiz directly
+                    _navigateToQuiz();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF5350),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                  child:  Text( 
+                    _quizRetryMessage != null ? ' try Retaking Quiz' :
+                    'Retake Quiz',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -4483,98 +4542,99 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
         const SizedBox(height: 16),
       ],
 
-      // Take Quiz Card
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with icon
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFA500),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.quiz,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Lesson Quiz',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFFFA500),
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Message
-            const Text(
-              'Find out how much you learnt by taking a Test',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-                height: 1.4,
+      // Take Quiz Card (hide when below threshold)
+      if (!isBelowThreshold)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
-            ),
-            const SizedBox(height: 16),
-            // Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
-                  if (isBelowThreshold && !_quizUnlocked) {
-                    _showUnlockQuizDialog();
-                    return;
-                  }
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with icon
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFA500),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.quiz,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Lesson Quiz',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFFA500),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Message
+              const Text(
+                'Find out how much you learnt by taking a Test',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
+                    if (isBelowThreshold && !_quizUnlocked) {
+                      _showUnlockQuizDialog();
+                      return;
+                    }
 
-                  // Otherwise, navigate to quiz directly
-                  _navigateToQuiz();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFA500),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    // Otherwise, navigate to quiz directly
+                    _navigateToQuiz();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFA500),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  _quizTaken ? 'Retake Quiz' : 'Take Quiz',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                  child: Text(
+                    _quizTaken ? 'Retake Quiz' : 'Take Quiz',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
 
       const SizedBox(height: 24),
 
