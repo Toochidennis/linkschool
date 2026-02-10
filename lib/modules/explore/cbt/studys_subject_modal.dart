@@ -17,10 +17,10 @@ class StudySubjectSelectionModal extends StatefulWidget {
   final int examTypeId;
 
   const StudySubjectSelectionModal({
-    Key? key,
+    super.key,
     required this.subjects,
     required this.examTypeId,
-  }) : super(key: key);
+  });
 
   @override
   State<StudySubjectSelectionModal> createState() =>
@@ -34,7 +34,7 @@ class _StudySubjectSelectionModalState
   List<String> _selectedTopicNames = [];
   bool _showTopics = false;
   bool _isTransitioning = false;
-  Set<int> _expandedSyllabusIds = {};
+  final Set<int> _expandedSyllabusIds = {};
 
   // Search state
   bool _isSearching = false;
@@ -188,57 +188,79 @@ class _StudySubjectSelectionModalState
   }
 
   Future<void> _onContinue() async {
-    if (_selectedTopicIds.isEmpty) return;
+    // if (_selectedTopicIds.isEmpty) return;
 
-    // ⚡ Study Module: Check subscription with free trial tracking
-    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    final hasUserPaid = userProvider.hasPaid;
-    final canTakeTest = await _subscriptionService.canTakeTest();
-    final remainingTests = await _subscriptionService.getRemainingFreeTests();
+    // // ⚡ Study Module: Check subscription with free trial tracking
+    // final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    // final hasUserPaid = userProvider.hasPaid;
+    // final canTakeTest = await _subscriptionService.canTakeTest();
+    // final remainingTests = await _subscriptionService.getRemainingFreeTests();
 
-    print('\n📚 Study Module Access Check:');
-    print('   - Backend says paid: $hasUserPaid');
-    print('   - Local says can take test: $canTakeTest');
-    print('   - Remaining free tests: $remainingTests');
+    // print('\n📚 Study Module Access Check:');
+    // print('   - Backend says paid: $hasUserPaid');
+    // print('   - Local says can take test: $canTakeTest');
+    // print('   - Remaining free tests: $remainingTests');
 
-    // If backend confirms payment, allow access
-    if (hasUserPaid) {
-      print('   ✅ User has paid (verified from backend) - starting study');
+    // // If backend confirms payment, allow access
+    // if (hasUserPaid) {
+    //   print('   ✅ User has paid (verified from backend) - starting study');
+    //   _proceedWithStudy();
+    //   return;
+    // }
+
+    // // If not paid, show prompt (hard if trial expired)
+    // final trialExpired = await _subscriptionService.isTrialExpired();
+    // final settings = await CbtSettingsHelper.getSettings();
+    // if (!mounted) return;
+
+    // if (!canTakeTest || trialExpired) {
+    //   print('   ❌ Study access denied - showing enforcement dialog');
+    //   final allowProceed = await showDialog<bool>(
+    //     context: context,
+    //     barrierDismissible: true,
+    //     builder: (context) => SubscriptionEnforcementDialog(
+    //       isHardBlock: true,
+    //       remainingTests: remainingTests,
+    //       amount: settings.amount,
+    //       discountRate: settings.discountRate,
+    //       onSubscribed: () async {
+    //         print('✅ User subscribed from Study module');
+    //         await userProvider.refreshCurrentUser();
+    //         if (mounted) {
+    //           setState(() {});
+    //         }
+    //       },
+    //     ),
+    //   );
+    //   if (allowProceed == true) {
+    //     _proceedWithStudy();
+    //   }
+    //   return;
+    // }
+
+    // // Within trial: show soft prompt and allow proceed
+    // final allowProceed = await showDialog<bool>(
+    //   context: context,
+    //   barrierDismissible: true,
+    //   builder: (context) => SubscriptionEnforcementDialog(
+    //     isHardBlock: false,
+    //     remainingTests: remainingTests,
+    //     amount: settings.amount,
+    //     discountRate: settings.discountRate,
+    //     onSubscribed: () async {
+    //       print('✅ User subscribed from Study module');
+    //       await userProvider.refreshCurrentUser();
+    //       if (mounted) {
+    //         setState(() {});
+    //       }
+    //     },
+    //   ),
+    // );
+
+    // if (allowProceed == true) {
+    //   print('   ✅ User can access study (within free limit)');
       _proceedWithStudy();
-      return;
-    }
-
-    // If not paid and can't take test (exceeded free limit)
-    if (!canTakeTest) {
-      print('   ❌ Study access denied - showing enforcement dialog');
-      if (!mounted) return;
-
-      final settings = await CbtSettingsHelper.getSettings();
-      if (!mounted) return;
-
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: true,
-          remainingTests: remainingTests,
-          amount: settings.amount,
-          discountRate: settings.discountRate,
-          onSubscribed: () async {
-            print('✅ User subscribed from Study module');
-            await userProvider.refreshCurrentUser();
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      );
-      return;
-    }
-
-    // User can access study (within free limit)
-    print('   ✅ User can access study (within free limit)');
-    _proceedWithStudy();
+    
   }
 
   void _proceedWithStudy() {
@@ -462,12 +484,12 @@ class _StudySubjectSelectionModalState
                   ),
                   child: CircleAvatar(
                     backgroundColor: Colors.transparent,
+                    radius: 12,
                     child: Text(
                       displayName.isNotEmpty ? displayName[0] : '?',
                       style: const TextStyle(
                           color: Colors.white, fontWeight: FontWeight.bold),
                     ),
-                    radius: 12,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -880,3 +902,4 @@ class _StudySubjectSelectionModalState
     );
   }
 }
+

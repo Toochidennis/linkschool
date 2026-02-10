@@ -47,6 +47,7 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
   bool _isFullscreen = false;
   bool _isYouTube = false;
   String? _errorMessage;
+  bool _isSwitchingVideo = false;
 
   // Dynamic video data
   List<dynamic> _courseVideos = []; // Can be DashboardVideoModel or VideoModel
@@ -182,39 +183,59 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
     return 'Unknown';
   }
 
-  Future<void> _initializeVideo(String url) async {
-    // Dispose previous controllers
-    await _videoController?.dispose();
-    _chewieController?.dispose();
-    _youtubeController?.dispose();
+ 
+Future<void> _initializeVideo(String url) async {
+  // Extra safety check - dispose previous controllers
+  try {
+    if (_videoController != null) {
+      await _videoController!.pause();
+      await _videoController!.dispose();
+      _videoController = null;
+    }
+    if (_chewieController != null) {
+      _chewieController!.dispose();
+      _chewieController = null;
+    }
+    if (_youtubeController != null) {
+      _youtubeController!.dispose();
+      _youtubeController = null;
+    }
+  } catch (e) {
+    debugPrint('Error disposing in _initializeVideo: $e');
+  }
 
-    setState(() {
-      _isVideoInitialized = false;
-      _errorMessage = null;
-    });
+  if (!mounted) return;
 
-    try {
-      // Check if it's a YouTube video
-      if (isYouTubeUrl(url)) {
-        await _initializeYouTubePlayer(url);
-      } else {
-        await _initializeDirectVideoPlayer(url);
-      }
+  setState(() {
+    _isVideoInitialized = false;
+    _errorMessage = null;
+    _isYouTube = false;
+  });
 
-      // Add to watch history after successful initialization
+  try {
+    // Check if it's a YouTube video
+    if (isYouTubeUrl(url)) {
+      await _initializeYouTubePlayer(url);
+    } else {
+      await _initializeDirectVideoPlayer(url);
+    }
+
+    // Add to watch history after successful initialization
+    if (mounted) {
       await _addToWatchHistory();
-    } catch (e) {
-      debugPrint('Error initializing video: $e');
+    }
+  } catch (e) {
+    debugPrint('Error initializing video: $e');
+    if (mounted) {
       setState(() {
         _errorMessage = 'Failed to load video: $e';
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load video: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load video: $e')),
+      );
     }
   }
+}
 
   Future<void> _initializeYouTubePlayer(String url) async {
     final videoId = extractYouTubeId(url);
@@ -482,13 +503,53 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
     }
   }
 
-  void _playVideo(int index) {
+  void _playVideo(int index) async {
+    if (index == _selectedVideoIndex) return; // Don't reload if same video
+    
+    final selectedVideo = _courseVideos[index];
+    
+    // Show switching indicator
+    setState(() {
+      _isSwitchingVideo = true;
+    });
+    
+    // First, dispose of existing controllers
+    try {
+      await _videoController?.pause();
+      await _videoController?.dispose();
+      _chewieController?.dispose();
+      _youtubeController?.dispose();
+    } catch (e) {
+      debugPrint('Error disposing during video switch: $e');
+    }
+    
     setState(() {
       _selectedVideoIndex = index;
+      _isVideoInitialized = false;
+      _videoController = null;
+      _chewieController = null;
+      _youtubeController = null;
+      _errorMessage = null;
+      _isYouTube = false;
+      // Update description and provider for the new video
+      _courseDescription = _getVideoDescription(selectedVideo);
+      _provider = _getAuthorName(selectedVideo);
     });
-    _initializeVideo(_getVideoUrl(_courseVideos[index]));
+    
+    // Small delay to ensure clean state transition
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // Then initialize the new video
+    await _initializeVideo(_getVideoUrl(selectedVideo));
+    
+    // Hide switching indicator
+    if (mounted) {
+      setState(() {
+        _isSwitchingVideo = false;
+      });
+    }
   }
-
+  
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final hours = twoDigits(duration.inHours);
@@ -654,6 +715,34 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
   }
 
   Widget _buildVideoPlayer() {
+    // Show loading during video switch
+    if (_isSwitchingVideo) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.black,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: Color(0xFF6366F1),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Switching video...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     // Error display
     if (_errorMessage != null) {
       return AspectRatio(
@@ -679,8 +768,9 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
     }
 
     // YouTube Player
-    if (_isYouTube && _youtubeController != null) {
+    if (_isYouTube && _youtubeController != null && _isVideoInitialized) {
       return YoutubePlayerBuilder(
+        key: ValueKey(_youtubeController!.initialVideoId),
         player: YoutubePlayer(
           controller: _youtubeController!,
           showVideoProgressIndicator: true,
@@ -703,6 +793,7 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
     if (!_isYouTube && _chewieController != null && _isVideoInitialized) {
       return AspectRatio(
         aspectRatio: 16 / 9,
+        key: ValueKey(_videoController.hashCode),
         child: Chewie(controller: _chewieController!),
       );
     }

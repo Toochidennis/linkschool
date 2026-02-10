@@ -30,10 +30,12 @@ class PaystackPaymentDialog extends StatefulWidget {
 
 class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
   final _authService = FirebaseAuthService();
+  final TextEditingController _voucherController = TextEditingController();
   
   bool _isProcessing = false;
   int _subscriptionPrice = 400; // Default, will be updated from API
   double _discountRate = 0.0;
+  bool _showVoucher = false;
   
   static const String _paystackPublicKey = 'pk_test_YOUR_PUBLIC_KEY_HERE'; // Replace with your public key
 
@@ -72,6 +74,12 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         }
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _voucherController.dispose();
+    super.dispose();
   }
 
   @override
@@ -115,7 +123,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
                     const SizedBox(height: 24),
                     _buildFeaturesList(),
                     const SizedBox(height: 24),
-                    _buildPayButton(),
+                    _buildPaymentOrVoucherSection(),
                   ],
                 ),
               ),
@@ -238,7 +246,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -292,6 +300,233 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
     );
   }
 
+  Widget _buildPaymentOrVoucherSection() {
+    if (!_showVoucher) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildPayButton(),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: Colors.grey.shade300,
+                  thickness: 1,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'OR',
+                  style: AppTextStyles.normal500(
+                    fontSize: 12,
+                    color: AppColors.text7Light,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: Colors.grey.shade300,
+                  thickness: 1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: _isProcessing
+                ? null
+                : () {
+                    setState(() => _showVoucher = true);
+                  },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.grey.shade300,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.confirmation_number_outlined,
+                    size: 20,
+                    color: AppColors.text7Light,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'I have a voucher code',
+                    style: AppTextStyles.normal600(
+                      fontSize: 15,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.grey.shade200,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.confirmation_number_rounded,
+                    size: 20,
+                    color: AppColors.eLearningBtnColor1,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Enter Voucher Code',
+                    style: AppTextStyles.normal600(
+                      fontSize: 15,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _voucherController,
+                textCapitalization: TextCapitalization.characters,
+                style: AppTextStyles.normal600(
+                  fontSize: 16,
+                  color: AppColors.text4Light,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'e.g., SAVE50',
+                  hintStyle: AppTextStyles.normal400(
+                    fontSize: 15,
+                    color: AppColors.text7Light,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.eLearningBtnColor1,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isProcessing
+                      ? null
+                      : () {
+                          final code = _voucherController.text.trim();
+                          if (code.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a voucher code'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Voucher validation coming soon'),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.eLearningBtnColor1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Apply Voucher',
+                    style: AppTextStyles.normal600(
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: _isProcessing
+              ? null
+              : () {
+                  setState(() => _showVoucher = false);
+                },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.arrow_back_rounded,
+                  size: 16,
+                  color: AppColors.text7Light,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Back to payment options',
+                  style: AppTextStyles.normal500(
+                    fontSize: 14,
+                    color: AppColors.text7Light,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _handlePayment() async {
     setState(() {
       _isProcessing = true;
@@ -315,7 +550,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
       }
 
       // Get user email
-      final userEmail = await _authService.getCurrentUserEmail();
+      final userEmail = _authService.getCurrentUserEmail();
       if (userEmail == null || userEmail.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

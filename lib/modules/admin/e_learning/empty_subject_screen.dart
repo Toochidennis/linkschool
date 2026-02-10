@@ -16,22 +16,15 @@ import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 
-import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 
-import 'package:linkschool/modules/staff/e_learning/view/quiz_answer_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_details_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart'
     as custom;
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
-import '../../model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/admin/e_learning/View/assignment_details.dart';
 import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 
@@ -1287,7 +1280,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
                 ),
               ),
             );
-    };
+    }
   }
 
   String _formatDate(DateTime date) {

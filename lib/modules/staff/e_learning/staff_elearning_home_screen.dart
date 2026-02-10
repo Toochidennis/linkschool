@@ -262,215 +262,52 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                     : provider.recentQuizzes.isEmpty
                         ? const Center(child: Text("No quizzes available"))
                         : CarouselSlider(
-                            items: provider.recentQuizzes.map((quiz) {
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => StaffRecentQuiz(
-                                        levelId: quiz.levelId,
-                                        syllabusId: quiz.syllabusId.toString(),
-                                        courseName: quiz.courseName,
-                                        courseId: quiz.courseId.toString(),
-                                        quizId: quiz.id.toString(),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12.0),
-                                    color: AppColors.paymentTxtColor1,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8.0),
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                            color: Colors.white,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  '${quiz.courseName} ${quiz.title}',
-                                                  style: const TextStyle(
-                                                    color: Colors.black,
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8.0,
-                                                        vertical: 4.0),
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          8.0),
-                                                  color: AppColors
-                                                      .paymentTxtColor1,
-                                                ),
-                                                child: Row(
-                                                  children: [
-                                                    SvgPicture.asset(
-                                                      'assets/icons/student/calender-icon.svg',
-                                                      width: 16,
-                                                      height: 16,
-                                                      colorFilter:
-                                                          const ColorFilter
-                                                              .mode(
-                                                        Colors.white,
-                                                        BlendMode.srcIn,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      quiz.datePosted,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 48),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            const Column(
-                                              children: [
-                                                Text(
-                                                  'Time',
-                                                  style: TextStyle(
-                                                    color: AppColors
-                                                        .backgroundLight,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 4),
-                                                Text(
-                                                  '08:00 AM', // TODO: replace if backend gives exact time
-                                                  style: TextStyle(
-                                                    color: AppColors
-                                                        .backgroundLight,
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            Container(
-                                              height: 40,
-                                              width: 1,
-                                              color: Colors.white,
-                                              margin:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8.0),
-                                            ),
-                                            Column(
-                                              children: [
-                                                const Text(
-                                                  'Classes',
-                                                  style: TextStyle(
-                                                    color: AppColors
-                                                        .backgroundLight,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  quiz.classes
-                                                      .map((c) => c.name)
-                                                      .join(", "),
-                                                  textAlign: TextAlign.center,
-                                                  style: const TextStyle(
-                                                    color: AppColors
-                                                        .backgroundLight,
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            Container(
-                                              height: 40,
-                                              width: 1,
-                                              color: Colors.white,
-                                              margin:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8.0),
-                                            ),
-                                            const Column(
-                                              children: [
-                                                Text(
-                                                  'Duration',
-                                                  style: TextStyle(
-                                                    color: AppColors
-                                                        .backgroundLight,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 4),
-                                                Text(
-                                                  '2h 30m', // TODO: replace if backend provides duration
-                                                  style: TextStyle(
-                                                    color: AppColors
-                                                        .backgroundLight,
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            options: CarouselOptions(
-                              height: 185,
-                              viewportFraction: 0.90,
-                              enableInfiniteScroll: false,
-                              autoPlay: true,
-                              autoPlayInterval: const Duration(seconds: 5),
-                              autoPlayCurve: Curves.easeIn,
-                              enlargeCenterPage: false,
-                              onPageChanged: (index, reason) {
-                                setState(() {
-                                  currentAssessmentIndex = index;
-                                });
-                              },
-                            ),
-                          ),
+  items: provider.recentQuizzes.asMap().entries.map((entry) {
+    final index = entry.key;
+    final quiz = entry.value;
+
+    final subject = quiz.courseName; // or "${quiz.courseName}"
+    final title = quiz.title;        // already a quiz title
+    final date = quiz.datePosted;
+
+    final classesText = quiz.classes.map((c) => c.name).join(", ");
+
+    return _buildStaffQuizCard(
+      index: index,
+      subject: subject,
+      title: title,
+      date: date,
+      classesText: classesText,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StaffRecentQuiz(
+              levelId: quiz.levelId,
+              syllabusId: quiz.syllabusId.toString(),
+              courseName: quiz.courseName,
+              courseId: quiz.courseId.toString(),
+              quizId: quiz.id.toString(),
+            ),
+          ),
+        );
+      },
+    );
+  }).toList(),
+  options: CarouselOptions(
+    height: 205, // match dashboard look
+    viewportFraction: 0.90,
+    enableInfiniteScroll: true,
+    autoPlay: true,
+    autoPlayInterval: const Duration(seconds: 5),
+    autoPlayCurve: Curves.easeOutCubic,
+    enlargeCenterPage: false,
+    onPageChanged: (index, reason) {
+      setState(() => currentAssessmentIndex = index);
+    },
+  ),
+),
+
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -764,4 +601,280 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
       ),
     );
   }
+
+
+  Color _getAssessmentColor(int index) {
+  final colors = [
+    AppColors.paymentTxtColor1,
+    Colors.orangeAccent,
+    Colors.greenAccent,
+  ];
+  return colors[index % colors.length];
+}
+
+Widget _buildStaffQuizCard({
+  required int index,
+  required String title,
+  required String subject,
+  required String date,
+  required String classesText,
+  required VoidCallback onTap,
+}) {
+  final bg = _getAssessmentColor(index);
+
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      height: 190,
+      margin: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [bg.withOpacity(0.95), bg.withOpacity(0.70)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          children: [
+            // decorative circles
+            Positioned(
+              top: -60,
+              right: -60,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.10),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -70,
+              left: -70,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.08),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // TOP: Subject + Date pill + Title
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              subject,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.white.withOpacity(0.18),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.22),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/icons/student/calender-icon.svg',
+                                  width: 14,
+                                  height: 14,
+                                  colorFilter: const ColorFilter.mode(
+                                    Colors.white,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 90),
+                                  child: Text(
+                                    date.isEmpty ? "—" : date,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // MID: Classes block
+                  Text(
+                    "Classes",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    classesText.isEmpty ? "All Classes" : classesText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // BOTTOM: Stats + CTA
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white.withOpacity(0.14),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.18),
+                          ),
+                        ),
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Time",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              "N/A",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white.withOpacity(0.14),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.18),
+                          ),
+                        ),
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Duration",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              "N/A",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                        ),
+                        child: const Text(
+                          "View quiz",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 }

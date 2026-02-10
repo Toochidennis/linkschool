@@ -9,8 +9,11 @@ import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 // Add this import for the payment dialog
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
+import 'package:linkschool/modules/model/cbt_user_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -31,7 +34,15 @@ class AppSettingsScreen extends StatefulWidget {
   _AppSettingsScreenState createState() => _AppSettingsScreenState();
 }
 
-class _AppSettingsScreenState extends State<AppSettingsScreen> {
+class _AppSettingsScreenState extends State<AppSettingsScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _bounceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _bounceAnimation;
+
   final FirebaseAuthService _authService = FirebaseAuthService();
   User? _currentUser;
   bool _isSignedIn = false;
@@ -39,7 +50,55 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   @override
   void initState() {
     super.initState();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+    );
+
+    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+
+    // Add mounted checks
+    _fadeController.forward();
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _slideController.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _bounceController.forward();
+    });
+
     _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _bounceController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -50,6 +109,21 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     });
   }
 
+  Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (id != null) {
+      await prefs.setInt('active_profile_id', id);
+      if (birthDate != null) {
+        await prefs.setString('active_profile_dob', birthDate);
+      } else {
+        await prefs.remove('active_profile_dob');
+      }
+    } else {
+      await prefs.remove('active_profile_id');
+      await prefs.remove('active_profile_dob');
+    }
+  }
+
   Future<void> _handleSignIn() async {
     if (!mounted) return;
     try {
@@ -57,13 +131,45 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       final user = userCredential?.user;
       if (user != null) {
         // Register user in backend via CbtUserProvider
-        final userProvider =
+        final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
-        await userProvider.handleFirebaseSignUp(
+        await cbtUserProvider.handleFirebaseSignUp(
           email: user.email ?? '',
           name: user.displayName ?? '',
           profilePicture: user.photoURL ?? '',
         );
+        
+        // Refresh current user to get updated data
+        await cbtUserProvider.refreshCurrentUser();
+        if (!mounted) return;
+        
+        final updatedUser = cbtUserProvider.currentUser;
+        
+        // Fetch profiles if user exists
+        if (updatedUser != null) {
+          try {
+            final profileProvider =
+                Provider.of<CreateUserProfileProvider>(context, listen: false);
+            final profiles =
+                await profileProvider.fetchUserProfiles(updatedUser.id.toString());
+            if (profiles.isNotEmpty) {
+              await cbtUserProvider.replaceProfiles(profiles);
+            }
+          } catch (e) {
+            debugPrint("Failed to fetch profiles after sign-in: $e");
+          }
+        }
+        
+        if (!mounted) return;
+        
+        // Set and save active profile
+        final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+        CbtUserProfile? activeProfile = profiles.isNotEmpty ? profiles.first : null;
+        
+        if (activeProfile?.id != null) {
+          await _saveActiveProfileId(activeProfile!.id, birthDate: activeProfile.birthDate);
+        }
+        
         setState(() {
           _currentUser = user;
           _isSignedIn = true;
@@ -165,8 +271,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
       // Keys used by CbtUserProvider
       final cbtKeys = ['cbt_current_user', 'cbt_payment_reference'];
+      // Keys used by Explore Courses active profile
+      final profileKeys = ['active_profile_id', 'active_profile_dob'];
 
-      for (final k in [...authKeys, ...cbtKeys]) {
+      for (final k in [...authKeys, ...cbtKeys, ...profileKeys]) {
         if (prefs.containsKey(k)) await prefs.remove(k);
       }
 
@@ -181,11 +289,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   Future<void> _handleSubscribeNow() async {
     // Directly launch Paystack payment page using the same logic as _chargeWithPaystack
     final settings = await CbtSettingsHelper.getSettings();
-    final _subscriptionPrice = settings.discountRate > 0
+    final subscriptionPrice = settings.discountRate > 0
         ? (settings.amount * (1 - settings.discountRate)).round()
         : settings.amount;
-    final _authService = FirebaseAuthService();
-    final userEmail = await _authService.getCurrentUserEmail();
+    final authService = FirebaseAuthService();
+    final userEmail = authService.getCurrentUserEmail();
     if (userEmail == null || userEmail.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -196,7 +304,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       );
       return;
     }
-    final amountInKobo = _subscriptionPrice * 100;
+    final amountInKobo = subscriptionPrice * 100;
     final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
     final paystackSecretKey = EnvConfig.paystackSecretKey;
     PaystackFlutter().pay(
@@ -214,7 +322,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       currency: Currency.NGN,
       metaData: {
         "subscription": "CBT Access",
-        "price": _subscriptionPrice,
+        "price": subscriptionPrice,
       },
       onSuccess: (paystackCallback) async {
         print('✅ Payment successful: "+paystackCallback.reference+"');
@@ -247,6 +355,52 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
   }
 
+  Widget _buildAnimatedCard({
+    required Widget child,
+    required int index,
+  }) {
+    // Calculate interval with proper bounds
+    final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
+    final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
+
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _slideController,
+              curve: Interval(
+                intervalStart,
+                intervalEnd,
+                curve: Curves.elasticOut,
+              ),
+            )),
+            // Add ScaleTransition to make the bounce visible using elastic curve
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: _bounceController,
+                  curve: Interval(
+                    intervalStart,
+                    intervalEnd,
+                    curve: Curves.elasticOut,
+                  ),
+                ),
+              ),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<AppSettingsProvider>(context);
@@ -255,7 +409,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     final subscriptionStatus = cbtUserProvider.subscriptionStatus;
     return MediaQuery(
       data: MediaQuery.of(context)
-          .copyWith(textScaleFactor: settings.textScaleFactor),
+          .copyWith(textScaler: TextScaler.linear(settings.textScaleFactor)),
       child: Scaffold(
         backgroundColor: settings.backgroundColor,
         body: SingleChildScrollView(
@@ -266,130 +420,156 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               children: [
                 // Banner if not signed in
                 if (!_isSignedIn)
-                  Card(
-                    color: Colors.orange[100],
-                    elevation: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.info_outline, color: Colors.orange),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Sign in to access your profile and subscription features.',
-                              style: AppTextStyles.normal600(
-                                  fontSize: 15, color: Colors.orange[900]),
+                  _buildAnimatedCard(
+                    index: 0,
+                    child: Card(
+                      color: Colors.orange[100],
+                      elevation: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Colors.orange),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Sign in to access your profile and subscription features.',
+                                style: AppTextStyles.normal600(
+                                    fontSize: 15, color: Colors.orange[900]),
+                              ),
                             ),
-                          ),
-                          TextButton(
-                            onPressed: _handleSignIn,
-                            child: const Text('Sign In'),
-                          ),
-                        ],
+                            TextButton(
+                              onPressed: _handleSignIn,
+                              child: const Text('Sign In'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 // Profile Header Section
                 if (_isSignedIn)
-                  _buildProfileHeader(settings, subscriptionStatus),
+                  _buildAnimatedCard(
+                    index: 1,
+                    child: _buildProfileHeader(settings, subscriptionStatus),
+                  ),
                 if (_isSignedIn) const SizedBox(height: 24),
 
-                // App Preferences Section
-                _buildSectionHeader('App Preferences', settings),
-                const SizedBox(height: 12),
-                _buildSettingsCard([
-                  _buildSettingsTile(
-                    icon: Icons.dark_mode_outlined,
-                    title: 'Dark Mode',
-                    subtitle: 'Switch to dark theme',
-                    settings: settings,
-                    trailing: Switch(
-                      value: settings.isDarkMode,
-                      onChanged: (value) {
-                        settings.setDarkMode(value);
-                      },
-                      activeColor: AppColors.text2Light,
-                    ),
-                  ),
-                  _buildDivider(),
-                ], settings),
-
-                const SizedBox(height: 24),
+                // App Preferences Section (Disabled for now)
+                // _buildSectionHeader('App Preferences', settings),
+                // const SizedBox(height: 12),
+                // _buildSettingsCard([
+                //   _buildSettingsTile(
+                //     icon: Icons.dark_mode_outlined,
+                //     title: 'Dark Mode',
+                //     subtitle: 'Switch to dark theme',
+                //     settings: settings,
+                //     trailing: Switch(
+                //       value: settings.isDarkMode,
+                //       onChanged: (value) {
+                //         settings.setDarkMode(value);
+                //       },
+                //       activeColor: AppColors.text2Light,
+                //     ),
+                //   ),
+                //   _buildDivider(),
+                // ], settings),
+                //
+                // const SizedBox(height: 24),
 
                 // Support & Legal Section
-                _buildSectionHeader('Support & Legal', settings),
+                _buildAnimatedCard(
+                  index: 2,
+                  child: _buildSectionHeader('Support & Legal', settings),
+                ),
                 const SizedBox(height: 12),
-                _buildSettingsCard([
-                  _buildSettingsTile(
-                    icon: Icons.help_outline,
-                    title: 'Help & Support',
-                    subtitle: 'Get help and contact support',
-                    settings: settings,
-                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                    onTap: () => _showHelpDialog(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingsTile(
-                    icon: Icons.privacy_tip_outlined,
-                    title: 'Privacy Policy',
-                    subtitle: 'Learn about our privacy practices',
-                    settings: settings,
-                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                    onTap: () => _showPrivacyDialog(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingsTile(
-                    icon: Icons.description_outlined,
-                    title: 'Terms & Conditions',
-                    subtitle: 'Read our terms of service',
-                    settings: settings,
-                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                    onTap: () => _showTermsDialog(),
-                  ),
-                ], settings),
+                _buildAnimatedCard(
+                  index: 3,
+                  child: _buildSettingsCard([
+                    _buildSettingsTile(
+                      icon: Icons.help_outline,
+                      title: 'Help & Support',
+                      subtitle: 'Get help and contact support',
+                      settings: settings,
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () => _showHelpDialog(),
+                    ),
+                    _buildDivider(),
+                    _buildSettingsTile(
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Privacy Policy',
+                      subtitle: 'Learn about our privacy practices',
+                      settings: settings,
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () => _showPrivacyDialog(),
+                    ),
+                    _buildDivider(),
+                    _buildSettingsTile(
+                      icon: Icons.description_outlined,
+                      title: 'Terms & Conditions',
+                      subtitle: 'Read our terms of service',
+                      settings: settings,
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () => _showTermsDialog(),
+                    ),
+                  ], settings),
+                ),
 
                 const SizedBox(height: 24),
 
                 // About Section
-                _buildSectionHeader('About', settings),
+                _buildAnimatedCard(
+                  index: 4,
+                  child: _buildSectionHeader('About', settings),
+                ),
                 const SizedBox(height: 12),
-                _buildSettingsCard([
-                  _buildSettingsTile(
-                    icon: Icons.info_outline,
-                    title: 'About LinkSchool',
-                    subtitle: 'Version 1.0.0',
-                    settings: settings,
-                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                    onTap: () => _showAboutDialog(),
-                  ),
-                  _buildDivider(),
-                  _buildSettingsTile(
-                    icon: Icons.star_outline,
-                    title: 'Rate App',
-                    subtitle: 'Share your feedback',
-                    settings: settings,
-                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                    onTap: () => _showRatingDialog(),
-                  ),
-                ], settings),
+                _buildAnimatedCard(
+                  index: 5,
+                  child: _buildSettingsCard([
+                    _buildSettingsTile(
+                      icon: Icons.info_outline,
+                      title: 'About LinkSchool',
+                      subtitle: 'Version 1.0.0',
+                      settings: settings,
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () => _showAboutDialog(),
+                    ),
+                    _buildDivider(),
+                    _buildSettingsTile(
+                      icon: Icons.star_outline,
+                      title: 'Rate App',
+                      subtitle: 'Share your feedback',
+                      settings: settings,
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () => _showRatingDialog(),
+                    ),
+                  ], settings),
+                ),
 
                 const SizedBox(height: 24),
 
                 // Logout Section (only if signed in)
                 if (_isSignedIn) ...[
-                  _buildSectionHeader('Account', settings),
-                  const SizedBox(height: 12),
-                  _buildSettingsCard([
-                    _buildSettingsTile(
-                      icon: Icons.logout,
-                      title: 'Logout',
-                      subtitle: 'Sign out of your account',
-                      settings: settings,
-                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                      onTap: _handleLogout,
+                  _buildAnimatedCard(
+                    index: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader('Account', settings),
+                        const SizedBox(height: 12),
+                        _buildSettingsCard([
+                          _buildSettingsTile(
+                            icon: Icons.logout,
+                            title: 'Logout',
+                            subtitle: 'Sign out of your account',
+                            settings: settings,
+                            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                            onTap: _handleLogout,
+                          ),
+                        ], settings),
+                      ],
                     ),
-                  ], settings),
+                  ),
                   const SizedBox(height: 24),
                 ],
 
@@ -676,23 +856,30 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     );
   }
 
-  void _showPrivacyDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Privacy Policy'),
-          content: Text(
-              'Your privacy is important to us. We collect and use your data responsibly.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('OK'),
-            ),
-          ],
+  Future<void> _showPrivacyDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Persist a flag so this dialog does not open again
+    await prefs.setBool('privacy_dialog_disabled', true);
+
+    final Uri url = Uri.parse('https://linkschoolonline.com/privacy-policy');
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open privacy policy')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening privacy policy: $e')),
         );
-      },
-    );
+      }
+    }
   }
 
   void _showTermsDialog() {

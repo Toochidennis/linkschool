@@ -14,7 +14,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/student/payment/student_reciept_dialog.dart';
-import 'package:linkschool/modules/student/payment/student_setting_dialog.dart';
 import 'package:linkschool/modules/student/payment/student_view_detail_payment.dart';
 import 'package:hive/hive.dart';
 import 'dart:convert';

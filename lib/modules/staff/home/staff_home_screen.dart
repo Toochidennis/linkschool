@@ -1033,24 +1033,24 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                 ),
               ),
             ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: FloatingActionButton(
-                  onPressed: () {
-                    setState(() {
-                      _showAddForm = !_showAddForm;
-                    });
-                  },
-                  backgroundColor: Colors.red,
-                  child: Icon(
-                    _showAddForm ? Icons.close : Icons.add,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+            // Align(
+            //   alignment: Alignment.bottomRight,
+            //   child: Padding(
+            //     padding: const EdgeInsets.all(16.0),
+            //     child: FloatingActionButton(
+            //       onPressed: () {
+            //         setState(() {
+            //           _showAddForm = !_showAddForm;
+            //         });
+            //       },
+            //       backgroundColor: Colors.red,
+            //       child: Icon(
+            //         _showAddForm ? Icons.close : Icons.add,
+            //         color: Colors.white,
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

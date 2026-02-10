@@ -335,7 +335,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
             ),
             const SizedBox(height: 16.0),
             DropdownButtonFormField<String>(
-              value: _selectedAssessmentType,
+              initialValue: _selectedAssessmentType,
               decoration: const InputDecoration(
                 hintText: 'Assessment type',
                 border: UnderlineInputBorder(
@@ -476,7 +476,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
               ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 decoration: const InputDecoration(
                   hintText: 'Assessment type',
                   border: UnderlineInputBorder(

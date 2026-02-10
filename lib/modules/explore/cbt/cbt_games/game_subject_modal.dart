@@ -18,10 +18,10 @@ class GameSubjectModal extends StatefulWidget {
   final int examTypeId;
 
   const GameSubjectModal({
-    Key? key,
+    super.key,
     required this.subjects,
     required this.examTypeId,
-  }) : super(key: key);
+  });
 
   @override
   State<GameSubjectModal> createState() => _GameSubjectModalState();
@@ -34,7 +34,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
   List<String> _selectedTopicNames = [];
   bool _showTopics = false;
   bool _isTransitioning = false;
-  Set<int> _expandedSyllabusIds = {};
+  final Set<int> _expandedSyllabusIds = {};
   late AnimationController _pulseController;
   late AnimationController _sparkleController;
   late AnimationController _slideController;
@@ -126,7 +126,9 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     if (name.contains('science')) return '🔬';
     if (name.contains('french') ||
         name.contains('spanish') ||
-        name.contains('language')) return '🗣️';
+        name.contains('language')) {
+      return '🗣️';
+    }
     return '📚'; // Default emoji
   }
 
@@ -246,37 +248,59 @@ class _GameSubjectModalState extends State<GameSubjectModal>
       return;
     }
 
-    // If not paid and can't take test (exceeded free limit)
-    if (!canTakeTest) {
-      print('   ❌ Gamify access denied - showing enforcement dialog');
-      if (!mounted) return;
+    // If not paid, show prompt (hard if trial expired)
+    final trialExpired = await _subscriptionService.isTrialExpired();
+    final settings = await CbtSettingsHelper.getSettings();
+    if (!mounted) return;
 
-      final settings = await CbtSettingsHelper.getSettings();
-      if (!mounted) return;
+    // if (!canTakeTest || trialExpired) {
+    //   print('   ❌ Gamify access denied - showing enforcement dialog');
+    //   final allowProceed = await showDialog<bool>(
+    //     context: context,
+    //     barrierDismissible: true,
+    //     builder: (context) => SubscriptionEnforcementDialog(
+    //       isHardBlock: true,
+    //       remainingTests: remainingTests,
+    //       amount: settings.amount,
+    //       discountRate: settings.discountRate,
+    //       onSubscribed: () async {
+    //         print('✅ User subscribed from Gamify module');
+    //         await userProvider.refreshCurrentUser();
+    //         if (mounted) {
+    //           setState(() {});
+    //         }
+    //       },
+    //     ),
+    //   );
+    //   if (allowProceed == true) {
+    //     _proceedWithGame();
+    //   }
+    //   return;
+    // }
 
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: true,
-          remainingTests: remainingTests,
-          amount: settings.amount,
-          discountRate: settings.discountRate,
-          onSubscribed: () async {
-            print('✅ User subscribed from Gamify module');
-            await userProvider.refreshCurrentUser();
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      );
-      return;
+    // Within trial: show soft prompt and allow proceed
+    final allowProceed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => SubscriptionEnforcementDialog(
+        isHardBlock: false,
+        remainingTests: remainingTests,
+        amount: settings.amount,
+        discountRate: settings.discountRate,
+        onSubscribed: () async {
+          print('✅ User subscribed from Gamify module');
+          await userProvider.refreshCurrentUser();
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+
+    if (allowProceed == true) {
+      print('   ✅ User can access game (within free limit)');
+      _proceedWithGame();
     }
-
-    // User can access game (within free limit)
-    print('   ✅ User can access game (within free limit)');
-    _proceedWithGame();
   }
 
   void _proceedWithGame() {
@@ -1364,3 +1388,4 @@ class ParticlePainter extends CustomPainter {
   @override
   bool shouldRepaint(ParticlePainter oldDelegate) => true;
 }
+

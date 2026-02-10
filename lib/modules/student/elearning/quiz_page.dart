@@ -108,7 +108,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                     'imageUrl': optionImage,
                   };
                 }).toList(),
-                correctAnswers: correct != null ? [correct.text] : [],
+                correctAnswers: [correct.text],
               );
             } else {
               // Handles 'short_answer'

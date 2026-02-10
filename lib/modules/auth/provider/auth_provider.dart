@@ -155,63 +155,48 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Check login status on app startup - attempts silent login if credentials exist
+  /// Check login status on app startup - always attempts fresh login if credentials exist
   Future<void> checkLoginStatus() async {
     try {
       print('🔍 Checking login status...');
 
       final userBox = Hive.box('userData');
-      final prefs = await SharedPreferences.getInstance();
 
-      // OPTIMIZATION: First check if we have a valid cached session
-      final sessionValid = userBox.get('sessionValid', defaultValue: false);
-      final hasUserData = userBox.get('userData') != null;
-      final hasToken = userBox.get('token') != null;
+      // Check if we have saved credentials in secure storage
+      final savedUsername = await _secureStorage.read(key: 'saved_username');
+      final savedPassword = await _secureStorage.read(key: 'saved_password');
+      final savedSchoolCode =
+          await _secureStorage.read(key: 'saved_school_code');
+      final hasSecureCredentials = savedUsername != null &&
+          savedPassword != null &&
+          savedSchoolCode != null;
 
-      print('📊 Quick Session Check:');
-      print('  - Session valid: $sessionValid');
-      print('  - Has userData: $hasUserData');
-      print('  - Has token: $hasToken');
+      print('📊 Credentials Check:');
+      print('  - Has saved credentials: $hasSecureCredentials');
+      print('  - Saved username: ${savedUsername ?? "none"}');
 
-      // If we have a valid session, restore it immediately (FAST PATH)
-      if (sessionValid && hasUserData && hasToken) {
-        print('⚡ Valid session found - using fast restore');
-        await _restoreFromSavedSession();
-
-        // Only attempt silent login in background if session is old (e.g., > 24 hours)
-        final lastLoginTime =
-            userBox.get('lastLoginTime', defaultValue: 0) as int;
-        final hoursSinceLogin =
-            (DateTime.now().millisecondsSinceEpoch - lastLoginTime) /
-                (1000 * 60 * 60);
-
-        if (hoursSinceLogin > 24) {
-          print(
-              '🔄 Session is old (${hoursSinceLogin.toStringAsFixed(1)}h), refreshing in background...');
-          // Refresh session in background without blocking UI
-          _attemptSilentLoginInBackground();
-        }
-        return;
-      }
-
-      // SLOW PATH: No valid session, attempt full silent login
-      final hasSavedCredentials =
-          userBox.get('has_saved_credentials', defaultValue: false);
-
-      if (hasSavedCredentials) {
-        print('🔑 No valid session - attempting silent login');
+      // If we have saved credentials, always attempt a fresh login
+      if (hasSecureCredentials) {
+        print('🔑 Found saved credentials - attempting login...');
         final success = await _attemptSilentLogin();
 
         if (success) {
-          print('✅ Silent login successful');
+          print('✅ Login successful with saved credentials');
           return;
         } else {
-          print('⚠️ Silent login failed - will try session restore');
+          print('⚠️ Login failed with saved credentials - clearing them');
+          // Clear invalid credentials
+          await _clearSavedCredentials();
         }
       }
 
-      // Fallback: Try to restore from saved session (old behavior)
-      await _restoreFromSavedSession();
+      // No valid credentials - user needs to log in manually
+      print('⚠️ No saved credentials found - user not logged in');
+      _isLoggedIn = false;
+      _user = null;
+      _token = null;
+      _settings = null;
+      notifyListeners();
     } catch (e, stackTrace) {
       print('❌ Error checking login status: $e');
       print('Stack trace: $stackTrace');
@@ -346,33 +331,51 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Logout and optionally clear saved credentials
-  Future<void> logout({bool clearSavedCredentials = false}) async {
+  /// Clear saved credentials from secure storage
+  Future<void> _clearSavedCredentials() async {
     try {
+      await _secureStorage.delete(key: 'saved_username');
+      await _secureStorage.delete(key: 'saved_password');
+      await _secureStorage.delete(key: 'saved_school_code');
+
       final userBox = Hive.box('userData');
+      await userBox.delete('has_saved_credentials');
+      await userBox.delete('saved_username');
+      await userBox.delete('saved_school_code');
 
-      if (clearSavedCredentials) {
-        // Clear saved credentials from secure storage
-        await _secureStorage.delete(key: 'saved_username');
-        await _secureStorage.delete(key: 'saved_password');
-        await _secureStorage.delete(key: 'saved_school_code');
-        print('🔐 Saved credentials cleared');
-      }
+      print('🔐 Saved credentials cleared');
+    } catch (e) {
+      print('⚠️ Error clearing saved credentials: $e');
+    }
+  }
 
+  /// Logout - clears all saved user data and credentials
+  Future<void> logout() async {
+    try {
+      print('🚪 Logging out...');
+
+      // Always clear saved credentials on logout
+      await _clearSavedCredentials();
+
+      // Clear Hive user data
+      final userBox = Hive.box('userData');
       await userBox.clear();
 
+      // Clear SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
+      // Clear API token
       final apiService = locator<ApiService>();
       apiService.setAuthToken('');
 
+      // Reset state
       _user = null;
       _token = null;
       _isLoggedIn = false;
       _settings = null;
 
-      print('✅ Logout successful');
+      print('✅ Logout successful - all user data cleared');
       notifyListeners();
     } catch (e) {
       print('❌ Error during logout: $e');
@@ -515,8 +518,9 @@ class AuthProvider with ChangeNotifier {
     final studentProfile = userBox.get('student_profile');
     if (studentProfile != null) {
       if (studentProfile is Map<String, dynamic>) return studentProfile;
-      if (studentProfile is Map)
+      if (studentProfile is Map) {
         return Map<String, dynamic>.from(studentProfile);
+      }
     }
     return {};
   }

@@ -21,47 +21,103 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   bool _isLoggedIn = false;
   String _userRole = '';
   int _selectedIndex = 0;
+  bool _isExploreActive = true;
   late FlipCardController _flipController;
   bool _showLogin = false;
   bool _showSchoolSelection = false;
   bool _isInitialized = false;
-  String? _selectedSchoolCode; // ✅ Add this
+  String? _selectedSchoolCode;
+  late AuthProvider _authProvider;
 
   @override
   void initState() {
     super.initState();
     _flipController = FlipCardController();
-    _initializeApp();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _authProvider = Provider.of<AuthProvider>(context, listen: false);
+      _authProvider.addListener(_onAuthStateChanged);
+      _initializeApp();
+    }
+  }
+
+  @override
+  void dispose() {
+    _authProvider.removeListener(_onAuthStateChanged);
+    super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    // React to auth state changes from AuthProvider
+    if (mounted) {
+      _syncAuthState();
+    }
+  }
+
+  void _syncAuthState() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final wasLoggedIn = _isLoggedIn;
+    final newIsLoggedIn = authProvider.isLoggedIn;
+    final newRole = authProvider.user?.role ?? '';
+
+    setState(() {
+      _userRole = newRole;
+      _isLoggedIn = newIsLoggedIn;
+    });
+
+    print('🔄 Auth State Synced - Role: $_userRole, LoggedIn: $_isLoggedIn');
+
+    // If user became logged in, flip to dashboard
+    if (!wasLoggedIn && newIsLoggedIn && _isInitialized) {
+      if (_flipController.state?.isFront == true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _flipController.toggleCard();
+        });
+      }
+      setState(() {
+        _showLogin = false;
+        _showSchoolSelection = false;
+        _isExploreActive = false;
+      });
+    }
   }
 
   Future<void> _initializeApp() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.checkLoginStatus();
-    await _checkLoginStatus();
+
+    // AuthProvider.checkLoginStatus() is already called in AppInitializer (main.dart)
+    // Just sync the current state from AuthProvider
+    _syncAuthState();
 
     setState(() {
       _isInitialized = true;
     });
 
+    // If already logged in, flip to dashboard
     if (_isLoggedIn && _flipController.state?.isFront == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _flipController.toggleCard();
+      });
+      setState(() {
+        _isExploreActive = false;
       });
     }
   }
 
   Future<void> _checkLoginStatus() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    setState(() {
-      _userRole = authProvider.user?.role ?? '';
-      _isLoggedIn = authProvider.isLoggedIn;
-      _showLogin = false;
-      _showSchoolSelection = false;
-    });
+    _syncAuthState();
   }
 
   void _handleSwitchFromExplore(bool value) {
+    setState(() {
+      _selectedIndex = 0;
+      _isExploreActive = false;
+    });
+
     if (_isLoggedIn) {
       if (_flipController.state?.isFront == true) {
         _flipController.toggleCard();
@@ -79,11 +135,15 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   }
 
   void _handleSwitchFromDashboard(bool value) {
+    setState(() {
+      _selectedIndex = 0;
+      _isExploreActive = true;
+    });
+
     if (_flipController.state?.isFront == false) {
       _flipController.toggleCard();
     }
   }
-
   /// ✅ This is now updated to receive a school code
   void _navigateToLogin(String selectedSchoolCode) {
     setState(() {
@@ -120,6 +180,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       onSwitch: _handleSwitchFromExplore,
       selectedIndex: _selectedIndex,
       onTabSelected: _updateSelectedIndex,
+     // isActive: _isExploreActive,
     );
   }
 
@@ -138,6 +199,14 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
             _showSchoolSelection = false;
           });
         },
+        onDemoLoginSuccess: () async {
+          // Handle demo login success - same as regular login success
+          await _checkLoginStatus();
+          setState(() {
+            _showSchoolSelection = false;
+            _showLogin = false;
+          });
+        },
       );
     }
 
@@ -147,6 +216,13 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
         onLoginSuccess: () async {
           await _checkLoginStatus();
           setState(() {});
+        },
+        onBack: () {
+          // Navigate back to school selection
+          setState(() {
+            _showLogin = false;
+            _showSchoolSelection = true;
+          });
         },
       );
     }
@@ -214,3 +290,6 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     );
   }
 }
+
+
+

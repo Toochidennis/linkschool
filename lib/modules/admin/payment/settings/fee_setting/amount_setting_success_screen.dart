@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/payment/settings/fee_setting/amount_setting_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 

@@ -538,7 +538,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     required void Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       style: const TextStyle(
         fontFamily: 'Urbanist',
         fontSize: 16,

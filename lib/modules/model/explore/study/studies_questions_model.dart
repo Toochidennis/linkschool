@@ -119,9 +119,22 @@ class CorrectAnswer {
   });
 
   factory CorrectAnswer.fromJson(Map<String, dynamic> json) {
+    int parsedOrder = 0;
+    final rawOrder = json['order'];
+    if (rawOrder is int) {
+      parsedOrder = rawOrder;
+    } else if (rawOrder is String) {
+      parsedOrder = int.tryParse(rawOrder) ?? 0;
+    } else if (rawOrder != null) {
+      parsedOrder = int.tryParse(rawOrder.toString()) ?? 0;
+    }
+
+    // API returns 1-based order (e.g., 1,2,3). Convert to 0-based index to match options list.
+    final int zeroBasedOrder = parsedOrder > 0 ? parsedOrder - 1 : 0;
+
     return CorrectAnswer(
-      order: json['order'],
-      text: json['text'],
+      order: zeroBasedOrder,
+      text: json['text']?.toString() ?? '',
     );
   }
 }

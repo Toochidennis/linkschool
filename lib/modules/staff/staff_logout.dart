@@ -237,12 +237,12 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
                   if (formClasses.isNotEmpty) ...[
                     _buildSectionHeader('Form Classes'),
-                    ...formClasses.map((level) => _buildFormClassInfo(level)).toList(),
+                    ...formClasses.map((level) => _buildFormClassInfo(level)),
                   ],
 
                   if (courses.isNotEmpty) ...[
                     _buildSectionHeader('Courses'),
-                    ...courses.map((classData) => _buildCourseInfo(classData)).toList(),
+                    ...courses.map((classData) => _buildCourseInfo(classData)),
                   ],
 
                   const SizedBox(height: 20.0),

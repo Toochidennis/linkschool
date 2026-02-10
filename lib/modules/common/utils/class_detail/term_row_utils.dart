@@ -8,6 +8,7 @@ class TermRow extends StatelessWidget {
   final double percent;
   final Color indicatorColor;
   final VoidCallback onTap;
+  final bool showTopBorder;
 
   const TermRow({
     super.key,
@@ -15,6 +16,7 @@ class TermRow extends StatelessWidget {
     required this.percent,
     required this.indicatorColor,
     required this.onTap,
+    this.showTopBorder = false,
   });
 
   @override
@@ -24,11 +26,13 @@ class TermRow extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 75,
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: AppColors.borderGray, width: 1),
-          ),
-        ),
+        decoration: BoxDecoration(
+  border: showTopBorder
+      ? const Border(
+          top: BorderSide(color: AppColors.borderGray, width: 1),
+        )
+      : null,
+),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Row(

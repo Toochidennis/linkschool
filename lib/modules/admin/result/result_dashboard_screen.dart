@@ -19,7 +19,15 @@ class ResultDashboardScreen extends StatefulWidget {
   State<ResultDashboardScreen> createState() => _ResultDashboardScreenState();
 }
 
-class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
+class _ResultDashboardScreenState extends State<ResultDashboardScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _bounceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _bounceAnimation;
+
   Map<String, dynamic>? userData;
   List<dynamic> levelNames = [];
   List<dynamic> classNames = [];
@@ -28,6 +36,36 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   @override
   void initState() {
     super.initState();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+    );
+
+    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+
+    // Animations will be triggered after data loads
     _loadUserData();
   }
 
@@ -104,12 +142,150 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
           print('Processed Class Names: $classNames');
           print('Levels with Classes: $levelsWithClasses');
         });
+
+        // Start the entrance animations after data is processed
+        _runEntranceAnimations();
       } else {
         print('No valid user data found in Hive');
       }
     } catch (e) {
       print('Error loading user data: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  void _runEntranceAnimations() {
+    if (!mounted) return;
+    _fadeController.forward();
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _slideController.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _bounceController.forward();
+    });
+  }
+
+  Widget _buildAnimatedCard({
+    required Widget child,
+    required int index,
+  }) {
+    // Calculate interval with proper bounds
+    final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
+    final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
+
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _slideController,
+              curve: Interval(
+                intervalStart,
+                intervalEnd,
+                curve: Curves.elasticOut,
+              ),
+            )),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required String label,
+    required String title,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color borderColor,
+    required VoidCallback onTap,
+    required int index,
+  }) {
+    return AnimatedBuilder(
+      animation: _bounceAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _bounceAnimation.value,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(color: borderColor, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: backgroundColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 800 + (index * 200)),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            label,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Urbanist',
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Icon(
+                            icon,
+                            size: 24,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -125,37 +301,59 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
             slivers: [
               const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
               SliverToBoxAdapter(
-                child: Constants.heading600(
-                  title: 'Overall Performance',
-                  titleSize: 18.0,
-                  titleColor: AppColors.resultColor1,
+                child: _buildAnimatedCard(
+                  index: 0,
+                  child: Constants.heading600(
+                    title: 'Overall Performance',
+                    titleSize: 18.0,
+                    titleColor: AppColors.resultColor1,
+                  ),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
-              const SliverToBoxAdapter(child: PerformanceChart()),
+              SliverToBoxAdapter(
+                child: _buildAnimatedCard(
+                  index: 1,
+                  child: const PerformanceChart(),
+                ),
+              ),
               const SliverToBoxAdapter(child: SizedBox(height: 28.0)),
               SliverToBoxAdapter(
-                child: Constants.heading600(
-                  title: 'Settings',
-                  titleSize: 18.0,
-                  titleColor: AppColors.resultColor1,
+                child: _buildAnimatedCard(
+                  index: 2,
+                  child: Constants.heading600(
+                    title: 'Settings',
+                    titleSize: 18.0,
+                    titleColor: AppColors.resultColor1,
+                  ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SettingsSection()),
+              SliverToBoxAdapter(
+                child: _buildAnimatedCard(
+                  index: 3,
+                  child: const SettingsSection(),
+                ),
+              ),
               const SliverToBoxAdapter(child: SizedBox(height: 48.0)),
               SliverToBoxAdapter(
-                child: Constants.heading600(
-                  title: 'Select Level',
-                  titleSize: 18.0,
-                  titleColor: AppColors.resultColor1,
+                child: _buildAnimatedCard(
+                  index: 4,
+                  child: Constants.heading600(
+                    title: 'Select Level',
+                    titleSize: 18.0,
+                    titleColor: AppColors.resultColor1,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
-                child: LevelSelection(
-                  levelNames: levelsWithClasses, // Use filtered levels list
-                  classNames: classNames,
-                  isSecondScreen: false,
-                  subjects: ['Math', 'Science', 'English'],
+                child: _buildAnimatedCard(
+                  index: 5,
+                  child: LevelSelection(
+                    levelNames: levelsWithClasses, // Use filtered levels list
+                    classNames: classNames,
+                    isSecondScreen: false,
+                    subjects: ['Math', 'Science', 'English'],
+                  ),
                 ),
               ),
             ],

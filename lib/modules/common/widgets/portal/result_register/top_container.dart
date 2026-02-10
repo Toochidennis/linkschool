@@ -10,6 +10,7 @@ import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 
 class TopContainer extends StatefulWidget {
+  final String  className;
   final String selectedTerm;
   final Function(String?) onTermChanged;
   final String classId;
@@ -23,6 +24,7 @@ class TopContainer extends StatefulWidget {
     required this.classId,
     required this.apiService,
     required this.authProvider,
+    required this.className,
   });
 
   @override
@@ -93,7 +95,7 @@ class _TopContainerState extends State<TopContainer> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Container(
-        height: 165,
+        height: 170,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12.0),
         ),
@@ -112,6 +114,17 @@ class _TopContainerState extends State<TopContainer> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+  widget.className,
+  maxLines: 1,
+  overflow: TextOverflow.ellipsis,
+  style: AppTextStyles.normal700(
+    fontSize: 20,
+    color: Colors.white,
+  ),
+),
+const SizedBox(height: 8),
+
                   Container(
                     height: 42,
                     padding:
@@ -141,7 +154,7 @@ class _TopContainerState extends State<TopContainer> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 34),
+                 SizedBox(height: 16),
                   Row(
                     children: [
                       const CircleAvatar(

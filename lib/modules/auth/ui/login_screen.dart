@@ -6,12 +6,12 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 import 'package:linkschool/modules/common/custom_toaster.dart';
-import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
+  final VoidCallback? onBack; // ✅ Add back navigation callback
   final String schoolCode; // ✅ received from SelectSchool
   final String? schoolName;
 
@@ -19,6 +19,7 @@ class LoginScreen extends StatefulWidget {
     super.key,
     required this.onLoginSuccess,
     required this.schoolCode,
+    this.onBack,
     this.schoolName,
   });
 
@@ -36,17 +37,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  void _navigateToExploreDashboard() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ExploreDashboard(
-          onSwitch: (bool value) {},
-          selectedIndex: 0,
-          onTabSelected: (int index) {},
-        ),
-      ),
-    );
+  void _navigateBack() {
+    // Use callback if provided, otherwise try Navigator.pop
+    if (widget.onBack != null) {
+      widget.onBack!();
+    } else {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -74,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
         widget.onLoginSuccess();
         CustomToaster.toastSuccess(context, 'Success', 'Login successful!');
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', 'Login failed: $e');
+        CustomToaster.toastError(context, 'Error', 'Login failed');
         print('error:$e');
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -86,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _navigateToExploreDashboard();
+        _navigateBack();
         return false;
       },
       child: Scaffold(
@@ -103,9 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   right: 300,
                   left: 0,
                   child: InkWell(
-                    onTap: () => _navigateToExploreDashboard(),
+                    onTap: () => _navigateBack(),
                     child: Icon(Icons.arrow_back,
-                        size: 16, color: AppColors.attCheckColor1),
+                        size: 25, color: AppColors.attCheckColor1),
                   ),
                 ),
 
@@ -118,26 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 // 👇 Bottom Sign Up
-                Positioned(
-                  top: 700,
-                  bottom: 30,
-                  left: 60,
-                  child: Wrap(
-                    children: [
-                      Text("Don't have an account?",
-                          style: AppTextStyles.normal500(
-                              fontSize: 12, color: AppColors.assessmentColor2)),
-                      InkWell(
-                        onTap: () {},
-                        child: Text(
-                          " Sign Up",
-                          style: AppTextStyles.normal500(
-                              fontSize: 14, color: AppColors.aicircle),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
+                
               ],
             ),
           ),
@@ -203,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "${widget.schoolName} (Code: ${widget.schoolCode})",
+                          widget.schoolName!,
                           style: AppTextStyles.normal500(
                               fontSize: 13, color: AppColors.bookText),
                         ),

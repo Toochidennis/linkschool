@@ -3,7 +3,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/services/study_history_service.dart';
-import 'dart:math' as math;
 
 /// Model to track study progress per topic
 class TopicProgress {
@@ -77,9 +76,9 @@ class StudyProgressDashboard extends StatefulWidget {
   final StudySessionStats sessionStats;
 
   const StudyProgressDashboard({
-    Key? key,
+    super.key,
     required this.sessionStats,
-  }) : super(key: key);
+  });
 
   @override
   State<StudyProgressDashboard> createState() => _StudyProgressDashboardState();
@@ -545,7 +544,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildTopicCard(topic, index + 1),
           );
-        }).toList(),
+        }),
       ],
     );
   }

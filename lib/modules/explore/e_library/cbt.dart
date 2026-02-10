@@ -9,6 +9,9 @@ import 'package:linkschool/modules/explore/e_library/new_cbt.dart';
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class E_CBTDashboard extends StatefulWidget {
   const E_CBTDashboard({super.key});
@@ -19,6 +22,8 @@ class E_CBTDashboard extends StatefulWidget {
 
 class _E_CBTDashboardState extends State<E_CBTDashboard> {
   int selectedCategoryIndex = 0;
+  final _subscriptionService = CbtSubscriptionService();
+  bool _isShowingEntryPrompt = false;
 
   int? selectedexamCategoriesIndex = 0;
   List<String> examCategories = <String>[
@@ -67,7 +72,55 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final settings = await CbtSettingsHelper.getSettings();
+        await _subscriptionService.setMaxFreeTests(settings.freeTrialDays);
+        await _subscriptionService.setTrialStartDate();
+      } catch (e) {
+        print('Error syncing trial settings: $e');
+      }
+    });
+  }
+
+  Future<void> _maybeShowEntryPaymentPrompt() async {
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.hasPaid == true) return;
+
+    if (_isShowingEntryPrompt) return;
+    _isShowingEntryPrompt = true;
+
+    final settings = await CbtSettingsHelper.getSettings();
+    final remainingDays = await _subscriptionService.getRemainingFreeTests();
+    final trialExpired = await _subscriptionService.isTrialExpired();
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => SubscriptionEnforcementDialog(
+        isHardBlock: trialExpired,
+        remainingTests: remainingDays,
+        amount: settings.amount,
+        discountRate: settings.discountRate,
+        onSubscribed: () {
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+    _isShowingEntryPrompt = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowEntryPaymentPrompt();
+    });
     // Access CbtUserProvider
     final cbtUserProvider = Provider.of<CbtUserProvider>(context);
     final currentUser = cbtUserProvider.currentUser;

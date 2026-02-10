@@ -5,10 +5,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
-import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-import 'package:linkschool/modules/services/explore/manage_storage.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_instruction.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/start_challenge.dart';
 import 'package:provider/provider.dart';
 
@@ -1299,7 +1296,7 @@ void _showStatusSelectionModal() {
                     items: timeOptions.map((time) {
                       return DropdownMenuItem(
                         value: time,
-                        child: Text('${time} mins'),
+                        child: Text('$time mins'),
                       );
                     }).toList(),
                     onChanged: (value) {

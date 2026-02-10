@@ -165,30 +165,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               key: _refreshIndicatorKey,
               onRefresh: _handleRefresh,
               child: Consumer<AttendanceProvider>(
-                builder: (context, provider, _) {
-                  if (provider.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+  builder: (context, provider, _) {
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-                  if (provider.error.isNotEmpty) {
-                    return _buildError(provider.error);
-                  }
+    if (provider.error.isNotEmpty) {
+      return _buildError(provider.error);
+    }
 
-                  final filteredRecords =
-                      _getFilteredRecords(provider.attendanceRecords);
+    final filteredRecords =
+        _getFilteredRecords(provider.attendanceRecords);
 
-                  // Show full content when not searching
-                  if (!_isSearching || _searchQuery.isEmpty) {
-                    if (provider.attendanceRecords.isEmpty) {
-                      return _buildEmpty(true);
-                    }
-                    return _buildContent(filteredRecords);
-                  }
+    // ALWAYS show the content (InfoCard + TakeAttendanceButton)
+    // Empty state will be shown in the history section only
+    if (!_isSearching || _searchQuery.isEmpty) {
+      return _buildContent(filteredRecords);
+    }
 
-                  // When searching, show empty state in background
-                  return const SizedBox.shrink();
-                },
-              ),
+    // When searching, show empty state in background
+    return const SizedBox.shrink();
+  },
+),
             ),
             // Search results overlay
             if (_isSearching && _searchQuery.isNotEmpty) _buildSearchResults(),
@@ -300,56 +298,91 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildContent(List<AttendanceRecord> filteredRecords) {
-    final screenHeight = MediaQuery.of(context).size.height;
+  final screenHeight = MediaQuery.of(context).size.height;
 
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Column(
-        children: [
-          Container(
-            height: screenHeight * _headerHeightRatio,
-            decoration: const BoxDecoration(
-              color: AppColors.paymentTxtColor1,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
-              ),
+  return SingleChildScrollView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    child: Column(
+      children: [
+        Container(
+          height: screenHeight * _headerHeightRatio,
+          decoration: const BoxDecoration(
+            color: AppColors.paymentTxtColor1,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(28),
+              bottomRight: Radius.circular(28),
             ),
           ),
-          Transform.translate(
-            offset: Offset(0, -screenHeight * _headerTranslateRatio),
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: _horizontalPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  InfoCard(
-                    className: widget.className,
-                    classId: widget.classId,
-                  ),
-                  const SizedBox(height: 20),
-                  TakeAttendanceButton(classId: widget.classId),
-                  const SizedBox(height: 30),
-                  _buildHistorySection(filteredRecords),
-                ],
-              ),
+        ),
+        Transform.translate(
+          offset: Offset(0, -screenHeight * _headerTranslateRatio),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InfoCard(
+                  className: widget.className,
+                  classId: widget.classId,
+                ),
+                const SizedBox(height: 20),
+                TakeAttendanceButton(classId: widget.classId),
+                const SizedBox(height: 30),
+                _buildHistorySection(filteredRecords),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildHistorySection(List<AttendanceRecord> records) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Attendance History',
-          style: AppTextStyles.normal600(fontSize: 18),
-        ),
-        const SizedBox(height: 12),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        'Attendance History',
+        style: AppTextStyles.normal600(fontSize: 18),
+      ),
+      const SizedBox(height: 12),
+      
+      // Show empty state here if no records
+      if (records.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.history,
+                  size: 50,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No attendance records yet',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Take attendance using the button above',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+      else
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -358,9 +391,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Divider(height: 1, color: Colors.grey[300]),
           itemBuilder: (context, index) => _buildHistoryItem(records[index]),
         ),
-      ],
-    );
-  }
+    ],
+  );
+}
 
   Widget _buildHistoryItem(AttendanceRecord record) {
     final provider = locator<AttendanceProvider>();

@@ -33,7 +33,7 @@ class SchoolProvider with ChangeNotifier {
     if (query.isEmpty) return _schools;
     return _schools
         .where((school) =>
-            school.schoolName.toLowerCase().contains(query.toLowerCase()))
+            school.schoolName.toLowerCase().startsWith(query.toLowerCase()))
         .toList();
   }
 }

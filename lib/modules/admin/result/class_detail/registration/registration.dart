@@ -12,7 +12,8 @@ import 'package:linkschool/modules/providers/admin/term_provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
   final String classId;
-  const RegistrationScreen({super.key, required this.classId});
+  final String className;
+  const RegistrationScreen({super.key, required this.classId, required this.className});
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -99,7 +100,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Registrations',
+          'Registration',
           style: AppTextStyles.normal600(
               fontSize: 18.0, color: AppColors.primaryLight),
         ),
@@ -125,6 +126,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
           child: Column(
             children: [
               TopContainer(
+                className: widget.className,
                 selectedTerm: _selectedTerm,
                 onTermChanged: (newValue) {
                   setState(() {

@@ -149,7 +149,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: !isHardBlock,
+      barrierDismissible: true,
       builder: (context) => SubscriptionEnforcementDialog(
         isHardBlock: isHardBlock,
         remainingTests: remainingTests,
@@ -197,8 +197,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
   // Save test result to shared preferences
   Future<void> _saveTestResult() async {
-    if (_isSaved || !_userSignedIn)
+    if (_isSaved || !_userSignedIn) {
       return; // Prevent duplicate saves and ensure user is signed in
+    }
 
     try {
       // Check if this is a multi-subject test
@@ -299,7 +300,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => _ScorePopupDialog(
         totalScore: totalScore,
         totalQuestions: totalQuestions,
@@ -1104,7 +1105,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                                   const SizedBox(height: 24),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -1940,3 +1941,9 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
     );
   }
 }
+
+
+
+
+
+

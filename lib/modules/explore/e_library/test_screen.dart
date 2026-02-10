@@ -12,6 +12,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'dart:convert';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 
 class TestScreen extends StatefulWidget {
   final String examTypeId;
@@ -55,7 +56,7 @@ class _TestScreenState extends State<TestScreen>
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
   int? remainingSeconds;
-  int _lastDisplayedQuestionIndex =
+  final int _lastDisplayedQuestionIndex =
       -1; // Track which question's instruction/passage was shown
   bool _isCountdownActive = false;
 
@@ -67,6 +68,7 @@ class _TestScreenState extends State<TestScreen>
   void initState() {
     super.initState();
     remainingSeconds = widget.totalDurationInSeconds;
+    AdManager.instance.preload();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -129,8 +131,17 @@ class _TestScreenState extends State<TestScreen>
         onComplete: () {
           if (!mounted) return;
           Navigator.of(context).pop();
-          setState(() {
-            _isCountdownActive = false;
+          AdManager.instance
+              .showIfEligible(
+            context: context,
+            trigger: AdTrigger.topicStart,
+          )
+              .then((_) {
+            if (mounted) {
+              setState(() {
+                _isCountdownActive = false;
+              });
+            }
           });
 
           // Dialog will only show when Read More is clicked
@@ -506,8 +517,7 @@ class _TestScreenState extends State<TestScreen>
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (question.questionImage != null &&
-                          question.questionImage.isNotEmpty)
+                      if (question.questionImage.isNotEmpty)
                         GestureDetector(
                           onTap: () =>
                               _showFullScreenImage(question.questionImage),
@@ -546,8 +556,9 @@ class _TestScreenState extends State<TestScreen>
                         content = question.passage;
                       }
 
-                      if (content.isNotEmpty)
+                      if (content.isNotEmpty) {
                         _showInstructionOrPassageModal(title, content);
+                      }
                     },
                     child: Row(
                       children: [
@@ -586,8 +597,9 @@ class _TestScreenState extends State<TestScreen>
                               content = question.passage;
                             }
 
-                            if (content.isNotEmpty)
+                            if (content.isNotEmpty) {
                               _showInstructionOrPassageModal(title, content);
+                            }
                           },
                           tooltip: (question.instruction.isNotEmpty &&
                                   question.passage.isNotEmpty)
@@ -1231,7 +1243,7 @@ class _TestScreenState extends State<TestScreen>
                                   const SizedBox(height: 24),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -1311,80 +1323,82 @@ class _TestScreenState extends State<TestScreen>
       );
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: provider.currentQuestionIndex > 0
-                ? () => provider.previousQuestion()
-                : null,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+    // Add bottom padding using MediaQuery to avoid navigation bar overlap
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding > 16 ? bottomPadding : 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: provider.currentQuestionIndex > 0
+                  ? () => provider.previousQuestion()
+                  : null,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-            ),
-            child:
-                const Text('Previous', style: TextStyle(color: Colors.white)),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () => _submitQuiz(
-              provider,
-              isFullyCompleted: isLastQuestion && isLastSubject,
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.eLearningContColor3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            child: const Text(
-              'Submit',
-              style: TextStyle(color: Colors.white),
+              child:
+                  const Text('Previous', style: TextStyle(color: Colors.white)),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: OutlinedButton(
-            onPressed: !isLastQuestion
-                ? () {
-                    provider.nextQuestion();
-                  }
-                : (widget.onExamComplete != null && !isLastSubject)
-                    ? () {
-                        // Auto-proceed to next exam without dialog
-                        _proceedToNextExam(provider);
-                      }
-                    : null,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                  color: (!isLastQuestion ||
-                          (widget.onExamComplete != null && !isLastSubject))
-                      ? Colors.white
-                      : const Color.fromARGB(255, 169, 168, 168)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _submitQuiz(
+                provider,
+                isFullyCompleted: isLastQuestion && isLastSubject,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.eLearningContColor3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: const Text(
+                'Submit',
+                style: TextStyle(color: Colors.white),
               ),
             ),
-            child: Text(
-              (isLastQuestion &&
-                      widget.onExamComplete != null &&
-                      !isLastSubject)
-                  ? 'Next Subject'
-                  : 'Next',
-              style: TextStyle(
-                  color: (!isLastQuestion ||
-                          (widget.onExamComplete != null && !isLastSubject))
-                      ? Colors.white
-                      : const Color.fromARGB(255, 169, 168, 168)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: !isLastQuestion
+                  ? () {
+                      provider.nextQuestion();
+                    }
+                  : (widget.onExamComplete != null && !isLastSubject)
+                      ? () {
+                          // Auto-proceed to next exam without dialog
+                          _proceedToNextExam(provider);
+                        }
+                      : (isLastQuestion && isLastSubject)
+                          ? () {
+                              // Show submit modal on last question of last subject
+                              _submitQuiz(provider, isFullyCompleted: true);
+                            }
+                          : null,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: Text(
+                (isLastQuestion &&
+                        widget.onExamComplete != null &&
+                        !isLastSubject)
+                    ? 'Next'
+                    : 'Next',
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1703,8 +1717,13 @@ class _TestScreenState extends State<TestScreen>
                       SizedBox(width: isLandscape ? 12 : 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             Navigator.of(context).pop();
+
+                            await AdManager.instance.showIfEligible(
+                              context: context,
+                              trigger: AdTrigger.resultNavigation,
+                            );
 
                             // After dialog closes, handle the navigation based on context
                             if (widget.onExamComplete != null &&

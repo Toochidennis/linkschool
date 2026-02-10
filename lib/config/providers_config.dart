@@ -35,10 +35,14 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
+import 'package:linkschool/modules/providers/explore/assignment_submission_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
+import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
@@ -47,6 +51,8 @@ import 'package:linkschool/modules/providers/explore/home/announcement_provider.
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
+import 'package:linkschool/modules/providers/explore/lesson_detail_provider.dart';
+import 'package:linkschool/modules/providers/explore/lesson_quiz_provider.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
@@ -76,6 +82,7 @@ import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
 import 'package:linkschool/modules/services/explore/courses/lessons_service.dart';
+import 'package:linkschool/modules/services/explore/courses/cohort_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
 import 'package:linkschool/modules/services/explore/video/video_service.dart';
@@ -132,11 +139,25 @@ List<SingleChildWidget> getAppProviders() {
     ChangeNotifierProvider(
         create: (_) => LessonProvider(LessonService()), lazy: true),
     ChangeNotifierProvider(
+        create: (_) => CohortProvider(CohortService()), lazy: true),
+    ChangeNotifierProvider(
         create: (_) => LeaderboardProvider(LeaderboardService()), lazy: true),
     ChangeNotifierProvider(
         create: (_) => QuestionsProvider(QuestionsService()), lazy: true),
     ChangeNotifierProvider(
         create: (_) => CourseVideoProvider(CourseVideoService()), lazy: true),
+      ChangeNotifierProvider(
+          create: (_) => AssignmentSubmissionProvider(), lazy: true),
+      ChangeNotifierProvider(
+          create: (_) => CreateUserProfileProvider(), lazy: true),
+      ChangeNotifierProvider(
+          create: (_) => LessonDetailProvider(), lazy: true),
+      ChangeNotifierProvider(
+          create: (_) => LessonQuizProvider(), lazy: true),
+      ChangeNotifierProvider(
+          create: (_) => EnrollmentProvider(), lazy: true),
+
+     
 
     // Admin HomeScreen - ALL LAZY
 

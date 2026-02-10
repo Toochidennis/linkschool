@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
-import 'package:linkschool/modules/explore/videos/see_all_screen.dart';
 import 'package:linkschool/modules/explore/videos/watch_history_screen.dart';
 import 'package:linkschool/modules/explore/videos/watch_video.dart';
 import 'package:linkschool/modules/explore/videos/course_videos_screen.dart';
@@ -11,12 +9,7 @@ import 'package:linkschool/modules/model/explore/videos/dashboard_video_model.da
 import 'package:linkschool/modules/services/explore/watch_history_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../common/app_colors.dart';
-import '../../common/constants.dart';
-import '../../common/text_styles.dart';
 import '../../providers/explore/subject_provider.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import '../e_library/e_lib_subject_detail.dart';
 
 class VideosDashboard extends StatefulWidget {
   final bool showAppBar;
@@ -146,25 +139,34 @@ class _VideosDashboardState extends State<VideosDashboard> {
     final name = subjectName.toUpperCase();
     if (name.contains('MATH')) return Color(0xFFFF6B35);
     if (name.contains('ENGLISH')) return Color(0xFF4A90E2);
-    if (name.contains('CHEMISTRY') || name.contains('CHEM'))
+    if (name.contains('CHEMISTRY') || name.contains('CHEM')) {
       return Color(0xFFFFB84D);
-    if (name.contains('BIOLOGY') || name.contains('BIO'))
+    }
+    if (name.contains('BIOLOGY') || name.contains('BIO')) {
       return Color(0xFF5CB85C);
-    if (name.contains('PHYSICS') || name.contains('PHY'))
+    }
+    if (name.contains('PHYSICS') || name.contains('PHY')) {
       return Color(0xFF6C5CE7);
-    if (name.contains('ECONOMICS') || name.contains('ECO'))
+    }
+    if (name.contains('ECONOMICS') || name.contains('ECO')) {
       return Color(0xFFE74C3C);
-    if (name.contains('GEOGRAPHY') || name.contains('GEO'))
+    }
+    if (name.contains('GEOGRAPHY') || name.contains('GEO')) {
       return Color(0xFF3498DB);
+    }
     if (name.contains('HISTORY')) return Color(0xFF9B59B6);
-    if (name.contains('LITERATURE') || name.contains('LIT'))
+    if (name.contains('LITERATURE') || name.contains('LIT')) {
       return Color(0xFF1ABC9C);
-    if (name.contains('GOVERNMENT') || name.contains('GOV'))
+    }
+    if (name.contains('GOVERNMENT') || name.contains('GOV')) {
       return Color(0xFFE67E22);
-    if (name.contains('COMMERCE') || name.contains('COM'))
+    }
+    if (name.contains('COMMERCE') || name.contains('COM')) {
       return Color(0xFF2ECC71);
-    if (name.contains('ACCOUNTING') || name.contains('ACC'))
+    }
+    if (name.contains('ACCOUNTING') || name.contains('ACC')) {
       return Color(0xFFF39C12);
+    }
     return Color(0xFF2C3E50); // Default dark color
   }
 
@@ -173,23 +175,29 @@ class _VideosDashboardState extends State<VideosDashboard> {
     final name = subjectName.toUpperCase();
     if (name.contains('MATH')) return Icons.functions;
     if (name.contains('ENGLISH')) return Icons.import_contacts;
-    if (name.contains('CHEMISTRY') || name.contains('CHEM'))
+    if (name.contains('CHEMISTRY') || name.contains('CHEM')) {
       return Icons.water_drop;
+    }
     if (name.contains('BIOLOGY') || name.contains('BIO')) return Icons.spa;
     if (name.contains('PHYSICS') || name.contains('PHY')) return Icons.bolt;
-    if (name.contains('ECONOMICS') || name.contains('ECO'))
+    if (name.contains('ECONOMICS') || name.contains('ECO')) {
       return Icons.show_chart;
-    if (name.contains('GEOGRAPHY') || name.contains('GEO'))
+    }
+    if (name.contains('GEOGRAPHY') || name.contains('GEO')) {
       return Icons.language;
+    }
     if (name.contains('HISTORY')) return Icons.auto_stories;
-    if (name.contains('LITERATURE') || name.contains('LIT'))
+    if (name.contains('LITERATURE') || name.contains('LIT')) {
       return Icons.auto_stories;
+    }
     if (name.contains('GOVERNMENT') || name.contains('GOV')) return Icons.gavel;
     if (name.contains('COMMERCE') || name.contains('COM')) return Icons.store;
-    if (name.contains('ACCOUNTING') || name.contains('ACC'))
+    if (name.contains('ACCOUNTING') || name.contains('ACC')) {
       return Icons.account_balance_wallet;
-    if (name.contains('COMPUTER') || name.contains('ICT'))
+    }
+    if (name.contains('COMPUTER') || name.contains('ICT')) {
       return Icons.computer;
+    }
     if (name.contains('ARTS') || name.contains('ART')) return Icons.palette;
     if (name.contains('MUSIC')) return Icons.music_note;
     return Icons.menu_book; // Default icon
@@ -1354,167 +1362,207 @@ class _VideosDashboardState extends State<VideosDashboard> {
     );
   }
 
-  void _showGradeLevelBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Consumer<SubjectProvider>(
-          builder: (context, provider, child) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Handle bar
-                  Container(
-                    margin: const EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+ void _showGradeLevelBottomSheet() {
+  showGeneralDialog(
+    context: context,
+    barrierLabel: 'Grade Level',
+    barrierDismissible: true,
+    barrierColor: Colors.black54, // dim background
+    transitionDuration: const Duration(milliseconds: 250),
+    pageBuilder: (context, anim1, anim2) {
+      return Align(
+        alignment: Alignment.bottomCenter,
+        child: Material(
+          color: Colors.transparent,
+          child: SafeArea(
+            top: false,
+            child: Consumer<SubjectProvider>(
+              builder: (context, provider, child) {
+                return Container(
+                  width: double.infinity,
+                  constraints: BoxConstraints(
+                    // behaves similar to isScrollControlled bottom sheet
+                    maxHeight: MediaQuery.of(context).size.height * 0.85,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
                   ),
-
-                  // Title
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(
-                      'Choose Grade',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Handle bar
+                      Container(
+                        margin: const EdgeInsets.only(top: 12),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                    ),
-                  ),
 
-                  // Grade levels list
-                  Flexible(
-                    child: provider.isLoadingLevels
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32.0),
-                              child: CircularProgressIndicator(),
-                            ),
-                          )
-                        : provider.levels.isEmpty
-                            ? Center(
+                      // Title
+                      const Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Text(
+                          'Choose Grade',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+
+                      // Grade levels list
+                      Flexible(
+                        child: provider.isLoadingLevels
+                            ? const Center(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(32.0),
-                                  child: Text(
-                                    'No levels available',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
+                                  padding: EdgeInsets.all(32.0),
+                                  child: CircularProgressIndicator(),
                                 ),
                               )
-                            : ListView.builder(
-                                shrinkWrap: true,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                itemCount: provider.levels.length,
-                                itemBuilder: (context, index) {
-                                  final level = provider.levels[index];
-                                  final isSelected =
-                                      _selectedLevel?.id == level.id;
-
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Material(
-                                      color: isSelected
-                                          ? Color(0xFFFF6B35)
-                                          : Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(12),
-                                        onTap: () async {
-                                          setState(() {
-                                            _selectedLevel = level;
-                                            _currentLevelId = level.id;
-                                          });
-
-                                          // Save to shared preferences
-                                          final prefs = await SharedPreferences
-                                              .getInstance();
-                                          await prefs.setInt(
-                                              'selected_level_id', level.id);
-                                          await prefs.setString(
-                                              'selected_level_name',
-                                              level.name);
-
-                                          // Fetch dashboard data for selected level
-                                          Provider.of<SubjectProvider>(context,
-                                                  listen: false)
-                                              .fetchDashboardData(level.id);
-                                          Navigator.pop(context);
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 14,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: BoxDecoration(
-                                                  color: isSelected
-                                                      ? Colors.white
-                                                      : Colors.transparent,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(
-                                                    color: isSelected
-                                                        ? Colors.white
-                                                        : Colors.grey[400]!,
-                                                    width: 2,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 16),
-                                              Expanded(
-                                                child: Text(
-                                                  level.name,
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: isSelected
-                                                        ? FontWeight.w600
-                                                        : FontWeight.w500,
-                                                    color: isSelected
-                                                        ? Colors.white
-                                                        : Colors.black87,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                            : provider.levels.isEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(32.0),
+                                      child: Text(
+                                        'No levels available',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey,
                                         ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                  ),
+                                  )
+                                : ListView.builder(
+  shrinkWrap: true,
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  itemCount: provider.levels.length,
+  itemBuilder: (context, index) {
+    final level = provider.levels[index];
+    final isSelected = _selectedLevel?.id == level.id;
 
-                  // Continue button (removed since selection now auto-triggers)
-                  SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    // ✅ Stagger timing: each next item starts slightly later
+    final start = (index * 0.06).clamp(0.0, 0.8);
+    final end = (start + 0.35).clamp(0.0, 1.0);
+
+    final itemAnim = CurvedAnimation(
+      parent: anim1,
+      curve: Interval(start, end, curve: Curves.easeOut),
     );
-  }
+
+    return FadeTransition(
+      opacity: itemAnim,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.06),
+          end: Offset.zero,
+        ).animate(itemAnim),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: isSelected ? const Color(0xFFFF6B35) : Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                setState(() {
+                  _selectedLevel = level;
+                  _currentLevelId = level.id;
+                });
+
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setInt('selected_level_id', level.id);
+                await prefs.setString('selected_level_name', level.name);
+
+                Provider.of<SubjectProvider>(context, listen: false)
+                    .fetchDashboardData(level.id);
+
+                Navigator.pop(context);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? Colors.white : Colors.grey[400]!,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        level.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  },
+),
+
+                      ),
+
+                      SizedBox(
+                        height:
+                            MediaQuery.of(context).padding.bottom + 16,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+    },
+
+    // ✅ Fade + slight slide transition
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final fade = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOut,
+        reverseCurve: Curves.easeIn,
+      );
+
+      final slide = Tween<Offset>(
+        begin: const Offset(0, 0.08),
+        end: Offset.zero,
+      ).animate(fade);
+
+      return FadeTransition(
+        opacity: fade,
+        child: SlideTransition(
+          position: slide, // remove this if you want only fade
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 }

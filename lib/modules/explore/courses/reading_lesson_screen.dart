@@ -10,14 +10,14 @@ class ReadingLessonScreen extends StatefulWidget {
   final List<Map<String, dynamic>> courseContent;
 
   const ReadingLessonScreen({
-    Key? key,
+    super.key,
     required this.lessonTitle,
     required this.lessonContent,
     required this.courseTitle,
     required this.duration,
     required this.currentIndex,
     required this.courseContent,
-  }) : super(key: key);
+  });
 
   @override
   State<ReadingLessonScreen> createState() => _ReadingLessonScreenState();

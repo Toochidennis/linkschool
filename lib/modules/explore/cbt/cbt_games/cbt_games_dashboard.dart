@@ -305,7 +305,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
               ..._subjectLeaderboards
                   .map((subjectData) =>
                       _buildSubjectLeaderboardCard(subjectData))
-                  .toList(),
+                  ,
             ],
           ),
         ),
@@ -917,7 +917,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                 ),
               ),
             );
-          }).toList(),
+          }),
 
           const SizedBox(height: 16),
 

@@ -3,8 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
-import 'package:linkschool/modules/common/bottom_nav_item.dart';
+import 'package:linkschool/modules/common/flat_bottom_navigation.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/student/elearning/student_elearning_home_screen.dart';
 import 'package:linkschool/modules/student/home/student_home_screen.dart';
@@ -71,7 +70,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term']?.toString() ?? '0');
       });
-    } catch (e, stack) {
+    } catch (e) {
       debugPrint('Error loading user data: $e');
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
@@ -109,61 +108,60 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final appBarItems = [
-      createBottomNavIcon(
-        imagePath: 'assets/icons/home.svg',
-        text: 'Home',
-        width: 18.0,
-        height: 20.0,
-      ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/result.svg',
-        text: 'Results',
-        width: 18.0,
-        height: 20.0,
-      ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/e-learning.svg',
-        text: 'E- \nLearning',
-        width: 20.0,
-        height: 16.0,
-      ),
-      createBottomNavIcon(
-        imagePath: 'assets/icons/payment.svg',
-        text: 'Payment',
-        width: 18.0,
-        height: 20.0,
-      ),
-    ];
+
 
     return Scaffold(
       key: const ValueKey('student_dashboard'),
-      body: Stack(
-        children: [
-          _buildBodyItem(_selectedIndex),
-          Positioned(
-            top: 16.0,
-            right: 16.0, // Place the FAB in the upper right corner
-            child: FloatingActionButton(
-              onPressed: () {},
-              backgroundColor: Colors.red,
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
+      body: _buildBodyItem(_selectedIndex),
+    
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: FlatBottomNavigation(
+        items: [
+         NavigationItem(
+            iconPath: 'assets/icons/home.svg',
+            activeIconPath: 'assets/icons/fill_home.svg',
+            label: 'Home',
+            iconWidth: 20.0,
+            iconHeight: 20.0,
+          ),
+          NavigationItem(
+            iconPath: 'assets/icons/two_pager.svg',
+            activeIconPath: 'assets/icons/two_pager_fill.svg',
+            label: 'Result',
+            
+          ),
+          NavigationItem(
+            iconPath: 'assets/icons/portal.svg',
+            label: 'Explore',
+            flipIcon: true,
+            color: const Color(0xFF1E3A8A),
+          ),
+           NavigationItem(
+            iconPath: 'assets/icons/globe_book.svg',
+            activeIconPath: 'assets/icons/globe_book.svg',
+            label: 'E-learning',
+            
+          ),
+          NavigationItem(
+            iconPath: 'assets/icons/assured_workload.svg',
+            activeIconPath: 'assets/icons/assured_workload_fill.svg',
+            label: 'Payments',
+            iconWidth: 10.0,
+            iconHeight: 20.0,
           ),
         ],
-      ),
-      bottomNavigationBar: CustomNavigationBar(
-        actionButtonImagePath: 'assets/icons/explore.svg',
-        appBarItems: appBarItems,
-        bodyItems: List.generate(4, (index) => _buildBodyItem(index)),
+        selectedIndex: _selectedIndex >= 2 ? _selectedIndex + 1 : _selectedIndex,
         onTabSelected: (index) {
+          if (index == 2) {
+            widget.onSwitch(true);
+            return;
+          }
+          final adjustedIndex = index > 2 ? index - 1 : index;
           setState(() {
-            _selectedIndex = index;
+            _selectedIndex = adjustedIndex;
           });
-          widget.onTabSelected(index);
+          widget.onTabSelected(adjustedIndex);
         },
-        onSwitch: widget.onSwitch,
-        selectedIndex: _selectedIndex,
       ),
     );
   }

@@ -3,11 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart';
-import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
-import 'package:linkschool/modules/explore/games/games_home.dart';
-import 'package:linkschool/modules/explore/home/library_videos.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
-import 'package:linkschool/modules/explore/ebooks/ebooks_dashboard.dart';
 import 'package:linkschool/modules/model/explore/home/book_model.dart';
 import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
@@ -20,7 +16,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/explore/videos/level_subject_selector_modal.dart';
 
-import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart';
 import '../../model/explore/home/video_model.dart';
 import '../../model/explore/videos/dashboard_video_model.dart';
 import '../../explore/videos/watch_video.dart';
@@ -57,7 +52,14 @@ class ElibraryDashboard extends StatefulWidget {
 }
 
 class _ElibraryDashboardState extends State<ElibraryDashboard>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _bounceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _bounceAnimation;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -120,6 +122,46 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
   @override
   void initState() {
     super.initState();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+    );
+
+    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+
+    // Add mounted checks
+    _fadeController.forward();
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _slideController.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _bounceController.forward();
+    });
+
     Future.microtask(() =>
         Provider.of<ForYouProvider>(context, listen: false).fetchForYouData());
     _loadWatchHistory();
@@ -127,6 +169,9 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
 
   @override
   void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _bounceController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -203,12 +248,58 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
     );
   }
 
+   Widget _buildAnimatedCard({
+  required Widget child,
+  required int index,
+}) {
+  // Calculate interval with proper bounds
+  final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
+  final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
+  
+  return AnimatedBuilder(
+    animation: _fadeAnimation,
+    builder: (context, child) {
+      return FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: _slideController,
+            curve: Interval(
+              intervalStart,
+              intervalEnd,
+              curve: Curves.elasticOut,
+            ),
+          )),
+          // Add ScaleTransition to provide a visible bounce using elastic curve
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+              CurvedAnimation(
+                parent: _bounceController,
+                curve: Interval(
+                  intervalStart,
+                  intervalEnd,
+                  curve: Curves.elasticOut,
+                ),
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      );
+    },
+    child: child,
+  );
+} 
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Container(
       decoration: Constants.customBoxDecoration(context),
-      padding: const EdgeInsets.only(bottom: 90.0),
+      // padding: const EdgeInsets.only(bottom: 90.0),
       child: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
@@ -217,9 +308,12 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
 
           // Library Section Header
           SliverToBoxAdapter(
-            child: _buildSectionTitle(
-              icon: Icons.local_library_rounded,
-              title: 'Library',
+            child: _buildAnimatedCard(
+              index: 0,
+              child: _buildSectionTitle(
+                icon: Icons.local_library_rounded,
+                title: 'Library',
+              ),
             ),
           ),
 
@@ -237,7 +331,10 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final item = _quickActions[index];
-                  return _buildQuickActionCard(item);
+                  return _buildAnimatedCard(
+                    index: index + 1,
+                    child: _buildQuickActionCard(item),
+                  );
                 },
                 childCount: _quickActions.length,
               ),
@@ -277,6 +374,49 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                         ),
                         const SizedBox(height: 12),
                         _buildContinueWatchingList(),
+                        const SizedBox(height: 24),
+                      ] else ...[
+                        _buildAnimatedCard(
+                          index: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20.0),
+                            child: Center(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  
+  SvgPicture.asset(
+    'assets/images/Empty-pana.svg',
+    width: 400,
+    height: 300,
+    fit: BoxFit.cover,
+    // color: Colors.grey.shade300,
+    // colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    'No lessons to continue',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                      color: Colors.grey.shade600,
+                                      fontFamily: 'Urbanist',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'When you watch a lesson, it will show up here for quick access.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 14,
+                                      fontFamily: 'Urbanist',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ),
+                        ),),
                         const SizedBox(height: 24),
                       ],
 

@@ -34,8 +34,8 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
   bool _showControls = true;
   int _selectedVideoIndex = 0;
   late TabController _tabController;
-  double _playbackSpeed = 1.0;
-  bool _isLooping = false;
+  final double _playbackSpeed = 1.0;
+  final bool _isLooping = false;
 
   List<dynamic> _videos = []; // Can be DashboardVideoModel or VideoModel
   bool _isLoadingVideos = false;

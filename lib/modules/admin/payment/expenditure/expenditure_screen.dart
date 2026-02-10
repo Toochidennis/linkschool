@@ -7,7 +7,6 @@ import 'package:linkschool/modules/admin/payment/expenditure/add_expenditure_scr
 import 'package:linkschool/modules/admin/payment/expenditure/expenditure_report_payment_screen.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/expense_history.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';

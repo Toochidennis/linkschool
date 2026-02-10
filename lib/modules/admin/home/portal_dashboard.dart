@@ -7,8 +7,7 @@ import 'package:linkschool/modules/admin/payment/payment_dashboard_screen.dart';
 import 'package:linkschool/modules/admin/result/result_dashboard_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/bottom_nav_item.dart';
-import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
+import 'package:linkschool/modules/common/flat_bottom_navigation.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart'; // Import the AuthProvider
@@ -52,6 +51,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 18),
       child: SafeArea(
+        bottom: false,
         child: AppBar(
           toolbarHeight: kToolbarHeight + 18,
           backgroundColor: AppColors.paymentTxtColor1,
@@ -159,39 +159,72 @@ class _PortalDashboardState extends State<PortalDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const ValueKey('portal_dashboard'),
-      appBar: _buildAppBar(context),
       body: _buildBodyItem(
           _selectedIndex, context), // Pass context to _buildBodyItem
-      bottomNavigationBar: CustomNavigationBar(
-        actionButtonImagePath: 'assets/icons/explore.svg',
-        appBarItems: [
-          createBottomNavIcon(
-            imagePath: 'assets/icons/home.svg',
-            text: 'Home',
+      bottomNavigationBar: FlatBottomNavigation(
+        items: [
+          // NavigationItem(
+          //   iconPath: 'assets/icons/home.svg',
+          //   activeIconPath: 'assets/icons/home_fill.svg',
+          //   label: 'Home',
+          // ),
+
+           NavigationItem(
+            iconPath: 'assets/icons/home.svg',
+            activeIconPath: 'assets/icons/fill_home.svg',
+            label: 'Home',
+           
           ),
-          createBottomNavIcon(
-            imagePath: 'assets/icons/result.svg',
-            text: 'Results',
+          // NavigationItem(
+          //   iconPath: 'assets/icons/result.svg',
+          //   label: 'Results',
+          // ),
+            NavigationItem(
+              iconPath: 'assets/icons/two_pager.svg',
+              activeIconPath: 'assets/icons/two_pager_fill.svg',
+              label: 'Result',
+              
+            ),
+          NavigationItem(
+            iconPath: 'assets/icons/portal.svg',
+            label: 'Explore',
+                iconWidth: 24.0,
+        iconHeight: 25.0,
+        flipIcon: true,
+            color: const Color(0xFF1E3A8A),
           ),
-          createBottomNavIcon(
-            imagePath: 'assets/icons/e-learning.svg',
-            text: 'E-learning',
-          ),
-          createBottomNavIcon(
-            imagePath: 'assets/icons/profile.svg',
-            text: 'Payment',
+          // NavigationItem(
+          //   iconPath: 'assets/icons/e-learning.svg',
+          //   label: 'E-learning',
+          // ),
+            NavigationItem(
+              iconPath: 'assets/icons/globe_book.svg',
+              activeIconPath: 'assets/icons/globe_book.svg',
+              label: 'E-learning',
+              
+            ),
+          NavigationItem(
+            iconPath: 'assets/icons/profile.svg',
+                activeIconPath: 'assets/icons/person_fill.svg',
+            label: 'Payment',
           ),
         ],
-        bodyItems: List.generate(
-            4, (index) => _buildBodyItem(index, context)), // Pass context
+        // Map body index to navigation slot (Explore occupies center index 2)
+        selectedIndex: _selectedIndex >= 2 ? _selectedIndex + 1 : _selectedIndex,
         onTabSelected: (index) {
+          // Explore slot - switch back to Explore dashboard
+          if (index == 2) {
+            widget.onSwitch(false);
+            return;
+          }
+
+          // Adjust index for body items (skip Explore slot)
+          final adjustedIndex = index > 2 ? index - 1 : index;
           setState(() {
-            _selectedIndex = index;
+            _selectedIndex = adjustedIndex;
           });
-          widget.onTabSelected(index);
+          widget.onTabSelected(adjustedIndex);
         },
-        onSwitch: widget.onSwitch,
-        selectedIndex: _selectedIndex,
       ),
     );
   }
