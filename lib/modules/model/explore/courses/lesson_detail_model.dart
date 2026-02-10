@@ -28,24 +28,26 @@ class LessonDetailResponse {
 
 class LessonDetailData {
   final Lesson lesson;
-  final String? submissionUrl;
+  final Submission? submission;
 
   LessonDetailData({
     required this.lesson,
-    this.submissionUrl,
+    this.submission,
   });
 
   factory LessonDetailData.fromJson(Map<String, dynamic> json) {
     return LessonDetailData(
       lesson: Lesson.fromJson(json['lesson'] ?? {}),
-      submissionUrl: json['submission'],
+      submission: json['submission'] != null
+          ? Submission.fromJson(json['submission'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'lesson': lesson.toJson(),
-      'submission': submissionUrl,
+      'submission': submission?.toJson(),
     };
   }
 }
@@ -67,6 +69,7 @@ class Lesson {
   final String lessonDate;
   final String? assignmentDueDate;
   final bool hasQuiz;
+  final LiveSessionInfo? liveSessionInfo;
 
   Lesson({
     required this.id,
@@ -85,6 +88,7 @@ class Lesson {
     required this.lessonDate,
     this.assignmentDueDate,
     required this.hasQuiz,
+    this.liveSessionInfo,
   });
 
   factory Lesson.fromJson(Map<String, dynamic> json) {
@@ -105,6 +109,9 @@ class Lesson {
       lessonDate: json['lesson_date'] ?? '',
       assignmentDueDate: json['assignment_due_date'],
       hasQuiz: json['has_quiz'] ?? false,
+      liveSessionInfo: json['live_session_info'] != null
+          ? LiveSessionInfo.fromJson(json['live_session_info'])
+          : null,
     );
   }
 
@@ -126,6 +133,71 @@ class Lesson {
       'lesson_date': lessonDate,
       'assignment_due_date': assignmentDueDate,
       'has_quiz': hasQuiz,
+      'live_session_info': liveSessionInfo?.toJson(),
+    };
+  }
+}
+
+class LiveSessionInfo {
+  final String? url;
+  final String? meetingId;
+  final String? passcode;
+  final String? startTime;
+  final String? endTime;
+
+  LiveSessionInfo({
+    this.url,
+    this.meetingId,
+    this.passcode,
+    this.startTime,
+    this.endTime,
+  });
+
+  factory LiveSessionInfo.fromJson(Map<String, dynamic> json) {
+    return LiveSessionInfo(
+      url: json['url'],
+      meetingId: json['meeting_id'],
+      passcode: json['passcode'],
+      startTime: json['start_time'],
+      endTime: json['end_time'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'url': url,
+      'meeting_id': meetingId,
+      'passcode': passcode,
+      'start_time': startTime,
+      'end_time': endTime,
+    };
+  }
+}
+
+class Submission {
+  final String? assignment;
+  final int? quizScore;
+  final String? submittedAt;
+
+  Submission({
+    this.assignment,
+    this.quizScore,
+    this.submittedAt,
+  });
+
+  factory Submission.fromJson(Map<String, dynamic> json) {
+    return Submission(
+      assignment: json['assignment'],
+      quizScore: json['quiz_score'],
+      submittedAt: json['submitted_at'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'assignment': assignment,
+      'quiz_score': quizScore,
+      'submitted_at': submittedAt,
     };
   }
 }

@@ -82,7 +82,7 @@ class CourseDetailScreen extends StatefulWidget {
 }
 
 class _CourseDetailScreenState extends State<CourseDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin,WidgetsBindingObserver  {
       static const platform = MethodChannel('com.linkskool.app/downloads');
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
@@ -113,10 +113,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? assignmentDescription;
   String? materialUrl;
   String? certificateUrl;
-  String? submissionUrl;
+  Submission? _submission;
   String? zoomUrl;
   String? recordedUrl;
   String? classDate;
+  String? liveSessionStartTime;
+  String? liveSessionEndTime;
   bool _dataLoaded = false;
   bool _hasVideo = false;
   bool _requestSent = false;
@@ -126,6 +128,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _lessonHasAssignment = false;
   bool _isFinalLesson = false;
   bool _isMinor = false;
+  bool _isNavigatingAway = false;
+bool _shouldShowAdOnResume = false;
+
+  AppOpenAd? _appOpenAd;
+bool _isAppOpenAdLoaded = false;
+
+DateTime? _lastPauseTime;
 
   // Interstitial Ad
   InterstitialAd? _interstitialAd;
@@ -143,7 +152,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool get _shouldShowCertificate =>
       _isFinalLesson && certificateUrl?.isNotEmpty == true;
   bool get _hasSubmittedAssignment =>
-      submissionUrl?.isNotEmpty == true;
+      _submission?.assignment?.isNotEmpty == true;
+  String? get _effectiveSessionStart =>
+      liveSessionStartTime?.isNotEmpty == true ? liveSessionStartTime : null;
+  String? get _effectiveSessionEnd =>
+      liveSessionEndTime?.isNotEmpty == true ? liveSessionEndTime : null;
   String? get _effectiveAssignmentUrl =>
       assignmentUrl?.isNotEmpty == true ? assignmentUrl : widget.assignmentUrl;
   String? get _effectiveAssignmentDescription =>
@@ -158,6 +171,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       classDate?.isNotEmpty == true ? classDate : widget.classDate;
        bool _isInitializing = false;
        bool _hasAppliedLessonData = false;
+
+       RewardedAd? _rewardedAd;
+bool _isRewardedAdLoaded = false;
+bool _quizUnlocked = false;
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -193,6 +210,8 @@ void initState() {
   _loadSubmissionStatus();
   _loadActiveProfile();
 
+  WidgetsBinding.instance.addObserver(this);
+
 
   
   // Only seed widget data, don't initialize video yet
@@ -219,6 +238,40 @@ void initState() {
   
   // Initialize interstitial ad
   _loadInterstitialAd();
+   Future.delayed(const Duration(seconds: 2), () {
+    if (mounted) {
+      _loadAppOpenAd();
+    }
+  });
+}
+
+
+@override
+void didChangeAppLifecycleState(AppLifecycleState state) {
+  super.didChangeAppLifecycleState(state);
+  
+  if (state == AppLifecycleState.paused) {
+    // Only mark for ad if not navigating away
+    if (!_isNavigatingAway) {
+      _lastPauseTime = DateTime.now();
+      _shouldShowAdOnResume = true;
+      print('App paused (real background) at: $_lastPauseTime');
+    } else {
+      print('App paused due to navigation, skipping ad flag');
+    }
+  } else if (state == AppLifecycleState.resumed) {
+    // Only show ad if it was a real background event
+    if (_shouldShowAdOnResume) {
+      print('App resumed from real background, attempting to show App Open Ad');
+      _showAppOpenAd();
+      _shouldShowAdOnResume = false;
+    } else {
+      print('App resumed from navigation, skipping ad');
+    }
+    
+    // Reset navigation flag
+    _isNavigatingAway = false;
+  }
 }
 
   void _seedContentFromWidget() {
@@ -288,6 +341,399 @@ void initState() {
     });
   }
 
+  void _loadAppOpenAd() {
+  // Don't load if user is a minor
+  // if (_isMinor == true) return;
+  
+  final AdRequest request;
+  if (_isMinor == true) {
+    request = AdRequest(nonPersonalizedAds: true);
+    print('AppOpenAd: Loading with nonPersonalizedAds for minor');
+  } else {
+    request = AdRequest();
+  }
+
+  AppOpenAd.load(
+    adUnitId: EnvConfig.programAdsOpenApiKey,
+    request: request,
+  
+    adLoadCallback: AppOpenAdLoadCallback(
+      onAdLoaded: (AppOpenAd ad) {
+        _appOpenAd = ad;
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = true;
+          });
+        }
+        print('App Open Ad loaded successfully');
+      },
+      onAdFailedToLoad: (LoadAdError error) {
+        print('App Open Ad failed to load: $error');
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        }
+      },
+    ),
+   
+  );
+}
+
+
+
+
+void _showAppOpenAd() {
+  // Check if enough time has passed since last ad
+  // if (_lastAppOpenAdTime != null) {
+  //   final timeSinceLastAd = DateTime.now().difference(_lastAppOpenAdTime!);
+  //   if (timeSinceLastAd < _minTimeBetweenAds) {
+  //     print('App Open Ad: Cooling period active, ${_minTimeBetweenAds.inHours - timeSinceLastAd.inHours} hours remaining');
+  //     return;
+  //   }
+  // }
+
+  
+
+  if (_isAppOpenAdLoaded && _appOpenAd != null) {
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (AppOpenAd ad) {
+        print('App Open Ad showed');
+      },
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        print('App Open Ad dismissed');
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+    
+        // Reload for next time
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        print('App Open Ad failed to show: $error');
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        // Reload for next time
+        _loadAppOpenAd();
+      },
+    );
+    
+    _appOpenAd!.show();
+  } else {
+    print('App Open Ad not ready to show');
+  }
+}
+
+void _loadRewardedAd() {
+  final AdRequest request;
+  if (_isMinor == true) {
+    request = AdRequest(nonPersonalizedAds: true);
+    print('RewardedAd: Loading with nonPersonalizedAds for minor');
+  } else {
+    request = AdRequest();
+  }
+
+  RewardedAd.load(
+    adUnitId: EnvConfig.programRewardsAdsKey,
+    request: request,
+    rewardedAdLoadCallback: RewardedAdLoadCallback(
+      onAdLoaded: (RewardedAd ad) {
+        _rewardedAd = ad;
+        if (mounted) {
+          setState(() {
+            _isRewardedAdLoaded = true;
+          });
+        }
+        print('Rewarded Ad loaded successfully');
+      },
+      onAdFailedToLoad: (LoadAdError error) {
+        print('Rewarded Ad failed to load: $error');
+        if (mounted) {
+          setState(() {
+            _isRewardedAdLoaded = false;
+          });
+        }
+      },
+    ),
+  );
+}
+
+void _showRewardedAdAndUnlockQuiz() {
+  if (_isRewardedAdLoaded && _rewardedAd != null) {
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (RewardedAd ad) {
+        print('Rewarded ad showed');
+      },
+      onAdDismissedFullScreenContent: (RewardedAd ad) {
+        print('Rewarded ad dismissed');
+        ad.dispose();
+        _rewardedAd = null;
+        _isRewardedAdLoaded = false;
+        // Reload for next time
+        _loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        print('Rewarded ad failed to show: $error');
+        ad.dispose();
+        _rewardedAd = null;
+        _isRewardedAdLoaded = false;
+        // Reload for next time
+        _loadRewardedAd();
+      },
+    );
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        print('User earned reward: ${reward.amount} ${reward.type}');
+        // Unlock the quiz
+        setState(() {
+          _quizUnlocked = true;
+        });
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Quiz unlocked! You can now retake the quiz.'),
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        
+        // Navigate to quiz after a short delay
+        Future.delayed(const Duration(seconds: 1), () {
+          _navigateToQuiz();
+        });
+      },
+    );
+  } else {
+    // Ad not loaded, show error
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ad not ready. Please try again in a moment.'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    // Try to load the ad
+    _loadRewardedAd();
+  }
+}
+
+void _showUnlockQuizDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    
+    builder: (BuildContext context) {
+      return Dialog(
+        backgroundColor: Colors.white,
+      
+        shape: RoundedRectangleBorder(
+          
+          borderRadius: BorderRadius.circular(16.0), // Optional: for smoother corners
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.99, // Adjustable: e.g., 0.7 for narrower, or fixed like 320.0
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Lock Icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA500).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lock_outline,
+                    size: 40,
+                    color: Color(0xFFFFA500),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Title
+                const Text(
+                  'Quiz Locked',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Message
+                const Text(
+                  'Watch a short ad to unlock and retake this quiz.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Info box
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3E0),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFFFB74D).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: Color(0xFFFF9800),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'After watching the ad, you can retake the quiz immediately.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.grey.shade700,
+                          side: BorderSide(
+                            color: Colors.grey.shade400,
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showRewardedAdAndUnlockQuiz();
+                        },
+                        icon: const Icon(Icons.play_circle_outline, size: 20),
+                        label: const Text(
+                          'Watch Ad',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFA500),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Future<void> _navigateToQuiz() async {
+  // Mark that we're navigating away
+  setState(() {
+    _isNavigatingAway = true;
+  });
+  
+  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  final user = cbtUserProvider.currentUser;
+  final activeProfile = _activeProfile ??
+      user?.profiles.firstWhere(
+        (p) => true,
+        orElse: () => CbtUserProfile(
+          id: 0,
+          firstName: 'User',
+          lastName: '',
+          avatar: null,
+        ),
+      );
+  final userName = activeProfile != null ? _profileName(activeProfile) : 'User';
+  final userEmail = user?.email ?? '';
+  final userPhone = user?.phone ?? '';
+  final profileId = activeProfile?.id?.toString() ??
+      widget.profileId?.toString() ??
+      '0';
+  final currentVideo = _courseVideos[_selectedVideoIndex];
+  final videoTitle = currentVideo['title'] as String;
+
+  final result = await Navigator.push<int>(
+    context,
+    MaterialPageRoute(
+      builder: (context) => QuizScreen(
+        courseTitle: widget.courseTitle,
+        lessonTitle: videoTitle,
+        lessonId: widget.lessonId!,
+        cohortId: widget.cohortId,
+        profileId: profileId,
+        userName: userName,
+        userEmail: userEmail,
+        userPhone: userPhone,
+      ),
+    ),
+  );
+
+  // Reset navigation flag when returning
+  setState(() {
+    _isNavigatingAway = false;
+  });
+
+  // Reload quiz data when returning from quiz
+  await _loadQuizData();
+
+  // Reset unlock status
+  setState(() {
+    _quizUnlocked = false;
+  });
+}
+
   
 
   void _loadInterstitialAd() {
@@ -310,7 +756,7 @@ void initState() {
  
    
     InterstitialAd.load(
-      adUnitId: EnvConfig.googleInterstitialAdsApiKey,
+      adUnitId: EnvConfig.programInterstitialAdsApiKey,
       request:request,
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {
@@ -371,35 +817,41 @@ void initState() {
       widget.lessons != null && widget.lessonIndex != null;
 
   void _navigateToLesson(int targetIndex) {
-    if (!_hasLessonNavigation) return;
-    final lessons = widget.lessons!;
-    if (targetIndex < 0 || targetIndex >= lessons.length) return;
-    final lesson = lessons[targetIndex];
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CourseDetailScreen(
-          courseTitle: lesson.title,
-          courseName: widget.courseName,
-          courseDescription: lesson.description,
-          provider: widget.provider,
-          videoUrl: lesson.videoUrl,
-          assignmentUrl: null,
-          assignmentDescription: null,
-          materialUrl: null,
-          zoomUrl: null,
-          recordedUrl: null,
-          classDate: null,
-          cohortId: widget.cohortId,
-          profileId: widget.profileId,
-          lessonId: lesson.id,
-          lessons: lessons,
-          lessonIndex: targetIndex,
-          onLessonCompleted: widget.onLessonCompleted,
-        ),
+  if (!_hasLessonNavigation) return;
+  final lessons = widget.lessons!;
+  if (targetIndex < 0 || targetIndex >= lessons.length) return;
+  final lesson = lessons[targetIndex];
+  
+  // Mark that we're navigating away
+  setState(() {
+    _isNavigatingAway = true;
+  });
+  
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CourseDetailScreen(
+        courseTitle: lesson.title,
+        courseName: widget.courseName,
+        courseDescription: lesson.description,
+        provider: widget.provider,
+        videoUrl: lesson.videoUrl,
+        assignmentUrl: null,
+        assignmentDescription: null,
+        materialUrl: null,
+        zoomUrl: null,
+        recordedUrl: null,
+        classDate: null,
+        cohortId: widget.cohortId,
+        profileId: widget.profileId,
+        lessonId: lesson.id,
+        lessons: lessons,
+        lessonIndex: targetIndex,
+        onLessonCompleted: widget.onLessonCompleted,
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _completeLesson() {
     final lessonId = widget.lessonId;
@@ -487,7 +939,7 @@ void initState() {
     );
   }
 
-  void _applyLessonData(Lesson lesson, {String? submissionUrl}) {
+  void _applyLessonData(Lesson lesson, {Submission? submission}) {
   final resolvedVideoUrl =
       lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
   
@@ -512,10 +964,14 @@ void initState() {
     assignmentDescription = lesson.assignmentInstructions;
     materialUrl = lesson.materialUrl;
     certificateUrl = lesson.certificateUrl;
-    this.submissionUrl = submissionUrl;
-    zoomUrl = lesson.videoUrl;
+    _submission = submission;
+    zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
+        ? lesson.liveSessionInfo!.url
+        : widget.zoomUrl;
     recordedUrl = lesson.recordedVideoUrl;
     classDate = lesson.lessonDate;
+    liveSessionStartTime = lesson.liveSessionInfo?.startTime;
+    liveSessionEndTime = lesson.liveSessionInfo?.endTime;
     _hasVideo = resolvedVideoUrl.isNotEmpty;
     _lessonHasQuiz = lesson.hasQuiz;
     _lessonHasAssignment = lesson.assignmentUrl.isNotEmpty;
@@ -1076,19 +1532,16 @@ bool isYouTubeUrl(String url) {
   return false;
 }
 
-  /// Determine the zoom class status based on date and recorded URL
-  /// Priority: Check recorded_url first, then zoom_url
- /// Determine the zoom class status based on date and recorded URL
-/// Priority: Check class date/time first, then fallback to recorded URL
-/// Determine the zoom class status based on date and recorded URL
-/// Priority: Check class date/time first, then fallback to recorded URL
+  /// Determine the live session status based on start/end time and recorded URL.
+  /// Priority: Check live session first, then fallback to recorded URL.
 Map<String, dynamic> _getZoomStatus() {
   final hasRecordedUrl =
       _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
-  final hasZoomUrl = _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
+  final hasLiveUrl =
+      _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
 
   // If neither URL exists, return unavailable
-  if (!hasRecordedUrl && !hasZoomUrl) {
+  if (!hasRecordedUrl && !hasLiveUrl) {
     return {
       'status': 'unavailable',
       'message': 'No live class or recording available for this lesson.',
@@ -1098,25 +1551,30 @@ Map<String, dynamic> _getZoomStatus() {
   }
 
   // PRIORITY 1: Check zoom URL with date logic FIRST
-  if (hasZoomUrl) {
-    // If no date provided, assume class is available
-    if (_effectiveClassDate == null || _effectiveClassDate!.isEmpty) {
+  if (hasLiveUrl) {
+    // If no time provided, assume session is available
+    if (_effectiveSessionStart == null || _effectiveSessionStart!.isEmpty) {
       return {
         'status': 'available',
-        'message': 'Join the live class session.',
+        'message': 'Live session link is available.',
         'buttonText': 'Join Live Class',
         'url': _effectiveZoomUrl,
       };
     }
 
     try {
-      final classDateTime = DateTime.parse(_effectiveClassDate!);
+      final classDateTime = DateTime.parse(_effectiveSessionStart!);
       final now = DateTime.now();
 
-      // Assuming class duration is 3 hours (you can make this configurable)
-      final classEndTime = classDateTime.add(const Duration(hours: 3));
+      final DateTime classEndTime;
+      if (_effectiveSessionEnd != null && _effectiveSessionEnd!.isNotEmpty) {
+        classEndTime = DateTime.parse(_effectiveSessionEnd!);
+      } else {
+        // Assuming class duration is 3 hours (fallback)
+        classEndTime = classDateTime.add(const Duration(hours: 3));
+      }
 
-      // Class hasn't started yet
+      // Session hasn't started yet
       if (now.isBefore(classDateTime)) {
         final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
         final dateStr = formatter.format(classDateTime);
@@ -1134,53 +1592,55 @@ Map<String, dynamic> _getZoomStatus() {
         
         return {
           'status': 'scheduled',
-          'message': 'Live class scheduled for $dateStr$timeUntil',
+          'message': 'Live session scheduled for $dateStr$timeUntil',
           'buttonText': 'Scheduled',
           'url': null,
           'classDate': classDateTime,
         };
       }
 
-      // Class is ongoing
+      // Session is ongoing
       if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
         return {
           'status': 'ongoing',
-          'message': 'Live class is in progress! Join now to participate.',
+          'message': 'Live session is in progress! Join now to participate.',
           'buttonText': 'Join Live Class',
           'url': _effectiveZoomUrl,
         };
       }
 
-      // Class has ended - check if recorded video is available
+      // Session has ended - check if recorded video is available
       if (hasRecordedUrl) {
         return {
           'status': 'recorded',
-          'message': 'Live class has ended. Watch the recorded session at your convenience.',
+          'message':
+              'Live session has ended. Watch the recorded session at your convenience.',
           'buttonText': 'Watch Recorded Class',
           'url': _effectiveRecordedUrl,
         };
       }
 
-      // Class has ended but no recorded video yet
+      // Session has ended but no recorded video yet
       return {
         'status': 'pending',
-        'message': 'Live class has ended. The recorded session will be available soon. Check back later.',
+        'message':
+            'Live session has ended. The recorded session will be available soon. Check back later.',
         'buttonText': 'Recording Pending',
         'url': null,
       };
     } catch (e) {
       debugPrint('Error parsing class date: $e');
-      // If date parsing fails but we have a Zoom URL, make it available
+      // If time parsing fails but we have a live URL, make it available
       return {
         'status': 'available',
-        'message': 'Join the live class session.',
+        'message': 'Live session link is available.',
         'buttonText': 'Join Live Class',
         'url': _effectiveZoomUrl,
       };
     }
   }
 
-  // PRIORITY 2: If only recorded URL exists (no zoom URL), show it
+  // PRIORITY 2: If only recorded URL exists (no live URL), show it
   if (hasRecordedUrl) {
     return {
       'status': 'recorded',
@@ -1651,6 +2111,11 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
 
   @override
   void dispose() {
+
+     WidgetsBinding.instance.removeObserver(this);
+  
+  // Dispose app open ad
+  _appOpenAd?.dispose();
     _videoController?.dispose();
     _chewieController?.dispose();
     _youtubeController?.dispose();
@@ -1672,23 +2137,26 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     super.dispose();
   }
 
-  Future<void> _handleBackButton() async {
-    final currentOrientation = MediaQuery.of(context).orientation;
+Future<void> _handleBackButton() async {
+  final currentOrientation = MediaQuery.of(context).orientation;
 
-    if (currentOrientation == Orientation.landscape) {
-      // In landscape: rotate to portrait, don't pop
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-      ]);
-      await SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual,
-        overlays: SystemUiOverlay.values,
-      );
-    } else {
-      // In portrait: show interstitial ad then pop the screen
-      _showInterstitialAdAndNavigateBack();
-    }
+  if (currentOrientation == Orientation.landscape) {
+    // In landscape: rotate to portrait, don't pop
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+  } else {
+    // In portrait: mark navigation and show interstitial ad then pop the screen
+    setState(() {
+      _isNavigatingAway = true;
+    });
+    _showInterstitialAdAndNavigateBack();
   }
+}
 
   void _showSubmitAssignmentModal(BuildContext context) {
     // Get active profile
@@ -1804,6 +2272,11 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
                           // PDF Upload Button
                           InkWell(
                             onTap: () async {
+                              if (mounted) {
+                                setState(() {
+                                  _isNavigatingAway = true;
+                                });
+                              }
                               try {
                                 FilePickerResult? result =
                                     await FilePicker.platform.pickFiles(
@@ -1863,6 +2336,11 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
                                     backgroundColor: Colors.red,
                                   ),
                                 );
+                              }
+                              if (mounted) {
+                                setState(() {
+                                  _isNavigatingAway = false;
+                                });
                               }
                             },
                             child: Container(
@@ -2404,18 +2882,26 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
 }
 
 
-  Future<void> _previewAssignment(String assignmentUrl) async {
-    // Navigate to a PDF preview screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _AssignmentPreviewScreen(
-          assignmentUrl: assignmentUrl,
-          assignmentTitle: 'Assignment',
-        ),
+// In _previewAssignment
+Future<void> _previewAssignment(String assignmentUrl) async {
+  setState(() {
+    _isNavigatingAway = true;
+  });
+  
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => _AssignmentPreviewScreen(
+        assignmentUrl: assignmentUrl,
+        assignmentTitle: 'Assignment',
       ),
-    );
-  }
+    ),
+  );
+  
+  setState(() {
+    _isNavigatingAway = false;
+  });
+}
 
   // Helper function to get public Downloads directory
   Future<Directory?> _getDownloadsDirectory() async {
@@ -2734,22 +3220,20 @@ Widget build(BuildContext context) {
         }
 
         final lesson = provider.lessonDetailData?.lesson;
-        final submissionUrl = provider.lessonDetailData?.submissionUrl;
+        final submission = provider.lessonDetailData?.submission;
 
         if (lesson != null && !_dataLoaded) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              _applyLessonData(lesson, submissionUrl: submissionUrl);
+              _applyLessonData(lesson, submission: submission);
             }
           });
         }
-        if (submissionUrl != null &&
-            submissionUrl.isNotEmpty &&
-            submissionUrl != this.submissionUrl) {
+        if (submission != null && submission != _submission) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               setState(() {
-                this.submissionUrl = submissionUrl;
+                _submission = submission;
               });
             }
           });
@@ -3850,7 +4334,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _hasSubmittedAssignment
-                        ? () => _previewAssignment(submissionUrl!)
+                        ? () => _previewAssignment(_submission!.assignment!)
                         : () {
                             _showSubmitAssignmentModal(context);
                           },
@@ -3938,246 +4422,252 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
   }
 
   Widget _buildReviewsTab() {
-    // Define controllers for use in the quiz submission
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController phoneController = TextEditingController();
+  // Check if score is below threshold
+  final bool isBelowThreshold = _quizTaken && _quizScore < 50;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Take Quiz Card (Zoom style)
+  return ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      // Low Score Warning - Only show if score is below 50
+      if (isBelowThreshold) ...[
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFFFFEBEE),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: const Color(0xFFEF5350).withOpacity(0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with icon
               Row(
                 children: [
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFA500),
+                      color: const Color(0xFFEF5350),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
-                      Icons.quiz,
+                      Icons.warning_outlined,
                       color: Colors.white,
                       size: 24,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Lesson Quiz',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFFFA500),
-                      letterSpacing: -0.5,
+                  const Expanded(
+                    child: Text(
+                      'Score Below Threshold',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFEF5350),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              // Message
               Text(
-                'Find out how much you learnt by taking a Test',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Button
-              SizedBox(
-                width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                    final cbtUserProvider =
-                        Provider.of<CbtUserProvider>(context, listen: false);
-                    final user = cbtUserProvider.currentUser;
-                    final activeProfile = _activeProfile ??
-                        user?.profiles.firstWhere((p) => true,
-                            orElse: () => CbtUserProfile(
-                                id: 0,
-                                firstName: 'User',
-                                lastName: '',
-                                avatar: null));
-                    final userName =
-                        activeProfile != null ? _profileName(activeProfile) : 'User';
-                    final userEmail = user?.email ?? '';
-                    final userPhone = user?.phone ?? '';
-                    final profileId = activeProfile?.id?.toString() ??
-                        widget.profileId?.toString() ??
-                        '0';
-                    final currentVideo = _courseVideos[_selectedVideoIndex];
-                    final videoTitle = currentVideo['title'] as String;
-
-                    final result = await Navigator.push<int>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => QuizScreen(
-                          courseTitle: widget.courseTitle,
-                          lessonTitle: videoTitle,
-                          lessonId: widget.lessonId!,
-                          cohortId: widget.cohortId,
-                          profileId: profileId,
-                          userName: userName,
-                          userEmail: userEmail,
-                          userPhone: userPhone,
-                        ),
-                      ),
-                    );
-
-                    // Reload quiz data when returning from quiz
-                    await _loadQuizData();
-
-                    // If we have pending assignment data and quiz was completed
-                    if (result != null &&
-                        _pendingUsername != null &&
-                        _quizTaken) {
-                      _prepareAndPrintPayload(
-                        emailController: emailController,
-                        phoneController: phoneController,
-                        score: result,
-                        assignmentFileName: _pendingAssignmentFileName,
-                        assignmentBase64: _pendingAssignmentFileBase64,
-                        username: _pendingUsername!,
-                      );
-
-                      // Clear pending data
-                      await _clearPendingAssignmentData();
-
-                      // Open email app
-                      _openEmailApp(_pendingUsername!);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFA500),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    _quizTaken ? 'Retake Quiz' : 'Take Quiz',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Lesson Assessment Progress
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Lesson Assessment',
+                'Your current score of $_quizScore% does not meet the program\'s minimum threshold of 50%. Please retake the quiz to improve your score.',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  fontSize: 14,
+                  color: Colors.grey.shade800,
+                  height: 1.5,
                 ),
               ),
-              const SizedBox(height: 20),
-              // Circular Progress
-              Center(
-                child: SizedBox(
-                  width: 160,
-                  height: 160,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Background circle
-                      SizedBox(
-                        width: 160,
-                        height: 160,
-                        child: CircularProgressIndicator(
-                          value: 1.0,
-                          strokeWidth: 12,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            const Color(0xFFFFA500).withOpacity(0.15),
-                          ),
-                        ),
-                      ),
-                      // Progress circle
-                      SizedBox(
-                        width: 160,
-                        height: 160,
-                        child: CircularProgressIndicator(
-                          value: _quizScore / 100,
-                          strokeWidth: 12,
-                          backgroundColor: Colors.transparent,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFFFFA500),
-                          ),
-                        ),
-                      ),
-                      // Score text
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$_quizScore/100',
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFFFA500),
-                            ),
-                          ),
-                          if (_quizTaken)
-                            Text(
-                              '$_quizScore%',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Take Quiz button (below progress)
             ],
           ),
         ),
+        const SizedBox(height: 16),
       ],
-    );
-  }
+
+      // Take Quiz Card
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with icon
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA500),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.quiz,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Lesson Quiz',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFFFA500),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Message
+            const Text(
+              'Find out how much you learnt by taking a Test',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
+                  if (isBelowThreshold && !_quizUnlocked) {
+                    _showUnlockQuizDialog();
+                    return;
+                  }
+
+                  // Otherwise, navigate to quiz directly
+                  _navigateToQuiz();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFA500),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  _quizTaken ? 'Retake Quiz' : 'Take Quiz',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 24),
+
+      // Lesson Assessment Progress
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Lesson Assessment',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Circular Progress
+            Center(
+              child: SizedBox(
+                width: 160,
+                height: 160,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Background circle
+                    SizedBox(
+                      width: 160,
+                      height: 160,
+                      child: CircularProgressIndicator(
+                        value: 1.0,
+                        strokeWidth: 12,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          const Color(0xFFFFA500).withOpacity(0.15),
+                        ),
+                      ),
+                    ),
+                    // Progress circle with color based on score
+                    SizedBox(
+                      width: 160,
+                      height: 160,
+                      child: CircularProgressIndicator(
+                        value: _quizScore / 100,
+                        strokeWidth: 12,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _quizScore >= 50
+                              ? const Color(0xFF4CAF50) // Green for passing
+                              : const Color(0xFFEF5350), // Red for failing
+                        ),
+                      ),
+                    ),
+                    // Score text
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$_quizScore/100',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: _quizScore >= 50
+                                ? const Color(0xFF4CAF50)
+                                : const Color(0xFFEF5350),
+                          ),
+                        ),
+                        if (_quizTaken)
+                          Text(
+                            '$_quizScore%',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
 
   String _calculateTotalDuration() {
     int totalMinutes = 0;
@@ -4999,6 +5489,8 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     return false;
   }
 }
+
+
 
 
 

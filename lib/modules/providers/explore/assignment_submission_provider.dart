@@ -36,6 +36,11 @@ class AssignmentSubmissionProvider with ChangeNotifier {
       print("=====ssignment datas=====");
       print("  - name: $name");
     print("  - quiz_score: $quizScore");
+    print("  - lesson_id: $lessonId");
+    print("  - cohort_id: $cohortId");
+    print("  - profile_id: $profileId");
+    print("  - Assignemt: $assignments");
+
     print("  - assignments count: ${assignments?.length ?? 0}");
       final result = await _service.submitAssignment(
         name: name,

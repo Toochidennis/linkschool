@@ -113,7 +113,7 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
 
   void _loadInterstitialAd() {
     InterstitialAd.load(
-      adUnitId: EnvConfig.googleInterstitialAdsApiKey,
+      adUnitId: EnvConfig.NewsInterstitialAdsApiKey,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {

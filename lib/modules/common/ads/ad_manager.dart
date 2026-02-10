@@ -34,7 +34,7 @@ class AdManager {
     if (_isLoading || _isLoaded) return;
     _isLoading = true;
     InterstitialAd.load(
-      adUnitId: EnvConfig.googleInterstitialAdsApiKey,
+      adUnitId: EnvConfig.googleCbtInterstitialAdsApiKey,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {

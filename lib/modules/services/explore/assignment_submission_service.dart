@@ -45,23 +45,13 @@ class AssignmentSubmissionService {
         payload["assignment"] = assignments;
       }
 
-      print("📦 Payload structure:");
-      print("  - name: $name");
-      print("  - email: $email");
-      print("  - phone: $phone");
-      print("  - quiz_score: $quizScore");
-      print("  - assignment array length: ${assignments.length}");
-      if (assignments.isNotEmpty) {
-        print("  - first assignment file_name: ${assignments[0]['file_name']}");
-        print("  - first assignment type: ${assignments[0]['type']}");
-        print(
-            "  - first assignment file length: ${assignments[0]['file']?.length ?? 0} chars");
-      }
+      
 
       // Encode JSON in background isolate to avoid blocking UI
       print("🔄 Encoding payload to JSON in background...");
+     //  print("✅ JSON encoding complete, size: ${jsonBody.length} bytes");
       final jsonBody = await compute(_encodePayloadToJson, payload);
-      print("✅ JSON encoding complete, size: ${jsonBody.length} bytes");
+     
 
       print("📤 Sending HTTP request...");
       final response = await http.post(
