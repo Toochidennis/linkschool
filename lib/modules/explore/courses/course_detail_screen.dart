@@ -1028,7 +1028,7 @@ Future<void> _navigateToQuiz() async {
     liveSessionEndTime = lesson.liveSessionInfo?.endTime;
     _hasVideo = resolvedVideoUrl.isNotEmpty;
     _lessonHasQuiz = lesson.hasQuiz;
-    _lessonHasAssignment = lesson.assignmentUrl.isNotEmpty;
+   _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
     _isFinalLesson = lesson.isFinalLesson;
     _courseVideos
       ..clear()
@@ -4188,17 +4188,60 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Download the file below and complete the assignment as instructed.',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade700,
-            height: 1.5,
+       
+ SizedBox(height: 16),
+                 Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: Color(0xFFFF9800),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Assignment Guidelines',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE65100),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Deadline: ${_formattedAssignmentDeadline()}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 24),
-
         // Current Video/Lesson Info Card
 
         const SizedBox(height: 24),
@@ -4280,7 +4323,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
           ),
 
         if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
         // Download Assignment Card
         if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
@@ -4338,59 +4381,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                     height: 1.4,
                   ),
                 ),
-                SizedBox(height: 16),
-                 Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.info_outline,
-                color: Color(0xFFFF9800),
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Assignment Guidelines',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFE65100),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade800,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Deadline: ${_formattedAssignmentDeadline()}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+               
                 const SizedBox(height: 16),
 
                 // Buttons Row
@@ -4495,55 +4486,90 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                 ),
                 const SizedBox(height: 12),
                 // Message
-                 Text(
+                Text(
                   _hasSubmittedAssignment
-                      ? 'Your assignment submission was successfull. You can preview your submission below.'
-                       :
-                  'Once you\'ve completed the assignment, submit your work here for review.',
-                  style: TextStyle(
+                      ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
+                      : 'Once you\'ve completed the assignment, submit your work here for review.',
+                  style: const TextStyle(
                     fontSize: 13,
                     color: Colors.black87,
                     height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _hasSubmittedAssignment
-                        ? () => _previewAssignment(_submission!.assignment!)
-                        : () {
+                // Buttons
+                _hasSubmittedAssignment
+                    ? Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () =>
+                                  _previewAssignment(_submission!.assignment!),
+                              icon: const Icon(Icons.visibility, size: 18),
+                              label: const Text('Preview'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF6366F1),
+                                side:
+                                    const BorderSide(color: Color(0xFF6366F1)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _showSubmitAssignmentModal(context);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6366F1),
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Resubmit',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
                             _showSubmitAssignmentModal(context);
                           },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_hasSubmittedAssignment)
-                          const Icon(Icons.visibility, size: 18),
-                        if (_hasSubmittedAssignment) const SizedBox(width: 8),
-                        Text(
-                          _hasSubmittedAssignment
-                              ? 'Preview Submitted Assignment'
-                              : 'Submit Assignment',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6366F1),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Submit Assignment',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
               ],
             ),
           ),

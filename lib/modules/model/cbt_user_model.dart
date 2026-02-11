@@ -64,6 +64,7 @@ class CbtUserModel {
   final List<CbtUserProfile> profiles;
   final String? first_name;
   final String? last_name;
+  final String? fcmToken;
 
   CbtUserModel({
     this.id,
@@ -79,6 +80,7 @@ class CbtUserModel {
     this.profiles = const [],
     this.first_name,
     this.last_name,
+    this.fcmToken,
   });
 
   /// Create CbtUserModel from JSON
@@ -100,6 +102,7 @@ class CbtUserModel {
         createdAt: user['created_at'] as String?,
         first_name: user['first_name'] as String?,
         last_name: user['last_name'] as String?,
+        fcmToken: user['fcm_token'] as String?,
         profiles: profiles,
       );
     } else {
@@ -116,6 +119,7 @@ class CbtUserModel {
         createdAt: json['created_at'] as String?,
           first_name: json['first_name'] as String?,
         last_name: json['last_name'] as String?,
+        fcmToken: json['fcm_token'] as String?,
         profiles: [],
       );
     }
@@ -136,6 +140,7 @@ class CbtUserModel {
     'subscribed': subscribed,
     'profile_picture': profilePicture ?? '',
     'reference': reference ?? '',
+    'fcm_token': fcmToken ?? '',
   };
 }
 
@@ -153,6 +158,7 @@ class CbtUserModel {
     String? reference,
     String? createdAt,
     List<CbtUserProfile>? profiles,
+    String? fcmToken,
   }) {
     return CbtUserModel(
       id: id ?? this.id,
@@ -166,6 +172,7 @@ class CbtUserModel {
       reference: reference ?? this.reference,
       createdAt: createdAt ?? this.createdAt,
       profiles: profiles ?? this.profiles,
+      fcmToken: fcmToken ?? this.fcmToken,
     );
   }
 

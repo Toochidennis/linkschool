@@ -6,6 +6,7 @@ import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/cbt_user_service.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
+import 'package:linkschool/modules/services/firebase_messaging_service.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 
@@ -255,6 +256,13 @@ await _saveUserToPreferences(_currentUser!);
     
 
     try {
+      final fcmToken = await FirebaseMessagingService().getFcmToken();
+      print('📡 FCM token retrieved: $fcmToken');
+      if (fcmToken == null || fcmToken.isEmpty) {
+        print('⚠️ FCM token is empty; continuing without it.');
+      }
+
+
       // Only POST, do not GET
       final newUser = CbtUserModel(
         last_name: name.split(' ').last,
@@ -262,6 +270,7 @@ await _saveUserToPreferences(_currentUser!);
         email: email,
         name: name,
         profilePicture: profilePicture,
+        fcmToken: fcmToken,
         attempt: 0,
         phone: "",
         subscribed: 1, // New users start as subscribed

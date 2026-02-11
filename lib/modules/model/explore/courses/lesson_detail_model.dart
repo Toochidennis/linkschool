@@ -61,7 +61,7 @@ class Lesson {
   final String videoUrl;
   final String recordedVideoUrl;
   final String materialUrl;
-  final String assignmentUrl;
+  final String? assignmentUrl;
   final String? certificateUrl;
   final String assignmentInstructions;
   final bool isFinalLesson;
@@ -80,7 +80,7 @@ class Lesson {
     required this.videoUrl,
     required this.recordedVideoUrl,
     required this.materialUrl,
-    required this.assignmentUrl,
+    this.assignmentUrl,
     this.certificateUrl,
     required this.assignmentInstructions,
     required this.isFinalLesson,
