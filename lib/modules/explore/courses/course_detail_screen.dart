@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:chewie/chewie.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -117,6 +118,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? zoomUrl;
   String? recordedUrl;
   String? classDate;
+  String? assignmentDueDate;
   String? liveSessionStartTime;
   String? liveSessionEndTime;
   bool _dataLoaded = false;
@@ -160,15 +162,28 @@ DateTime? _lastPauseTime;
   String? get _effectiveAssignmentUrl =>
       assignmentUrl?.isNotEmpty == true ? assignmentUrl : widget.assignmentUrl;
   String? get _effectiveAssignmentDescription =>
+
       assignmentDescription?.isNotEmpty == true
           ? assignmentDescription
           : widget.assignmentDescription;
+
   String? get _effectiveZoomUrl =>
       zoomUrl?.isNotEmpty == true ? zoomUrl : widget.zoomUrl;
   String? get _effectiveRecordedUrl =>
       recordedUrl?.isNotEmpty == true ? recordedUrl : widget.recordedUrl;
   String? get _effectiveClassDate =>
       classDate?.isNotEmpty == true ? classDate : widget.classDate;
+  String _formattedAssignmentDeadline() {
+    final raw = assignmentDueDate;
+    if (raw == null || raw.trim().isEmpty) {
+      return 'Not set';
+    }
+    final parsed = DateTime.tryParse(raw.trim());
+    if (parsed == null) {
+      return raw;
+    }
+    return DateFormat('E, dd MMM yyyy (hh:mm a)').format(parsed);
+  }
        bool _isInitializing = false;
        bool _hasAppliedLessonData = false;
 
@@ -521,155 +536,198 @@ void _showRewardedAdAndUnlockQuiz() {
 }
 
 void _showUnlockQuizDialog() {
+  int retrySeconds = 0;
+  String? retryMessage;
+  Timer? retryTimer;
+
+  void startRetryCountdown(StateSetter setDialogState) {
+    retryTimer?.cancel();
+    retrySeconds = 10;
+    retryMessage = 'Ad not ready yet. Please retry in $retrySeconds seconds.';
+    setDialogState(() {});
+
+    retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (retrySeconds <= 1) {
+        timer.cancel();
+        retrySeconds = 0;
+        retryMessage = null;
+        setDialogState(() {});
+        return;
+      }
+      retrySeconds -= 1;
+      retryMessage = 'Ad not ready yet. Please retry in $retrySeconds seconds.';
+      setDialogState(() {});
+    });
+  }
+
   showDialog(
     context: context,
     barrierDismissible: false,
     
     builder: (BuildContext context) {
-      return Dialog(
-        backgroundColor: Colors.white,
-      
-        shape: RoundedRectangleBorder(
-          
-          borderRadius: BorderRadius.circular(16.0), // Optional: for smoother corners
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.99, // Adjustable: e.g., 0.7 for narrower, or fixed like 320.0
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black87),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Close',
-                  ),
-                ),
-                // Lock Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFA500).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.lock_outline,
-                    size: 40,
-                    color: Color(0xFFFFA500),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Title
-                const Text(
-                  'Quiz Locked',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // Message
-                const Text(
-                  'retaking quiz is locked watch a short ad to unlock and retake this quiz.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Info box
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3E0),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFFFFB74D).withOpacity(0.3),
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.99,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black87),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        tooltip: 'Close',
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Color(0xFFFF9800),
-                        size: 20,
+                    // Lock Icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFA500).withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'After watching the ad, you can retake the quiz immediately.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
+                      child: const Icon(
+                        Icons.lock_outline,
+                        size: 40,
+                        color: Color(0xFFFFA500),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Buttons
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (!_isRewardedAdLoaded || _rewardedAd == null) {
-                        Navigator.pop(context);
-                        setState(() {
-                          _quizRetryMessage =
-                              'Ad not ready yet. Please retry taking the quiz.';
-                        });
-                        _loadRewardedAd();
-                        return;
-                      }
-
-                      setState(() {
-                        _quizRetryMessage = null;
-                      });
-                      Navigator.pop(context);
-                      _showRewardedAdAndUnlockQuiz();
-                    },
-                    icon: const Icon(Icons.play_circle_outline, size: 20),
-                    label: const Text(
-                      'Watch Ad',
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Title
+                    const Text(
+                      'Quiz Locked',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Message
+                    const Text(
+                      'This Feature is locked,please watch a short ad to unlock this feature ',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                        height: 1.5,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFA500),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
+                    const SizedBox(height: 24),
+                    
+                    // Info box
+                    if (retryMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFFFFB74D).withOpacity(0.3),
+                        ),
                       ),
-                      elevation: 0,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Color(0xFFFF9800),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              retryMessage!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),],
+                    
+                      // const SizedBox(height: 12),
+                      // Text(
+                      //   retryMessage!,
+                      //   textAlign: TextAlign.center,
+                      //   style: const TextStyle(
+                      //     fontSize: 13,
+                      //     fontWeight: FontWeight.w600,
+                      //     color: Color(0xFFEF5350),
+                      //   ),
+                      // ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Buttons
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: retrySeconds > 0
+                            ? null
+                            : () {
+                                if (!_isRewardedAdLoaded || _rewardedAd == null) {
+                                  setState(() {
+                                    _quizRetryMessage =
+                                        'Ad not ready yet. Please retry taking the quiz.';
+                                  });
+                                  startRetryCountdown(setDialogState);
+                                  _loadRewardedAd();
+                                  return;
+                                }
+
+                                setState(() {
+                                  _quizRetryMessage = null;
+                                });
+                                Navigator.pop(context);
+                                _showRewardedAdAndUnlockQuiz();
+                              },
+                        icon: const Icon(Icons.play_circle_outline, size: 20),
+                        label: Text(
+                          retrySeconds > 0 ? 'Retry in ${retrySeconds}s' : 'Watch Ad',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFA500),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       );
     },
-  );
+  ).then((_) {
+    retryTimer?.cancel();
+  });
 }
 
 Future<void> _navigateToQuiz() async {
@@ -959,6 +1017,7 @@ Future<void> _navigateToQuiz() async {
     assignmentDescription = lesson.assignmentInstructions;
     materialUrl = lesson.materialUrl;
     certificateUrl = lesson.certificateUrl;
+    assignmentDueDate = lesson.assignmentDueDate;
     _submission = submission;
     zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
         ? lesson.liveSessionInfo!.url
@@ -1072,6 +1131,11 @@ Future<void> _navigateToQuiz() async {
     final currentVideo = _courseVideos[_selectedVideoIndex];
     final videoTitle = currentVideo['title'] as String;
 
+    final quizTaken = await QuizResultService.hasQuizBeenTaken(
+      courseTitle: widget.courseTitle,
+      lessonTitle: videoTitle,
+    );
+
     final quizScore = await QuizResultService.getQuizScore(
       courseTitle: widget.courseTitle,
       lessonTitle: videoTitle,
@@ -1079,7 +1143,7 @@ Future<void> _navigateToQuiz() async {
 
     setState(() {
       _quizScore = quizScore;
-      _quizTaken = quizScore > 0;
+      _quizTaken = quizTaken;
     });
   }
 
@@ -4139,6 +4203,85 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
 
         const SizedBox(height: 24),
 
+        if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1F2937),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.list_alt,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Assignment Instructions',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Html(
+                  data: _effectiveAssignmentDescription,
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(13),
+                      color: Colors.black87,
+                      lineHeight: LineHeight(1.4),
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                    ),
+                    "p": Style(
+                      margin: Margins(bottom: Margin(8)),
+                    ),
+                    "ul": Style(
+                      margin: Margins(bottom: Margin(8)),
+                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                    ),
+                    "ol": Style(
+                      margin: Margins(bottom: Margin(8)),
+                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                    ),
+                    "li": Style(
+                      margin: Margins(bottom: Margin(2)),
+                      padding: HtmlPaddings.zero,
+                    ),
+                  },
+                ),
+              ],
+            ),
+          ),
+
+        if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
+          const SizedBox(height: 16),
+
         // Download Assignment Card
         if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
           Container(
@@ -4187,36 +4330,69 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Assignment description
-                Html(
-                  data: _effectiveAssignmentDescription ??
-                      'Download the file below and complete the assignment as instructed.',
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(13),
-                      color: Colors.black87,
-                      lineHeight: LineHeight(1.4),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                    ),
-                    "p": Style(
-                      margin: Margins(bottom: Margin(8)),
-                    ),
-                    "ul": Style(
-                      margin: Margins(bottom: Margin(8)),
-                      padding: HtmlPaddings(left: HtmlPadding(20)),
-                    ),
-                    "ol": Style(
-                      margin: Margins(bottom: Margin(8)),
-                      padding: HtmlPaddings(left: HtmlPadding(20)),
-                    ),
-                    "li": Style(
-                      margin: Margins(bottom: Margin(2)),
-                      padding: HtmlPaddings.zero,
-                    ),
-                  },
+                Text(
+                  'Use the buttons below to preview or download the assignment file.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    height: 1.4,
+                  ),
                 ),
+                SizedBox(height: 16),
+                 Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: Color(0xFFFF9800),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Assignment Guidelines',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE65100),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Deadline: ${_formattedAssignmentDeadline()}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
                 const SizedBox(height: 16),
+
                 // Buttons Row
                 Row(
                   children: [
@@ -4262,6 +4438,9 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
             ),
           ),
 
+        const SizedBox(height: 16),
+       
+
         // Submit Assignment Card - Only show if assignmentUrl exists
         if (_effectiveAssignmentUrl != null &&
             _effectiveAssignmentUrl!.isNotEmpty) ...[
@@ -4302,8 +4481,9 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Submit',
+                     Text(
+                      _hasSubmittedAssignment ? 'Submitted Assignment' : 'Submit Assignment',
+                      
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -4315,7 +4495,10 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                 ),
                 const SizedBox(height: 12),
                 // Message
-                const Text(
+                 Text(
+                  _hasSubmittedAssignment
+                      ? 'Your assignment submission was successfull. You can preview your submission below.'
+                       :
                   'Once you\'ve completed the assignment, submit your work here for review.',
                   style: TextStyle(
                     fontSize: 13,
@@ -4369,49 +4552,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
         const SizedBox(height: 24),
 
         // Additional Info
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.info_outline,
-                color: Color(0xFFFF9800),
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Assignment Guidelines',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFE65100),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade800,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        
       ],
     );
   }
@@ -4492,17 +4633,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                   ],
                 ),
               ),
-              if (_quizRetryMessage != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  _quizRetryMessage!,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFEF5350),
-                  ),
-                ),
-              ],
+             
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -4527,7 +4658,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                     elevation: 0,
                   ),
                   child:  Text( 
-                    _quizRetryMessage != null ? ' try Retaking Quiz' :
+                    _quizRetryMessage != null ? 'Retake Quiz' :
                     'Retake Quiz',
                     style: TextStyle(
                       fontSize: 15,

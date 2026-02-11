@@ -91,29 +91,30 @@ class Lesson {
     this.liveSessionInfo,
   });
 
-  factory Lesson.fromJson(Map<String, dynamic> json) {
-    return Lesson(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      description: json['description'],
-      goals: json['goals'] ?? '',
-      objectives: json['objectives'] ?? '',
-      videoUrl: json['video_url'] ?? '',
-      recordedVideoUrl: json['recorded_video_url'] ?? '',
-      materialUrl: json['material_url'] ?? '',
-      assignmentUrl: json['assignment_url'],
-      certificateUrl: json['certificate_url'],
-      assignmentInstructions: json['assignment_instructions'] ?? '',
-      isFinalLesson: json['is_final_lesson'] ?? false,
-      displayOrder: json['display_order'] ?? 0,
-      lessonDate: json['lesson_date'] ?? '',
-      assignmentDueDate: json['assignment_due_date'],
-      hasQuiz: json['has_quiz'] ?? false,
-      liveSessionInfo: json['live_session_info'] != null
-          ? LiveSessionInfo.fromJson(json['live_session_info'])
-          : null,
-    );
-  }
+ factory Lesson.fromJson(Map<String, dynamic> json) {
+  return Lesson(
+    id: json['id'] ?? 0,
+    title: json['title'] ?? '',
+    description: json['description'],
+    goals: json['goals'] ?? '',
+    objectives: json['objectives'] ?? '',
+    videoUrl: json['video_url'] ?? '',
+    recordedVideoUrl: json['recorded_video_url'] ?? '',
+    materialUrl: json['material_url'] ?? '',
+    assignmentUrl: json['assignment_url'],
+    certificateUrl: json['certificate_url'],
+    assignmentInstructions: json['assignment_instructions'] ?? '',
+    isFinalLesson: json['is_final_lesson'] ?? false,
+    displayOrder: json['display_order'] ?? 0,
+    lessonDate: json['lesson_date'] ?? '',
+    assignmentDueDate: json['assignment_due_date'],
+    hasQuiz: json['has_quiz'] ?? false,
+    liveSessionInfo: json['live_session_info'] != null && 
+                     json['live_session_info'] is Map<String, dynamic>
+        ? LiveSessionInfo.fromJson(json['live_session_info'])
+        : null,
+  );
+}
 
   Map<String, dynamic> toJson() {
     return {
