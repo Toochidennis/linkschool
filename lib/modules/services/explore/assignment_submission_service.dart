@@ -21,6 +21,9 @@ class AssignmentSubmissionService {
     required String cohortId,
     required String profileId,
     required List<Map<String, dynamic>> assignments,
+    String? submissionType,
+    String? linkUrl,
+    String? textContent,
   }) async {
     try {
       final apiKey = EnvConfig.apiKey;
@@ -41,6 +44,15 @@ class AssignmentSubmissionService {
         'cohort_id': cohortId,
         'profile_id': profileId,
       };
+      if (submissionType != null && submissionType.isNotEmpty) {
+        payload["submission_type"] = submissionType;
+      }
+      if (linkUrl != null && linkUrl.isNotEmpty) {
+        payload["link_url"] = linkUrl;
+      }
+      if (textContent != null && textContent.isNotEmpty) {
+        payload["text_content"] = textContent;
+      }
       if (assignments.isNotEmpty) {
         payload["assignment"] = assignments;
       }

@@ -35,6 +35,7 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/providers/cbt_plan_provider.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
 import 'package:linkschool/modules/providers/explore/assignment_submission_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
@@ -124,6 +125,7 @@ List<SingleChildWidget> getAppProviders() {
         lazy: true),
     ChangeNotifierProvider(create: (_) => SubjectProvider(), lazy: true),
     ChangeNotifierProvider(create: (_) => CbtUserProvider(), lazy: true),
+    ChangeNotifierProvider(create: (_) => CbtPlanProvider(), lazy: true),
     ChangeNotifierProvider(
         create: (_) => CBTProvider(CBTService()), lazy: true),
     ChangeNotifierProvider(create: (_) => GameProvider(), lazy: true),

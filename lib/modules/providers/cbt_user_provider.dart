@@ -29,6 +29,7 @@ class CbtUserProvider with ChangeNotifier {
   // Loading states
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+String? _errorMessage; String? get errorMessage => _errorMessage;
 
   // SharedPreferences keys
   static const String _keyCurrentUser = 'cbt_current_user';
@@ -96,7 +97,7 @@ _currentUser = CbtUserModel.fromJson(userData);
     final prefs = await SharedPreferences.getInstance();
 
     // Save user directly (no wrapper)
-    await prefs.setString(_keyCurrentUser, json.encode(user.toJson()));
+    await prefs.setString(_keyCurrentUser, json.encode(user.toPrefsJson()));
 
     // Only overwrite cached profiles if backend returned them
     if (user.profiles.isNotEmpty) {
@@ -291,7 +292,151 @@ await _saveUserToPreferences(_currentUser!);
       print('❌ Error in sign-up flow: $e');
       _isLoading = false;
       notifyListeners();
-      throw Exception('Failed to sync user: $e');
+      throw (' $e');
+    }
+  }
+
+  // =========================================================================
+  // 🔐 HANDLE FIREBASE LOGIN (GET -> CREATE IF MISSING)
+  // =========================================================================
+  Future<CbtUserModel?> handleFirebaseLogin({
+    required String email,
+    required String name,
+    required String profilePicture,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final existingUser = await _userService.fetchUserByEmail(email);
+      if (existingUser != null) {
+        _currentUser = existingUser;
+        await _saveUserToPreferences(existingUser);
+        if (existingUser.reference != null &&
+            existingUser.reference!.isNotEmpty) {
+          await _savePaymentReference(existingUser.reference!);
+        }
+        await syncSubscriptionService();
+        _isLoading = false;
+        notifyListeners();
+        return existingUser;
+      }
+
+      final fcmToken = await FirebaseMessagingService().getFcmToken();
+      final trimmedName = name.trim().isEmpty ? 'User' : name.trim();
+      final nameParts = trimmedName.split(' ');
+      final firstName = nameParts.isNotEmpty ? nameParts.first : trimmedName;
+      final lastName = nameParts.length > 1 ? nameParts.last : '';
+
+      final newUser = CbtUserModel(
+        first_name: firstName,
+        last_name: lastName,
+        name: trimmedName,
+        email: email,
+        profilePicture: profilePicture,
+        fcmToken: fcmToken,
+        attempt: 0,
+        phone: "",
+        subscribed: 1,
+        reference: null,
+      );
+
+      final createdUser = await _userService.createUser(newUser);
+      _currentUser = createdUser;
+      await _saveUserToPreferences(createdUser);
+      if (createdUser.reference != null && createdUser.reference!.isNotEmpty) {
+        await _savePaymentReference(createdUser.reference!);
+      }
+      await syncSubscriptionService();
+      _isLoading = false;
+      notifyListeners();
+      return createdUser;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = '$e';
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // =========================================================================
+  // 🔐 EMAIL/PASSWORD SIGNUP (API)
+  // =========================================================================
+  Future<CbtUserModel?> signupWithEmailPassword({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+    required String gender,
+    required String birthDate,
+    required String phone,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final createdUser = await _userService.signupWithEmailPassword(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        password: password,
+        gender: gender,
+        birthDate: birthDate,
+        phone: phone,
+      );
+
+      _currentUser = createdUser;
+      await _saveUserToPreferences(createdUser);
+      if (createdUser.reference != null && createdUser.reference!.isNotEmpty) {
+        await _savePaymentReference(createdUser.reference!);
+      }
+      await syncSubscriptionService();
+
+      _isLoading = false;
+      notifyListeners();
+      return createdUser;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Failed to sign up: $e';
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // =========================================================================
+  // 🔐 EMAIL/PASSWORD LOGIN (API)
+  // =========================================================================
+  Future<CbtUserModel?> loginWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final user = await _userService.loginWithEmailPassword(
+        email: email,
+        password: password,
+      );
+
+      _currentUser = user;
+      await _saveUserToPreferences(user);
+      if (user.reference != null && user.reference!.isNotEmpty) {
+        await _savePaymentReference(user.reference!);
+      }
+      await syncSubscriptionService();
+
+      _isLoading = false;
+      notifyListeners();
+      return user;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = ' $e';
+      notifyListeners();
+      rethrow;
     }
   }
 
@@ -301,7 +446,7 @@ await _saveUserToPreferences(_currentUser!);
   Future<void> updateUserAfterPayment({required String reference}) async {
     if (_currentUser == null) {
       print('⚠️ Cannot update: currentUser is null');
-      throw Exception('No current user to update');
+      throw ('No current user to update');
     }
 
     print('💳 Updating user after payment...');
@@ -345,7 +490,7 @@ await _saveUserToPreferences(_currentUser!);
       print('❌ Error updating user after payment: $e');
       _isLoading = false;
       notifyListeners();
-      throw Exception('Failed to update user: $e');
+      throw (' $e');
     }
   }
 

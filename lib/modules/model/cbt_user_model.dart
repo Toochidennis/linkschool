@@ -144,6 +144,25 @@ class CbtUserModel {
   };
 }
 
+  /// Convert CbtUserModel to JSON for local persistence
+  Map<String, dynamic> toPrefsJson() {
+    return {
+      'id': id,
+      'username': username,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'profile_picture': profilePicture ?? '',
+      'attempt': attempt,
+      'subscribed': subscribed,
+      'reference': reference ?? '',
+      'created_at': createdAt,
+      'first_name': first_name,
+      'last_name': last_name,
+      'fcm_token': fcmToken ?? '',
+    };
+  }
+
 
   /// Create a copy of the model with updated fields
   CbtUserModel copyWith({
@@ -158,6 +177,8 @@ class CbtUserModel {
     String? reference,
     String? createdAt,
     List<CbtUserProfile>? profiles,
+    String? first_name,
+    String? last_name,
     String? fcmToken,
   }) {
     return CbtUserModel(
@@ -172,6 +193,8 @@ class CbtUserModel {
       reference: reference ?? this.reference,
       createdAt: createdAt ?? this.createdAt,
       profiles: profiles ?? this.profiles,
+      first_name: first_name ?? this.first_name,
+      last_name: last_name ?? this.last_name,
       fcmToken: fcmToken ?? this.fcmToken,
     );
   }

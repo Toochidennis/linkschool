@@ -52,6 +52,54 @@ class FirebaseAuthService {
       rethrow;
     }
   }
+
+  /// Sign in with email and password
+  Future<UserCredential> signInWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await markSignupAsShown();
+      return credential;
+    } on FirebaseAuthException catch (e) {
+      print('Firebase email signin error: ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('Email signin error: $e');
+      rethrow;
+    }
+  }
+
+  /// Sign up with email and password
+  Future<UserCredential> signUpWithEmailPassword({
+    required String email,
+    required String password,
+    String? displayName,
+  }) async {
+    try {
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (displayName != null && displayName.trim().isNotEmpty) {
+        await credential.user?.updateDisplayName(displayName.trim());
+      }
+
+      await markSignupAsShown();
+      return credential;
+    } on FirebaseAuthException catch (e) {
+      print('Firebase email signup error: ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('Email signup error: $e');
+      rethrow;
+    }
+  }
   
   /// Mark signup as shown
   Future<void> markSignupAsShown() async {

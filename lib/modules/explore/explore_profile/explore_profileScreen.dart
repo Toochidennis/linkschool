@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/config/env_config.dart' show EnvConfig;
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-import 'package:paystack_for_flutter/paystack_for_flutter.dart';
+// import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 // Add this import for the payment dialog
-import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+// import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/cbt_auth_dialog.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -44,8 +45,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
   late Animation<double> _bounceAnimation;
 
   final FirebaseAuthService _authService = FirebaseAuthService();
-  User? _currentUser;
-  bool _isSignedIn = false;
 
   @override
   void initState() {
@@ -90,7 +89,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       if (mounted) _bounceController.forward();
     });
 
-    _loadUserData();
   }
 
   @override
@@ -99,14 +97,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     _slideController.dispose();
     _bounceController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadUserData() async {
-    final user = _authService.getCurrentUser();
-    setState(() {
-      _currentUser = user;
-      _isSignedIn = user != null;
-    });
   }
 
   Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
@@ -127,31 +117,23 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
   Future<void> _handleSignIn() async {
     if (!mounted) return;
     try {
-      final userCredential = await _authService.signInWithGoogle();
-      final user = userCredential?.user;
-      if (user != null) {
-        // Register user in backend via CbtUserProvider
+      final signedIn = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => const CbtAuthDialog(),
+      );
+
+      if (signedIn == true) {
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
-        await cbtUserProvider.handleFirebaseSignUp(
-          email: user.email ?? '',
-          name: user.displayName ?? '',
-          profilePicture: user.photoURL ?? '',
-        );
-        
-        // Refresh current user to get updated data
-        await cbtUserProvider.refreshCurrentUser();
-        if (!mounted) return;
-        
         final updatedUser = cbtUserProvider.currentUser;
-        
-        // Fetch profiles if user exists
+
         if (updatedUser != null) {
           try {
             final profileProvider =
                 Provider.of<CreateUserProfileProvider>(context, listen: false);
-            final profiles =
-                await profileProvider.fetchUserProfiles(updatedUser.id.toString());
+            final profiles = await profileProvider
+                .fetchUserProfiles(updatedUser.id.toString());
             if (profiles.isNotEmpty) {
               await cbtUserProvider.replaceProfiles(profiles);
             }
@@ -159,21 +141,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
             debugPrint("Failed to fetch profiles after sign-in: $e");
           }
         }
-        
+
         if (!mounted) return;
-        
-        // Set and save active profile
+
         final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
-        CbtUserProfile? activeProfile = profiles.isNotEmpty ? profiles.first : null;
-        
+        CbtUserProfile? activeProfile =
+            profiles.isNotEmpty ? profiles.first : null;
+
         if (activeProfile?.id != null) {
-          await _saveActiveProfileId(activeProfile!.id, birthDate: activeProfile.birthDate);
+          await _saveActiveProfileId(
+            activeProfile!.id,
+            birthDate: activeProfile.birthDate,
+          );
         }
-        
-        setState(() {
-          _currentUser = user;
-          _isSignedIn = true;
-        });
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Signed in successfully')),
@@ -233,11 +214,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
         await _authService.signOut();
         print('✅ Firebase signout completed');
 
-        setState(() {
-          _currentUser = null;
-          _isSignedIn = false;
-        });
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -287,72 +263,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 
   // Add this method to handle the payment flow
   Future<void> _handleSubscribeNow() async {
-    // Directly launch Paystack payment page using the same logic as _chargeWithPaystack
-    final settings = await CbtSettingsHelper.getSettings();
-    final subscriptionPrice = settings.discountRate > 0
-        ? (settings.amount * (1 - settings.discountRate)).round()
-        : settings.amount;
-    final authService = FirebaseAuthService();
-    final userEmail = authService.getCurrentUserEmail();
-    if (userEmail == null || userEmail.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to retrieve user email'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    final amountInKobo = subscriptionPrice * 100;
-    final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
-    final paystackSecretKey = EnvConfig.paystackSecretKey;
-    PaystackFlutter().pay(
-      context: context,
-      secretKey: paystackSecretKey,
-      amount: amountInKobo.toDouble(),
-      email: userEmail,
-      callbackUrl: "https://callback.com",
-      showProgressBar: true,
-      paymentOptions: [
-        PaymentOption.card,
-        PaymentOption.bankTransfer,
-        PaymentOption.mobileMoney,
-      ],
-      currency: Currency.NGN,
-      metaData: {
-        "subscription": "CBT Access",
-        "price": subscriptionPrice,
-      },
-      onSuccess: (paystackCallback) async {
-        print('✅ Payment successful: "+paystackCallback.reference+"');
-        // Optionally verify and update payment here
-        final cbtUserProvider =
-            Provider.of<CbtUserProvider>(context, listen: false);
-        await cbtUserProvider.updateUserAfterPayment(reference: reference);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Payment Successful! Subscription activated.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-          setState(() {});
-        }
-      },
-      onCancelled: (paystackCallback) {
-        print('❌ Payment cancelled or failed: "+paystackCallback.reference+"');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Payment cancelled'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
+    if (!mounted) return;
+    final didProceed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
     );
+    if (didProceed == true && mounted) {
+      setState(() {});
+    }
   }
 
   Widget _buildAnimatedCard({
@@ -406,6 +323,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     final settings = Provider.of<AppSettingsProvider>(context);
 
     final cbtUserProvider = Provider.of<CbtUserProvider>(context);
+    final cbtUser = cbtUserProvider.currentUser;
+    final isSignedIn = cbtUser != null;
     final subscriptionStatus = cbtUserProvider.subscriptionStatus;
     return MediaQuery(
       data: MediaQuery.of(context)
@@ -419,7 +338,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Banner if not signed in
-                if (!_isSignedIn)
+                if (!isSignedIn)
                   _buildAnimatedCard(
                     index: 0,
                     child: Card(
@@ -448,12 +367,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                     ),
                   ),
                 // Profile Header Section
-                if (_isSignedIn)
+                if (isSignedIn)
                   _buildAnimatedCard(
                     index: 1,
-                    child: _buildProfileHeader(settings, subscriptionStatus),
+                    child:
+                        _buildProfileHeader(settings, subscriptionStatus, cbtUser),
                   ),
-                if (_isSignedIn) const SizedBox(height: 24),
+                if (isSignedIn) const SizedBox(height: 24),
 
                 // App Preferences Section (Disabled for now)
                 // _buildSectionHeader('App Preferences', settings),
@@ -549,7 +469,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                 const SizedBox(height: 24),
 
                 // Logout Section (only if signed in)
-                if (_isSignedIn) ...[
+                if (isSignedIn) ...[
                   _buildAnimatedCard(
                     index: 6,
                     child: Column(
@@ -583,8 +503,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
   }
 
   Widget _buildProfileHeader(
-      AppSettingsProvider settings, Map<String, dynamic> subscriptionStatus) {
-    final user = _currentUser;
+    AppSettingsProvider settings,
+    Map<String, dynamic> subscriptionStatus,
+    CbtUserModel? user,
+  ) {
     if (user == null) return const SizedBox.shrink();
 
     // Show static subscription expiry message if user has paid
@@ -617,9 +539,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
               CircleAvatar(
                 radius: 40,
                 backgroundColor: AppColors.text2Light.withOpacity(0.2),
-                backgroundImage:
-                    user.photoURL != null ? NetworkImage(user.photoURL!) : null,
-                child: user.photoURL == null
+                backgroundImage: (user.profilePicture != null &&
+                        user.profilePicture!.trim().isNotEmpty)
+                    ? NetworkImage(user.profilePicture!)
+                    : null,
+                child: (user.profilePicture == null ||
+                        user.profilePicture!.trim().isEmpty)
                     ? Icon(
                         Icons.person,
                         size: 40,
@@ -634,7 +559,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user.displayName ?? 'User',
+                      _displayName(user),
                       style: AppTextStyles.normal600(
                         fontSize: 18,
                         color: settings.isDarkMode
@@ -644,7 +569,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.email ?? '',
+                      user.email,
                       style: AppTextStyles.normal400(
                         fontSize: 14,
                         color: settings.isDarkMode
@@ -751,6 +676,16 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
         ],
       ),
     );
+  }
+
+  String _displayName(CbtUserModel user) {
+    final name = user.name?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final first = user.first_name?.trim() ?? '';
+    final last = user.last_name?.trim() ?? '';
+    final combined = ('$first $last').trim();
+    if (combined.isNotEmpty) return combined;
+    return 'User';
   }
 
   Widget _buildSectionHeader(String title, AppSettingsProvider settings) {

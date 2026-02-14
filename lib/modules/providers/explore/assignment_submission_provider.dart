@@ -21,7 +21,10 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     required String lessonId,
     required String cohortId,
     required String profileId,
-   List<Map<String, dynamic>>? assignments,
+    String? submissionType,
+    String? linkUrl,
+    String? textContent,
+    List<Map<String, dynamic>>? assignments,
   }) async {
     print("🚀 AssignmentSubmissionProvider: submitAssignment called");
 
@@ -47,6 +50,9 @@ class AssignmentSubmissionProvider with ChangeNotifier {
         email: email,
         phone: phone,
         quizScore: quizScore,
+        submissionType: submissionType,
+        linkUrl: linkUrl,
+        textContent: textContent,
         assignments: assignments ?? [],
         lessonId: lessonId,
         cohortId: cohortId,

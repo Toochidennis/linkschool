@@ -6,12 +6,14 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/config/providers_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
+import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
+
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -104,24 +106,51 @@ class AppInitializer extends StatefulWidget {
 class _AppInitializerState extends State<AppInitializer> {
   bool _isInitialized = false;
   bool _showOnboarding = false;
+  //Uri? _pendingUri;
 
   @override
   void initState() {
+    
     super.initState();
-    _initializeApp();
+   _initializeApp();
+    //_bootstrap();
   }
+
+  // Future<void> _bootstrap() async {
+  // await _initializeApp();
+  // _initDeepLinks();
+  // }
+
+  // void _initDeepLinks() async {
+  //   final initialUri = await getInitialUri();
+
+  //   if (initialUri != null) {
+  //     _handleUri(initialUri);
+  //   }
+
+  //   uriLinkStream.listen((Uri? uri) {
+  //     if (uri != null) {
+  //       _handleUri(uri);
+  //     }
+  //   });
+  // }
+
+  // void _handleUri(Uri uri) {
+  //   debugPrint("Deep link: $uri");
+
+  //   if (uri.pathSegments.contains('submissions')) {
+  //     _pendingUri = uri;
+  //   }
+  // }
 
   Future<void> _initializeApp() async {
     try {
-      print('=== Starting App Initialization ===');
-
       // Get Hive box first
       final userBox = Hive.box('userData');
 
       // Check onboarding status
       final hasSeenOnboarding =
           userBox.get('hasSeenOnboarding', defaultValue: false);
-      print('hasSeenOnboarding: $hasSeenOnboarding');
 
       // Get AuthProvider from Provider context
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -135,37 +164,19 @@ class _AppInitializerState extends State<AppInitializer> {
       // Don't await - let it initialize in background
       cbtUserProvider.initialize();
 
-      print('Auth Status:');
-      print('  - isLoggedIn: ${authProvider.isLoggedIn}');
-      print('  - user: ${authProvider.user?.name ?? "null"}');
-      print('  - role: ${authProvider.user?.role ?? "null"}');
-      print('  - token exists: ${authProvider.token != null}');
-
-      // Verify from Hive directly as backup
-      final isLoggedInHive = userBox.get('isLoggedIn', defaultValue: false);
-      final sessionValid = userBox.get('sessionValid', defaultValue: false);
-      print('Hive Verification:');
-      print('  - isLoggedIn: $isLoggedInHive');
-      print('  - sessionValid: $sessionValid');
-
       if (mounted) {
         setState(() {
           // Show onboarding only if user hasn't seen it AND isn't logged in
           _showOnboarding = !hasSeenOnboarding && !authProvider.isLoggedIn;
-          print('Decision: Show onboarding = $_showOnboarding');
         });
       }
-    } catch (e, stackTrace) {
-      print('❌ Error initializing app: $e');
-      print('Stack trace: $stackTrace');
-
+    } catch (e) {
       if (mounted) {
         setState(() {
           final userBox = Hive.box('userData');
           final hasSeenOnboarding =
               userBox.get('hasSeenOnboarding', defaultValue: false);
           _showOnboarding = !hasSeenOnboarding;
-          print('Error fallback: Show onboarding = $_showOnboarding');
         });
       }
     } finally {
@@ -174,9 +185,59 @@ class _AppInitializerState extends State<AppInitializer> {
           _isInitialized = true;
         });
       }
-      print('=== App Initialization Complete ===\n');
     }
   }
+
+//   void _navigateFromUri(Uri uri) {
+//   final segments = uri.pathSegments;
+
+//   if (segments.contains('submissions')) {
+
+//     final submissionId = segments.last;
+//     final profileId = uri.queryParameters['profile_id'];
+//     final lessonId  = uri.queryParameters['lesson_id'];
+//     final cohortId = uri.queryParameters['cohort_id'];
+
+//     // Decide section
+//    // final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+//     // if (!authProvider.isLoggedIn) {
+//     //   Navigator.pushNamed(context, '/explore-login',
+//     //     arguments: {
+//     //       'redirect': uri.toString(),
+//     //     }
+//     //   );
+//     //   return;
+//     // }
+
+
+//       // Navigator.push(
+//       //         context,
+//       //         MaterialPageRoute(
+//       //           builder: (context) => CourseDetailScreen(
+//       //          profileId:int.tryParse(profileId!),
+//       //           lessonId: int.tryParse(lessonId!),
+//       //            courseTitle:'', 
+//       //            courseName: '',
+//       //             courseDescription: '',
+//       //              provider: '', 
+//       //              cohortId:cohortId!,
+                 
+//       //           ),
+//       //         ),
+//       //       );
+
+//     // Navigator.pushNamed(
+//     //   context,
+//     //   '/submission',
+//     //   arguments: {
+//     //     'submission_id': submissionId,
+//     //     'profile_id': profileId,
+//     //     'lesson_id': lessonId,
+//     //   },
+//     // );
+//   }
+// }
 
   @override
   Widget build(BuildContext context) {
@@ -189,12 +250,16 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    print('🏗️ Building: showOnboarding=$_showOnboarding');
-
     if (_showOnboarding) {
       return const Onboardingscreen();
     }
 
+// if (_pendingUri != null) {
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//      _navigateFromUri(_pendingUri!);
+//       _pendingUri = null; // prevent repeat
+//     });
+//   }
     return const AppNavigationFlow();
   }
 }
