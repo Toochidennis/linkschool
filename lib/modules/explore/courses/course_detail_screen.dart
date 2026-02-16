@@ -37,6 +37,55 @@ String _encodeToBase64(Uint8List bytes) {
   return base64Encode(bytes);
 }
 
+class _DashedRRectPainter extends CustomPainter {
+  _DashedRRectPainter({
+    required this.color,
+    this.strokeWidth = 1,
+    this.dashLength = 6,
+    this.gapLength = 6,
+    this.radius = 12,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double dashLength;
+  final double gapLength;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+    final path = Path()..addRRect(rrect);
+    final dashedPath = Path();
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dashLength;
+        dashedPath.addPath(metric.extractPath(distance, next), Offset.zero);
+        distance = next + gapLength;
+      }
+    }
+
+    canvas.drawPath(dashedPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.dashLength != dashLength ||
+        oldDelegate.gapLength != gapLength ||
+        oldDelegate.radius != radius;
+  }
+}
+
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
   final String courseName;
@@ -85,6 +134,7 @@ class CourseDetailScreen extends StatefulWidget {
 class _CourseDetailScreenState extends State<CourseDetailScreen>
     with SingleTickerProviderStateMixin,WidgetsBindingObserver  {
       static const platform = MethodChannel('com.linkskool.app/downloads');
+  late final LessonDetailProvider _lessonDetailProvider;
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   YoutubePlayerController? _youtubeController;
@@ -100,6 +150,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isDescriptionExpanded = false;
   String? emailError;
   String? pdfError;
+  late final Stream<int> _countdownStream;
   // Quiz state variables
   int _quizScore = 0;
   bool _quizTaken = false;
@@ -132,6 +183,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isMinor = false;
   bool _isNavigatingAway = false;
 bool _shouldShowAdOnResume = false;
+  String? _lastMetaSignature;
 
   AppOpenAd? _appOpenAd;
 bool _isAppOpenAdLoaded = false;
@@ -158,13 +210,32 @@ final TextEditingController _textController = TextEditingController();
       _isFinalLesson && certificateUrl?.isNotEmpty == true;
 // Check if user has submitted assignment
 bool get _hasSubmittedAssignment {
-  final assignment = _submission?.assignment;
-  return assignment != null && assignment.isNotEmpty;
+  final submission = _submission;
+  if (submission == null) return false;
+
+  final assignment = submission.assignment;
+  final hasAssignment = assignment != null &&
+      (assignment is String
+          ? assignment.trim().isNotEmpty
+          : assignment is List
+              ? assignment.isNotEmpty
+              : assignment is Map
+                  ? assignment.isNotEmpty
+                  : true);
+  final hasLink = submission.linkUrl?.trim().isNotEmpty == true;
+  final hasText = submission.textContent?.trim().isNotEmpty == true;
+
+  return hasAssignment || hasLink || hasText;
 }
 
 // Get the submitted assignment URL
 String? get _submittedAssignmentUrl {
-  return _submission?.assignment;
+  final submission = _submission;
+  if (submission == null) return null;
+  final assignmentFile = submission.assignmentFile;
+  if (assignmentFile == null) return null;
+  final value = assignmentFile.toString().trim();
+  return value.isEmpty ? null : value;
 }
   String? get _effectiveSessionStart =>
       liveSessionStartTime?.isNotEmpty == true ? liveSessionStartTime : null;
@@ -234,6 +305,51 @@ String? get _submittedAssignmentUrl {
     }
     return '${seconds}s ';
   }
+
+  Widget _buildCountdownItem(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: Color(0xFF6B7280),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: 50,
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111827),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF0F172A)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
        bool _isInitializing = false;
        bool _hasAppliedLessonData = false;
 
@@ -275,7 +391,12 @@ bool _isRewardedAdLoaded = false;
   @override
 void initState() {
   super.initState();
+  _lessonDetailProvider = LessonDetailProvider();
   _tabController = TabController(length: 3, vsync: this);
+  _countdownStream = Stream<int>.periodic(
+    const Duration(seconds: 1),
+    (i) => i,
+  ).asBroadcastStream();
   _loadSubmissionStatus();
   _loadActiveProfile();
 
@@ -1096,6 +1217,7 @@ Future<void> _navigateToQuiz() async {
         'isCompleted': false,
       });
     _selectedVideoIndex = 0;
+    _lastMetaSignature = _buildLessonMetaSignature(lesson, submission);
     
     // Pre-fill controllers if submission exists
     if (submission != null) {
@@ -1353,6 +1475,71 @@ Future<void> _navigateToQuiz() async {
       setState(() => _loadedActiveProfile = true);
     } catch (e) {
       print('Error loading active profile: $e');
+    }
+  }
+
+  String _buildLessonMetaSignature(Lesson lesson, Submission? submission) {
+    return [
+      lesson.title,
+      lesson.description ?? '',
+      lesson.assignmentUrl ?? '',
+      lesson.assignmentInstructions,
+      lesson.assignmentDueDate ?? '',
+      lesson.assignmentSubmissionType ?? '',
+      lesson.materialUrl,
+      lesson.certificateUrl ?? '',
+      lesson.lessonDate,
+      lesson.recordedVideoUrl,
+      lesson.liveSessionInfo?.url ?? '',
+      lesson.liveSessionInfo?.startTime ?? '',
+      lesson.liveSessionInfo?.endTime ?? '',
+      lesson.hasQuiz.toString(),
+      lesson.isFinalLesson.toString(),
+      submission?.submittedAt ?? '',
+      submission?.assignment?.toString() ?? '',
+      submission?.linkUrl ?? '',
+      submission?.textContent ?? '',
+      submission?.assignedScore?.toString() ?? '',
+    ].join('|');
+  }
+
+  void _applyLessonMeta(Lesson lesson, {Submission? submission}) {
+    if (!mounted) return;
+    setState(() {
+      courseTitle = lesson.title;
+      courseDescription = lesson.description;
+      assignmentUrl = lesson.assignmentUrl;
+      assignmentDescription = lesson.assignmentInstructions;
+      materialUrl = lesson.materialUrl;
+      certificateUrl = lesson.certificateUrl;
+      assignmentDueDate = lesson.assignmentDueDate;
+      _assignmentSubmissionType = lesson.assignmentSubmissionType;
+      zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
+          ? lesson.liveSessionInfo!.url
+          : widget.zoomUrl;
+      recordedUrl = lesson.recordedVideoUrl;
+      classDate = lesson.lessonDate;
+      liveSessionStartTime = lesson.liveSessionInfo?.startTime;
+      liveSessionEndTime = lesson.liveSessionInfo?.endTime;
+      _lessonHasQuiz = lesson.hasQuiz;
+      _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
+      _isFinalLesson = lesson.isFinalLesson;
+      _submission = submission;
+      _lastMetaSignature = _buildLessonMetaSignature(lesson, submission);
+    });
+  }
+
+  Future<void> _silentRefreshLessonDetail() async {
+    if (widget.lessonId == null || widget.profileId == null) return;
+    final success = await _lessonDetailProvider.fetchLessonDetail(
+      lessonId: widget.lessonId!,
+      profileId: widget.profileId!,
+    );
+    if (!success) return;
+    final lesson = _lessonDetailProvider.lessonDetailData?.lesson;
+    final submission = _lessonDetailProvider.lessonDetailData?.submission;
+    if (lesson != null && mounted) {
+      _applyLessonMeta(lesson, submission: submission);
     }
   }
 
@@ -2246,6 +2433,7 @@ void dispose() {
   // Dispose text controllers
   _linkController.dispose();
   _textController.dispose();
+  _lessonDetailProvider.dispose();
 
   // Ensure system UI is restored when leaving this screen
   SystemChrome.setEnabledSystemUIMode(
@@ -2294,6 +2482,7 @@ Future<void> _handleBackButton() async {
   String? selectedFileName;
   String? selectedFilePath;
   String? selectedFileBase64;
+  bool _isPickingFile = false;
   
   // Get the submission type
   final submissionType = _assignmentSubmissionType ?? 'upload';
@@ -2401,148 +2590,243 @@ Future<void> _handleBackButton() async {
                           
                           // Dynamic submission fields based on type
                           if (submissionType == 'upload') ...[
-                            // PDF Upload Button
-                            InkWell(
-                              onTap: () async {
-                                if (mounted) {
-                                  setState(() {
-                                    _isNavigatingAway = true;
-                                  });
-                                }
-                                try {
-                                  FilePickerResult? result =
-                                      await FilePicker.platform.pickFiles(
-                                    type: FileType.custom,
-                                    allowedExtensions: ['pdf'],
-                                  );
-                                  if (result != null) {
-                                    final filePath = result.files.single.path;
-                                    final fileName = result.files.single.name;
-                                    final ext =
-                                        fileName.split('.').last.toLowerCase();
-                                    if (filePath != null) {
-                                      if (ext != 'pdf') {
+                            Builder(
+                              builder: (context) {
+                                Future<void> pickFile() async {
+                                  if (_isPickingFile) return;
+                                  if (mounted) {
+                                    setState(() {
+                                      _isPickingFile = true;
+                                      _isNavigatingAway = true;
+                                    });
+                                  }
+                                  try {
+                                    FilePickerResult? result =
+                                        await FilePicker.platform.pickFiles(
+                                      type: FileType.custom,
+                                      allowedExtensions: ['pdf'],
+                                    );
+                                    if (result != null) {
+                                      final filePath = result.files.single.path;
+                                      final fileName = result.files.single.name;
+                                      final ext =
+                                          fileName.split('.').last.toLowerCase();
+                                      if (filePath != null) {
+                                        if (ext != 'pdf') {
+                                          setModalState(() {
+                                            selectedFileName = null;
+                                            pdfError = 'Only PDF files are allowed.';
+                                          });
+                                          return;
+                                        }
+                                        // Check file size (limit to 1MB)
+                                        final file = File(filePath);
+                                        final fileSize = await file.length();
+                                        if (fileSize > 1024 * 1024) {
+                                          setModalState(() {
+                                            selectedFileName = null;
+                                            pdfError = 'PDF file must not exceed 1MB.';
+                                          });
+                                          return;
+                                        }
+                                        // Show loading indicator while encoding
                                         setModalState(() {
-                                          selectedFileName = null;
-                                          pdfError = 'Only PDF files are allowed.';
+                                          selectedFileName = 'Encoding file...';
+                                          pdfError = null;
                                         });
-                                        return;
-                                      }
-                                      // Check file size (limit to 1MB)
-                                      final file = File(filePath);
-                                      final fileSize = await file.length();
-                                      if (fileSize > 1024 * 1024) {
+                                        // Read file bytes
+                                        final bytes = await file.readAsBytes();
+                                        // Encode to base64
+                                        final base64String =
+                                            await compute(_encodeToBase64, bytes);
                                         setModalState(() {
-                                          selectedFileName = null;
-                                          pdfError = 'PDF file must not exceed 1MB.';
+                                          selectedFileName = fileName;
+                                          selectedFilePath = filePath;
+                                          selectedFileBase64 = base64String;
+                                          pdfError = null;
                                         });
-                                        return;
                                       }
-                                      // Show loading indicator while encoding
-                                      setModalState(() {
-                                        selectedFileName = 'Encoding file...';
-                                        pdfError = null;
-                                      });
-                                      // Read file bytes
-                                      final bytes = await file.readAsBytes();
-                                      // Encode to base64
-                                      final base64String =
-                                          await compute(_encodeToBase64, bytes);
-                                      setModalState(() {
-                                        selectedFileName = fileName;
-                                        selectedFilePath = filePath;
-                                        selectedFileBase64 = base64String;
-                                        pdfError = null;
+                                    }
+                                  } catch (e) {
+                                    setModalState(() {
+                                      selectedFileName = null;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error picking file: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isPickingFile = false;
+                                        _isNavigatingAway = false;
                                       });
                                     }
                                   }
-                                } catch (e) {
-                                  setModalState(() {
-                                    selectedFileName = null;
-                                  });
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Error picking file: $e'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
                                 }
-                                if (mounted) {
-                                  setState(() {
-                                    _isNavigatingAway = false;
-                                  });
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: selectedFileName != null
-                                      ? const Color(0xFF6366F1).withOpacity(0.1)
-                                      : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: selectedFileName != null
-                                        ? const Color(0xFF6366F1)
-                                        : Colors.grey.shade300,
-                                    width: selectedFileName != null ? 2 : 1,
-                                  ),
-                                ),
-                                child: Row(
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    Icon(
-                                      selectedFileName != null
-                                          ? Icons.picture_as_pdf
-                                          : Icons.upload_file,
-                                      color: selectedFileName != null
-                                          ? const Color(0xFF6366F1)
-                                          : Colors.grey.shade600,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        selectedFileName ?? 'Upload PDF Assignment',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: selectedFileName != null
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
-                                          color: selectedFileName != null
-                                              ? const Color(0xFF6366F1)
-                                              : Colors.grey.shade600,
+                                    InkWell(
+                                      onTap: _isPickingFile ? null : pickFile,
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: CustomPaint(
+                                        painter: _DashedRRectPainter(
+                                          color: Colors.grey.shade400,
+                                          strokeWidth: 1,
+                                          dashLength: 6,
+                                          gapLength: 6,
+                                          radius: 12,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 24,
+                                            horizontal: 20,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade50,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.05),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Icon(
+                                                  Icons.cloud_upload_outlined,
+                                                  size: 36,
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Text(
+                                                'Drag & Drop your file here',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.grey.shade700,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    'or ',
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed:
+                                                        _isPickingFile ? null : pickFile,
+                                                    style: TextButton.styleFrom(
+                                                      padding: EdgeInsets.zero,
+                                                      minimumSize: Size.zero,
+                                                      tapTargetSize:
+                                                          MaterialTapTargetSize.shrinkWrap,
+                                                    ),
+                                                    child: const Text(
+                                                      'browse.',
+                                                      style: TextStyle(fontSize: 13),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '1 file only • PDF • max 1MB',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    if (selectedFileName != null)
-                                      IconButton(
-                                        icon: const Icon(Icons.close, size: 20),
-                                        onPressed: () {
-                                          setModalState(() {
-                                            selectedFileName = null;
-                                            selectedFilePath = null;
-                                            selectedFileBase64 = null;
-                                          });
-                                        },
-                                        color: Colors.grey.shade600,
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
+                                    if (selectedFileName != null) ...[
+                                      const SizedBox(height: 10),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.picture_as_pdf,
+                                              color: Color(0xFF6366F1),
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                selectedFileName!,
+                                                style: const TextStyle(fontSize: 13),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon:
+                                                  const Icon(Icons.close, size: 18),
+                                              onPressed: () {
+                                                setModalState(() {
+                                                  selectedFileName = null;
+                                                  selectedFilePath = null;
+                                                  selectedFileBase64 = null;
+                                                });
+                                              },
+                                              color: Colors.grey.shade600,
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
+                                    if (pdfError != null)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8.0),
+                                        child: Text(
+                                          pdfError!,
+                                          style: const TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 12,
+                                          ),
+                                        ),
                                       ),
                                   ],
-                                ),
-                              ),
+                                );
+                              },
                             ),
-                            const SizedBox(height: 8),
-                            if (pdfError != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Text(
-                                  pdfError!,
-                                  style: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
                           ] else if (submissionType == 'link' || submissionType == 'url') ...[
                             // URL/Link input field
                             TextField(
@@ -2768,13 +3052,13 @@ Future<void> _handleBackButton() async {
                                       };
 
                                       if (submissionType == 'upload') {
-                                        // submissionData['assignments'] = [
-                                        //   {
-                                        //     'file_name': selectedFileName!,
-                                        //     'type': 'pdf',
-                                        //     'file': selectedFileBase64!,
-                                        //   }
-                                        // ];
+                                        submissionData['assignments'] = [
+                                          {
+                                            'file_name': selectedFileName!,
+                                            'type': 'pdf',
+                                            'file': selectedFileBase64!,
+                                          }
+                                        ];
                                       } else if (submissionType == 'link' || 
                                                  submissionType == 'url') {
                                         submissionData['link_url'] = 
@@ -2821,6 +3105,8 @@ Future<void> _handleBackButton() async {
                                         // Clear controllers
                                         _linkController.clear();
                                         _textController.clear();
+
+                                        unawaited(_silentRefreshLessonDetail());
 
                                         // Show success message
                                         if (navigatorContext.mounted) {
@@ -3412,8 +3698,8 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
   @override
   @override
 Widget build(BuildContext context) {
-  return ChangeNotifierProvider<LessonDetailProvider>(
-    create: (_) => LessonDetailProvider(),
+  return ChangeNotifierProvider<LessonDetailProvider>.value(
+    value: _lessonDetailProvider,
     child: Consumer<LessonDetailProvider>(
       builder: (context, provider, child) {
         final hasLessonRequest =
@@ -3438,6 +3724,16 @@ Widget build(BuildContext context) {
               _applyLessonData(lesson, submission: submission);
             }
           });
+        }
+        if (lesson != null && _dataLoaded) {
+          final signature = _buildLessonMetaSignature(lesson, submission);
+          if (signature != _lastMetaSignature) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _applyLessonMeta(lesson, submission: submission);
+              }
+            });
+          }
         }
         if (submission != null && submission != _submission) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -4340,86 +4636,125 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
       children: [
         if (hasFeedback) ...[
           const SizedBox(height: 4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (assignedScore != null) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 18,
-                    horizontal: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF6FAFF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE3EEF9)),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'YOUR SCORE',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${assignedScore}%',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1D4ED8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (hasRemark) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 const Text(
-                  'Remark:',
+                  'Feedback',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  remark!,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF374151),
-                    height: 1.4,
+                const SizedBox(height: 12),
+                if (assignedScore != null) ...[
+                  Center(
+                    child: SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: CircularProgressIndicator(
+                              value: 1.0,
+                              strokeWidth: 12,
+                              backgroundColor: Colors.transparent,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                const Color(0xFF1D4ED8).withOpacity(0.15),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: CircularProgressIndicator(
+                              value: assignedScore / 100,
+                              strokeWidth: 12,
+                              backgroundColor: Colors.transparent,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Color(0xFF1D4ED8),
+                              ),
+                            ),
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${assignedScore}/100',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1D4ED8),
+                                ),
+                              ),
+                              const Text(
+                                'Score',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                ],
+                if (hasRemark) ...[
+                  const Text(
+                    'Remark:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    remark!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF374151),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (hasComment) ...[
+                  const Text(
+                    'Instructor Feedback:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    comment!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF374151),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ],
-              if (hasComment) ...[
-                const Text(
-                  'Instructor Feedback:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  comment!,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF374151),
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
           const SizedBox(height: 24),
         ],
@@ -4467,7 +4802,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                       Text(
                         'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           color: Colors.grey.shade800,
                           height: 1.4,
                         ),
@@ -4477,29 +4812,83 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                         'Deadline: ${_formattedAssignmentDeadline()}',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: Colors.grey.shade900,
                         ),
                       ),
                       const SizedBox(height: 6),
                       StreamBuilder<int>(
-                        stream: Stream<int>.periodic(
-                          const Duration(seconds: 1),
-                          (i) => i,
-                        ),
+                        stream: _countdownStream,
                         builder: (context, snapshot) {
-                          final isPastDue = _isAssignmentPastDue();
-                          return Text(
-                            isPastDue
-                                ? 'Deadline passed'
-                                : 'Time Left: ${_assignmentCountdownText()}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isPastDue
-                                  ? const Color(0xFFB91C1C)
-                                  :  Colors.grey.shade900,
-                            ),
+                          final deadline = _assignmentDeadlineDate();
+                          if (deadline == null) {
+                            return Text(
+                              'No deadline set',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade900,
+                              ),
+                            );
+                          }
+
+                          final now = DateTime.now();
+                          final isPastDue = now.isAfter(deadline);
+                          final diff = isPastDue
+                              ? Duration.zero
+                              : deadline.difference(now);
+                          final days = diff.inDays;
+                          final hours = diff.inHours % 24;
+                          final minutes = diff.inMinutes % 60;
+                          final seconds = diff.inSeconds % 60;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFDF2E5),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: const Color(0xFFFFD4A1),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _buildCountdownItem(
+                                      'DAYS',
+                                      days.toString().padLeft(2, '0'),
+                                    ),
+                                    _buildCountdownItem(
+                                      'HOURS',
+                                      hours.toString().padLeft(2, '0'),
+                                    ),
+                                    _buildCountdownItem(
+                                      'MINUTES',
+                                      minutes.toString().padLeft(2, '0'),
+                                    ),
+                                    _buildCountdownItem(
+                                      'SECONDS',
+                                      seconds.toString().padLeft(2, '0'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isPastDue) ...[
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Deadline passed',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFFB91C1C),
+                                  ),
+                                ),
+                              ],
+                            ],
                           );
                         },
                       ),
@@ -4786,16 +5175,26 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
             child: OutlinedButton.icon(
               onPressed: () {
                 final submittedFileUrl = _submittedAssignmentUrl;
-                if (submittedFileUrl == null || submittedFileUrl.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No submitted assignment file'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                if (submittedFileUrl != null && submittedFileUrl.isNotEmpty) {
+                  _previewAssignment(submittedFileUrl);
                   return;
                 }
-                _previewAssignment(submittedFileUrl);
+                final linkUrl = _submission?.linkUrl?.trim();
+                if (linkUrl != null && linkUrl.isNotEmpty) {
+                  _launchUrl(linkUrl);
+                  return;
+                }
+                final textContent = _submission?.textContent?.trim();
+                if (textContent != null && textContent.isNotEmpty) {
+                  _showTextSubmissionDialog(textContent);
+                  return;
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No submitted assignment found'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               },
               icon: const Icon(Icons.visibility, size: 18),
               label: const Text('Preview'),
@@ -5190,6 +5589,26 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
     return '${hours}h ${minutes}m';
+  }
+
+  void _showTextSubmissionDialog(String text) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Submitted Text'),
+          content: SingleChildScrollView(
+            child: Text(text),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

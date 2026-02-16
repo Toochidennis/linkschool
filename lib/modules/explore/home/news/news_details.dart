@@ -41,6 +41,8 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
   // Banner Ad
   BannerAd? _bannerAd;
   bool _isBannerAdLoaded = false;
+  BannerAd? _bannerAdInline;
+  bool _isBannerAdInlineLoaded = false;
 
   // Interstitial Ad
   InterstitialAd? _interstitialAd;
@@ -77,8 +79,9 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
       _animationController.forward();
     });
 
-    // Initialize banner ad
+    // Initialize banner ads
     _loadBannerAd();
+    _loadInlineBannerAd();
     // Initialize interstitial ad
     _loadInterstitialAd();
   }
@@ -101,6 +104,34 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
           if (mounted) {
             setState(() {
               _isBannerAdLoaded = false;
+            });
+          }
+        },
+        onAdOpened: (Ad ad) {},
+        onAdClosed: (Ad ad) {},
+        onAdImpression: (Ad ad) {},
+      ),
+    )..load();
+  }
+
+  void _loadInlineBannerAd() {
+    _bannerAdInline = BannerAd(
+      adUnitId: EnvConfig.googleBannerAdsApiKey,
+      size: AdSize.mediumRectangle,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (Ad ad) {
+          if (mounted) {
+            setState(() {
+              _isBannerAdInlineLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          ad.dispose();
+          if (mounted) {
+            setState(() {
+              _isBannerAdInlineLoaded = false;
             });
           }
         },
@@ -170,6 +201,7 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
   void dispose() {
     _animationController.dispose();
     _bannerAd?.dispose();
+    _bannerAdInline?.dispose();
     _interstitialAd?.dispose();
     super.dispose();
   }
@@ -465,6 +497,17 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                                     launchURL(link.value.toString());
                                   },
                                 ),
+                                const SizedBox(height: 12),
+                                if (_isBannerAdInlineLoaded)
+                                  Container(
+                                    color: Colors.white,
+                                    alignment: Alignment.center,
+                                    child: SizedBox(
+                                      width: _bannerAdInline!.size.width.toDouble(),
+                                      height: _bannerAdInline!.size.height.toDouble(),
+                                      child: AdWidget(ad: _bannerAdInline!),
+                                    ),
+                                  ),
                                 const SizedBox(height: 40),
                                 if (recommendedNews.isNotEmpty) ...[
                                   Row(

@@ -57,7 +57,7 @@ class NewsMetaData {
   factory NewsMetaData.fromJson(Map<String, dynamic> json) {
     return NewsMetaData(
       total: json['total'] ?? 0,
-      perPage: json['per_page'] ?? 25,
+      perPage: json['per_page'] ?? 10,
       currentPage: json['current_page'] ?? 1,
       lastPage: json['last_page'] ?? 1,
       hasNext: json['has_next'] ?? false,
@@ -69,15 +69,25 @@ class NewsMetaData {
 class NewsService {
   final String baseUrl = "https://linkskool.net/api/v3/public/news";
 
-  Future<NewsResponse> getAllNews() async {
+  Future<NewsResponse> getAllNews({
+    int page = 1,
+    int perPage = 10,
+  }) async {
     try {
       final apiKey = EnvConfig.apiKey;
       if (apiKey.isEmpty) {
         throw Exception("API key not found in .env file");
       }
 
+      final uri = Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'page': page.toString(),
+          'limit': perPage.toString(),
+        },
+      );
+
       final response = await http.get(
-        Uri.parse(baseUrl),
+        uri,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
