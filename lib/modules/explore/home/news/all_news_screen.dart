@@ -17,21 +17,41 @@ class AllnewsScreen extends StatefulWidget {
   State<AllnewsScreen> createState() => _AllnewsScreenState();
 }
 
-class _AllnewsScreenState extends State<AllnewsScreen> {
+class _AllnewsScreenState extends State<AllnewsScreen>
+    with WidgetsBindingObserver {
   Set<String> selectedCategories = {};
   late final ScrollController _scrollController;
   final Map<int, NativeAd?> _nativeAds = {};
   final List<int> _adPositions = [];
   int _lastAdNewsCount = -1;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController = ScrollController();
     _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NewsProvider>(context, listen: false).fetchNews(refresh: true);
     });
+    _loadAppOpenAd();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
   }
 
 void _loadNativeAds(int newsCount) {
@@ -93,6 +113,50 @@ void _loadNativeAds(int newsCount) {
       ad?.dispose();
     }
     _nativeAds.clear();
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.newsAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
   }
 
   Color getCategoryColor(String category) {
@@ -497,9 +561,11 @@ void _loadNativeAds(int newsCount) {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _disposeAds();
+    _appOpenAd?.dispose();
     super.dispose();
   }
 

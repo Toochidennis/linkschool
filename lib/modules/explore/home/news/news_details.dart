@@ -27,7 +27,8 @@ class NewsDetails extends StatefulWidget {
   State<NewsDetails> createState() => _NewsDetailsState();
 }
 
-class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin {
+class _NewsDetailsState extends State<NewsDetails>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
 
   late NewsModel currentNews;
   List<NewsModel> allNewsList = [];
@@ -38,19 +39,17 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
 
-  // Banner Ad
-  BannerAd? _bannerAd;
-  bool _isBannerAdLoaded = false;
-  BannerAd? _bannerAdInline;
-  bool _isBannerAdInlineLoaded = false;
-
   // Interstitial Ad
   InterstitialAd? _interstitialAd;
   bool _isInterstitialAdLoaded = false;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     currentNews = widget.news;
 
     _animationController = AnimationController(
@@ -79,67 +78,24 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
       _animationController.forward();
     });
 
-    // Initialize banner ads
-    _loadBannerAd();
-    _loadInlineBannerAd();
     // Initialize interstitial ad
     _loadInterstitialAd();
+    // Initialize app open ad
+    _loadAppOpenAd();
   }
 
-  void _loadBannerAd() {
-    _bannerAd = BannerAd(
-      adUnitId: EnvConfig.googleBannerAdsApiKey,
-      size:  AdSize.mediumRectangle,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (Ad ad) {
-          if (mounted) {
-            setState(() {
-              _isBannerAdLoaded = true;
-            });
-          }
-        },
-        onAdFailedToLoad: (Ad ad, LoadAdError error) {
-          ad.dispose();
-          if (mounted) {
-            setState(() {
-              _isBannerAdLoaded = false;
-            });
-          }
-        },
-        onAdOpened: (Ad ad) {},
-        onAdClosed: (Ad ad) {},
-        onAdImpression: (Ad ad) {},
-      ),
-    )..load();
-  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
 
-  void _loadInlineBannerAd() {
-    _bannerAdInline = BannerAd(
-      adUnitId: EnvConfig.googleBannerAdsApiKey,
-      size: AdSize.mediumRectangle,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (Ad ad) {
-          if (mounted) {
-            setState(() {
-              _isBannerAdInlineLoaded = true;
-            });
-          }
-        },
-        onAdFailedToLoad: (Ad ad, LoadAdError error) {
-          ad.dispose();
-          if (mounted) {
-            setState(() {
-              _isBannerAdInlineLoaded = false;
-            });
-          }
-        },
-        onAdOpened: (Ad ad) {},
-        onAdClosed: (Ad ad) {},
-        onAdImpression: (Ad ad) {},
-      ),
-    )..load();
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
   }
 
   void _loadInterstitialAd() {
@@ -164,6 +120,50 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
         },
       ),
     );
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.newsAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
   }
 
   void _showInterstitialAdAndNavigateBack() {
@@ -199,10 +199,10 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
-    _bannerAd?.dispose();
-    _bannerAdInline?.dispose();
     _interstitialAd?.dispose();
+    _appOpenAd?.dispose();
     super.dispose();
   }
 
@@ -285,8 +285,13 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         .where((news) => news.id != currentNews.id)
         .toList();
 
-    return Stack(
-      children: [
+    return WillPopScope(
+      onWillPop: () async {
+        _showInterstitialAdAndNavigateBack();
+        return false;
+      },
+      child: Stack(
+        children: [
         // Optional: Dimmed background for popup effect
         Positioned.fill(
           child: Container(
@@ -462,18 +467,12 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                       ),
 
                       // Banner Ad - Displays after the image
-                      if (_isBannerAdLoaded)
-                        SliverToBoxAdapter(
-                          child: Container(
-                            color: Colors.white,
-                            alignment: Alignment.center,
-                            child: SizedBox(
-                              width: _bannerAd!.size.width.toDouble(),
-                              height: _bannerAd!.size.height.toDouble(),
-                              child: AdWidget(ad: _bannerAd!),
-                            ),
-                          ),
+                      SliverToBoxAdapter(
+                        child: _NewsBannerAd(
+                          adUnitId: EnvConfig.googleBannerAdsApiKey,
+                          size: AdSize.mediumRectangle,
                         ),
+                      ),
                       // ...existing code...
                       SliverToBoxAdapter(
                         child: Container(
@@ -498,16 +497,10 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                                   },
                                 ),
                                 const SizedBox(height: 12),
-                                if (_isBannerAdInlineLoaded)
-                                  Container(
-                                    color: Colors.white,
-                                    alignment: Alignment.center,
-                                    child: SizedBox(
-                                      width: _bannerAdInline!.size.width.toDouble(),
-                                      height: _bannerAdInline!.size.height.toDouble(),
-                                      child: AdWidget(ad: _bannerAdInline!),
-                                    ),
-                                  ),
+                                _NewsBannerAd(
+                                  adUnitId: EnvConfig.googleBannerAdsApiKey,
+                                  size: AdSize.mediumRectangle,
+                                ),
                                 const SizedBox(height: 40),
                                 if (recommendedNews.isNotEmpty) ...[
                                   Row(
@@ -579,6 +572,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -842,5 +836,74 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     if (days < 7) return '$days days ago';
 
     return '${days ~/ 7} weeks ago';
+  }
+}
+
+class _NewsBannerAd extends StatefulWidget {
+  final String adUnitId;
+  final AdSize size;
+
+  const _NewsBannerAd({
+    super.key,
+    required this.adUnitId,
+    required this.size,
+  });
+
+  @override
+  State<_NewsBannerAd> createState() => _NewsBannerAdState();
+}
+
+class _NewsBannerAdState extends State<_NewsBannerAd> {
+  BannerAd? _ad;
+  bool _isLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ad = BannerAd(
+      adUnitId: widget.adUnitId,
+      size: widget.size,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (Ad ad) {
+          if (mounted) {
+            setState(() {
+              _isLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          ad.dispose();
+          if (mounted) {
+            setState(() {
+              _isLoaded = false;
+            });
+          }
+        },
+      ),
+    )..load();
+  }
+
+  @override
+  void dispose() {
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ad = _ad;
+    if (!_isLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      color: Colors.white,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
   }
 }

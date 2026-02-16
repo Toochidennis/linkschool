@@ -2486,6 +2486,7 @@ Future<void> _handleBackButton() async {
   
   // Get the submission type
   final submissionType = _assignmentSubmissionType ?? 'upload';
+  final isPastDue = _isAssignmentPastDue();
 
   showGeneralDialog(
     context: context,
@@ -2670,96 +2671,88 @@ Future<void> _handleBackButton() async {
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    InkWell(
-                                      onTap: _isPickingFile ? null : pickFile,
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: CustomPaint(
-                                        painter: _DashedRRectPainter(
-                                          color: Colors.grey.shade400,
-                                          strokeWidth: 1,
-                                          dashLength: 6,
-                                          gapLength: 6,
-                                          radius: 12,
+                                    CustomPaint(
+                                      painter: _DashedRRectPainter(
+                                        color: Colors.grey.shade400,
+                                        strokeWidth: 1,
+                                        dashLength: 6,
+                                        gapLength: 6,
+                                        radius: 12,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 24,
+                                          horizontal: 20,
                                         ),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 24,
-                                            horizontal: 20,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade50,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(12),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  shape: BoxShape.circle,
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black.withOpacity(0.05),
-                                                      blurRadius: 8,
-                                                      offset: const Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Icon(
-                                                  Icons.cloud_upload_outlined,
-                                                  size: 36,
-                                                  color: Colors.grey.shade500,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 12),
-                                              Text(
-                                                'Drag & Drop your file here',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.grey.shade700,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text(
-                                                    'or ',
-                                                    style: TextStyle(
-                                                      fontSize: 13,
-                                                      color: Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed:
-                                                        _isPickingFile ? null : pickFile,
-                                                    style: TextButton.styleFrom(
-                                                      padding: EdgeInsets.zero,
-                                                      minimumSize: Size.zero,
-                                                      tapTargetSize:
-                                                          MaterialTapTargetSize.shrinkWrap,
-                                                    ),
-                                                    child: const Text(
-                                                      'browse.',
-                                                      style: TextStyle(fontSize: 13),
-                                                    ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade50,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.05),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
                                                   ),
                                                 ],
                                               ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '1 file only • PDF • max 1MB',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey.shade500,
+                                              child: Icon(
+                                                Icons.cloud_upload_outlined,
+                                                size: 36,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              'Drag & Drop your file here',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 10),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: OutlinedButton.icon(
+                                                onPressed: _isPickingFile ? null : pickFile,
+                                                icon: const Icon(Icons.folder_open, size: 18),
+                                                label: Center(
+                                                  child: const Text('Browse File',style: TextStyle(
+                                                    color: Colors.white
+                                                  ),),
+                                                ),
+                                                style: OutlinedButton.styleFrom(
+                                                  backgroundColor:const Color(0xFF6366F1) ,
+                                                  foregroundColor:const Color(0xFF6366F1) ,
+                                                  side: const BorderSide(
+                                                    color: Color(0xFF6366F1),
+                                                  ),
+                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
                                                 ),
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              '1 file only � PDF � max 1MB',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -2922,7 +2915,9 @@ Future<void> _handleBackButton() async {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () async {
+                                  onPressed: isPastDue
+                                      ? null
+                                      : () async {
                                     // Get selected profile data
                                     final name = _profileName(modalActiveProfile!);
                                     final phone = user?.phone ?? '';
@@ -3207,7 +3202,12 @@ Future<void> _handleBackButton() async {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF6366F1),
+                                    backgroundColor: isPastDue
+                                        ? Colors.grey.shade400
+                                        : const Color(0xFF6366F1),
+                                    disabledBackgroundColor:
+                                        Colors.grey.shade400,
+                                    disabledForegroundColor: Colors.white,
                                     foregroundColor: Colors.white,
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 16),
@@ -3774,18 +3774,23 @@ Widget build(BuildContext context) {
                 'url': _effectiveVideoUrl ?? '',
               };
 
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: _handleBackButton,
+        return WillPopScope(
+          onWillPop: () async {
+            await _handleBackButton();
+            return false;
+          },
+          child: Scaffold(
+            extendBodyBehindAppBar: true,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: _handleBackButton,
+              ),
             ),
-          ),
-          backgroundColor: Colors.white,
-          body: NestedScrollView(
+            backgroundColor: Colors.white,
+            body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
                 SliverToBoxAdapter(
@@ -3845,6 +3850,7 @@ Widget build(BuildContext context) {
                 _buildReviewsTab(),
                 _buildAssignmentsTab(currentVideo),
               ],
+            ),
             ),
           ),
         );
@@ -4630,6 +4636,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
     final hasComment = comment != null && comment.isNotEmpty;
     final hasFeedback = hasRemark || hasComment;
     final assignedScore = _submission?.assignedScore;
+    final isPastDue = _isAssignmentPastDue();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -4648,7 +4655,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Feedback',
+                  'Performance',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -4758,7 +4765,10 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
           ),
           const SizedBox(height: 24),
         ],
-        const Text(
+      
+       
+        if (!hasFeedback) ...[
+            const Text(
           'Lesson Assignment',
           style: TextStyle(
             fontSize: 20,
@@ -4766,9 +4776,8 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
             color: Colors.black87,
           ),
         ),
-       
-        if (!hasFeedback) ...[
           const SizedBox(height: 16),
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -4811,7 +4820,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                       Text(
                         'Deadline: ${_formattedAssignmentDeadline()}',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: Colors.grey.shade900,
                         ),
@@ -4879,12 +4888,14 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                               ),
                               if (isPastDue) ...[
                                 const SizedBox(height: 6),
-                                const Text(
-                                  'Deadline passed',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFFB91C1C),
+                                Center(
+                                  child: const Text(
+                                    'Deadline passed',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFB91C1C),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -5211,11 +5222,17 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                _showSubmitAssignmentModal(context);
-              },
+              onPressed: isPastDue
+                  ? null
+                  : () {
+                      _showSubmitAssignmentModal(context);
+                    },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
+                backgroundColor: isPastDue
+                    ? Colors.grey.shade400
+                    : const Color(0xFF6366F1),
+                disabledBackgroundColor: Colors.grey.shade400,
+                disabledForegroundColor: Colors.white,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -5237,11 +5254,17 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                     : SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            _showSubmitAssignmentModal(context);
-                          },
+                          onPressed: isPastDue
+                              ? null
+                              : () {
+                                  _showSubmitAssignmentModal(context);
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6366F1),
+                            backgroundColor: isPastDue
+                                ? Colors.grey.shade400
+                                : const Color(0xFF6366F1),
+                            disabledBackgroundColor: Colors.grey.shade400,
+                            disabledForegroundColor: Colors.white,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -6419,6 +6442,7 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     return false;
   }
 }
+
 
 
 

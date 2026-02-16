@@ -247,8 +247,15 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LessonQuizProvider>(
-      builder: (context, provider, child) {
+    return WillPopScope(
+      onWillPop: () async {
+        _showInterstitialAdThen(() {
+          Navigator.pop(context);
+        });
+        return false;
+      },
+      child: Consumer<LessonQuizProvider>(
+        builder: (context, provider, child) {
         if (provider.isLoading) {
           return Scaffold(
             appBar: AppBar(
@@ -561,7 +568,8 @@ class _QuizScreenState extends State<QuizScreen> {
             ],
           ),
         );
-      },
+        },
+      ),
     );
   }
 }
