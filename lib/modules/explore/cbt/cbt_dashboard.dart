@@ -24,6 +24,7 @@ import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 
 class CBTDashboard extends StatefulWidget {
   final bool showAppBar;
@@ -61,6 +62,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   late Animation<double> _bounceAnimation;
   bool _animationTriggered = false;
   String? _pressedBoardCode;
+  String? _lastNetworkMessage;
 
   Future<bool> _ensureAuthenticated() async {
     final cbtUserProvider =
@@ -73,13 +75,35 @@ class _CBTDashboardState extends State<CBTDashboard>
       final userId = cbtUserProvider.currentUser?.id;
       print('[CBT_FLOW] Authenticated userId=$userId');
       if (userId == null) return false;
-      final isActive = await _licenseService.isLicenseActive(userId: userId);
-      print('[CBT_FLOW] License active=$isActive (post-auth)');
-      if (!mounted) return false;
-      if (!isActive) {
-        return await _showPlansAndReturn();
+      try {
+        final cachedStatus =
+            await _licenseService.getCachedLicenseStatus(userId);
+        if (cachedStatus == true) {
+          print('[CBT_FLOW] License active from cache');
+          return true;
+        }
+        if (cachedStatus == false) {
+          print('[CBT_FLOW] License inactive from cache');
+          return await _showPlansAndReturn();
+        }
+
+        final isActive = await _licenseService.isLicenseActive(userId: userId);
+        print('[CBT_FLOW] License active=$isActive (post-auth)');
+        if (!mounted) return false;
+        if (!isActive) {
+          return await _showPlansAndReturn();
+        }
+        return true;
+      } catch (e) {
+        print('[CBT_FLOW] License check failed: $e');
+        if (!mounted) return false;
+        await NetworkDialog.ensureOnline(
+          context,
+          message:
+              'Unable to verify license status. Please check your internet connection and try again.',
+        );
+        return false;
       }
-      return true;
     }
     if (!mounted) return false;
 
@@ -92,6 +116,17 @@ class _CBTDashboardState extends State<CBTDashboard>
       final userId = cbtUserProvider.currentUser?.id;
       print('[CBT_FLOW] Signed in via dialog userId=$userId');
       if (userId == null) return false;
+      final cachedStatus =
+          await _licenseService.getCachedLicenseStatus(userId);
+      if (cachedStatus == true) {
+        print('[CBT_FLOW] License active from cache (post-signin)');
+        return true;
+      }
+      if (cachedStatus == false) {
+        print('[CBT_FLOW] License inactive from cache (post-signin)');
+        return await _showPlansAndReturn();
+      }
+
       final isActive = await _licenseService.isLicenseActive(userId: userId);
       print('[CBT_FLOW] License active=$isActive (post-signin)');
       if (!mounted) return false;
@@ -359,6 +394,20 @@ class _CBTDashboardState extends State<CBTDashboard>
     return isActive;
   }
 
+  void _showNetworkMessage(String message) {
+    if (message.isEmpty || message == _lastNetworkMessage) return;
+    _lastNetworkMessage = message;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(message),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -373,6 +422,9 @@ class _CBTDashboardState extends State<CBTDashboard>
           : null,
       body: Consumer<CBTProvider>(
         builder: (context, provider, child) {
+        if (provider.error != null && provider.error!.isNotEmpty) {
+          _showNetworkMessage(provider.error!);
+        }
 
         final loading = provider.isLoading;
 
@@ -1132,6 +1184,8 @@ _wasLoading = loading;
     CbtHistoryModel test,
     CBTProvider provider,
   ) async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(context);
+    if (!canUseNetwork || !mounted) return;
     final canProceed = await _checkSubscriptionBeforeTest();
     if (!canProceed || !mounted) return;
 
@@ -1164,6 +1218,8 @@ _wasLoading = loading;
               titleSize: 18.0,
               titleColor: AppColors.text4Light,
               onPressed: () async {
+                final canUseNetwork = await NetworkDialog.ensureOnline(context);
+                if (!canUseNetwork || !mounted) return;
                 final canProceed = await _checkSubscriptionBeforeTest();
                 if (!canProceed || !mounted) return;
                 Navigator.push(
@@ -1272,6 +1328,8 @@ _wasLoading = loading;
   }) {
     return GestureDetector(
       onTap: () async {
+        final canUseNetwork = await NetworkDialog.ensureOnline(context);
+        if (!canUseNetwork || !mounted) return;
         final canProceed = await _checkSubscriptionBeforeTest();
         if (!canProceed || !mounted) return;
         Navigator.push(

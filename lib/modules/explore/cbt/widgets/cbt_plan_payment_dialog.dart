@@ -6,6 +6,7 @@ import 'package:linkschool/modules/model/cbt_plan_model.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_billing_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -400,6 +401,12 @@ Widget build(BuildContext context) {
   }
 
   Future<void> _handlePayOnline() async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(
+      context,
+      message: 'Please connect to the internet to continue payment.',
+    );
+    if (!canUseNetwork || !mounted) return;
+
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
     final user = userProvider.currentUser;
     if (user?.id == null) {
@@ -477,6 +484,12 @@ Widget build(BuildContext context) {
   }
 
   Future<void> _handleVoucherVerify() async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(
+      context,
+      message: 'Please connect to the internet to verify your voucher.',
+    );
+    if (!canUseNetwork || !mounted) return;
+
     final code = _voucherController.text.trim();
     if (code.isEmpty) {
       setState(() => _errorMessage = 'Please enter a voucher code');

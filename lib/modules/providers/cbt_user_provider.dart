@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +18,7 @@ class CbtUserProvider with ChangeNotifier {
     final UserProfileUpdateService _profileUpdateService = UserProfileUpdateService();
   final CbtUserService _userService = CbtUserService();
   bool _isShowingProfileUpdate = false;
+  StreamSubscription<String>? _tokenRefreshSub;
 
   // User state
   CbtUserModel? _currentUser;
@@ -37,10 +39,10 @@ String? _errorMessage; String? get errorMessage => _errorMessage;
   static const String _keyUserProfiles = 'cbt_user_profiles';
 
   // =========================================================================
-  // 🔄 INITIALIZE - Load user from SharedPreferences on app start
+  // ?? INITIALIZE - Load user from SharedPreferences on app start
   // =========================================================================
   Future<void> initialize() async {
-    print('🚀 Initializing CbtUserProvider...');
+    print('?? Initializing CbtUserProvider...');
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -49,7 +51,7 @@ String? _errorMessage; String? get errorMessage => _errorMessage;
       if (userJson != null && userJson.isNotEmpty) {
      final userData = json.decode(userJson) as Map<String, dynamic>;
 _currentUser = CbtUserModel.fromJson(userData);
-        print('✅ User loaded from SharedPreferences: ${_currentUser?.email}');
+        print('? User loaded from SharedPreferences: ${_currentUser?.email}');
 
         final cachedProfiles = await _loadProfilesFromPreferences();
         if (cachedProfiles.isNotEmpty) {
@@ -58,8 +60,10 @@ _currentUser = CbtUserModel.fromJson(userData);
           await _saveProfilesToPreferences(_currentUser!.profiles);
         }
 
-        // ✨ SYNC SUBSCRIPTION SERVICE WITH USER PAYMENT STATUS
+        // ? SYNC SUBSCRIPTION SERVICE WITH USER PAYMENT STATUS
         await syncSubscriptionService();
+        await _syncDeviceTokenIfNeeded();
+        _startTokenRefreshListener();
 
         notifyListeners();
       }
@@ -68,11 +72,52 @@ _currentUser = CbtUserModel.fromJson(userData);
       final savedReference = prefs.getString(_keyPaymentReference);
       if (savedReference != null && savedReference.isNotEmpty) {
         paymentReferenceNotifier.value = savedReference;
-        print('✅ Payment reference loaded: $savedReference');
+        print('? Payment reference loaded: $savedReference');
       }
     } catch (e) {
-      print('⚠️ Error initializing provider: $e');
+      print('?? Error initializing provider: $e');
     }
+  }
+
+  Future<void> _syncDeviceTokenIfNeeded() async {
+    if (_currentUser == null) return;
+    try {
+      final fcmToken = await FirebaseMessagingService().getFcmToken();
+      if (fcmToken == null || fcmToken.isEmpty) return;
+      if (_currentUser!.fcmToken == fcmToken) return;
+      if (_currentUser!.id == null) return;
+
+      final updated = await _userService.updateUser(
+        _currentUser!.copyWith(fcmToken: fcmToken),
+      );
+      _currentUser = updated;
+      await _saveUserToPreferences(updated);
+      print('✅ Device token updated');
+    } catch (e) {
+      print('❌ Error syncing device token: $e');
+    }
+  }
+
+  void _startTokenRefreshListener() {
+    _tokenRefreshSub?.cancel();
+    _tokenRefreshSub =
+        FirebaseMessagingService().onTokenRefresh().listen((newToken) async {
+      if (_currentUser == null) return;
+      if (newToken.isEmpty) return;
+      if (_currentUser!.fcmToken == newToken) return;
+      if (_currentUser!.id == null) return;
+
+      try {
+        final updated = await _userService.updateUser(
+          _currentUser!.copyWith(fcmToken: newToken),
+        );
+        _currentUser = updated;
+        await _saveUserToPreferences(updated);
+        print('✅ Device token refreshed and saved');
+      } catch (e) {
+        print('❌ Error updating device token on refresh: $e');
+      }
+    });
   }
 
   Future<void> syncSubscriptionService() async {
@@ -86,11 +131,11 @@ _currentUser = CbtUserModel.fromJson(userData);
       subscribed: _currentUser!.subscribed,
     );
 
-    print('✅ Subscription service synced with user payment status');
+    print('? Subscription service synced with user payment status');
   }
 
   // =========================================================================
-  // 💾 SAVE USER TO SHARED PREFERENCES
+  // ?? SAVE USER TO SHARED PREFERENCES
   // =========================================================================
   Future<void> _saveUserToPreferences(CbtUserModel user) async {
   try {
@@ -104,23 +149,23 @@ _currentUser = CbtUserModel.fromJson(userData);
       await _saveProfilesToPreferences(user.profiles);
     }
 
-    print('✅ User saved to SharedPreferences: ${user.email}');
+    print('? User saved to SharedPreferences: ${user.email}');
   } catch (e) {
-    print('❌ Error saving user to SharedPreferences: $e');
+    print('? Error saving user to SharedPreferences: $e');
   }
 }
 
   // =========================================================================
-  // 👥 PROFILES - Save/Load helper methods
+  // ?? PROFILES - Save/Load helper methods
   // =========================================================================
   Future<void> _saveProfilesToPreferences(List<CbtUserProfile> profiles) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final profilesJson = json.encode(profiles.map((p) => p.toJson()).toList());
       await prefs.setString(_keyUserProfiles, profilesJson);
-      print('✅ User profiles saved to SharedPreferences: ${profiles.length}');
+      print('? User profiles saved to SharedPreferences: ${profiles.length}');
     } catch (e) {
-      print('❌ Error saving profiles to SharedPreferences: $e');
+      print('? Error saving profiles to SharedPreferences: $e');
     }
   }
 
@@ -132,13 +177,13 @@ _currentUser = CbtUserModel.fromJson(userData);
       final decoded = json.decode(profilesString) as List;
       return decoded.map((e) => CbtUserProfile.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('❌ Error loading profiles from SharedPreferences: $e');
+      print('? Error loading profiles from SharedPreferences: $e');
       return [];
     }
   }
 
   // =========================================================================
-  // 🗑️ CLEAR USER FROM SHARED PREFERENCES
+  // ??? CLEAR USER FROM SHARED PREFERENCES
   // =========================================================================
   Future<void> _clearUserFromPreferences() async {
     try {
@@ -149,7 +194,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       final refExists = prefs.containsKey(_keyPaymentReference);
       final profilesExist = prefs.containsKey(_keyUserProfiles);
 
-      print('🗑️ Clearing user data from SharedPreferences...');
+      print('??? Clearing user data from SharedPreferences...');
       print('   - User key exists: $userExists');
       print('   - Payment reference key exists: $refExists');
       print('   - Profiles key exists: $profilesExist');
@@ -177,23 +222,23 @@ _currentUser = CbtUserModel.fromJson(userData);
         throw Exception('Failed to remove user data from SharedPreferences');
       }
 
-      print('✅ User data cleared from SharedPreferences');
+      print('? User data cleared from SharedPreferences');
     } catch (e) {
-      print('❌ Error clearing user data: $e');
+      print('? Error clearing user data: $e');
       rethrow;
     }
   }
 
   // =========================================================================
-  // 👤 FETCH USER BY EMAIL - Simple GET and Save
+  // ?? FETCH USER BY EMAIL - Simple GET and Save
   // =========================================================================
   Future<CbtUserModel?> fetchUserByEmail(String email) async {
     if (email.isEmpty) {
-      print('⚠️ Cannot fetch user: email is empty');
+      print('?? Cannot fetch user: email is empty');
       return null;
     }
 
-    print('📡 [FETCH USER] GET request for: $email');
+    print('?? [FETCH USER] GET request for: $email');
     _isLoading = true;
     notifyListeners();
 
@@ -201,7 +246,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       final user = await _userService.fetchUserByEmail(email);
 
       if (user != null) {
-        print('✅ [FETCH USER] User found');
+        print('? [FETCH USER] User found');
         print('   - Subscribed: ${user.subscribed}');
         print('   - Reference: ${user.reference}');
 
@@ -223,16 +268,16 @@ await _saveUserToPreferences(_currentUser!);
           await _savePaymentReference(user.reference!);
         }
 
-        print('✅ [FETCH USER] User saved to SharedPreferences');
+        print('? [FETCH USER] User saved to SharedPreferences');
       } else {
-        print('⚠️ [FETCH USER] User not found in database');
+        print('?? [FETCH USER] User not found in database');
       }
 
       _isLoading = false;
       notifyListeners();
       return user;
     } catch (e) {
-      print('❌ [FETCH USER] Error: $e');
+      print('? [FETCH USER] Error: $e');
       _isLoading = false;
       notifyListeners();
       return null;
@@ -240,17 +285,17 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 🆕 HANDLE FIREBASE SIGN UP - OPTIMIZED FLOW
-  // Flow: GET → (if empty) → POST → GET → Save
-  //       GET → (not empty) → Save → Proceed
+  // ?? HANDLE FIREBASE SIGN UP - OPTIMIZED FLOW
+  // Flow: GET ? (if empty) ? POST ? GET ? Save
+  //       GET ? (not empty) ? Save ? Proceed
   // =========================================================================
   Future<CbtUserModel?> handleFirebaseSignUp({
     required String email,
     required String name,
     required String profilePicture,
   }) async {
-    print('🔐 Handling Firebase sign-up for: $email');
-    print('📋 Flow: POST only, use returned data');
+    print('?? Handling Firebase sign-up for: $email');
+    print('?? Flow: POST only, use returned data');
 
     _isLoading = true;
     notifyListeners();
@@ -258,9 +303,9 @@ await _saveUserToPreferences(_currentUser!);
 
     try {
       final fcmToken = await FirebaseMessagingService().getFcmToken();
-      print('📡 FCM token retrieved: $fcmToken');
+      print('?? FCM token retrieved: $fcmToken');
       if (fcmToken == null || fcmToken.isEmpty) {
-        print('⚠️ FCM token is empty; continuing without it.');
+        print('?? FCM token is empty; continuing without it.');
       }
 
 
@@ -284,12 +329,14 @@ await _saveUserToPreferences(_currentUser!);
         await _savePaymentReference(createdUser.reference!);
       }
       await syncSubscriptionService();
-      print('✅ Sign-up flow completed successfully');
+      await _syncDeviceTokenIfNeeded();
+      _startTokenRefreshListener();
+      print('? Sign-up flow completed successfully');
       _isLoading = false;
       notifyListeners();
       return createdUser;
     } catch (e) {
-      print('❌ Error in sign-up flow: $e');
+      print('? Error in sign-up flow: $e');
       _isLoading = false;
       notifyListeners();
       throw (' $e');
@@ -297,7 +344,7 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 🔐 HANDLE FIREBASE LOGIN (GET -> CREATE IF MISSING)
+  // ?? HANDLE FIREBASE LOGIN (GET -> CREATE IF MISSING)
   // =========================================================================
   Future<CbtUserModel?> handleFirebaseLogin({
     required String email,
@@ -318,6 +365,8 @@ await _saveUserToPreferences(_currentUser!);
           await _savePaymentReference(existingUser.reference!);
         }
         await syncSubscriptionService();
+        await _syncDeviceTokenIfNeeded();
+        _startTokenRefreshListener();
         _isLoading = false;
         notifyListeners();
         return existingUser;
@@ -349,6 +398,8 @@ await _saveUserToPreferences(_currentUser!);
         await _savePaymentReference(createdUser.reference!);
       }
       await syncSubscriptionService();
+      await _syncDeviceTokenIfNeeded();
+      _startTokenRefreshListener();
       _isLoading = false;
       notifyListeners();
       return createdUser;
@@ -361,7 +412,7 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 🔐 EMAIL/PASSWORD SIGNUP (API)
+  // ?? EMAIL/PASSWORD SIGNUP (API)
   // =========================================================================
   Future<CbtUserModel?> signupWithEmailPassword({
     required String firstName,
@@ -393,6 +444,8 @@ await _saveUserToPreferences(_currentUser!);
         await _savePaymentReference(createdUser.reference!);
       }
       await syncSubscriptionService();
+      await _syncDeviceTokenIfNeeded();
+      _startTokenRefreshListener();
 
       _isLoading = false;
       notifyListeners();
@@ -406,7 +459,7 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 🔐 EMAIL/PASSWORD LOGIN (API)
+  // ?? EMAIL/PASSWORD LOGIN (API)
   // =========================================================================
   Future<CbtUserModel?> loginWithEmailPassword({
     required String email,
@@ -428,6 +481,8 @@ await _saveUserToPreferences(_currentUser!);
         await _savePaymentReference(user.reference!);
       }
       await syncSubscriptionService();
+      await _syncDeviceTokenIfNeeded();
+      _startTokenRefreshListener();
 
       _isLoading = false;
       notifyListeners();
@@ -441,15 +496,15 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 💳 UPDATE USER AFTER PAYMENT (PUT + Fetch + Persist)
+  // ?? UPDATE USER AFTER PAYMENT (PUT + Fetch + Persist)
   // =========================================================================
   Future<void> updateUserAfterPayment({required String reference}) async {
     if (_currentUser == null) {
-      print('⚠️ Cannot update: currentUser is null');
+      print('?? Cannot update: currentUser is null');
       throw ('No current user to update');
     }
 
-    print('💳 Updating user after payment...');
+    print('?? Updating user after payment...');
     print('   - Email: ${_currentUser!.email}');
     print('   - Reference: $reference');
 
@@ -458,7 +513,7 @@ await _saveUserToPreferences(_currentUser!);
 
     try {
       // Step 1: Make PUT request to update user
-      print('📡 Making PUT request to update user...');
+      print('?? Making PUT request to update user...');
       final updatedUser = await _userService.updateUser(_currentUser!.copyWith(
         subscribed: 1,
         reference: reference,
@@ -473,21 +528,23 @@ await _saveUserToPreferences(_currentUser!);
       // Step 4: Save payment reference and trigger notifier
       await _savePaymentReference(reference);
 
-      // ✨ Step 5: Mark as paid in subscription service
+      // ? Step 5: Mark as paid in subscription service
       final subscriptionService = CbtSubscriptionService();
       await subscriptionService.markAsPaid(_currentUser!.email);
 
-      // ✨ Step 6: Sync subscription service
+      // ? Step 6: Sync subscription service
       await syncSubscriptionService();
+      await _syncDeviceTokenIfNeeded();
+      _startTokenRefreshListener();
 
-      print('✅ User updated and persisted after payment');
+      print('? User updated and persisted after payment');
       print('   - Subscribed: ${updatedUser.subscribed}');
       print('   - Reference: ${updatedUser.reference}');
 
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('❌ Error updating user after payment: $e');
+      print('? Error updating user after payment: $e');
       _isLoading = false;
       notifyListeners();
       throw (' $e');
@@ -495,7 +552,7 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 📌 Phone check moved to UI
+  // ?? Phone check moved to UI
   // The modal prompting for phone/profile updates is now shown from UI
   // components (`CBTDashboard` and `ExploreCourses`). A convenience getter
   // is provided so widgets can quickly check if a phone is missing.
@@ -519,68 +576,70 @@ await _saveUserToPreferences(_currentUser!);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyPaymentReference, reference);
       paymentReferenceNotifier.value = reference;
-      print('✅ Payment reference saved: $reference');
+      print('? Payment reference saved: $reference');
     } catch (e) {
-      print('❌ Error saving payment reference: $e');
+      print('? Error saving payment reference: $e');
     }
   }
 
   // =========================================================================
-  // 🔄 REFRESH USER DATA (Force fetch from API)
+  // ?? REFRESH USER DATA (Force fetch from API)
   // =========================================================================
   Future<void> refreshCurrentUser() async {
     if (_currentUser == null) {
-      print('⚠️ Cannot refresh: currentUser is null');
+      print('?? Cannot refresh: currentUser is null');
       return;
     }
 
-    print('🔄 Refreshing user data for: ${_currentUser!.email}');
+    print('?? Refreshing user data for: ${_currentUser!.email}');
     await fetchUserByEmail(_currentUser!.email);
   }
 
   // =========================================================================
-  // 🚪 LOGOUT
+  // ?? LOGOUT
   // =========================================================================
   Future<void> logout() async {
-    print('🚪 Logging out user...');
+    print('?? Logging out user...');
 
     // Clear state
     _currentUser = null;
     paymentReferenceNotifier.value = null;
+    await _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = null;
 
     // Clear SharedPreferences
     try {
       await _clearUserFromPreferences();
-      print('✅ User data cleared from SharedPreferences');
+      print('? User data cleared from SharedPreferences');
     } catch (e) {
-      print('❌ Error clearing user from preferences: $e');
+      print('? Error clearing user from preferences: $e');
       rethrow; // Re-throw to let caller handle
     }
 
-    // ✨ Clear subscription service data
+    // ? Clear subscription service data
     try {
       final subscriptionService = CbtSubscriptionService();
       await subscriptionService.clearUserData();
-      print('✅ Subscription service data cleared');
+      print('? Subscription service data cleared');
     } catch (e) {
-      print('❌ Error clearing subscription service data: $e');
+      print('? Error clearing subscription service data: $e');
     }
 
-    // ✨ Clear CBT test history data
+    // ? Clear CBT test history data
     try {
       final historyService = CbtHistoryService();
       await historyService.clearHistory();
-      print('✅ CBT test history cleared on logout');
+      print('? CBT test history cleared on logout');
     } catch (e) {
-      print('❌ Error clearing CBT test history on logout: $e');
+      print('? Error clearing CBT test history on logout: $e');
     }
 
     notifyListeners();
-    print('✅ User logged out successfully');
+    print('? User logged out successfully');
   }
 
   // =========================================================================
-  // ✅ CHECK IF USER HAS PAID
+  // ? CHECK IF USER HAS PAID
   // =========================================================================
   bool get hasPaid {
     if (_currentUser == null) return false;
@@ -591,7 +650,7 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 📊 GET SUBSCRIPTION STATUS
+  // ?? GET SUBSCRIPTION STATUS
   // =========================================================================
   Map<String, dynamic> get subscriptionStatus {
     if (_currentUser == null) {
@@ -650,10 +709,10 @@ await _saveUserToPreferences(_currentUser!);
 
 //   /// Initialize provider - load cached user data and attempt count
 //   Future<void> initialize() async {
-//     _log('🚀 Initializing CbtUserProvider...');
+//     _log('?? Initializing CbtUserProvider...');
 //     await _loadAttemptCount();
 //     await _loadCachedUserData();
-//     _log('✅ CbtUserProvider initialized');
+//     _log('? CbtUserProvider initialized');
 //   }
 
 //   /// Load attempt count before signup from SharedPreferences
@@ -661,9 +720,9 @@ await _saveUserToPreferences(_currentUser!);
 //     try {
 //       final prefs = await SharedPreferences.getInstance();
 //       _attemptCountBeforeSignup = prefs.getInt(_keyAttemptBeforeSignup) ?? 0;
-//       _log('📊 Loaded attempt count: $_attemptCountBeforeSignup');
+//       _log('?? Loaded attempt count: $_attemptCountBeforeSignup');
 //     } catch (e) {
-//       _log('❌ Error loading attempt count: $e');
+//       _log('? Error loading attempt count: $e');
 //     }
 //   }
 
@@ -692,12 +751,12 @@ await _saveUserToPreferences(_currentUser!);
 //             subscribed: int.tryParse(userData['subscribed'] ?? '0') ?? 0,
 //             reference: userData['reference'],
 //           );
-//           _log('✅ Loaded cached user: ${_currentUser?.name}');
+//           _log('? Loaded cached user: ${_currentUser?.name}');
 //           notifyListeners();
 //         }
 //       }
 //     } catch (e) {
-//       _log('❌ Error loading cached user data: $e');
+//       _log('? Error loading cached user data: $e');
 //     }
 //   }
 
@@ -711,16 +770,16 @@ await _saveUserToPreferences(_currentUser!);
 //           'reference:${user.reference ?? ''}';
       
 //       await prefs.setString(_keyUserData, userData);
-//       _log('💾 User data cached');
+//       _log('?? User data cached');
 //     } catch (e) {
-//       _log('❌ Error caching user data: $e');
+//       _log('? Error caching user data: $e');
 //     }
 //   }
 
 //   /// Increment attempt count before signup
 //   Future<void> incrementAttemptBeforeSignup() async {
 //     _attemptCountBeforeSignup++;
-//     _log('➕ Attempt count incremented to: $_attemptCountBeforeSignup');
+//     _log('? Attempt count incremented to: $_attemptCountBeforeSignup');
     
 //     final prefs = await SharedPreferences.getInstance();
 //     await prefs.setInt(_keyAttemptBeforeSignup, _attemptCountBeforeSignup);
@@ -732,12 +791,12 @@ await _saveUserToPreferences(_currentUser!);
 //     _attemptCountBeforeSignup = 0;
 //     final prefs = await SharedPreferences.getInstance();
 //     await prefs.setInt(_keyAttemptBeforeSignup, 0);
-//     _log('🔄 Attempt count reset');
+//     _log('?? Attempt count reset');
 //   }
 
 //   /// Fetch user data by email from API
 //   Future<void> fetchUserByEmail(String email) async {
-//     _log('🔍 Fetching user by email: $email');
+//     _log('?? Fetching user by email: $email');
 //     _setLoading(true);
 //     _errorMessage = null;
 
@@ -747,16 +806,16 @@ await _saveUserToPreferences(_currentUser!);
 //       if (user != null) {
 //         _currentUser = user;
 //         await _cacheUserData(user);
-//         _log('✅ User fetched successfully: ${user.name}');
+//         _log('? User fetched successfully: ${user.name}');
 //       } else {
 //         _currentUser = null;
-//         _log('🔍 User not found');
+//         _log('?? User not found');
 //       }
       
 //       notifyListeners();
 //     } catch (e) {
 //       _errorMessage = 'Failed to fetch user: $e';
-//       _log('❌ Error fetching user: $e');
+//       _log('? Error fetching user: $e');
 //       notifyListeners();
 //     } finally {
 //       _setLoading(false);
@@ -769,7 +828,7 @@ await _saveUserToPreferences(_currentUser!);
 //     required String profilePicture,
 //     String? reference,
 //   }) async {
-//     _log('🔐 Handling Firebase sign-up...');
+//     _log('?? Handling Firebase sign-up...');
 //     _setLoading(true);
 //     _errorMessage = null;
 
@@ -777,22 +836,22 @@ await _saveUserToPreferences(_currentUser!);
 //       final cbtSubscriptionService = CbtSubscriptionService();
 //       final actualTestCount = await cbtSubscriptionService.getTestCount();
       
-//       _log('📊 User has taken $actualTestCount tests before signup');
-//       _log('📡 Step 1: Checking if user exists with GET request...');
+//       _log('?? User has taken $actualTestCount tests before signup');
+//       _log('?? Step 1: Checking if user exists with GET request...');
 
 //       final existingUser = await _userService.fetchUserByEmail(email);
 
 //       if (existingUser != null) {
-//         _log('👤 User already exists, saving to SharedPreferences and proceeding');
+//         _log('?? User already exists, saving to SharedPreferences and proceeding');
 //         _currentUser = existingUser;
 //         await _cacheUserData(existingUser);
 //         await _resetAttemptCount();
-//         _log('✅ Existing user loaded and cached');
+//         _log('? Existing user loaded and cached');
 //         notifyListeners();
 //         return;
 //       }
 
-//       _log('🔍 User not found (empty), proceeding with POST request...');
+//       _log('?? User not found (empty), proceeding with POST request...');
 
 //       final newUser = CbtUserModel(
 //         name: name,
@@ -804,9 +863,9 @@ await _saveUserToPreferences(_currentUser!);
 //       );
 
 //       await _userService.createUser(newUser);
-//       _log('✅ POST request successful, user created');
+//       _log('? POST request successful, user created');
 
-//       _log('📡 Step 2: Fetching user data back with GET request...');
+//       _log('?? Step 2: Fetching user data back with GET request...');
 
 //       final fetchedUser = await _userService.fetchUserByEmail(email);
 
@@ -814,19 +873,19 @@ await _saveUserToPreferences(_currentUser!);
 //         throw Exception('Failed to fetch user data after creation');
 //       }
 
-//       _log('✅ User data fetched successfully, saving to SharedPreferences');
+//       _log('? User data fetched successfully, saving to SharedPreferences');
 
 //       _currentUser = fetchedUser;
 //       await _cacheUserData(fetchedUser);
 //       await _resetAttemptCount();
 
-//       _log('✅ Sign-up completed successfully');
-//       _log('📊 User: ${fetchedUser.name}, Subscribed: ${fetchedUser.subscribed}, Attempts: ${fetchedUser.attempt}');
+//       _log('? Sign-up completed successfully');
+//       _log('?? User: ${fetchedUser.name}, Subscribed: ${fetchedUser.subscribed}, Attempts: ${fetchedUser.attempt}');
 
 //       notifyListeners();
 //     } catch (e) {
 //       _errorMessage = 'Failed to sign up: $e';
-//       _log('❌ Error during sign-up: $e');
+//       _log('? Error during sign-up: $e');
 //       notifyListeners();
 //       rethrow;
 //     } finally {
@@ -835,7 +894,7 @@ await _saveUserToPreferences(_currentUser!);
 //   }
 
 //   Future<void> handleFirebaseSignIn({String? reference}) async {
-//     _log('🔐 Handling Firebase sign-in...');
+//     _log('?? Handling Firebase sign-in...');
 //     _setLoading(true);
 //     _errorMessage = null;
 
@@ -846,7 +905,7 @@ await _saveUserToPreferences(_currentUser!);
 //         throw Exception('No Firebase user found');
 //       }
 
-//       _log('👤 Firebase user: ${firebaseUser.email}');
+//       _log('?? Firebase user: ${firebaseUser.email}');
 
 //       final user = await _userService.syncUserOnLogin(
 //         email: firebaseUser.email ?? '',
@@ -860,13 +919,13 @@ await _saveUserToPreferences(_currentUser!);
 //       await _cacheUserData(user);
 //       await _resetAttemptCount();
 
-//       _log('✅ User synced successfully: ${user.name}');
-//       _log('📊 Subscribed status: ${user.subscribed}');
+//       _log('? User synced successfully: ${user.name}');
+//       _log('?? Subscribed status: ${user.subscribed}');
 
 //       notifyListeners();
 //     } catch (e) {
 //       _errorMessage = 'Failed to sync user: $e';
-//       _log('❌ Error handling Firebase sign-in: $e');
+//       _log('? Error handling Firebase sign-in: $e');
 //       notifyListeners();
 //       rethrow;
 //     } finally {
@@ -883,7 +942,7 @@ await _saveUserToPreferences(_currentUser!);
 //     int? subscribed,
 //     String? reference,
 //   }) async {
-//     _log('📝 Creating/Updating user: $email');
+//     _log('?? Creating/Updating user: $email');
 //     _setLoading(true);
 //     _errorMessage = null;
 
@@ -905,11 +964,11 @@ await _saveUserToPreferences(_currentUser!);
 //         await _resetAttemptCount();
 //       }
       
-//       _log('✅ User created/updated successfully');
+//       _log('? User created/updated successfully');
 //       notifyListeners();
 //     } catch (e) {
 //       _errorMessage = 'Failed to create/update user: $e';
-//       _log('❌ Error creating/updating user: $e');
+//       _log('? Error creating/updating user: $e');
 //       notifyListeners();
 //       rethrow;
 //     } finally {
@@ -920,11 +979,11 @@ await _saveUserToPreferences(_currentUser!);
 //   /// Update user's subscription status
 //   Future<void> updateSubscriptionStatus(int subscribed) async {
 //     if (_currentUser == null) {
-//       _log('❌ Cannot update subscription: No user logged in');
+//       _log('? Cannot update subscription: No user logged in');
 //       return;
 //     }
 
-//     _log('🔄 Updating subscription status to: $subscribed');
+//     _log('?? Updating subscription status to: $subscribed');
 //     _setLoading(true);
 
 //     try {
@@ -934,11 +993,11 @@ await _saveUserToPreferences(_currentUser!);
 //       _currentUser = result;
 //       await _cacheUserData(result);
       
-//       _log('✅ Subscription status updated');
+//       _log('? Subscription status updated');
 //       notifyListeners();
 //     } catch (e) {
 //       _errorMessage = 'Failed to update subscription: $e';
-//       _log('❌ Error updating subscription: $e');
+//       _log('? Error updating subscription: $e');
 //       notifyListeners();
 //     } finally {
 //       _setLoading(false);
@@ -949,7 +1008,7 @@ await _saveUserToPreferences(_currentUser!);
 //   Future<void> updateUserAfterPayment({
 //     required String reference,
 //   }) async {
-//     _log('💳 Updating user after payment with reference: $reference');
+//     _log('?? Updating user after payment with reference: $reference');
 //     _setLoading(true);
 //     _errorMessage = null;
 
@@ -964,8 +1023,8 @@ await _saveUserToPreferences(_currentUser!);
 //       final name = firebaseUser.displayName ?? '';
 //       final profilePicture = firebaseUser.photoURL ?? '';
 
-//       _log('👤 Updating user: $email');
-//       _log('💰 Payment reference: $reference');
+//       _log('?? Updating user: $email');
+//       _log('?? Payment reference: $reference');
 
 //       // Make PUT request to update user with payment reference
 //       final updatedUser = await _userService.updateUserAfterPayment(
@@ -985,13 +1044,13 @@ await _saveUserToPreferences(_currentUser!);
 //       // Update the notifier to trigger dialog dismissal
 //       paymentReferenceNotifier.value = reference;
 
-//       _log('✅ User updated successfully after payment');
-//       _log('📊 User: ${updatedUser.name}, Subscribed: ${updatedUser.subscribed}, Reference: $reference');
+//       _log('? User updated successfully after payment');
+//       _log('?? User: ${updatedUser.name}, Subscribed: ${updatedUser.subscribed}, Reference: $reference');
 
 //       notifyListeners();
 //     } catch (e) {
 //       _errorMessage = 'Failed to update user after payment: $e';
-//       _log('❌ Error updating user after payment: $e');
+//       _log('? Error updating user after payment: $e');
 //       notifyListeners();
 //       rethrow;
 //     } finally {
@@ -1005,7 +1064,7 @@ await _saveUserToPreferences(_currentUser!);
 //       final prefs = await SharedPreferences.getInstance();
 //       return prefs.getString(_keyPaymentReference);
 //     } catch (e) {
-//       _log('❌ Error getting payment reference: $e');
+//       _log('? Error getting payment reference: $e');
 //       return null;
 //     }
 //   }
@@ -1016,15 +1075,15 @@ await _saveUserToPreferences(_currentUser!);
 //       final prefs = await SharedPreferences.getInstance();
 //       await prefs.remove(_keyPaymentReference);
 //       paymentReferenceNotifier.value = null;
-//       _log('🗑️ Payment reference cleared');
+//       _log('??? Payment reference cleared');
 //     } catch (e) {
-//       _log('❌ Error clearing payment reference: $e');
+//       _log('? Error clearing payment reference: $e');
 //     }
 //   }
 
 //   /// Sign out user
 //   Future<void> signOut() async {
-//     _log('👋 Signing out user...');
+//     _log('?? Signing out user...');
     
 //     try {
 //       await _authService.signOut();
@@ -1036,10 +1095,10 @@ await _saveUserToPreferences(_currentUser!);
 //       final prefs = await SharedPreferences.getInstance();
 //       await prefs.remove(_keyUserData);
       
-//       _log('✅ User signed out successfully');
+//       _log('? User signed out successfully');
 //       notifyListeners();
 //     } catch (e) {
-//       _log('❌ Error signing out: $e');
+//       _log('? Error signing out: $e');
 //     }
 //   }
 
@@ -1073,6 +1132,8 @@ await _saveUserToPreferences(_currentUser!);
 //     };
 //   }
 // }
+
+
 
 
 

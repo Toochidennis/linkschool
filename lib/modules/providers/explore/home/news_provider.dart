@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/services/explore/home/news_service.dart';
+import 'package:linkschool/modules/services/network/connectivity_service.dart';
 
 class NewsProvider with ChangeNotifier {
   List<NewsModel> _newsmodel = [];
@@ -65,6 +66,8 @@ class NewsProvider with ChangeNotifier {
   Future<void> fetchNews({bool refresh = true}) async {
     if (_isLoading || _isLoadingMore) return;
 
+    final isOnline = await ConnectivityService.isOnline();
+
     if (refresh) {
       _currentPage = 1;
       _hasNextPage = true;
@@ -85,6 +88,7 @@ class NewsProvider with ChangeNotifier {
       final response = await _newsService.getAllNews(
         page: _currentPage,
         perPage: _pageSize,
+        allowNetwork: isOnline,
       );
 
       // Merge news items by id (avoid duplicates)
@@ -121,12 +125,18 @@ class NewsProvider with ChangeNotifier {
       _hasNextPage = response.meta.hasNext;
       _currentPage = response.meta.currentPage + 1;
 
+      if (!isOnline) {
+        _errorMessage = 'You are offline. Showing saved news.';
+      }
+
       // Log the fetched news for debugging
       print('✅ Fetched ${response.news.length} news items (page ${response.meta.currentPage})');
       print('📊 Groups: ${_groups.keys.join(", ")}');
       print('🏷️ Categories: ${_categories.keys.join(", ")}');
     } catch (e) {
-      _errorMessage = 'Error fetching News: $e';
+      _errorMessage = isOnline
+          ? 'Network error. Please try again.'
+          : 'No internet connection. Connect and try again.';
       print('❌ Error in NewsProvider: $_errorMessage');
     } finally {
       _isLoading = false;

@@ -66,6 +66,7 @@ class _ExploreHomeState extends State<ExploreHome> with AutomaticKeepAliveClient
   );
 
   bool _imagesPrecached = false;
+  String? _lastNetworkMessage;
 
   void _shareNews(String title, String content, String time, String imageUrl) {
     // Format the complete news content for sharing
@@ -299,6 +300,20 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     }
   }
 
+  void _showNetworkMessage(String message) {
+    if (message.isEmpty || message == _lastNetworkMessage) return;
+    _lastNetworkMessage = message;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(message),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
+    });
+  }
+
   Future<void> _showLevelSubjectSelector() async {
     // Check if there's a saved level in shared preferences
     final prefs = await SharedPreferences.getInstance();
@@ -399,6 +414,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     super.build(context);
     final newsProvider = Provider.of<NewsProvider>(context);
     final announcementProvider = Provider.of<AnnouncementProvider>(context);
+
+    _showNetworkMessage(newsProvider.errorMessage);
+    _showNetworkMessage(announcementProvider.errorMessage);
 
     // Precache images once data is available to avoid re-downloading when returning
     if (!_imagesPrecached && !newsProvider.isLoading && !announcementProvider.isLoading) {

@@ -54,7 +54,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
               children: [
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     children: [
                       IconButton(
@@ -91,7 +91,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                         const Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         )
-                      else if (provider.errorMessage != null)
+                      else if (provider.errorMessage != null &&
+                          plans.isEmpty)
                         _buildErrorState(provider.errorMessage!)
                       else if (plans.isEmpty)
                         _buildEmptyState()
@@ -392,13 +393,13 @@ class _PlanCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: accent.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 60, color: accent),
+              child: Icon(icon, size: 40, color: accent),
             ),
             const SizedBox(height: 20),
             Text(
@@ -428,7 +429,7 @@ class _PlanCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _buildFeaturesList(plan.features),

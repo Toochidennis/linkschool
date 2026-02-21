@@ -17,7 +17,8 @@ class CbtLicenseService {
   static const String _licenseStatusKey = 'cbt_license_status_active';
   static const String _licenseStatusTsKey = 'cbt_license_status_checked_at';
   static const String _licenseStatusUserKey = 'cbt_license_status_user_id';
-  static const int _statusCacheMinutes = 0;
+  static const String _licenseExpiresAtKey = 'cbt_license_expires_at';
+  static const int _statusCacheMinutes = 30;
 
   Future<CbtLicenseActivationModel> activateLicense({
     required int userId,
@@ -47,7 +48,11 @@ class CbtLicenseService {
             decoded['data'] as Map<String, dynamic>,
           );
           await _persistLicense(model);
-          await _setCachedLicenseStatus(true, userId);
+          await _setCachedLicenseStatus(
+            true,
+            userId,
+            expiresAt: model.license.expiresAt,
+          );
           return model;
         }
         throw Exception(decoded['message'] ?? 'Activation failed');
@@ -113,7 +118,11 @@ class CbtLicenseService {
               isActive = false;
             }
           }
-          await _setCachedLicenseStatus(isActive, userId);
+          await _setCachedLicenseStatus(
+            isActive,
+            userId,
+            expiresAt: expiresAtRaw,
+          );
           return isActive;
         }
         throw Exception(decoded['message'] ?? 'Failed to load license status');
@@ -130,8 +139,24 @@ class CbtLicenseService {
     final ts = prefs.getInt(_licenseStatusTsKey);
     final cached = prefs.getBool(_licenseStatusKey);
     final cachedUserId = prefs.getInt(_licenseStatusUserKey);
+    final expiresAtRaw = prefs.getString(_licenseExpiresAtKey);
     if (ts == null || cached == null) return null;
     if (cachedUserId == null || cachedUserId != userId) return null;
+
+    // If we have an expiry date and it's still valid, honor it without
+    // forcing network revalidation.
+    if (cached == true && expiresAtRaw != null && expiresAtRaw.isNotEmpty) {
+      final expiresAt = _parseDateTime(expiresAtRaw);
+      if (expiresAt != null && DateTime.now().isBefore(expiresAt)) {
+        return true;
+      }
+    }
+
+    // If cached says inactive, return it without re-checking to allow
+    // offline access to the plans flow.
+    if (cached == false) {
+      return false;
+    }
 
     final now = DateTime.now().millisecondsSinceEpoch;
     final maxAgeMs = _statusCacheMinutes * 60 * 1000;
@@ -141,7 +166,17 @@ class CbtLicenseService {
     return cached;
   }
 
-  Future<void> _setCachedLicenseStatus(bool isActive, int userId) async {
+  /// Returns cached license status without any network call.
+  /// true = active and not expired, false = inactive, null = no cache.
+  Future<bool?> getCachedLicenseStatus(int userId) async {
+    return _getCachedLicenseStatus(userId);
+  }
+
+  Future<void> _setCachedLicenseStatus(
+    bool isActive,
+    int userId, {
+    String? expiresAt,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_licenseStatusKey, isActive);
     await prefs.setInt(_licenseStatusUserKey, userId);
@@ -149,6 +184,11 @@ class CbtLicenseService {
       _licenseStatusTsKey,
       DateTime.now().millisecondsSinceEpoch,
     );
+    if (expiresAt != null) {
+      await prefs.setString(_licenseExpiresAtKey, expiresAt);
+    } else if (!isActive) {
+      await prefs.remove(_licenseExpiresAtKey);
+    }
   }
 
   DateTime? _parseDateTime(String value) {

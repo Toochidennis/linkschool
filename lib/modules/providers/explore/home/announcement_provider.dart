@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/home/announcement_model.dart';
 import 'package:linkschool/modules/services/explore/home/announcement_service.dart';
+import 'package:linkschool/modules/services/network/connectivity_service.dart';
 
 class AnnouncementProvider with ChangeNotifier {
   List<AnnouncementModel> _announcements = [];
@@ -53,19 +54,28 @@ class AnnouncementProvider with ChangeNotifier {
   final AnnouncementService _announcementService = AnnouncementService();
 
   void fetchAnnouncements() async {
+    final isOnline = await ConnectivityService.isOnline();
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
     try {
-      final response = await _announcementService.getAllAnnouncements();
+      final response = await _announcementService.getAllAnnouncements(
+        allowNetwork: isOnline,
+      );
       _announcements = response.announcements;
 
       // Log the fetched announcements for debugging
       print('✅ Fetched ${_announcements.length} announcements');
       print(
           '📊 Published: ${publishedAnnouncements.length}, Sponsored: ${sponsoredAnnouncements.length}');
+
+      if (!isOnline) {
+        _errorMessage = 'You are offline. Showing saved announcements.';
+      }
     } catch (e) {
-      _errorMessage = 'Error fetching announcements: $e';
+      _errorMessage = isOnline
+          ? 'Network error. Please try again.'
+          : 'No internet connection. Connect and try again.';
       // Log the error for debugging
       print('❌ Error in AnnouncementProvider: $_errorMessage');
     } finally {

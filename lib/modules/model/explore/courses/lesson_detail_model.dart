@@ -66,6 +66,7 @@ class Lesson {
   final String assignmentInstructions;
   final String? assignmentSubmissionType;
   final bool isFinalLesson;
+  final bool hasAttendance;
   final int displayOrder;
   final String lessonDate;
   final String? assignmentDueDate;
@@ -86,6 +87,7 @@ class Lesson {
     required this.assignmentInstructions,
     this.assignmentSubmissionType,
     required this.isFinalLesson,
+    required this.hasAttendance,
     required this.displayOrder,
     required this.lessonDate,
     this.assignmentDueDate,
@@ -108,6 +110,7 @@ class Lesson {
     assignmentInstructions: json['assignment_instructions'] ?? '',
     assignmentSubmissionType: json['assignment_submission_type'],
     isFinalLesson: json['is_final_lesson'] ?? false,
+    hasAttendance: json['has_attendance'] ?? false,
     displayOrder: json['display_order'] ?? 0,
     lessonDate: json['lesson_date'] ?? '',
     assignmentDueDate: json['assignment_due_date'],
@@ -146,6 +149,7 @@ class Lesson {
       'assignment_instructions': assignmentInstructions,
       'assignment_submission_type': assignmentSubmissionType,
       'is_final_lesson': isFinalLesson,
+      'has_attendance': hasAttendance,
       'display_order': displayOrder,
       'lesson_date': lessonDate,
       'assignment_due_date': assignmentDueDate,

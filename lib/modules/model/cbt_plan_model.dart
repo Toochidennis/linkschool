@@ -34,4 +34,17 @@ class CbtPlanModel {
           const [],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'discount_percent': discountPercent,
+      'price': price,
+      'final_price': finalPrice,
+      'free_trial_days': freeTrialDays,
+      'currency': currency,
+      'features': features,
+    };
+  }
 }

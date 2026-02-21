@@ -5,6 +5,7 @@ import 'package:linkschool/modules/explore/components/year_picker_dialog.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:provider/provider.dart';
 
 class AllSubjectsScreen extends StatelessWidget {
@@ -67,7 +68,9 @@ class AllSubjectsScreen extends StatelessWidget {
         : 'N/A';
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final canUseNetwork = await NetworkDialog.ensureOnline(context);
+        if (!canUseNetwork) return;
         if (yearModels.isNotEmpty) {
           YearPickerDialog.show(
             context,

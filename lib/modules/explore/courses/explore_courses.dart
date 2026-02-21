@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../../common/constants.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
@@ -13,6 +15,7 @@ import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/services/explore/courses/course_service.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'course_description_screen.dart';
 import 'course_content_screen.dart';
 import 'create_user_profile_screen.dart';
@@ -46,8 +49,20 @@ class _ExploreCoursesState extends State<ExploreCourses>
   int? _lastUserId;
   CourseModel? _pendingCourse;
   CategoryModel? _pendingCategory;
-   bool _isShowingAccountSwitcher = false; 
-  
+  bool _isShowingAccountSwitcher = false; 
+  String? _lastNetworkMessage;
+  bool _imagesPrecached = false;
+  String? _lastPrecacheKey;
+
+  // Persistent image cache for course thumbnails
+  final CacheManager _coursesCacheManager = CacheManager(
+    Config(
+      'coursesCacheKey',
+      stalePeriod: const Duration(days: 30),
+      maxNrOfCacheObjects: 200,
+    ),
+  );
+
 
 
   final ScrollController _scrollController = ScrollController();
@@ -124,6 +139,44 @@ class _ExploreCoursesState extends State<ExploreCourses>
     return parts.last;
   }
 
+  void _showNetworkMessage(String message) {
+    if (message.isEmpty || message == _lastNetworkMessage) return;
+    _lastNetworkMessage = message;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(message),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
+    });
+  }
+
+  void _precacheCourseImages(List<CategoryModel> categories) {
+    final urls = <String>{};
+    for (final category in categories) {
+      for (final course in category.courses) {
+        final raw = course.imageUrl.trim();
+        if (raw.isEmpty) continue;
+        final url = raw.startsWith('https')
+            ? raw
+            : "https://linkskool.net/$raw";
+        urls.add(url);
+      }
+    }
+
+    for (final url in urls) {
+      try {
+        precacheImage(
+          CachedNetworkImageProvider(url, cacheManager: _coursesCacheManager),
+          context,
+        );
+      } catch (_) {
+        // ignore errors while precaching
+      }
+    }
+  }
   
   Future<void> _bootstrapScreen() async {
   if (!mounted || _isBootstrapping) return;
@@ -704,8 +757,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
     return;
   }
   
-  _isShowingAccountSwitcher = true;
-  debugPrint('Opening account switcher dialog, flag set to: $_isShowingAccountSwitcher');
+ _isShowingAccountSwitcher = true;
+ debugPrint('Opening account switcher dialog, flag set to: $_isShowingAccountSwitcher');
 
   final userId = user?.id;
   if (userId == null) {
@@ -714,6 +767,15 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   try {
+    final canUseNetwork = await NetworkDialog.ensureOnline(
+      context,
+      message:
+          'This action requires an internet connection. Please connect and try again.',
+    );
+    if (!canUseNetwork || !mounted) {
+      _isShowingAccountSwitcher = false;
+      return;
+    }
     final profileProvider =
         Provider.of<CreateUserProfileProvider>(context, listen: false);
     final profiles =
@@ -879,6 +941,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
       if (_navigating) return;
       _navigating = true;
       try {
+        final canUseNetwork = await NetworkDialog.ensureOnline(context);
+        if (!canUseNetwork || !mounted) return;
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
         final isSignedIn = cbtUserProvider.currentUser != null;
@@ -1520,7 +1584,25 @@ class _ExploreCoursesState extends State<ExploreCourses>
         backgroundColor: Colors.transparent,
         body: Consumer<ExploreCourseProvider>(
           builder: (context, courseProvider, child) {
+            _showNetworkMessage(courseProvider.errorMessage);
             final loading = courseProvider.isLoading;
+
+            final precacheKey =
+                '${_activeProfile?.id ?? 'public'}:${_activeProfile?.birthDate ?? ''}';
+            if (_lastPrecacheKey != precacheKey) {
+              _lastPrecacheKey = precacheKey;
+              _imagesPrecached = false;
+            }
+
+            if (!_imagesPrecached &&
+                !loading &&
+                courseProvider.categories.isNotEmpty) {
+              _imagesPrecached = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                _precacheCourseImages(courseProvider.categories);
+              });
+            }
 
 // If we go back into loading (refresh / retry), allow replay
             if (!_wasLoading && loading) {
@@ -1565,8 +1647,9 @@ class _ExploreCoursesState extends State<ExploreCourses>
                 );
               }
 
-              if (courseProvider.errorMessage.isNotEmpty) {
-                // fine error section with retry button
+              if (courseProvider.errorMessage.isNotEmpty &&
+                  courseProvider.categories.isEmpty) {
+                // Show error state only when there's no cached data to display.
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -1933,14 +2016,27 @@ class _ExploreCoursesState extends State<ExploreCourses>
                 ),
                 child: Stack(
                   children: [
-                    Image.network(
-                      course.imageUrl.startsWith('https')
+                    CachedNetworkImage(
+                      cacheManager: _coursesCacheManager,
+                      imageUrl: course.imageUrl.startsWith('https')
                           ? course.imageUrl
                           : "https://linkskool.net/${course.imageUrl}",
                       height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
+                      placeholder: (context, url) {
+                        return Container(
+                          height: 120,
+                          color: Colors.grey.shade100,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFFA500),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
+                      },
+                      errorWidget: (context, url, error) {
                         return Container(
                           height: 120,
                           color: Colors.grey.shade200,
@@ -1949,23 +2045,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
                               Icons.image_not_supported,
                               size: 32,
                               color: Colors.grey,
-                            ),
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          height: 120,
-                          color: Colors.grey.shade100,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              color: const Color(0xFFFFA500),
-                              strokeWidth: 2,
                             ),
                           ),
                         );

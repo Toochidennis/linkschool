@@ -14,6 +14,7 @@ import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforc
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 
 // Convert a string to sentence case: all lowercase then first letter uppercase
 String _sentenceCase(String input) {
@@ -520,6 +521,9 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   }
 
   Future<void> _startTest() async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(context);
+    if (!canUseNetwork || !mounted) return;
+
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
 
     // ✨ PRIMARY CHECK: Use CbtUserProvider's payment status (from backend)

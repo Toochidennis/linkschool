@@ -10,6 +10,7 @@ import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
@@ -133,6 +134,9 @@ class _GameSubjectModalState extends State<GameSubjectModal>
   }
 
   Future<void> _onSubjectSelected(String subjectId) async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(context);
+    if (!canUseNetwork || !mounted) return;
+
     setState(() {
       _selectedSubject = subjectId;
       _isTransitioning = true;

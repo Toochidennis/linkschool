@@ -12,6 +12,8 @@ class FirebaseMessagingService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
+  Stream<String> onTokenRefresh() => _messaging.onTokenRefresh;
+
   Future<String?> getFcmToken() async {
     try {
       await _ensurePermission();

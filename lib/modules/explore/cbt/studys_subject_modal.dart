@@ -10,6 +10,7 @@ import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforc
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:provider/provider.dart';
 
 class StudySubjectSelectionModal extends StatefulWidget {
@@ -85,6 +86,9 @@ class _StudySubjectSelectionModalState
   }
 
   Future<void> _onSubjectSelected(String subjectId) async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(context);
+    if (!canUseNetwork || !mounted) return;
+
     setState(() {
       _selectedSubject = subjectId;
       _isTransitioning = true;

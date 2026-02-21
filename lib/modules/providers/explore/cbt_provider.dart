@@ -5,6 +5,7 @@ import '../../model/explore/home/subject_model.dart';
 import '../../model/explore/cbt_history_model.dart';
 import '../../services/explore/cbt_service.dart';
 import '../../services/cbt_history_service.dart';
+import 'package:linkschool/modules/services/network/connectivity_service.dart';
 
 class CBTProvider extends ChangeNotifier {
   final CBTService _cbtService;
@@ -55,15 +56,23 @@ class CBTProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _boards = await _cbtService.fetchCBTBoards();
+      final isOnline = await ConnectivityService.isOnline();
+      _boards = await _cbtService.fetchCBTBoards(allowNetwork: isOnline);
       if (_boards.isNotEmpty && _selectedBoard == null) {
         _selectedBoard = _boards.first;
       }
       
       // Load dashboard statistics
       await loadDashboardStats();
+
+      if (!isOnline) {
+        _error = 'You are offline. Showing saved CBT dashboard.';
+      }
     } catch (e) {
-      _error = e.toString();
+      final isOnline = await ConnectivityService.isOnline();
+      _error = isOnline
+          ? 'Network error. Please try again.'
+          : 'No internet connection. Connect and try again.';
       print('Error in CBTProvider: $_error');
     }
 

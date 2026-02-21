@@ -111,6 +111,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 builder: (context) => CourseDetailScreen(
                   courseTitle: lesson.title,
                   courseName: widget.courseTitle,
+                  courseId: widget.courseId,
                   courseDescription: lesson.description,
                   provider: widget.provider,
                   videoUrl: lesson.videoUrl,
@@ -673,6 +674,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                     builder: (context) => CourseDetailScreen(
                       courseTitle: lesson.title,
                       courseName: widget.courseTitle,
+                      courseId: widget.courseId,
                       courseDescription: lesson.description,
                       provider: widget.provider,
                       videoUrl: lesson.videoUrl,
