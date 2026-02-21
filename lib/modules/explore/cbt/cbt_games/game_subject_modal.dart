@@ -6,7 +6,7 @@ import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+// import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';
@@ -278,29 +278,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     //   return;
     // }
 
-    // Within trial: show soft prompt and allow proceed
-    final allowProceed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => SubscriptionEnforcementDialog(
-        isHardBlock: false,
-        remainingTests: remainingTests,
-        amount: settings.amount,
-        discountRate: settings.discountRate,
-        onSubscribed: () async {
-          print('✅ User subscribed from Gamify module');
-          await userProvider.refreshCurrentUser();
-          if (mounted) {
-            setState(() {});
-          }
-        },
-      ),
-    );
-
-    if (allowProceed == true) {
-      print('   ✅ User can access game (within free limit)');
-      _proceedWithGame();
-    }
+    // Legacy subscription dialog disabled. Plans screen now handles CBT paywall.
+    _proceedWithGame();
   }
 
   void _proceedWithGame() {

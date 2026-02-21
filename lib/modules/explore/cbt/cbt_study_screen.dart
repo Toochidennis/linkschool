@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
@@ -33,11 +35,17 @@ class CBTStudyScreen extends StatefulWidget {
 }
 
 class _CBTStudyScreenState extends State<CBTStudyScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // Cache for AI-generated explanations (keyed by question ID)
   final Map<int, String> _explanationCache = {};
   bool _isStudyComplete = false;
   bool _isInitialCountdownComplete = false;
+
+  bool _isNavigatingAway = false;
+  bool _shouldShowAdOnResume = false;
+
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
 
   // Animation controller for bouncing arrow in Read More
   late AnimationController _bounceController;
@@ -46,6 +54,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     AdManager.instance.preload();
 
     // Initialize bounce animation for Read More arrow
@@ -65,12 +74,81 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInitialLoadingCountdown();
     });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _loadAppOpenAd();
+      }
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
     _bounceController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _shouldShowAdOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.cbtAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (_isAppOpenAdLoaded && _appOpenAd != null) {
+      _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (AppOpenAd ad) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _loadAppOpenAd();
+        },
+        onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _loadAppOpenAd();
+        },
+      );
+
+      _appOpenAd!.show();
+    }
   }
 
   void _showInitialLoadingCountdown() {
@@ -291,6 +369,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                 trigger: AdTrigger.resultNavigation,
               );
 
+              _isNavigatingAway = true;
               // Navigate to progress dashboard
               Navigator.pushReplacement(
                 context,

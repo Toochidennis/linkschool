@@ -64,6 +64,7 @@ class CbtUserModel {
   final List<CbtUserProfile> profiles;
   final String? first_name;
   final String? last_name;
+  final String? fcmToken;
 
   CbtUserModel({
     this.id,
@@ -79,6 +80,7 @@ class CbtUserModel {
     this.profiles = const [],
     this.first_name,
     this.last_name,
+    this.fcmToken,
   });
 
   /// Create CbtUserModel from JSON
@@ -100,6 +102,7 @@ class CbtUserModel {
         createdAt: user['created_at'] as String?,
         first_name: user['first_name'] as String?,
         last_name: user['last_name'] as String?,
+        fcmToken: user['fcm_token'] as String?,
         profiles: profiles,
       );
     } else {
@@ -116,6 +119,7 @@ class CbtUserModel {
         createdAt: json['created_at'] as String?,
           first_name: json['first_name'] as String?,
         last_name: json['last_name'] as String?,
+        fcmToken: json['fcm_token'] as String?,
         profiles: [],
       );
     }
@@ -136,8 +140,28 @@ class CbtUserModel {
     'subscribed': subscribed,
     'profile_picture': profilePicture ?? '',
     'reference': reference ?? '',
+    'fcm_token': fcmToken ?? '',
   };
 }
+
+  /// Convert CbtUserModel to JSON for local persistence
+  Map<String, dynamic> toPrefsJson() {
+    return {
+      'id': id,
+      'username': username,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'profile_picture': profilePicture ?? '',
+      'attempt': attempt,
+      'subscribed': subscribed,
+      'reference': reference ?? '',
+      'created_at': createdAt,
+      'first_name': first_name,
+      'last_name': last_name,
+      'fcm_token': fcmToken ?? '',
+    };
+  }
 
 
   /// Create a copy of the model with updated fields
@@ -153,6 +177,9 @@ class CbtUserModel {
     String? reference,
     String? createdAt,
     List<CbtUserProfile>? profiles,
+    String? first_name,
+    String? last_name,
+    String? fcmToken,
   }) {
     return CbtUserModel(
       id: id ?? this.id,
@@ -166,6 +193,9 @@ class CbtUserModel {
       reference: reference ?? this.reference,
       createdAt: createdAt ?? this.createdAt,
       profiles: profiles ?? this.profiles,
+      first_name: first_name ?? this.first_name,
+      last_name: last_name ?? this.last_name,
+      fcmToken: fcmToken ?? this.fcmToken,
     );
   }
 

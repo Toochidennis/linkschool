@@ -98,7 +98,7 @@ class _QuizScreenState extends State<QuizScreen> {
   void _loadInterstitialAd() {
     if (_isMinor) return;
     InterstitialAd.load(
-      adUnitId: EnvConfig.googleInterstitialAdsApiKey,
+      adUnitId: EnvConfig.programInterstitialAdsApiKey,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
@@ -672,17 +674,24 @@ class MultiSubjectTestScreen extends StatefulWidget {
   State<MultiSubjectTestScreen> createState() => _MultiSubjectTestScreenState();
 }
 
-class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
+class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
+    with WidgetsBindingObserver {
   int currentExamIndex = 0;
   late int remainingSeconds;
   Map<String, Map<int, int>> allAnswers = {}; // examId -> userAnswers
   Map<String, List<QuestionModel>> allQuestions = {}; // examId -> questions
   Map<String, String> subjectNames = {}; // examId -> subject name
   Map<String, String> subjectYears = {}; // examId -> year
+  bool _isNavigatingAway = false;
+  bool _shouldShowAdOnResume = false;
+
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     remainingSeconds = widget.totalDurationInSeconds;
 
     // Initialize subject mappings
@@ -696,7 +705,80 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
     print('   Total Duration: ${widget.totalDurationInSeconds ~/ 60} minutes');
     print('   Question Limit: ${widget.questionLimit ?? "All"}');
     print('   Subjects: ${widget.subjects.join(", ")}');
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _loadAppOpenAd();
+      }
+    });
     print('─' * 50);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _shouldShowAdOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.cbtAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (_isAppOpenAdLoaded && _appOpenAd != null) {
+      _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (AppOpenAd ad) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _loadAppOpenAd();
+        },
+        onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _loadAppOpenAd();
+        },
+      );
+
+      _appOpenAd!.show();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
+    super.dispose();
   }
 
   void _loadNextExam() {
@@ -738,6 +820,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
     print('   Total: $totalAnswered/$totalQuestions answered');
     print('─' * 50);
 
+    _isNavigatingAway = true;
     // Navigate to result screen with all subject data
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(

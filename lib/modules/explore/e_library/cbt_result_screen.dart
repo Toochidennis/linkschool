@@ -13,7 +13,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/widgets/google_signup_dialog.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+// import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
@@ -142,29 +142,8 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   /// Show subscription enforcement dialog
   Future<void> _showSubscriptionPrompt(
       {required bool isHardBlock, required int remainingTests}) async {
-    if (!mounted) return;
-
-    final settings = await CbtSettingsHelper.getSettings();
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => SubscriptionEnforcementDialog(
-        isHardBlock: isHardBlock,
-        remainingTests: remainingTests,
-        amount: settings.amount,
-        discountRate: settings.discountRate,
-        onSubscribed: () {
-          print('✅ User subscribed successfully');
-          if (mounted) {
-            setState(() {
-              // Refresh the UI
-            });
-          }
-        },
-      ),
-    );
+    // Legacy subscription dialog disabled. Plans screen now handles CBT paywall.
+    return;
   }
 
   /// Show persistent Google Sign-in dialog

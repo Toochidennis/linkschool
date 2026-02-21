@@ -8,7 +8,7 @@ import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/cbt_auth_dialog.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/services/explore/courses/course_service.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
@@ -105,6 +105,23 @@ class _ExploreCoursesState extends State<ExploreCourses>
         _searchQuery = _searchController.text;
       });
     });
+  }
+
+  String _userFirstName(CbtUserModel user) {
+    final first = user.first_name?.trim();
+    if (first != null && first.isNotEmpty) return first;
+    final name = (user.name ?? '').trim();
+    if (name.isEmpty) return 'User';
+    return name.split(' ').first;
+  }
+
+  String _userLastName(CbtUserModel user) {
+    final last = user.last_name?.trim();
+    if (last != null && last.isNotEmpty) return last;
+    final name = (user.name ?? '').trim();
+    final parts = name.split(' ').where((e) => e.isNotEmpty).toList();
+    if (parts.length <= 1) return '';
+    return parts.last;
   }
 
   
@@ -535,105 +552,16 @@ class _ExploreCoursesState extends State<ExploreCourses>
     );
   }
 
-  void _showSignInDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          backgroundColor: Colors.white,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.lock_outline,
-                  size: 48,
-                  color: Color(0xFFFFA500),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Sign In Required',
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Please sign in to access course content and track your progress.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Sign In Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await _handleSignIn();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFA500),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Sign In with Google',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Cancel Button
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Maybe Later',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _handleSignIn() async {
     if (!mounted) return;
-    final authService = FirebaseAuthService();
     try {
-      final userCredential = await authService.signInWithGoogle();
-      final user = userCredential?.user;
-      if (user != null) {
-        final userProvider =
-            Provider.of<CbtUserProvider>(context, listen: false);
-        await userProvider.handleFirebaseSignUp(
-          email: user.email!,
-          name: user.displayName!,
-          profilePicture: user.photoURL ?? '',
-        );
+      final signedIn = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => const CbtAuthDialog(),
+      );
 
+      if (signedIn == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Signed in successfully')),
@@ -662,8 +590,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
                 try {
                   await profileService.updateUserPhone(
                     userId: currentUser.id!,
-                    firstName: currentUser.name!.split(' ').first,
-                    lastName: currentUser.name!.split(' ').last,
+                    firstName: _userFirstName(currentUser),
+                    lastName: _userLastName(currentUser),
                     phone: phone,
                     attempt: currentUser.attempt.toString(),
                     email: currentUser.email,
@@ -694,62 +622,62 @@ class _ExploreCoursesState extends State<ExploreCourses>
             );
           }
 
-         await _bootstrapScreen();
-if (!mounted) return;
+          await _bootstrapScreen();
+          if (!mounted) return;
 
-// Get the active profile that was just set in _bootstrapScreen
+          final profiles = cbtUserProvider.currentUser?.profiles ??
+              <CbtUserProfile>[];
+          final savedId = await _loadActiveProfileId();
+          CbtUserProfile? activeProfile;
 
-final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
-final savedId = await _loadActiveProfileId();
-CbtUserProfile? activeProfile;
-
-if (savedId != null) {
-  try {
-    activeProfile = profiles.firstWhere((p) => p.id == savedId);
-  } catch (_) {
-    activeProfile = null;
-  }
-}
-activeProfile ??= profiles.isNotEmpty ? profiles.first : null;
-
-// Update the widget's _activeProfile
-setState(() {
-  _activeProfile = activeProfile;
-});
-
-debugPrint('After bootstrap - _pendingCourse: ${_pendingCourse?.courseName}');
-debugPrint('After bootstrap - _pendingCategory: ${_pendingCategory?.name}');
-debugPrint('After bootstrap - _activeProfile: ${_activeProfile?.id}');
-
-// Check enrollment status before resuming pending course selection
-if (_pendingCourse != null && _pendingCategory != null) {
-  debugPrint('Entering enrollment check block');
-  final profileId = _activeProfile?.id;
-  debugPrint('Profile ID: $profileId');
-  debugPrint('Cohort ID: ${_pendingCourse!.cohortId}');
-  
-  if (profileId != null && _pendingCourse!.cohortId != null) {
-    debugPrint('About to check enrollment...');
-    try {
-      final isEnrolled = await CourseService().checkIsEnrolled(
-        cohortId: _pendingCourse!.cohortId!,
-        profileId: profileId,
-      );
-      debugPrint('Enrollment check after sign-in: isEnrolled=$isEnrolled for course ${_pendingCourse!.courseName}');
-    } catch (e) {
-      debugPrint('Error checking enrollment after sign-in: $e');
-    }
-  } else {
-    debugPrint('Skipped enrollment check - profileId: $profileId, cohortId: ${_pendingCourse!.cohortId}');
-  }
-} else {
-  debugPrint('Skipped enrollment check - _pendingCourse: $_pendingCourse, _pendingCategory: $_pendingCategory');
-}
-
-await _resumePendingCourseSelection();
+          if (savedId != null) {
+            try {
+              activeProfile = profiles.firstWhere((p) => p.id == savedId);
+            } catch (_) {
+              activeProfile = null;
+            }
           }
-          
-       
+          activeProfile ??= profiles.isNotEmpty ? profiles.first : null;
+
+          setState(() {
+            _activeProfile = activeProfile;
+          });
+
+          debugPrint(
+              'After bootstrap - _pendingCourse: ${_pendingCourse?.courseName}');
+          debugPrint(
+              'After bootstrap - _pendingCategory: ${_pendingCategory?.name}');
+          debugPrint('After bootstrap - _activeProfile: ${_activeProfile?.id}');
+
+          if (_pendingCourse != null && _pendingCategory != null) {
+            debugPrint('Entering enrollment check block');
+            final profileId = _activeProfile?.id;
+            debugPrint('Profile ID: $profileId');
+            debugPrint('Cohort ID: ${_pendingCourse!.cohortId}');
+
+            if (profileId != null && _pendingCourse!.cohortId != null) {
+              debugPrint('About to check enrollment...');
+              try {
+                final isEnrolled = await CourseService().checkIsEnrolled(
+                  cohortId: _pendingCourse!.cohortId!,
+                  profileId: profileId,
+                );
+                debugPrint(
+                    'Enrollment check after sign-in: isEnrolled=$isEnrolled for course ${_pendingCourse!.courseName}');
+              } catch (e) {
+                debugPrint('Error checking enrollment after sign-in: $e');
+              }
+            } else {
+              debugPrint(
+                  'Skipped enrollment check - profileId: $profileId, cohortId: ${_pendingCourse!.cohortId}');
+            }
+          } else {
+            debugPrint(
+                'Skipped enrollment check - _pendingCourse: $_pendingCourse, _pendingCategory: $_pendingCategory');
+          }
+
+          await _resumePendingCourseSelection();
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -951,17 +879,15 @@ await _resumePendingCourseSelection();
       if (_navigating) return;
       _navigating = true;
       try {
-        final authService = FirebaseAuthService();
-        final isSignedIn = await authService.isUserSignedUp();
+        final cbtUserProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
+        final isSignedIn = cbtUserProvider.currentUser != null;
 
         if (!isSignedIn) {
           _setPendingCourseSelection(course, category);
-          _showSignInDialog();
+          await _handleSignIn();
           return;
         }
-
-        final cbtUserProvider =
-            Provider.of<CbtUserProvider>(context, listen: false);
         if (cbtUserProvider.isPhoneMissing) {
           await UserProfileUpdateModal.show(
             context,
@@ -975,8 +901,8 @@ await _resumePendingCourseSelection();
               if (user == null) return;
               await profileService.updateUserPhone(
                 userId: user.id!,
-                firstName: user.name!.split(' ').first,
-                lastName: user.name!.split(' ').last,
+                firstName: _userFirstName(user),
+                lastName: _userLastName(user),
                 phone: phone,
                 attempt: user.attempt.toString(),
                 email: user.email,

@@ -4,13 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart';
 import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/explore/cbt/all_test_history_screen.dart';
 import 'package:linkschool/modules/explore/cbt/subject_selection_screen.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/cbt_auth_dialog.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -40,6 +43,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   final _subscriptionService = CbtSubscriptionService();
   final _authService = FirebaseAuthService();
+  final _licenseService = CbtLicenseService();
 
   bool _wasLoading = true;
 
@@ -57,6 +61,47 @@ class _CBTDashboardState extends State<CBTDashboard>
   late Animation<double> _bounceAnimation;
   bool _animationTriggered = false;
   String? _pressedBoardCode;
+
+  Future<bool> _ensureAuthenticated() async {
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.currentUser == null) {
+      await cbtUserProvider.initialize();
+    }
+    final isSignedIn = cbtUserProvider.currentUser != null;
+    if (isSignedIn) {
+      final userId = cbtUserProvider.currentUser?.id;
+      print('[CBT_FLOW] Authenticated userId=$userId');
+      if (userId == null) return false;
+      final isActive = await _licenseService.isLicenseActive(userId: userId);
+      print('[CBT_FLOW] License active=$isActive (post-auth)');
+      if (!mounted) return false;
+      if (!isActive) {
+        return await _showPlansAndReturn();
+      }
+      return true;
+    }
+    if (!mounted) return false;
+
+    final signedIn = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => const CbtAuthDialog(),
+    );
+    if (signedIn == true && mounted) {
+      final userId = cbtUserProvider.currentUser?.id;
+      print('[CBT_FLOW] Signed in via dialog userId=$userId');
+      if (userId == null) return false;
+      final isActive = await _licenseService.isLicenseActive(userId: userId);
+      print('[CBT_FLOW] License active=$isActive (post-signin)');
+      if (!mounted) return false;
+      if (!isActive) {
+        return await _showPlansAndReturn();
+      }
+      return true;
+    }
+    return false;
+  }
 
 
   @override
@@ -277,71 +322,41 @@ class _CBTDashboardState extends State<CBTDashboard>
   Future<bool> _checkSubscriptionBeforeTest() async {
     if (_isCheckingSubscription) return false;
 
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
-    if (cbtUserProvider.hasPaid == true) {
-      _cachedCanTakeTest = true;
-      return true;
-    }
-
     setState(() => _isCheckingSubscription = true);
 
     try {
-      final canTakeTest = await _subscriptionService.canTakeTest();
-      final trialExpired = await _subscriptionService.isTrialExpired();
-      final remainingDays = await _subscriptionService.getRemainingFreeTests();
-      final settings = await CbtSettingsHelper.getSettings();
-      if (!mounted) return false;
-
-      if (!canTakeTest || trialExpired) {
-        final allowProceed = await showDialog<bool>(
-          context: context,
-          barrierDismissible: true,
-          builder: (context) => SubscriptionEnforcementDialog(
-            isHardBlock: true,
-            remainingTests: remainingDays,
-            amount: settings.amount,
-            discountRate: settings.discountRate,
-            onSubscribed: () {
-              print('User subscribed from CBT Dashboard');
-              _cachedCanTakeTest = true;
-              if (mounted) {
-                setState(() {});
-              }
-            },
-          ),
-        );
-        return allowProceed == true;
-      }
-
-      // Within trial: show soft prompt, then allow proceed
-      final allowProceed = await showDialog<bool>(
-        context: context,
-        barrierDismissible: true,
-        builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: false,
-          remainingTests: remainingDays,
-          amount: settings.amount,
-          discountRate: settings.discountRate,
-          onSubscribed: () {
-            print('User subscribed from CBT Dashboard');
-            _cachedCanTakeTest = true;
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      );
-
-      return allowProceed == true;
+      final authenticated = await _ensureAuthenticated();
+      if (!authenticated || !mounted) return false;
+      return true;
     } catch (e) {
       print('Subscription check error: $e');
-      return false;
+      if (!mounted) return false;
+      return await _showPlansAndReturn();
     } finally {
       if (mounted) {
         setState(() => _isCheckingSubscription = false);
       }
     }
+  }
+
+  Future<bool> _showPlansAndReturn() async {
+    print('[CBT_FLOW] Opening plans screen...');
+    final didProceed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
+    );
+    print('[CBT_FLOW] Plans closed didProceed=$didProceed');
+    if (didProceed != true) return false;
+
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    final userId = cbtUserProvider.currentUser?.id;
+    print('[CBT_FLOW] Checking license after plans userId=$userId');
+    if (userId == null) return false;
+
+    final isActive =
+        await _licenseService.isLicenseActive(userId: userId, forceRefresh: true);
+    print('[CBT_FLOW] License active after plans=$isActive');
+    return isActive;
   }
 
   @override
@@ -737,6 +752,9 @@ _wasLoading = loading;
 
   /// ⚡ OPTIMIZED: Non-blocking board tap handler
   Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {
+    final isAuthenticated = await _ensureAuthenticated();
+    if (!isAuthenticated || !mounted) return;
+
     // Check subscription asynchronously
     final canProceed = await _checkSubscriptionBeforeTest();
     if (!canProceed || !mounted) return;
