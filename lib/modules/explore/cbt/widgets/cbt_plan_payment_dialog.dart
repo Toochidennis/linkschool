@@ -438,6 +438,8 @@ Widget build(BuildContext context) {
           PaymentOption.card,
           PaymentOption.bankTransfer,
           PaymentOption.mobileMoney,
+          PaymentOption.ussd,
+         
         ],
         currency: Currency.NGN,
         metaData: {
@@ -460,6 +462,8 @@ Widget build(BuildContext context) {
             voucherCode: '',
             reference: callback.reference,
           );
+
+         
         },
         onCancelled: (callback) {
           if (mounted) {

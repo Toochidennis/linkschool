@@ -1636,7 +1636,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
             _wasLoading = loading;
             // Helper function to render result content
             Widget buildContent() {
-              if (courseProvider.isLoading) {
+              if ((_isBootstrapping && courseProvider.categories.isEmpty) ||
+                  courseProvider.isLoading) {
                 return const Padding(
                   padding: EdgeInsets.only(top: 50),
                   child: Center(

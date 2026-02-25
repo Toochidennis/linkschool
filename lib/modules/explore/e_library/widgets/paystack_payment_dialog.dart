@@ -611,7 +611,8 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
       paymentOptions: [
         PaymentOption.card,
         PaymentOption.bankTransfer,
-        PaymentOption.mobileMoney,
+        
+    
       ],
       currency: Currency.NGN,
       metaData: {

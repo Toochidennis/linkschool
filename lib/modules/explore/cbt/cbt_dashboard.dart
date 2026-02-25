@@ -25,6 +25,7 @@ import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
+import 'package:linkschool/main.dart';
 
 class CBTDashboard extends StatefulWidget {
   final bool showAppBar;
@@ -41,7 +42,10 @@ class CBTDashboard extends StatefulWidget {
 }
 
 class _CBTDashboardState extends State<CBTDashboard>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+    with
+        AutomaticKeepAliveClientMixin,
+        TickerProviderStateMixin,
+        RouteAware {
   final _subscriptionService = CbtSubscriptionService();
   final _authService = FirebaseAuthService();
   final _licenseService = CbtLicenseService();
@@ -63,8 +67,11 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool _animationTriggered = false;
   String? _pressedBoardCode;
   String? _lastNetworkMessage;
+  bool _didSubscribeToRoute = false;
+  bool _skipNextPlanPrompt = false;
+  bool _isHandlingBoardTap = false;
 
-  Future<bool> _ensureAuthenticated() async {
+  Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
     if (cbtUserProvider.currentUser == null) {
@@ -84,6 +91,7 @@ class _CBTDashboardState extends State<CBTDashboard>
         }
         if (cachedStatus == false) {
           print('[CBT_FLOW] License inactive from cache');
+          if (allowAds) return true;
           return await _showPlansAndReturn();
         }
 
@@ -91,6 +99,7 @@ class _CBTDashboardState extends State<CBTDashboard>
         print('[CBT_FLOW] License active=$isActive (post-auth)');
         if (!mounted) return false;
         if (!isActive) {
+          if (allowAds) return true;
           return await _showPlansAndReturn();
         }
         return true;
@@ -124,6 +133,7 @@ class _CBTDashboardState extends State<CBTDashboard>
       }
       if (cachedStatus == false) {
         print('[CBT_FLOW] License inactive from cache (post-signin)');
+        if (allowAds) return true;
         return await _showPlansAndReturn();
       }
 
@@ -131,6 +141,7 @@ class _CBTDashboardState extends State<CBTDashboard>
       print('[CBT_FLOW] License active=$isActive (post-signin)');
       if (!mounted) return false;
       if (!isActive) {
+        if (allowAds) return true;
         return await _showPlansAndReturn();
       }
       return true;
@@ -173,13 +184,19 @@ class _CBTDashboardState extends State<CBTDashboard>
       await _syncTrialSettingsOnEntry();
       await _subscriptionService.setTrialStartDate();
       _preloadSubscriptionStatus(); // Pre-cache subscription status
-   //   await _maybeShowEntryPaymentPrompt();
     });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_didSubscribeToRoute) {
+      final route = ModalRoute.of(context);
+      if (route != null) {
+        routeObserver.subscribe(this, route);
+        _didSubscribeToRoute = true;
+      }
+    }
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
     // Show profile modal once after sign-in/payment if phone is missing
@@ -250,10 +267,18 @@ class _CBTDashboardState extends State<CBTDashboard>
 
   @override
   void dispose() {
+    if (_didSubscribeToRoute) {
+      routeObserver.unsubscribe(this);
+    }
     _fadeController.dispose();
     _slideController.dispose();
     _bounceController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // No auto plans prompt on return; only show on card tap.
   }
 
   Widget _buildAnimatedCard({
@@ -353,6 +378,43 @@ class _CBTDashboardState extends State<CBTDashboard>
     _isShowingEntryPrompt = false;
   }
 
+  Future<void> _maybeShowEntryPlans() async {
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    final canShowPlans = await _ensureSignedInForPlans();
+    if (!canShowPlans) return;
+    if (cbtUserProvider.hasPaid == true) return;
+    if (_isShowingEntryPrompt) return;
+    _isShowingEntryPrompt = true;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
+    );
+
+    if (mounted) {
+      _isShowingEntryPrompt = false;
+      _skipNextPlanPrompt = true;
+    }
+  }
+
+  Future<bool> _ensureSignedInForPlans() async {
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.currentUser != null) return true;
+
+    final signedIn = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => const CbtAuthDialog(),
+    );
+
+    if (signedIn == true) {
+      await cbtUserProvider.refreshCurrentUser();
+      return true;
+    }
+    return false;
+  }
+
   /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
   Future<bool> _checkSubscriptionBeforeTest() async {
     if (_isCheckingSubscription) return false;
@@ -360,7 +422,8 @@ class _CBTDashboardState extends State<CBTDashboard>
     setState(() => _isCheckingSubscription = true);
 
     try {
-      final authenticated = await _ensureAuthenticated();
+      final allowAds = await _subscriptionService.shouldContinueWithAds();
+      final authenticated = await _ensureAuthenticated(allowAds: allowAds);
       if (!authenticated || !mounted) return false;
       return true;
     } catch (e) {
@@ -376,11 +439,15 @@ class _CBTDashboardState extends State<CBTDashboard>
 
   Future<bool> _showPlansAndReturn() async {
     print('[CBT_FLOW] Opening plans screen...');
-    final didProceed = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
     );
-    print('[CBT_FLOW] Plans closed didProceed=$didProceed');
-    if (didProceed != true) return false;
+    print('[CBT_FLOW] Plans closed result=$result');
+    if (result == 'continue_ads') {
+      await _subscriptionService.setContinueWithAds(true);
+      return true;
+    }
+    if (result != true) return false;
 
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
@@ -804,120 +871,128 @@ _wasLoading = loading;
 
   /// ⚡ OPTIMIZED: Non-blocking board tap handler
   Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {
-    final isAuthenticated = await _ensureAuthenticated();
-    if (!isAuthenticated || !mounted) return;
+    if (_isHandlingBoardTap) return;
+    _isHandlingBoardTap = true;
+    try {
+      final isAuthenticated = await _ensureAuthenticated();
+      if (!isAuthenticated || !mounted) return;
 
-    // Check subscription asynchronously
-    final canProceed = await _checkSubscriptionBeforeTest();
-    if (!canProceed || !mounted) return;
+      // Check subscription asynchronously
+      final canProceed = await _checkSubscriptionBeforeTest();
+      if (!canProceed || !mounted) return;
 
-    provider.selectBoard(board.boardCode);
+      provider.selectBoard(board.boardCode);
 
-    // Show board options modal
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _BoardOptionsModal(
-        boardName: board.title,
-        onPractice: () {
-          Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const SubjectSelectionScreen(),
-            ),
-          );
-        },
-        onStudy: () {
-          Navigator.pop(context);
-          // Show study subject selection modal using current board subjects
-          final examTypeId =
-              int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => StudySubjectSelectionModal(
-              subjects: provider.currentBoardSubjects,
-              examTypeId: examTypeId,
-            ),
-          );
-        },
-        onGamify: () {
-          Navigator.pop(context);
-          final examTypeId = int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => GameDashboardScreen(
+      // Show board options modal
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _BoardOptionsModal(
+          boardName: board.title,
+          onPractice: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SubjectSelectionScreen(),
+              ),
+            );
+          },
+          onStudy: () {
+            Navigator.pop(context);
+            // Show study subject selection modal using current board subjects
+            final examTypeId =
+                int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => StudySubjectSelectionModal(
                 subjects: provider.currentBoardSubjects,
                 examTypeId: examTypeId,
               ),
-            ),
-          );
-        },
-        onChallenge: () async {
-          Navigator.pop(context);
-
-          // ⚡ Challenge Module: Check if user is signed in and has paid
-          // Does NOT check free trial limits - only checks active subscription
-          final cbtuserProvider =
-              Provider.of<CbtUserProvider>(context, listen: false);
-          final isSignedIn = await _authService.isUserSignedUp();
-          final hasPaid = cbtuserProvider.hasPaid;
-
-          print('\n🎯 Challenge Module Access Check:');
-          print('   - User signed in: $isSignedIn');
-          print('   - Has paid: $hasPaid');
-
-          // If not signed in or not paid, show enforcement dialog
-          if (!isSignedIn || !hasPaid) {
-            print('   ❌ Challenge access denied - showing enforcement dialog');
-
-            final settings = await CbtSettingsHelper.getSettings();
-            if (!mounted) return;
-
-            await showDialog(
-              context: context,
-              barrierDismissible: true,
-              builder: (context) => ChallengeAccessDialog(
-                amount: settings.amount,
-                discountRate: settings.discountRate,
-                onSubscribed: () {
-                  print('✅ User subscribed for Challenge module');
-                  if (mounted) {
-                    setState(() {});
-                  }
-                },
+            );
+          },
+          onGamify: () {
+            Navigator.pop(context);
+            final examTypeId =
+                int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GameDashboardScreen(
+                  subjects: provider.currentBoardSubjects,
+                  examTypeId: examTypeId,
+                ),
               ),
             );
-            return;
-          }
+          },
+          onChallenge: () async {
+            Navigator.pop(context);
 
-          // User is signed in and has paid, proceed to challenge
-          print('   ✅ Challenge access granted - proceeding');
-          final cbtProvider = Provider.of<CBTProvider>(context, listen: false);
-          final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
+            // ⚡ Challenge Module: Check if user is signed in and has paid
+            // Does NOT check free trial limits - only checks active subscription
+            final cbtuserProvider =
+                Provider.of<CbtUserProvider>(context, listen: false);
+            final isSignedIn = await _authService.isUserSignedUp();
+            final hasPaid = cbtuserProvider.hasPaid;
 
-          String userName = cbtuserProvider.currentUser?.name ?? 'User';
-          int userId = cbtuserProvider.currentUser?.id ?? 0;
-          print(
-              'userName: $userName, userId: $userId , examTypeId: $CurrentexamTypeId');
+            print('\n🎯 Challenge Module Access Check:');
+            print('   - User signed in: $isSignedIn');
+            print('   - Has paid: $hasPaid');
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ModernChallengeScreen(
-                userName: userName,
-                userId: userId,
-                examTypeId: CurrentexamTypeId.toString(),
+            // If not signed in or not paid, show enforcement dialog
+            if (!isSignedIn || !hasPaid) {
+              print('   ❌ Challenge access denied - showing enforcement dialog');
+
+              final settings = await CbtSettingsHelper.getSettings();
+              if (!mounted) return;
+
+              await showDialog(
+                context: context,
+                barrierDismissible: true,
+                builder: (context) => ChallengeAccessDialog(
+                  amount: settings.amount,
+                  discountRate: settings.discountRate,
+                  onSubscribed: () {
+                    print('✅ User subscribed for Challenge module');
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  },
+                ),
+              );
+              return;
+            }
+
+            // User is signed in and has paid, proceed to challenge
+            print('   ✅ Challenge access granted - proceeding');
+            final cbtProvider =
+                Provider.of<CBTProvider>(context, listen: false);
+            final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
+
+            String userName = cbtuserProvider.currentUser?.name ?? 'User';
+            int userId = cbtuserProvider.currentUser?.id ?? 0;
+            print(
+                'userName: $userName, userId: $userId , examTypeId: $CurrentexamTypeId');
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ModernChallengeScreen(
+                  userName: userName,
+                  userId: userId,
+                  examTypeId: CurrentexamTypeId.toString(),
+                ),
               ),
-            ),
-          );
-        },
-      ),
-    );
+            );
+          },
+        ),
+      );
+    } finally {
+      _isHandlingBoardTap = false;
+    }
   }
 
   Widget _buildEmptyBoardsState(CBTProvider provider) {

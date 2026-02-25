@@ -5,6 +5,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:provider/provider.dart';
 
 enum AdTrigger {
@@ -46,6 +47,7 @@ class AdManager {
           _interstitialAd = null;
           _isLoaded = false;
           _isLoading = false;
+          print('Ad failed to load: $error');
         },
       ),
     );
@@ -56,13 +58,41 @@ class AdManager {
     required AdTrigger trigger,
   }) async {
     final tier = await _getTier(context);
-    if (!_shouldShow(tier, trigger)) return;
+    if (!_shouldShow(tier, trigger)) {
+      print('No ad to show for trigger: $trigger, tier: $tier');
+      return;
+    }
+    print('Showing ad for trigger: $trigger, tier: $tier');
     await _showInterstitialOrContinue();
   }
 
   Future<AdTier> _getTier(BuildContext context) async {
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    if (userProvider.hasPaid == true) return AdTier.paid;
+    final adMode = await CbtSubscriptionService().getAdMode();
+    if (adMode == 'continue_with_ads') {
+      return AdTier.freeAds;
+    }
+    if (adMode == 'free_trial') {
+      return AdTier.freeTrial;
+    }
+
+    final userId = userProvider.currentUser?.id;
+    if (userId != null) {
+      try {
+        final cached = await CbtLicenseService().getCachedLicenseStatus(userId);
+        if (cached == true) return AdTier.paid;
+        if (cached == false) {
+          final trialExpired = await CbtSubscriptionService().isTrialExpired();
+          return trialExpired ? AdTier.freeAds : AdTier.freeTrial;
+        }
+
+        final isActive =
+            await CbtLicenseService().isLicenseActive(userId: userId);
+        if (isActive) return AdTier.paid;
+      } catch (_) {
+        // Fall through to trial logic if license check fails.
+      }
+    }
 
     final trialExpired = await CbtSubscriptionService().isTrialExpired();
     return trialExpired ? AdTier.freeAds : AdTier.freeTrial;
@@ -82,6 +112,10 @@ class AdManager {
         trigger == AdTrigger.topicCompletion ||
         trigger == AdTrigger.resultNavigation;
   }
+
+// print which ad triger is shown for which tier
+
+
 
   Future<void> _showInterstitialOrContinue() async {
     if (_isShowing) return;
@@ -104,6 +138,7 @@ class AdManager {
           _isLoaded = false;
           _isShowing = false;
           preload();
+          print('Ad failed to show: $error');
           completer.complete();
         },
       );
@@ -114,6 +149,7 @@ class AdManager {
     }
 
     // If ad not ready, load for next time and continue immediately.
+    print('No ad ready to show; loading for next time.');
     preload();
   }
 }

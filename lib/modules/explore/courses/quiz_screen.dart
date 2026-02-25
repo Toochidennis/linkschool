@@ -35,15 +35,21 @@ class QuizScreen extends StatefulWidget {
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
+class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool _isSubmittingScore = false;
   bool _isMinor = false;
   InterstitialAd? _interstitialAd;
   bool _isInterstitialAdLoaded = false;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
+  bool _isNavigatingAway = false;
+  DateTime? _lastPauseTime;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadAgeGate();
     _loadInterstitialAd();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -66,6 +72,7 @@ class _QuizScreenState extends State<QuizScreen> {
         _isInterstitialAdLoaded = false;
       }
     } catch (_) {}
+    _loadAppOpenAd();
   }
 
   int? _computeAgeFromBirthDate(String? raw) {
@@ -142,6 +149,70 @@ class _QuizScreenState extends State<QuizScreen> {
       },
     );
     _interstitialAd!.show();
+  }
+
+  void _loadAppOpenAd() {
+    final AdRequest request =
+        _isMinor ? AdRequest(nonPersonalizedAds: true) : const AdRequest();
+
+    AppOpenAd.load(
+      adUnitId: EnvConfig.programAdsOpenApiKey,
+      request: request,
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _lastPauseTime = DateTime.now();
+        _shouldShowAdOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+      _isNavigatingAway = false;
+    }
   }
 
   void _selectAnswer(BuildContext context, int optionIndex) {
@@ -241,7 +312,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _interstitialAd?.dispose();
+    _appOpenAd?.dispose();
     super.dispose();
   }
 
@@ -249,6 +322,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
+        _isNavigatingAway = true;
         _showInterstitialAdThen(() {
           Navigator.pop(context);
         });
@@ -333,6 +407,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context); // Close dialog
+                          _isNavigatingAway = true;
                           Navigator.pop(context); // Close quiz screen
                         },
                         child: const Text(

@@ -14,6 +14,10 @@ class CbtSubscriptionService {
       'cbt_trial_start_date'; // Track when trial started
   static const String _keyFreeTrialDays =
       'cbt_free_trial_days'; // Sync trial days from settings
+  static const String _keyContinueWithAds =
+      'cbt_continue_with_ads'; // Legacy flag
+  static const String _keyAdMode =
+      'cbt_ad_mode'; // continue_with_ads | free_trial
 
   // Dynamic values from API (with fallbacks)
   static int _freeTrialDays = 7; // Default 7 days
@@ -105,6 +109,8 @@ class CbtSubscriptionService {
     await prefs.setBool(_keyHasPaid, true);
     await prefs.setString(_keyPaymentDate, DateTime.now().toIso8601String());
     await prefs.setString(_keyUserEmail, userEmail);
+    await prefs.remove(_keyContinueWithAds);
+    await prefs.remove(_keyAdMode);
     print('✅ User marked as paid subscriber: $userEmail');
   }
 
@@ -125,12 +131,16 @@ class CbtSubscriptionService {
     }
 
     // Update payment status based on backend data
-    final isPaid = hasReference || subscribed == 1;
+    final isPaid = hasReference;
     await prefs.setBool(_keyHasPaid, isPaid);
     await prefs.setString(_keyUserEmail, userEmail);
 
     if (isPaid && !await hasPaid()) {
       await prefs.setString(_keyPaymentDate, DateTime.now().toIso8601String());
+    }
+    if (isPaid) {
+      await prefs.remove(_keyContinueWithAds);
+      await prefs.remove(_keyAdMode);
     }
 
     print('✅ Payment status synced for $userEmail: paid=$isPaid');
@@ -145,6 +155,8 @@ class CbtSubscriptionService {
     await prefs.remove(_keySignupPromptShown);
     await prefs.remove(_keyPaymentDialogDismissed);
     await prefs.remove(_keyTrialStartDate);
+    await prefs.remove(_keyContinueWithAds);
+    await prefs.remove(_keyAdMode);
     // Keep test count as it's device-specific, not user-specific
     print('🗑️ User subscription data cleared');
   }
@@ -219,7 +231,46 @@ class CbtSubscriptionService {
     await prefs.remove(_keyPaymentDialogDismissed);
     await prefs.remove(_keyUserEmail);
     await prefs.remove(_keyTrialStartDate);
+    await prefs.remove(_keyContinueWithAds);
+    await prefs.remove(_keyAdMode);
     print('🔄 Subscription data reset');
+  }
+
+  Future<void> setContinueWithAds(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value) {
+      await prefs.setBool(_keyContinueWithAds, true);
+      await prefs.setString(_keyAdMode, 'continue_with_ads');
+    } else {
+      await prefs.remove(_keyContinueWithAds);
+      await prefs.remove(_keyAdMode);
+    }
+  }
+
+  Future<bool> shouldContinueWithAds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyContinueWithAds) ?? false;
+  }
+
+  Future<void> setAdMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mode == 'continue_with_ads') {
+      await prefs.setBool(_keyContinueWithAds, true);
+      await prefs.setString(_keyAdMode, 'continue_with_ads');
+      return;
+    }
+    if (mode == 'free_trial') {
+      await prefs.remove(_keyContinueWithAds);
+      await prefs.setString(_keyAdMode, 'free_trial');
+      return;
+    }
+    await prefs.remove(_keyContinueWithAds);
+    await prefs.remove(_keyAdMode);
+  }
+
+  Future<String?> getAdMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyAdMode);
   }
 
   /// Get remaining free trial days

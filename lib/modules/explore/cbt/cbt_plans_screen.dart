@@ -317,9 +317,21 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       return;
     }
 
+    final isContinueWithAds = _remainingDays <= 1;
+
     setState(() => _isStartingTrial = true);
     try {
+      if (isContinueWithAds) {
+        await CbtSubscriptionService().setAdMode('continue_with_ads');
+        if (mounted) {
+          Navigator.of(context).pop('continue_ads');
+        }
+        return;
+      }
+
+      await CbtSubscriptionService().setAdMode('free_trial');
       await CbtLicenseService().startFreeTrial(userId: user!.id!);
+      await CbtSubscriptionService().setTrialStartDate();
       if (!mounted) return;
       final isActive = await CbtLicenseService()
           .isLicenseActive(userId: user.id!, forceRefresh: true);

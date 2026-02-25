@@ -42,6 +42,7 @@ import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/lesson_performance_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
@@ -83,6 +84,7 @@ import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
 import 'package:linkschool/modules/services/explore/courses/lessons_service.dart';
+import 'package:linkschool/modules/services/explore/courses/lesson_performance_service.dart';
 import 'package:linkschool/modules/services/explore/courses/cohort_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
@@ -137,9 +139,12 @@ List<SingleChildWidget> getAppProviders() {
         create: (_) => locator<EbookProvider>(), lazy: true),
     ChangeNotifierProvider(
         create: (_) => ChallengeQuestionProvider(), lazy: true),
-    ChangeNotifierProvider(create: (_) => ExploreCourseProvider(), lazy: true),
+    ChangeNotifierProvider(create: (_) => ExploreCourseProvider(), lazy: false),
     ChangeNotifierProvider(
         create: (_) => LessonProvider(LessonService()), lazy: true),
+    ChangeNotifierProvider(
+        create: (_) => LessonPerformanceProvider(LessonPerformanceService()),
+        lazy: true),
     ChangeNotifierProvider(
         create: (_) => CohortProvider(CohortService()), lazy: true),
     ChangeNotifierProvider(

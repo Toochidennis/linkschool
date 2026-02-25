@@ -10,6 +10,7 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:linkschool/modules/services/notification_navigation_service.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,8 @@ import 'package:provider/provider.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
+final GlobalKey<NavigatorState> appNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,6 +91,7 @@ class MyApp extends StatelessWidget {
                 : AppThemes.lightTheme,
             themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const AppInitializer(),
+            navigatorKey: appNavigatorKey,
             navigatorObservers: [routeObserver],
           ),
         );
@@ -112,6 +116,7 @@ class _AppInitializerState extends State<AppInitializer> {
   void initState() {
     
     super.initState();
+    NotificationNavigationService().initialize(appNavigatorKey);
    _initializeApp();
     //_bootstrap();
   }

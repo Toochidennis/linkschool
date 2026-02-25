@@ -87,6 +87,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       if (_currentUser!.fcmToken == fcmToken) return;
       if (_currentUser!.id == null) return;
 
+      print('?? Sending FCM token via updateUser: $fcmToken');
       final updated = await _userService.updateUser(
         _currentUser!.copyWith(fcmToken: fcmToken),
       );
@@ -108,6 +109,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       if (_currentUser!.id == null) return;
 
       try {
+        print('?? Sending refreshed FCM token via updateUser: $newToken');
         final updated = await _userService.updateUser(
           _currentUser!.copyWith(fcmToken: newToken),
         );
@@ -319,10 +321,11 @@ await _saveUserToPreferences(_currentUser!);
         fcmToken: fcmToken,
         attempt: 0,
         phone: "",
-        subscribed: 1, // New users start as subscribed
+        subscribed: 0, // New users start as unpaid
         reference: null,
       );
-          final createdUser = await _userService.createUser(newUser);
+      print('?? Sending FCM token via createUser (signup): $fcmToken');
+      final createdUser = await _userService.createUser(newUser);
       _currentUser = createdUser;
       await _saveUserToPreferences(createdUser);
       if (createdUser.reference != null && createdUser.reference!.isNotEmpty) {
@@ -387,10 +390,11 @@ await _saveUserToPreferences(_currentUser!);
         fcmToken: fcmToken,
         attempt: 0,
         phone: "",
-        subscribed: 1,
+        subscribed: 0,
         reference: null,
       );
 
+      print('?? Sending FCM token via createUser (login fallback): $fcmToken');
       final createdUser = await _userService.createUser(newUser);
       _currentUser = createdUser;
       await _saveUserToPreferences(createdUser);
@@ -645,8 +649,7 @@ await _saveUserToPreferences(_currentUser!);
     if (_currentUser == null) return false;
     final hasReference =
         _currentUser!.reference != null && _currentUser!.reference!.isNotEmpty;
-    final isSubscribed = _currentUser!.subscribed == 1;
-    return hasReference || isSubscribed;
+    return hasReference;
   }
 
   // =========================================================================

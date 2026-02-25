@@ -3,6 +3,7 @@ import 'package:linkschool/config/env_config.dart' show EnvConfig;
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
@@ -792,6 +793,11 @@ class _SubscriptionEnforcementDialogState
     }
   }
 
+  Future<void> _handleContinueWithAds() async {
+    await CbtSubscriptionService().setAdMode('continue_with_ads');
+    _closeDialogWithResult(true);
+  }
+
   @override
   void dispose() {
     _voucherController.dispose();
@@ -1107,8 +1113,11 @@ class _SubscriptionEnforcementDialogState
         onPressed: _isProcessing
             ? null
             : () {
-                // TODO: hook ads flow here when needed.
-                _closeDialogWithResult(true);
+                if (widget.remainingTests <= 1) {
+                  _handleContinueWithAds();
+                } else {
+                  _closeDialogWithResult(true);
+                }
               },
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: AppColors.eLearningBtnColor1),
