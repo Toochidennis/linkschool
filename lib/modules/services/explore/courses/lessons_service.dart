@@ -5,11 +5,11 @@ import 'package:linkschool/config/env_config.dart';
 
 class LessonService {
   final String _baseUrl =
-      "https://linkskool.net/api/v3/public/learning/cohorts";
+      "https://linkskool.net/api/v3/public/learning/cohorts/";
 
   Future<LessonsResponseModel> fetchLessons({
-    String? cohortId
-   
+    String? cohortId,
+    required String profileId,
   }) async {
     try {
       // Load API key from .env
@@ -22,7 +22,14 @@ class LessonService {
       // Build query parameters
      
 
-      final uri = Uri.parse("$_baseUrl/$cohortId/lessons");
+      final uri = Uri.parse("$_baseUrl/$cohortId/lessons/v2").replace(
+        queryParameters: {
+          'profile_id': profileId,
+        },
+      );
+
+
+
 
       final response = await http.get(
         uri,
@@ -31,6 +38,7 @@ class LessonService {
           'Accept': 'application/json',
           'X-API-KEY': apiKey,
         },
+       
       );
 
       print("🛰️ Fetching lessons...");
@@ -41,6 +49,7 @@ class LessonService {
         print("✅ Response received: ${response.body}");
 
         final decoded = json.decode(response.body);
+        print("🛠️ Decoded response: $decoded");
         return LessonsResponseModel.fromJson(decoded);
       } else {
         print("❌ Failed to load lessons: ${response.statusCode}");

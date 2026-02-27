@@ -7,22 +7,26 @@ class LessonProvider extends ChangeNotifier {
   
   List<LessonModel> _lessons = [];
   List<ResourceModel> _resources = [];
+  NextCourseModel? _nextCourse;
   bool _isLoading = false;
   String? _error;
   String? _currentCategoryId;
   String? _currentCourseId;
   String? _currentCohortId;
+  int? _currentProfileId;
 
   LessonProvider(this._lessonService);
 
   // Getters
   List<LessonModel> get lessons => _lessons;
   List<ResourceModel> get resources => _resources;
+  NextCourseModel? get nextCourse => _nextCourse;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get currentCategoryId => _currentCategoryId;
   String? get currentCourseId => _currentCourseId;
   String? get currentCohortId => _currentCohortId;
+  int? get currentProfileId => _currentProfileId;
 
   // Get lesson by id
   LessonModel? getLessonById(int id) {
@@ -48,22 +52,34 @@ class LessonProvider extends ChangeNotifier {
     String? categoryId,
     String? courseId,
     required String cohortId,
+    required int profileId,
   }) async {
     _isLoading = true;
     _error = null;
     _currentCategoryId = categoryId;
     _currentCourseId = courseId;
     _currentCohortId = cohortId;
+    _currentProfileId = profileId;
     notifyListeners();
+
+    if (profileId <= 0) {
+      _error = 'Profile ID is required to load lessons';
+      print('❌ $_error');
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
 
     try {
       final response = await _lessonService.fetchLessons(
-       cohortId: cohortId,
+        cohortId: cohortId,
+        profileId: profileId.toString(),
       );
 
       if (response.success) {
         _lessons = response.lessons;
         _resources = response.resources;
+        _nextCourse = response.nextCourse;
         
         print('✅ Lessons loaded successfully:');
         print('   Total lessons: ${_lessons.length}');
@@ -83,11 +99,12 @@ class LessonProvider extends ChangeNotifier {
 
   // Refresh lessons (reload with current filters)
   Future<void> refreshLessons() async {
-    if (_currentCohortId != null) {
+    if (_currentCohortId != null && _currentProfileId != null) {
       await loadLessons(
         categoryId: _currentCategoryId,
         courseId: _currentCourseId,
         cohortId: _currentCohortId!,
+        profileId: _currentProfileId!,
       );
     }
   }
@@ -96,9 +113,11 @@ class LessonProvider extends ChangeNotifier {
   void clearLessons() {
     _lessons = [];
     _resources = [];
+    _nextCourse = null;
     _currentCategoryId = null;
     _currentCourseId = null;
     _currentCohortId = null;
+    _currentProfileId = null;
     _error = null;
     notifyListeners();
   }

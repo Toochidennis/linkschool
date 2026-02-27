@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -9,14 +9,16 @@ import 'package:linkschool/modules/services/cbt_user_service.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/firebase_messaging_service.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
-import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
+import 'package:linkschool/modules/services/cbt_fcm_token_service.dart';
+
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 
 class CbtUserProvider with ChangeNotifier {
-    final UserProfileUpdateService _profileUpdateService = UserProfileUpdateService();
+  final UserProfileUpdateService _profileUpdateService = UserProfileUpdateService();
   final CbtUserService _userService = CbtUserService();
+  final CbtFcmTokenService _fcmTokenService = CbtFcmTokenService();
   bool _isShowingProfileUpdate = false;
   StreamSubscription<String>? _tokenRefreshSub;
 
@@ -87,13 +89,15 @@ _currentUser = CbtUserModel.fromJson(userData);
       if (_currentUser!.fcmToken == fcmToken) return;
       if (_currentUser!.id == null) return;
 
-      print('?? Sending FCM token via updateUser: $fcmToken');
-      final updated = await _userService.updateUser(
-        _currentUser!.copyWith(fcmToken: fcmToken),
+      print('?? Sending FCM token via fcm-token endpoint: $fcmToken');
+      final success = await _fcmTokenService.updateFcmToken(
+        userId: _currentUser!.id!,
+        fcmToken: fcmToken,
       );
-      _currentUser = updated;
-      await _saveUserToPreferences(updated);
-      print('✅ Device token updated');
+      if (!success) return;
+      _currentUser = _currentUser!.copyWith(fcmToken: fcmToken);
+      await _saveUserToPreferences(_currentUser!);
+      print('✅ Device token updated via fcm-token endpoint');
     } catch (e) {
       print('❌ Error syncing device token: $e');
     }
@@ -109,13 +113,15 @@ _currentUser = CbtUserModel.fromJson(userData);
       if (_currentUser!.id == null) return;
 
       try {
-        print('?? Sending refreshed FCM token via updateUser: $newToken');
-        final updated = await _userService.updateUser(
-          _currentUser!.copyWith(fcmToken: newToken),
+        print('?? Sending refreshed FCM token via fcm-token endpoint: $newToken');
+        final success = await _fcmTokenService.updateFcmToken(
+          userId: _currentUser!.id!,
+          fcmToken: newToken,
         );
-        _currentUser = updated;
-        await _saveUserToPreferences(updated);
-        print('✅ Device token refreshed and saved');
+        if (!success) return;
+        _currentUser = _currentUser!.copyWith(fcmToken: newToken);
+        await _saveUserToPreferences(_currentUser!);
+        print('✅ Device token refreshed and saved via fcm-token endpoint');
       } catch (e) {
         print('❌ Error updating device token on refresh: $e');
       }

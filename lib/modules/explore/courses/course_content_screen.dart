@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
+import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:provider/provider.dart';
 import 'course_detail_screen.dart';
 import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
@@ -71,6 +73,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     final cost = widget.cohortCost ?? 0;
     return cost;
   }
+  NextCourseModel? nextCourse = null;
 
   bool _isTrialDaysExpired() {
     final expiry = widget.trialExpiryDate;
@@ -241,10 +244,11 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     _initTrialViewsCounter();
     _loadCompletedLessons();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profileId = widget.profileId;
       context.read<LessonProvider>().loadLessons(
             cohortId: widget.cohortId,
+            profileId: profileId!,
           );
-      final profileId = widget.profileId;
       if (profileId != null) {
         context.read<LessonPerformanceProvider>().loadLessonPerformance(
               cohortId: widget.cohortId,
@@ -284,8 +288,82 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     }
   }
 
+  // handle next course navigation
+  void _navigateToNextCourse() {
+    if (nextCourse == null) return;
+    if (nextCourse!.isEnrolled == true) {
+      final image = "https://linkskool.net/${nextCourse!.image}";
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseContentScreen(
+            courseTitle: nextCourse!.courseName,
+            courseDescription: nextCourse!.description,
+            provider: widget.provider,
+            courseId: widget.courseId,
+            categoryId: widget.categoryId,
+            cohortId: nextCourse!.id.toString(),
+            isFree: widget.isFree,
+            providerSubtitle: widget.providerSubtitle,
+            category: widget.category,
+            categoryColor: widget.categoryColor,
+            profileId: widget.profileId,
+            courseName: nextCourse!.courseName,
+            lessonImage: image,
+            trialType: widget.trialType,
+            trialValue: widget.trialValue,
+            lessonsTaken: widget.lessonsTaken,
+            cohortCost: widget.cohortCost,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final nextCourseModel = CourseModel(
+      id: nextCourse!.courseId ?? 0,
+      programId: widget.categoryId,
+      courseName: nextCourse!.courseName,
+      description: nextCourse!.description,
+      imageUrl: '',
+      hasActiveCohort: true,
+      cohortId: int.tryParse(nextCourse!.id),
+      isFree: false,
+      trialType: null,
+      trialValue: 0,
+      cost: 0.0,
+      isEnrolled: nextCourse!.isEnrolled,
+      isCompleted: false,
+      enrollmentStatus: null,
+      paymentStatus: null,
+      lessonsTaken: 0,
+      trialExpiryDate: null,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CourseDescriptionScreen(
+          cohortId: nextCourse!.id,
+          categoryId: widget.categoryId,
+          categoryName: widget.category,
+          hasEnrolled: nextCourse!.isEnrolled,
+          course: nextCourseModel,
+          provider: widget.provider,
+          profileId: widget.profileId,
+          providerSubtitle: widget.providerSubtitle,
+          categoryColor: widget.categoryColor,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final lessonProvider = context.watch<LessonProvider>();
+    final lessons = lessonProvider.lessons;
+    nextCourse = lessonProvider.nextCourse;
+
     const imageHeight = 240.0;
     return Scaffold(
       backgroundColor: Colors.white,
@@ -299,11 +377,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
+    onRefresh: () async {
+          final profileId = widget.profileId;
           await context.read<LessonProvider>().loadLessons(
                 cohortId: widget.cohortId,
+                profileId: profileId ?? 0,
               );
-          final profileId = widget.profileId;
           if (profileId != null) {
             await context.read<LessonPerformanceProvider>().loadLessonPerformance(
                   cohortId: widget.cohortId,
@@ -319,26 +398,34 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 SizedBox(
                   height: imageHeight,
                   width: double.infinity,
-                  child: Image.network(
-                    widget.lessonImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(Icons.broken_image,
-                            size: 48, color: Colors.grey),
-                      ),
-                    ),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: Colors.grey.shade100,
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    },
-                  ),
+                  child: widget.lessonImage.isNotEmpty
+    ? Image.network(
+        widget.lessonImage.startsWith('http')
+            ? widget.lessonImage
+            : "https://linkskool.net/${widget.lessonImage}",
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey.shade200,
+          child: const Center(
+            child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+          ),
+        ),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: Colors.grey.shade100,
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      )
+    : Container(
+        color: Colors.grey.shade200,
+        child: const Center(
+          child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+        ),
+      ),
                 ),
                 Positioned.fill(
                   child: DecoratedBox(
@@ -480,10 +567,13 @@ class _CourseContentScreenState extends State<CourseContentScreen>
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: lessons.length,
-          itemBuilder: (context, index) {
+       return CustomScrollView(
+  slivers: [
+    SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
             final lesson = lessons[index];
             final isCompleted = _completedLessonIds.contains(lesson.id);
             final isVideo = lesson.videoUrl.isNotEmpty;
@@ -529,8 +619,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
 
                 if (isTrialCourse) {
                   try {
-                    final enrollmentProvider =
-                        context.read<EnrollmentProvider>();
+                    final enrollmentProvider = context.read<EnrollmentProvider>();
                     final prefs = await SharedPreferences.getInstance();
                     final savedPrefs = prefs.getInt(_trialViewsKey()) ?? 0;
 
@@ -553,8 +642,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                     }
 
                     final newLessonsTaken = currentLessonsTaken + 1;
-                    shouldPromptAfterView =
-                        newLessonsTaken > widget.trialValue;
+                    shouldPromptAfterView = newLessonsTaken > widget.trialValue;
 
                     setState(() {
                       _localLessonsTaken = newLessonsTaken;
@@ -634,9 +722,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       height: 26,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isCompleted
-                            ? const Color(0xFF10B981)
-                            : Colors.white,
+                        color: isCompleted ? const Color(0xFF10B981) : Colors.white,
                         border: Border.all(
                           color: isCompleted
                               ? const Color(0xFF10B981)
@@ -645,8 +731,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                         ),
                       ),
                       child: isCompleted
-                          ? const Icon(Icons.check,
-                              size: 16, color: Colors.white)
+                          ? const Icon(Icons.check, size: 16, color: Colors.white)
                           : null,
                     ),
                     const SizedBox(width: 14),
@@ -723,7 +808,131 @@ class _CourseContentScreenState extends State<CourseContentScreen>
               ),
             );
           },
-        );
+          childCount: lessons.length,
+        ),
+      ),
+    ),
+
+  if (nextCourse != null)
+  SliverToBoxAdapter(
+  child: Padding(
+    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+    child: GestureDetector(
+      onTap: () {
+        _navigateToNextCourse();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          // ✅ gradient background to make it stand out
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.4)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFA500).withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ unique icon instead of checkbox
+         
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ✅ badge label
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFA500),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'NEXT COURSE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                         ' ${nextCourse!.courseName}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Great job completing this course! Enroll in the next course to continue your learning journey.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.school_rounded,
+                        size: 18,
+                        color: const Color(0xFFFFA500),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _completedLessonIds.length >= lessons.length
+                            ? 'Enroll Now'
+                            : 'Complete course to enroll',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFFFA500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+           Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFA500),
+                shape: BoxShape.circle,
+              ),
+              child:  Icon(
+              Icons.chevron_right,
+              color: Colors.white,
+              size: 24,
+            ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
+),
+  ],
+);
       },
     );
   }
@@ -822,6 +1031,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       },
     );
   }
+  
 
   Widget _buildPerformanceOverviewCards(LessonPerformanceData? performance) {
     final resultValue = performance == null

@@ -2,6 +2,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/config/notification_service.dart';
 import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
+import 'package:linkschool/modules/explore/courses/course_content_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -49,20 +51,28 @@ class NotificationNavigationService {
 
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
-      _handleMessage(initialMessage);
+      await _handleMessage(initialMessage);
     }
   }
 
-  void _handleMessage(RemoteMessage message) {
-    final data = message.data;
-    if (data.isEmpty) return;
+Future<void> _handleMessage(RemoteMessage message) async {
+  final data = message.data;
+  if (data.isEmpty) return;
 
-    final type = _stringFrom(data, ['type', 'screen']);
-    final looksLikeCourse = _looksLikeCoursePayload(data);
-    if (type == 'submission_graded' || type == 'class_reminder' || type == 'live_class_reminder' || type == 'assignment_due_reminder' || looksLikeCourse) {
-      _navigateToCourseDetail(data);
-    }
+  final type = _stringFrom(data, ['type']);
+
+  switch (type) {
+    case 'lesson_published':
+    case 'submission_graded':
+    case 'class_reminder':
+    case 'live_class_reminder':
+    case 'assignment_due_reminder':
+      await _navigateToCourseContent(data); // ✅ all go to CourseDetailScreen
+      break;
+    default:
+      print('Unknown notification type: $type');
   }
+}
 
   Map<String, String> _stringPayload(Map<String, dynamic> data) {
     return data.map((key, value) => MapEntry(key, value?.toString() ?? ''));
@@ -114,6 +124,41 @@ class NotificationNavigationService {
     );
   }
 
+Future<void> _navigateToCourseContent(Map<String, dynamic> data) async {
+  final cohortId = _stringFrom(data, ['cohort_id', 'cohortId']);
+  final lessonId = _intFrom(data, ['lesson_id', 'lessonId']);
+  int? profileId = _intFrom(data, ['profile_id', 'profileId']);
+
+  // ✅ fallback to saved profile
+  if (profileId == null || profileId <= 0) {
+    final prefs = await SharedPreferences.getInstance();
+    profileId = prefs.getInt('active_profile_id');
+  }
+
+  if (cohortId.isEmpty || lessonId == null || profileId == null) {
+    print('Missing required fields, cannot navigate');
+    return;
+  }
+
+  final navigator = _navigatorKey?.currentState;
+  if (navigator == null) return;
+
+  navigator.push(
+    MaterialPageRoute(
+      builder: (context) => CourseDetailScreen(
+        courseTitle: '',        // loaded by LessonDetailProvider
+        courseName: '',         // loaded by LessonDetailProvider
+        courseId: _intFrom(data, ['course_id', 'courseId']) ?? 0,
+        courseDescription: '', // loaded by LessonDetailProvider
+        provider: '',          // loaded by LessonDetailProvider
+        cohortId: cohortId,    // ✅ key field
+        profileId: profileId,  // ✅ key field
+        lessonId: lessonId,    // ✅ key field
+      ),
+    ),
+  );
+}
+
   String _stringFrom(Map<String, dynamic> data, List<String> keys) {
     for (final key in keys) {
       final value = data[key];
@@ -131,6 +176,18 @@ class NotificationNavigationService {
       if (value is int) return value;
       final parsed = int.tryParse(value.toString().trim());
       if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  bool? _boolFrom(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value == null) continue;
+      if (value is bool) return value;
+      final text = value.toString().trim().toLowerCase();
+      if (text == 'true' || text == '1' || text == 'yes') return true;
+      if (text == 'false' || text == '0' || text == 'no') return false;
     }
     return null;
   }

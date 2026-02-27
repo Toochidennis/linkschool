@@ -6,7 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/config/providers_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -26,6 +26,8 @@ Future<void> main() async {
   // Initialize Firebase (required for auth)
   await Firebase.initializeApp();
   print('Firebase initialized successfully');
+
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize Hive (required for session management)
   try {
