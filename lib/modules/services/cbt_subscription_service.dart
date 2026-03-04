@@ -12,6 +12,8 @@ class CbtSubscriptionService {
       'cbt_user_email'; // Track which user's data this is
   static const String _keyTrialStartDate =
       'cbt_trial_start_date'; // Track when trial started
+  static const String _keyTrialOriginalDuration =
+      'cbt_trial_original_duration'; // Store original duration to prevent API changes from breaking expiration
   static const String _keyFreeTrialDays =
       'cbt_free_trial_days'; // Sync trial days from settings
   static const String _keyContinueWithAds =
@@ -53,29 +55,36 @@ class CbtSubscriptionService {
     return null;
   }
 
-  /// Set the trial start date (called on first test)
-  Future<void> setTrialStartDate() async {
+  /// Set the trial start date and original duration (called when trial begins)
+  /// Pass the trial duration from the selected plan, not the global value
+  Future<void> setTrialStartDate({int? originalDuration}) async {
     final prefs = await SharedPreferences.getInstance();
     final existingDate = await getTrialStartDate();
     if (existingDate == null) {
       final now = DateTime.now();
       await prefs.setString(_keyTrialStartDate, now.toIso8601String());
-      print('🎬 Trial started: $now');
+      // Store the original duration (from plan) so expiration checks don't break if API value changes
+      final durationToStore = originalDuration ?? _freeTrialDays;
+      await prefs.setInt(_keyTrialOriginalDuration, durationToStore);
+      print('🎬 Trial started: $now with $durationToStore days duration');
     }
   }
 
   /// Check if trial period has expired
   Future<bool> isTrialExpired() async {
-    await _ensureFreeTrialDaysLoaded();
     final startDate = await getTrialStartDate();
     if (startDate == null) return false; // Trial hasn't started yet
 
     final now = DateTime.now();
     final daysPassed = now.difference(startDate).inDays;
-    final expired = daysPassed >= _freeTrialDays;
+    
+    // Use original trial duration stored at start time, not current API value
+    final prefs = await SharedPreferences.getInstance();
+    final originalDuration = prefs.getInt(_keyTrialOriginalDuration) ?? 7;
+    final expired = daysPassed >= originalDuration;
 
     print(
-        '📅 Trial days passed: $daysPassed/$_freeTrialDays (expired: $expired)');
+        '📅 Trial days passed: $daysPassed/$originalDuration (expired: $expired)');
     return expired;
   }
 
@@ -257,11 +266,17 @@ class CbtSubscriptionService {
     if (mode == 'continue_with_ads') {
       await prefs.setBool(_keyContinueWithAds, true);
       await prefs.setString(_keyAdMode, 'continue_with_ads');
+      // Ensure hasPaid is false when on continue_with_ads
+      await prefs.setBool(_keyHasPaid, false);
+      print('[setAdMode] Set mode to continue_with_ads and hasPaid to false');
       return;
     }
     if (mode == 'free_trial') {
       await prefs.remove(_keyContinueWithAds);
       await prefs.setString(_keyAdMode, 'free_trial');
+      // Ensure hasPaid is false when on free_trial
+      await prefs.setBool(_keyHasPaid, false);
+      print('[setAdMode] Set mode to free_trial and hasPaid to false');
       return;
     }
     await prefs.remove(_keyContinueWithAds);

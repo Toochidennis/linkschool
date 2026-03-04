@@ -1274,13 +1274,15 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              year.year,
-              style: AppTextStyles.normal600(
-                fontSize: 16,
-                color: AppColors.text3Light,
-              ),
-            ),
+           Text(
+  year.year == DateTime.now().year.toString()
+      ? '${year.year} (Simulation)'
+      : year.year,
+  style: AppTextStyles.normal600(
+    fontSize: 16,
+    color: AppColors.text3Light,
+  ),
+),
             if (isSelected)
               const Icon(
                 Icons.check_circle,

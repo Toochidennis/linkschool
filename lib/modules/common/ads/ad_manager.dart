@@ -13,6 +13,7 @@ enum AdTrigger {
   questionFailure,
   topicCompletion,
   resultNavigation,
+  paywallContinue,
 }
 
 enum AdTier {
@@ -30,28 +31,43 @@ class AdManager {
   bool _isLoading = false;
   bool _isLoaded = false;
   bool _isShowing = false;
+int _retryAttempt = 0;
+static const int _maxRetryAttempts = 3;
 
-  Future<void> preload() async {
-    if (_isLoading || _isLoaded) return;
-    _isLoading = true;
-    InterstitialAd.load(
-      adUnitId: EnvConfig.googleCbtInterstitialAdsApiKey,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (InterstitialAd ad) {
-          _interstitialAd = ad;
-          _isLoaded = true;
-          _isLoading = false;
-        },
-        onAdFailedToLoad: (LoadAdError error) {
-          _interstitialAd = null;
-          _isLoaded = false;
-          _isLoading = false;
-          print('Ad failed to load: $error');
-        },
-      ),
-    );
-  }
+Future<void> preload() async {
+  if (_isLoading || _isLoaded) return;
+  _isLoading = true;
+
+  InterstitialAd.load(
+    adUnitId: EnvConfig.googleCbtInterstitialAdsApiKey,
+    request: const AdRequest(),
+    adLoadCallback: InterstitialAdLoadCallback(
+      onAdLoaded: (InterstitialAd ad) {
+        _interstitialAd = ad;
+        _isLoaded = true;
+        _isLoading = false;
+        _retryAttempt = 0; 
+        print('Ad loaded successfully');
+      },
+      onAdFailedToLoad: (LoadAdError error) {
+        _interstitialAd = null;
+        _isLoaded = false;
+        _isLoading = false;
+        print('Ad failed to load: $error');
+
+       
+        if (error.code == 3 && _retryAttempt < _maxRetryAttempts) {
+          _retryAttempt++;
+          final delaySeconds = _retryAttempt * 30; 
+          print('Retrying ad load in ${delaySeconds}s (attempt $_retryAttempt)');
+          Future.delayed(Duration(seconds: delaySeconds), () => preload());
+        } else {
+          _retryAttempt = 0; // reset after max attempts
+        }
+      },
+    ),
+  );
+}
 
   Future<void> showIfEligible({
     required BuildContext context,
@@ -70,6 +86,7 @@ class AdManager {
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
     final adMode = await CbtSubscriptionService().getAdMode();
     if (adMode == 'continue_with_ads') {
+      print('Ad mode is continue_with_ads, treating as freeAds tier');
       return AdTier.freeAds;
     }
     if (adMode == 'free_trial') {
@@ -107,49 +124,51 @@ class AdManager {
     }
 
     // freeAds
-    return trigger == AdTrigger.topicStart ||
-        trigger == AdTrigger.questionFailure ||
-        trigger == AdTrigger.topicCompletion ||
-        trigger == AdTrigger.resultNavigation;
+    return  trigger == AdTrigger.topicCompletion ||
+         // AdTrigger.topicStart ||
+        // trigger == AdTrigger.questionFailure ||
+       
+        trigger == AdTrigger.resultNavigation ||
+        trigger == AdTrigger.paywallContinue;
   }
 
 // print which ad triger is shown for which tier
 
 
+Future<void> _showInterstitialOrContinue() async {
+  if (_isShowing) return;
 
-  Future<void> _showInterstitialOrContinue() async {
-    if (_isShowing) return;
-    if (_isLoaded && _interstitialAd != null) {
-      _isShowing = true;
-      final completer = Completer<void>();
+  if (_isLoaded && _interstitialAd != null) {
+    _isShowing = true;
+    final completer = Completer<void>();
 
-      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (InterstitialAd ad) {
-          ad.dispose();
-          _interstitialAd = null;
-          _isLoaded = false;
-          _isShowing = false;
-          preload();
-          completer.complete();
-        },
-        onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
-          ad.dispose();
-          _interstitialAd = null;
-          _isLoaded = false;
-          _isShowing = false;
-          preload();
-          print('Ad failed to show: $error');
-          completer.complete();
-        },
-      );
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (InterstitialAd ad) {
+        ad.dispose();
+        _interstitialAd = null;
+        _isLoaded = false;
+        _isShowing = false;
+        preload(); // preload next ad
+        completer.complete();
+      },
+      onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+        ad.dispose();
+        _interstitialAd = null;
+        _isLoaded = false;
+        _isShowing = false;
+        preload();
+        print('Ad failed to show: $error');
+        completer.complete(); 
+      },
+    );
 
-      _interstitialAd!.show();
-      await completer.future;
-      return;
-    }
-
-    // If ad not ready, load for next time and continue immediately.
-    print('No ad ready to show; loading for next time.');
-    preload();
+    _interstitialAd!.show();
+    await completer.future;
+    return;
   }
+
+  // No ad ready — silently continue and preload for next time
+  print('No ad ready (no fill or still loading); continuing without ad.');
+  preload();
+}
 }

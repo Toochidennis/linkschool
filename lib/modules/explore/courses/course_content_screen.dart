@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
@@ -16,6 +17,9 @@ import 'dart:io' show Platform, Directory, File;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'course_payment_dialog.dart';
+import 'package:intl/intl.dart';
+import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
+import 'package:linkschool/modules/services/explore/courses/cohort_service.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final String courseTitle;
@@ -66,6 +70,12 @@ class CourseContentScreen extends StatefulWidget {
 class _CourseContentScreenState extends State<CourseContentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final Stream<int> _countdownStream;
+  late final CohortProvider _cohortProvider;
+  DateTime? _courseStartDate;
+  bool _isStartDateLoading = true;
+  bool _lessonsLocked = false;
+  Timer? _startTimer;
   int _localLessonsTaken = 0;
   bool _hasPaid = false;
   final Set<int> _completedLessonIds = {};
@@ -92,6 +102,232 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     return (widget.trialType?.toLowerCase() == 'views') &&
         widget.trialValue > 0 &&
         _localLessonsTaken >= widget.trialValue;
+  }
+
+  DateTime? _parseStartDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    return DateTime.tryParse(raw.trim());
+  }
+
+  String _formatStartDate(DateTime date) {
+    return DateFormat('E, dd MMM yyyy (hh:mm a)').format(date);
+  }
+
+  void _scheduleStartTimer(DateTime startDate) {
+    _startTimer?.cancel();
+    final diff = startDate.difference(DateTime.now());
+    if (diff.isNegative || diff.inSeconds <= 0) {
+      _unlockLessonsAndLoad();
+      return;
+    }
+    _startTimer = Timer(diff, _unlockLessonsAndLoad);
+  }
+
+  Future<void> _loadCohortAndMaybeLock() async {
+    setState(() {
+      _isStartDateLoading = true;
+    });
+
+    try {
+      await _cohortProvider.loadCohort(widget.cohortId);
+      if (_cohortProvider.error != null) {
+        _courseStartDate = null;
+        _lessonsLocked = false;
+        _isStartDateLoading = false;
+        if (mounted) {
+          setState(() {});
+        }
+        _loadLessonsNow();
+        return;
+      }
+
+      final startDate = _parseStartDate(_cohortProvider.cohort?.startDate);
+      _courseStartDate = startDate;
+      final now = DateTime.now();
+      if (startDate != null && startDate.isAfter(now)) {
+        _lessonsLocked = true;
+        _isStartDateLoading = false;
+        _scheduleStartTimer(startDate);
+      } else {
+        _lessonsLocked = false;
+        _isStartDateLoading = false;
+        _loadLessonsNow();
+      }
+    } catch (_) {
+      _courseStartDate = null;
+      _lessonsLocked = false;
+      _isStartDateLoading = false;
+      _loadLessonsNow();
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _unlockLessonsAndLoad() {
+    if (!_lessonsLocked) return;
+    if (mounted) {
+      setState(() {
+        _lessonsLocked = false;
+      });
+    } else {
+      _lessonsLocked = false;
+    }
+    _loadLessonsNow();
+  }
+
+  void _loadLessonsNow() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final profileId = widget.profileId;
+      if (profileId == null) return;
+      await context.read<LessonProvider>().loadLessons(
+            cohortId: widget.cohortId,
+            profileId: profileId,
+          );
+      if (profileId != null) {
+        await context.read<LessonPerformanceProvider>().loadLessonPerformance(
+              cohortId: widget.cohortId,
+              profileId: profileId,
+              silent: true,
+            );
+      }
+      _refreshPaymentStatus();
+    });
+  }
+
+  Widget _buildCountdownItem(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: 50,
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111827),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF0F172A)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStartCountdownCard(DateTime startDate) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.schedule, color: Color(0xFF1D4ED8)),
+              SizedBox(width: 8),
+              Text(
+                'Course starts in',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start date: ${_formatStartDate(startDate)}',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          StreamBuilder<int>(
+            stream: _countdownStream,
+            builder: (context, snapshot) {
+              final now = DateTime.now();
+              final diff =
+                  now.isAfter(startDate) ? Duration.zero : startDate.difference(now);
+              final days = diff.inDays;
+              final hours = diff.inHours % 24;
+              final minutes = diff.inMinutes % 60;
+              final seconds = diff.inSeconds % 60;
+
+              if (diff.inSeconds <= 0 && _lessonsLocked) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _unlockLessonsAndLoad();
+                });
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildCountdownItem(
+                    'DAYS',
+                    days.toString().padLeft(2, '0'),
+                  ),
+                  _buildCountdownItem(
+                    'HOURS',
+                    hours.toString().padLeft(2, '0'),
+                  ),
+                  _buildCountdownItem(
+                    'MINUTES',
+                    minutes.toString().padLeft(2, '0'),
+                  ),
+                  _buildCountdownItem(
+                    'SECONDS',
+                    seconds.toString().padLeft(2, '0'),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Lessons will be available as soon as the countdown ends.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPaymentDialog({
@@ -243,21 +479,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     _localLessonsTaken = 0;
     _initTrialViewsCounter();
     _loadCompletedLessons();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final profileId = widget.profileId;
-      context.read<LessonProvider>().loadLessons(
-            cohortId: widget.cohortId,
-            profileId: profileId!,
-          );
-      if (profileId != null) {
-        context.read<LessonPerformanceProvider>().loadLessonPerformance(
-              cohortId: widget.cohortId,
-              profileId: profileId,
-              silent: true,
-            );
-      }
-      _refreshPaymentStatus();
-    });
+    _countdownStream = Stream<int>.periodic(
+      const Duration(seconds: 1),
+      (i) => i,
+    ).asBroadcastStream();
+    _cohortProvider = CohortProvider(CohortService());
+    _loadCohortAndMaybeLock();
   }
 
   Future<void> _loadCompletionStatus() async {
@@ -268,6 +495,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   void dispose() {
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
+    _startTimer?.cancel();
     super.dispose();
   }
 
@@ -378,17 +606,21 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       ),
       body: RefreshIndicator(
     onRefresh: () async {
-          final profileId = widget.profileId;
-          await context.read<LessonProvider>().loadLessons(
-                cohortId: widget.cohortId,
-                profileId: profileId ?? 0,
-              );
-          if (profileId != null) {
-            await context.read<LessonPerformanceProvider>().loadLessonPerformance(
+          await _loadCohortAndMaybeLock();
+          if (!_lessonsLocked) {
+            final profileId = widget.profileId;
+            await context.read<LessonProvider>().loadLessons(
                   cohortId: widget.cohortId,
-                  profileId: profileId,
-                  silent: false,
+                  profileId: profileId ?? 0,
                 );
+            if (profileId != null) {
+              await context.read<LessonPerformanceProvider>()
+                  .loadLessonPerformance(
+                cohortId: widget.cohortId,
+                profileId: profileId,
+                silent: false,
+              );
+            }
           }
         },
         child: Column(
@@ -521,6 +753,23 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   }
 
   Widget _buildLessonsTab() {
+    if (_isStartDateLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFFFA500),
+        ),
+      );
+    }
+
+    if (_lessonsLocked && _courseStartDate != null) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildStartCountdownCard(_courseStartDate!),
+        ],
+      );
+    }
+
     return Consumer<LessonProvider>(
       builder: (context, lessonProvider, child) {
         if (lessonProvider.isLoading) {

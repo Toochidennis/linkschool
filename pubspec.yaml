@@ -3,7 +3,7 @@ description: "School Management System"
 
 publish_to: 'none' 
 
-version: 1.4.0+33
+version: 1.4.3+36
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

@@ -65,10 +65,10 @@ class _NewsDetailsState extends State<NewsDetails>
     ));
 
     Future.microtask(() {
-      final provider = Provider.of<NewsProvider>(context, listen: false);
-      if (provider.newsmodel.isEmpty) {
-        provider.fetchNews();
-      }
+        final provider = Provider.of<NewsProvider>(context, listen: false);
+        if (provider.newsmodel.isEmpty) {
+          provider.fetchAllNews();
+        }
       setState(() {
         allNewsList = provider.newsmodel;
         currentIndex = allNewsList.indexWhere((news) => news.id == currentNews.id);

@@ -8,6 +8,10 @@ import 'package:linkschool/modules/providers/explore/studies_question_provider.d
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/ai_chat_screen.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
@@ -38,8 +42,12 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // Cache for AI-generated explanations (keyed by question ID)
   final Map<int, String> _explanationCache = {};
+  final _subscriptionService = CbtSubscriptionService();
+  final Set<int> _answeredQuestionIds = {};
   bool _isStudyComplete = false;
   bool _isInitialCountdownComplete = false;
+  bool _isContinueWithAds = false;
+  bool _isShowingAdsGate = false;
 
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
@@ -56,6 +64,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     AdManager.instance.preload();
+    _loadAdMode();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -201,6 +210,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       questionId: question.questionId,
       isCorrect: isCorrect,
     );
+    final isNewAnswer = _answeredQuestionIds.add(question.questionId);
 
     // Check if we already have explanation for this question (keyed by question ID)
     String? cachedExplanation = _explanationCache[question.questionId];
@@ -225,6 +235,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       cachedExplanation: cachedExplanation,
       apiExplanation: apiExplanation,
       questionId: question.questionId,
+      shouldGate: isNewAnswer && _answeredQuestionIds.length % 10 == 0,
     );
   }
 
@@ -236,6 +247,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     String? cachedExplanation,
     String? apiExplanation,
     required int questionId,
+    required bool shouldGate,
   }) async {
     await showModalBottomSheet(
       context: context,
@@ -254,12 +266,97 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           // Cache the explanation by question ID
           _explanationCache[questionId] = explanation;
         },
-        onContinue: () {
+        onContinue: () async {
           Navigator.pop(context);
+          if (shouldGate) {
+            final canContinue = await _maybeShowAdsGate();
+            if (!canContinue) return;
+          }
           _moveToNextQuestion();
         },
       ),
     );
+  }
+
+  Future<bool> _isContinueWithAdsActive() async {
+    final hasPaid = await _subscriptionService.hasPaid();
+    if (hasPaid) return false;
+    final mode = await _subscriptionService.getAdMode();
+    if (mode == 'continue_with_ads') return true;
+    return await _subscriptionService.shouldContinueWithAds();
+  }
+
+  Future<void> _loadAdMode() async {
+    final isActive = await _isContinueWithAdsActive();
+    if (!mounted) return;
+    setState(() {
+      _isContinueWithAds = isActive;
+    });
+  }
+
+  Future<bool> _maybeShowAdsGate() async {
+    if (_isShowingAdsGate) return true;
+    final isActive = await _isContinueWithAdsActive();
+    if (!isActive) return true;
+    final answeredCount = _answeredQuestionIds.length;
+    if (answeredCount == 0 || answeredCount % 10 != 0) return true;
+
+    _isShowingAdsGate = true;
+    try {
+      print('==== question $answeredCount ====');
+      final settings = await CbtSettingsHelper.getSettings();
+      if (!mounted) return false;
+
+      final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => CbtContinueAdsDialog(
+        
+        ),
+      );
+
+      if (!mounted) return false;
+
+      if (result == 'ads') {
+        await _subscriptionService.setAdMode('continue_with_ads');
+        await AdManager.instance.showIfEligible(
+          context: context,
+          trigger: AdTrigger.paywallContinue,
+        );
+        return true;
+      }
+
+      if (result == 'subscribe') {
+        final planResult = await Navigator.of(context).push<Object?>(
+          MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
+        );
+
+        if (!mounted) return false;
+
+        if (planResult == 'continue_ads') {
+          await _subscriptionService.setAdMode('continue_with_ads');
+          await AdManager.instance.showIfEligible(
+            context: context,
+            trigger: AdTrigger.paywallContinue,
+          );
+          return true;
+        }
+
+        if (planResult == true) {
+          return true;
+        }
+      }
+
+      final mode = await _subscriptionService.getAdMode();
+      final hasPaid = await _subscriptionService.hasPaid();
+      setState(() {
+        _isContinueWithAds = mode == 'continue_with_ads' && !hasPaid;
+      });
+
+      return result == 'ads' || result == 'subscribe';
+    } finally {
+      _isShowingAdsGate = false;
+    }
   }
 
   Future<void> _moveToNextQuestion() async {

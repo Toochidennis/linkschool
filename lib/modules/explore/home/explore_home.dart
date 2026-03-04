@@ -134,7 +134,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
     // Fetch news and announcements data when the widget is initialized
     Future.microtask(() {
-      Provider.of<NewsProvider>(context, listen: false).fetchNews();
+      Provider.of<NewsProvider>(context, listen: false).fetchLatestNews();
       Provider.of<AnnouncementProvider>(context, listen: false)
           .fetchAnnouncements();
     });
@@ -287,6 +287,16 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         widget.onSearchIconVisibilityChanged(_showSearchBar);
       });
     }
+
+    if (!_controller.hasClients) return;
+    final position = _controller.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      final provider = Provider.of<NewsProvider>(context, listen: false);
+      if (provider.hasNextPageLatest && !provider.isLoadingMoreLatest) {
+        provider.loadMoreLatest();
+        _lastAdNewsCount = -1;
+      }
+    }
   }
 
   Future<void> _launchURL(String url) async {
@@ -345,15 +355,15 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   }
 
   void _loadNativeAds(int newsCount) {
-    _disposeAds();
-    _adPositions.clear();
-
     final listItemCount = _getListItemCount(newsCount);
+    final positions = <int>[];
     for (int position = 5; position < listItemCount; position += 6) {
-      _adPositions.add(position);
+      positions.add(position);
     }
 
-    for (int position in _adPositions) {
+    for (int position in positions) {
+      if (_nativeAds.containsKey(position)) continue;
+      _adPositions.add(position);
       final nativeAd = NativeAd(
         adUnitId: EnvConfig.newsNativeAds,
         listener: NativeAdListener(
@@ -419,7 +429,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     _showNetworkMessage(announcementProvider.errorMessage);
 
     // Precache images once data is available to avoid re-downloading when returning
-    if (!_imagesPrecached && !newsProvider.isLoading && !announcementProvider.isLoading) {
+    if (!_imagesPrecached && !newsProvider.isLoadingLatest && !announcementProvider.isLoading) {
       _imagesPrecached = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _precacheImages(newsProvider, announcementProvider);
@@ -432,8 +442,6 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         _lastAdNewsCount = newsProvider.latestNews.length;
         if (_lastAdNewsCount > 0) {
           _loadNativeAds(_lastAdNewsCount);
-        } else {
-          _disposeAds();
         }
       });
     }
@@ -482,7 +490,11 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         onRefresh: () async {
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
-            Provider.of<NewsProvider>(context, listen: false).fetchNews();
+            setState(() {
+              _lastAdNewsCount = -1;
+              _imagesPrecached = false;
+            });
+            Provider.of<NewsProvider>(context, listen: false).fetchLatestNews();
             Provider.of<AnnouncementProvider>(context, listen: false)
                 .fetchAnnouncements();
           }
@@ -759,11 +771,11 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 ),
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  if (_shouldShowAdAtPosition(
-                      index, newsProvider.latestNews.length)) {
+                    if (_shouldShowAdAtPosition(
+                        index, newsProvider.latestNews.length)) {
                     final ad = _nativeAds[index];
                     if (ad != null) {
                       return Padding(
@@ -778,8 +790,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                     return const SizedBox.shrink();
                   }
 
-                  final newsIndex = _getNewsIndex(
-                      index, newsProvider.latestNews.length);
+                    final newsIndex = _getNewsIndex(
+                        index, newsProvider.latestNews.length);
                   if (newsIndex >= newsProvider.latestNews.length) {
                     return const SizedBox.shrink();
                   }
@@ -810,6 +822,14 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 childCount: _getListItemCount(newsProvider.latestNews.length),
               ),
             ),
+
+            if (newsProvider.isLoadingMoreLatest)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
 
             const SliverToBoxAdapter(
   child: SizedBox(height: kBottomNavigationBarHeight),

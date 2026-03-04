@@ -95,29 +95,45 @@ class Lesson {
     this.liveSessionInfo,
   });
 
- factory Lesson.fromJson(Map<String, dynamic> json) {
-  return Lesson(
-    id: json['id'] ?? 0,
-    title: json['title'] ?? '',
-    description: json['description'],
-    goals: json['goals'] ?? '',
-    objectives: json['objectives'] ?? '',
-    videoUrl: json['video_url'] ?? '',
-    recordedVideoUrl: json['recorded_video_url'] ?? '',
-    materialUrl: json['material_url'] ?? '',
-    assignmentUrl: json['assignment_url'],
-    certificateUrl: json['certificate_url'],
-    assignmentInstructions: json['assignment_instructions'] ?? '',
-    assignmentSubmissionType: json['assignment_submission_type'],
-    isFinalLesson: json['is_final_lesson'] ?? false,
-    hasAttendance: json['has_attendance'] ?? false,
-    displayOrder: json['display_order'] ?? 0,
-    lessonDate: json['lesson_date'] ?? '',
-    assignmentDueDate: json['assignment_due_date'],
-    hasQuiz: json['has_quiz'] ?? false,
-    liveSessionInfo: _parseLiveSessionInfo(json['live_session_info']),
-  );
-}
+  factory Lesson.fromJson(Map<String, dynamic> json) {
+    return Lesson(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      description: json['description'],
+      goals: json['goals'] ?? '',
+      objectives: json['objectives'] ?? '',
+      videoUrl: json['video_url'] ?? '',
+      recordedVideoUrl: json['recorded_video_url'] ?? '',
+      materialUrl: json['material_url'] ?? '',
+      assignmentUrl: json['assignment_url'],
+      certificateUrl: json['certificate_url'],
+      assignmentInstructions: json['assignment_instructions'] ?? '',
+      assignmentSubmissionType: json['assignment_submission_type'],
+      isFinalLesson: json['is_final_lesson'] ?? false,
+      hasAttendance: json['has_attendance'] ?? false,
+      displayOrder: json['display_order'] ?? 0,
+      lessonDate: json['lesson_date'] ?? '',
+      assignmentDueDate: json['assignment_due_date'],
+      hasQuiz: _parseBool(
+          json['has_quiz'] ?? json['hasquiz'] ?? json['hasQuiz']),
+      liveSessionInfo: _parseLiveSessionInfo(json['live_session_info']),
+    );
+  }
+
+  static bool _parseBool(dynamic raw) {
+    if (raw is bool) return raw;
+    if (raw is num) return raw != 0;
+    if (raw is String) {
+      final normalized = raw.trim().toLowerCase();
+      if (normalized == 'true' || normalized == '1' || normalized == 'yes') {
+        return true;
+      }
+      if (normalized == 'false' || normalized == '0' || normalized == 'no') {
+        return false;
+      }
+    }
+    return false;
+  }
 
   static LiveSessionInfo? _parseLiveSessionInfo(dynamic raw) {
     if (raw == null) return null;

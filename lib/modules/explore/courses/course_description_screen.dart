@@ -499,14 +499,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                     ),
                                   ],
                                 )
-                              else ...[
-                                _buildObjectiveItem(
-                                    "Master the fundamentals of ${cohort.title}"),
-                                _buildObjectiveItem(
-                                    "Key concepts and practical applications"),
-                                _buildObjectiveItem(
-                                    "Industry-relevant skills and best practices"),
-                              ],
+                              ,
                               const SizedBox(height: 24),
 
                               if (isFree) ...[

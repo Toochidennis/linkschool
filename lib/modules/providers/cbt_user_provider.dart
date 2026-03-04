@@ -422,6 +422,54 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
+  // 🔗 LINK PORTAL USER (NO CREATE)
+  // =========================================================================
+  Future<bool> tryLinkPortalUser({
+    required String email,
+  }) async {
+    final normalizedEmail = email.trim();
+    if (normalizedEmail.isEmpty) {
+      _errorMessage = 'Portal user email is empty';
+      return false;
+    }
+
+    if (_currentUser != null && _currentUser!.email == normalizedEmail) {
+      return true;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final existingUser = await _userService.fetchUserByEmail(normalizedEmail);
+      if (existingUser == null) {
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      _currentUser = existingUser;
+      await _saveUserToPreferences(existingUser);
+      if (existingUser.reference != null &&
+          existingUser.reference!.isNotEmpty) {
+        await _savePaymentReference(existingUser.reference!);
+      }
+      await syncSubscriptionService();
+      await _syncDeviceTokenIfNeeded();
+      _startTokenRefreshListener();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Portal user link failed: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // =========================================================================
   // ?? EMAIL/PASSWORD SIGNUP (API)
   // =========================================================================
   Future<CbtUserModel?> signupWithEmailPassword({

@@ -182,7 +182,7 @@ List<SingleChildWidget> getAppProviders() {
       lazy: true,
     ),
     ChangeNotifierProvider<ManageStudentProvider>(
-        create: (_) => locator<ManageStudentProvider>(), lazy: true),
+     create: (_) => locator<ManageStudentProvider>(), lazy: true),
     ChangeNotifierProvider<CourseProvider>(
         create: (_) => locator<CourseProvider>(), lazy: true),
     ChangeNotifierProvider<DashboardFeedProvider>(

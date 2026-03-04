@@ -21,6 +21,7 @@ import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
@@ -62,8 +63,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _bounceController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _bounceAnimation;
+    
   bool _animationTriggered = false;
   String? _pressedBoardCode;
   String? _lastNetworkMessage;
@@ -72,6 +72,13 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool _isHandlingBoardTap = false;
 
   Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
+    var allowAdsOverride = allowAds;
+    final portalLoggedIn = await _handlePortalLogin();
+    if (portalLoggedIn) {
+      allowAdsOverride = true;
+      return true;
+    }
+
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
     if (cbtUserProvider.currentUser == null) {
@@ -91,7 +98,7 @@ class _CBTDashboardState extends State<CBTDashboard>
         }
         if (cachedStatus == false) {
           print('[CBT_FLOW] License inactive from cache');
-          if (allowAds) return true;
+          if (allowAdsOverride) return true;
           return await _showPlansAndReturn();
         }
 
@@ -99,7 +106,7 @@ class _CBTDashboardState extends State<CBTDashboard>
         print('[CBT_FLOW] License active=$isActive (post-auth)');
         if (!mounted) return false;
         if (!isActive) {
-          if (allowAds) return true;
+          if (allowAdsOverride) return true;
           return await _showPlansAndReturn();
         }
         return true;
@@ -133,7 +140,7 @@ class _CBTDashboardState extends State<CBTDashboard>
       }
       if (cachedStatus == false) {
         print('[CBT_FLOW] License inactive from cache (post-signin)');
-        if (allowAds) return true;
+        if (allowAdsOverride) return true;
         return await _showPlansAndReturn();
       }
 
@@ -141,12 +148,22 @@ class _CBTDashboardState extends State<CBTDashboard>
       print('[CBT_FLOW] License active=$isActive (post-signin)');
       if (!mounted) return false;
       if (!isActive) {
-        if (allowAds) return true;
+        if (allowAdsOverride) return true;
         return await _showPlansAndReturn();
       }
       return true;
     }
     return false;
+  }
+
+  Future<bool> _handlePortalLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isLoggedIn) {
+      return false;
+    }
+
+    await _subscriptionService.setAdMode('free_trial');
+    return true;
   }
 
 
@@ -171,13 +188,7 @@ class _CBTDashboardState extends State<CBTDashboard>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-
-    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
-    );
+    
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<CBTProvider>().loadBoards();
@@ -388,7 +399,11 @@ class _CBTDashboardState extends State<CBTDashboard>
     _isShowingEntryPrompt = true;
 
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
+      MaterialPageRoute(
+        builder: (_) => const CbtPlansScreen(
+          preferTrialLabel: true,
+        ),
+      ),
     );
 
     if (mounted) {
@@ -398,6 +413,9 @@ class _CBTDashboardState extends State<CBTDashboard>
   }
 
   Future<bool> _ensureSignedInForPlans() async {
+    final portalLoggedIn = await _handlePortalLogin();
+    if (portalLoggedIn) return true;
+
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
     if (cbtUserProvider.currentUser != null) return true;
@@ -935,7 +953,9 @@ _wasLoading = loading;
             // Does NOT check free trial limits - only checks active subscription
             final cbtuserProvider =
                 Provider.of<CbtUserProvider>(context, listen: false);
-            final isSignedIn = await _authService.isUserSignedUp();
+            final portalLoggedIn = await _handlePortalLogin();
+            final isSignedIn =
+                await _authService.isUserSignedUp() || portalLoggedIn;
             final hasPaid = cbtuserProvider.hasPaid;
 
             print('\n🎯 Challenge Module Access Check:');
@@ -943,7 +963,7 @@ _wasLoading = loading;
             print('   - Has paid: $hasPaid');
 
             // If not signed in or not paid, show enforcement dialog
-            if (!isSignedIn || !hasPaid) {
+            if (!isSignedIn || (!hasPaid && !portalLoggedIn)) {
               print('   ❌ Challenge access denied - showing enforcement dialog');
 
               final settings = await CbtSettingsHelper.getSettings();
@@ -968,6 +988,18 @@ _wasLoading = loading;
 
             // User is signed in and has paid, proceed to challenge
             print('   ✅ Challenge access granted - proceeding');
+            if (cbtuserProvider.currentUser == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Challenge requires a CBT profile. Please sign in to CBT.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              return;
+            }
+
             final cbtProvider =
                 Provider.of<CBTProvider>(context, listen: false);
             final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;

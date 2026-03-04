@@ -134,6 +134,11 @@ class CourseDetailScreen extends StatefulWidget {
   State<CourseDetailScreen> createState() => _CourseDetailScreenState();
 }
 
+enum _RewardAction {
+  quizRetake,
+  assignmentResubmit,
+}
+
 class _CourseDetailScreenState extends State<CourseDetailScreen>
     with SingleTickerProviderStateMixin,WidgetsBindingObserver  {
       static const platform = MethodChannel('com.linkskool.app/downloads');
@@ -449,9 +454,11 @@ String? get _submittedAssignmentUrl {
        bool _isInitializing = false;
        bool _hasAppliedLessonData = false;
 
-       RewardedAd? _rewardedAd;
+RewardedAd? _rewardedAd;
 bool _isRewardedAdLoaded = false;
+bool _isRewardedAdLoading = false;
   bool _quizUnlocked = false;
+  bool _assignmentResubmitUnlocked = false;
   String? _quizRetryMessage;
 
   bool _isValidEmail(String email) {
@@ -469,20 +476,7 @@ bool _isRewardedAdLoaded = false;
   String? _lastInitializedUrl;
   final bool _isSubmittingAssignment = false;
 
-  final List<Map<String, dynamic>> _courseVideos = [
-   
-    {
-      'title': 'Final Project and Next Steps',
-      'duration': '16:50',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description':
-          'Complete the final project and discover where to go next.',
-    },
-  ];
+  final List<Map<String, dynamic>> _courseVideos = [];
 
   @override
 void initState() {
@@ -497,6 +491,13 @@ void initState() {
   _loadActiveProfile();
 
   WidgetsBinding.instance.addObserver(this);
+
+
+  if (widget.courseTitle.isNotEmpty ||
+      widget.courseDescription.isNotEmpty ||
+      widget.videoUrl?.isNotEmpty == true) {
+    _seedContentFromWidget();
+  }
 
 
   
@@ -524,6 +525,8 @@ void initState() {
   
   // Initialize interstitial ad
   _loadInterstitialAd();
+  // Preload rewarded ad early so it's ready when user taps
+  _loadRewardedAd();
    Future.delayed(const Duration(seconds: 2), () {
     if (mounted) {
       _loadAppOpenAd();
@@ -712,6 +715,10 @@ void _showAppOpenAd() {
 }
 
 void _loadRewardedAd() {
+  if (_isRewardedAdLoaded || _isRewardedAdLoading) {
+    return;
+  }
+  _isRewardedAdLoading = true;
   final AdRequest request;
   if (_isMinor == true) {
     request = AdRequest(nonPersonalizedAds: true);
@@ -729,7 +736,10 @@ void _loadRewardedAd() {
         if (mounted) {
           setState(() {
             _isRewardedAdLoaded = true;
+            _isRewardedAdLoading = false;
           });
+        } else {
+          _isRewardedAdLoading = false;
         }
         print('Rewarded Ad loaded successfully');
       },
@@ -738,14 +748,17 @@ void _loadRewardedAd() {
         if (mounted) {
           setState(() {
             _isRewardedAdLoaded = false;
+            _isRewardedAdLoading = false;
           });
+        } else {
+          _isRewardedAdLoading = false;
         }
       },
     ),
   );
 }
 
-void _showRewardedAdAndUnlockQuiz() {
+void _showRewardedAdAndUnlock(_RewardAction action) {
   if (_isRewardedAdLoaded && _rewardedAd != null) {
     _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) {
@@ -772,23 +785,45 @@ void _showRewardedAdAndUnlockQuiz() {
     _rewardedAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
         print('User earned reward: ${reward.amount} ${reward.type}');
-        // Unlock the quiz
+        if (action == _RewardAction.quizRetake) {
+          // Unlock the quiz
+          setState(() {
+            _quizUnlocked = true;
+          });
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Quiz unlocked! You can now retake the quiz.'),
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 3),
+            ),
+          );
+
+          // Navigate to quiz after a short delay
+          Future.delayed(const Duration(seconds: 1), () {
+            _navigateToQuiz();
+          });
+          return;
+        }
+
+        // Unlock assignment resubmission
         setState(() {
-          _quizUnlocked = true;
+          _assignmentResubmitUnlocked = true;
         });
-        
-        // Show success message
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Quiz unlocked! You can now retake the quiz.'),
+            content: Text('Resubmission unlocked! You can now update your assignment.'),
             backgroundColor: Color(0xFF4CAF50),
             duration: Duration(seconds: 3),
           ),
         );
-        
-        // Navigate to quiz after a short delay
+
         Future.delayed(const Duration(seconds: 1), () {
-          _navigateToQuiz();
+          if (mounted) {
+            _openSubmitAssignmentPage(context);
+          }
         });
       },
     );
@@ -805,7 +840,7 @@ void _showRewardedAdAndUnlockQuiz() {
   }
 }
 
-void _showUnlockQuizDialog() {
+void _showUnlockRewardDialog(_RewardAction action) {
   int retrySeconds = 0;
   String? retryMessage;
   Timer? retryTimer;
@@ -837,6 +872,12 @@ void _showUnlockQuizDialog() {
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setDialogState) {
+          final title = action == _RewardAction.quizRetake
+              ? 'Quiz Locked'
+              : 'Resubmission Locked';
+          final message = action == _RewardAction.quizRetake
+              ? 'This feature is locked. Please watch a short ad to unlock quiz retake.'
+              : 'This feature is locked. Please watch a short ad to unlock assignment resubmission.';
           return Dialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
@@ -878,8 +919,8 @@ void _showUnlockQuizDialog() {
                     const SizedBox(height: 20),
                     
                     // Title
-                    const Text(
-                      'Quiz Locked',
+                    Text(
+                      title,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -889,8 +930,8 @@ void _showUnlockQuizDialog() {
                     const SizedBox(height: 12),
                     
                     // Message
-                    const Text(
-                      'This Feature is locked,please watch a short ad to unlock this feature ',
+                    Text(
+                      message,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
@@ -955,7 +996,7 @@ void _showUnlockQuizDialog() {
                                 if (!_isRewardedAdLoaded || _rewardedAd == null) {
                                   setState(() {
                                     _quizRetryMessage =
-                                        'Ad not ready yet. Please retry taking the quiz.';
+                                        'Ad not ready yet. Please retry to unlock.';
                                   });
                                   startRetryCountdown(setDialogState);
                                   _loadRewardedAd();
@@ -966,11 +1007,11 @@ void _showUnlockQuizDialog() {
                                   _quizRetryMessage = null;
                                 });
                                 Navigator.pop(context);
-                                _showRewardedAdAndUnlockQuiz();
+                                _showRewardedAdAndUnlock(action);
                               },
                         icon: const Icon(Icons.play_circle_outline, size: 20),
                         label: Text(
-                          retrySeconds > 0 ? 'Retry in ${retrySeconds}s' : 'Watch Ad',
+                          retrySeconds > 0 ? 'Retry in ${retrySeconds}s' : 'Watch Ad To Unlock',
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -1299,6 +1340,7 @@ Future<void> _navigateToQuiz() async {
   void _applyLessonData(Lesson lesson, {Submission? submission}) {
   final resolvedVideoUrl =
       lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
+  final metaSignature = _buildLessonMetaSignature(lesson, submission);
   
   print('=== APPLYING LESSON DATA ===');
   print('Video URL: $resolvedVideoUrl');
@@ -1306,7 +1348,7 @@ Future<void> _navigateToQuiz() async {
   print('Last initialized URL: $_lastInitializedUrl');
   
   // Prevent applying the same lesson data twice
-  if (_hasAppliedLessonData && _lastInitializedUrl == resolvedVideoUrl) {
+  if (_hasAppliedLessonData && _lastMetaSignature == metaSignature) {
     print('Same lesson already applied, skipping...');
     return;
   }
@@ -1336,6 +1378,8 @@ Future<void> _navigateToQuiz() async {
     _lessonHasQuiz = lesson.hasQuiz;
     _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
     _isFinalLesson = lesson.isFinalLesson;
+    _quizTaken = false;
+    _quizScore = 0;
     _courseVideos
       ..clear()
       ..add({
@@ -1348,7 +1392,7 @@ Future<void> _navigateToQuiz() async {
         'isCompleted': false,
       });
     _selectedVideoIndex = 0;
-    _lastMetaSignature = _buildLessonMetaSignature(lesson, submission);
+    _lastMetaSignature = metaSignature;
     
     // Pre-fill controllers if submission exists
     if (submission != null) {
@@ -2625,7 +2669,7 @@ Future<void> _handleBackButton() async {
   }
 }
 
- void _openSubmitAssignmentPage(BuildContext context) {
+  Future<void> _openSubmitAssignmentPage(BuildContext context) async {
   // Get active profile
   final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
   final user = cbtUserProvider.currentUser;
@@ -2645,7 +2689,7 @@ Future<void> _handleBackButton() async {
   final isPastDue = _isAssignmentPastDue();
   _loadInterstitialAd();
 
-  Navigator.of(context).push(
+  await Navigator.of(context).push(
     MaterialPageRoute(
       builder: (context) {
         return WillPopScope(
@@ -3535,6 +3579,12 @@ Future<void> _handleBackButton() async {
       },
     ),
   );
+
+  if (mounted) {
+    setState(() {
+      _assignmentResubmitUnlocked = false;
+    });
+  }
 }
 
 
@@ -5215,161 +5265,227 @@ if (_hasAttendance) ...[
   }
 
   Widget _buildAssignmentsTab(Map<String, dynamic> currentVideo) {
-    final remark = _submission?.remark?.trim();
-    final comment = _submission?.comment?.trim();
-    final hasRemark = remark != null && remark.isNotEmpty;
-    final hasComment = comment != null && comment.isNotEmpty;
-    final hasFeedback = hasRemark || hasComment;
-    final assignedScore = _submission?.assignedScore;
-    final isPastDue = _isAssignmentPastDue();
+  final remark = _submission?.remark?.trim();
+  final comment = _submission?.comment?.trim();
+  final hasRemark = remark != null && remark.isNotEmpty;
+  final hasComment = comment != null && comment.isNotEmpty;
+  final hasFeedback = hasRemark || hasComment;
+  final assignedScore = _submission?.assignedScore;
+  final isPastDue = _isAssignmentPastDue();
+  
+  // Check if lesson has assignment
+  final bool hasAssignment = _effectiveAssignmentUrl != null && 
+                             _effectiveAssignmentUrl!.isNotEmpty;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (hasFeedback) ...[
-          const SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+  return ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      if (hasFeedback) ...[
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Performance',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (assignedScore != null) ...[
+                Center(
+                  child: SizedBox(
+                    width: 120,
+                    height: 120,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: 1.0,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              const Color(0xFF1D4ED8).withOpacity(0.15),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: assignedScore / 100,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${assignedScore}/100',
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1D4ED8),
+                              ),
+                            ),
+                            const Text(
+                              'Score',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (hasRemark) ...[
                 const Text(
-                  'Performance',
+                  'Remark:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 12),
-                if (assignedScore != null) ...[
-                  Center(
-                    child: SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 160,
-                            height: 160,
-                            child: CircularProgressIndicator(
-                              value: 1.0,
-                              strokeWidth: 12,
-                              backgroundColor: Colors.transparent,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                const Color(0xFF1D4ED8).withOpacity(0.15),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 160,
-                            height: 160,
-                            child: CircularProgressIndicator(
-                              value: assignedScore / 100,
-                              strokeWidth: 12,
-                              backgroundColor: Colors.transparent,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Color(0xFF1D4ED8),
-                              ),
-                            ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${assignedScore}/100',
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1D4ED8),
-                                ),
-                              ),
-                              const Text(
-                                'Score',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                const SizedBox(height: 6),
+                Text(
+                  remark!,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF374151),
+                    height: 1.4,
                   ),
-                  const SizedBox(height: 16),
-                ],
-                if (hasRemark) ...[
-                  const Text(
-                    'Remark:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    remark!,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF374151),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (hasComment) ...[
-                  const Text(
-                    'Instructor Feedback:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    comment!,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF374151),
-                      height: 1.4,
-                    ),
-                  ),
-                ],
+                ),
+                const SizedBox(height: 16),
               ],
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-      
-       
-        if (!hasFeedback) ...[
-            const Text(
-          'Lesson Assignment',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+              if (hasComment) ...[
+                const Text(
+                  'Instructor Feedback:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  comment!,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF374151),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
+        const SizedBox(height: 24),
+      ],
+      
+      if (!hasAssignment) ...[
+        // EMPTY STATE - No assignment available
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Empty state icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.assignment_outlined,
+                  size: 60,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              const Text(
+                'No Assignment Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              
+              // Description
+              Text(
+                'No assignment for this lesson.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 32),
+              Center(
+                child: _CourseBannerAd(
+                  key: const ValueKey('assignment_empty_banner'),
+                  adUnitId: EnvConfig.programBannersAdsKey,
+                  size: AdSize.mediumRectangle,
+                ),
+              ),
+              
+            
+              
+              
+            ],
+          ),
+        ),
+      ] else ...[
+        // HAS ASSIGNMENT - Show all assignment-related content
+        if (!hasFeedback) ...[
+          const Text(
+            'Lesson Assignment',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
           const SizedBox(height: 16),
 
+          // Assignment Guidelines Card (always shown)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
+              border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -5449,8 +5565,7 @@ if (_hasAttendance) ...[
                                   ),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     _buildCountdownItem(
                                       'DAYS',
@@ -5495,10 +5610,10 @@ if (_hasAttendance) ...[
             ),
           ),
         ],
-        // Current Video/Lesson Info Card
 
         const SizedBox(height: 24),
 
+        // Assignment Instructions (if available)
         if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
@@ -5579,129 +5694,7 @@ if (_hasAttendance) ...[
           const SizedBox(height: 10),
 
         // Download Assignment Card
-        // Download Assignment Card
-if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
-  Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header with icon
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2196F3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.assignment,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Assignment',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF2196F3),
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Use the buttons below to preview or download the assignment file.',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey.shade700,
-            height: 1.4,
-          ),
-        ),
-       
-        const SizedBox(height: 16),
-
-        // Buttons Row
-        Row(
-          children: [
-            // Preview Button - FIXED: Preview the lesson assignment, not submitted
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  // Use lesson assignment URL, not submitted assignment
-                  if (_effectiveAssignmentUrl == null || 
-                      _effectiveAssignmentUrl!.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('No assignment file available'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                  _previewAssignment(_effectiveAssignmentUrl!); // CHANGED THIS LINE
-                },
-                icon: const Icon(Icons.visibility, size: 18),
-                label: const Text('Preview'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF2196F3),
-                  side: const BorderSide(color: Color(0xFF2196F3)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Download Button
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    _downloadAssignment(_effectiveAssignmentUrl!),
-                icon: const Icon(Icons.download, size: 18),
-                label: const Text('Download'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  ),
-
-        const SizedBox(height: 16),
-       
-
-        // Submit Assignment Card - Only show if assignmentUrl exists
-        if (_effectiveAssignmentUrl != null &&
-            _effectiveAssignmentUrl!.isNotEmpty) ...[
-          const SizedBox(height: 16),
+        if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -5726,122 +5719,209 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
+                        color: const Color(0xFF2196F3),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
-                        Icons.upload_file,
+                        Icons.assignment,
                         color: Colors.white,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                     Text(
-                      _hasSubmittedAssignment ? 'Submitted Assignment' : 'Submit Assignment',
-                      
+                    const Text(
+                      'Assignment',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF6366F1),
+                        color: Color(0xFF2196F3),
                         letterSpacing: -0.5,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Message
                 Text(
-                  _hasSubmittedAssignment
-                      ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
-                      : 'Once you\'ve completed the assignment, submit your work here for review.',
-                  style: const TextStyle(
+                  'Use the buttons below to preview or download the assignment file.',
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Colors.black87,
+                    color: Colors.grey.shade700,
                     height: 1.4,
                   ),
                 ),
+               
                 const SizedBox(height: 16),
-                // Buttons
-                _hasSubmittedAssignment
-    ? Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                final submittedFileUrl = _submittedAssignmentUrl;
-                if (submittedFileUrl != null && submittedFileUrl.isNotEmpty) {
-                  _previewAssignment(submittedFileUrl);
-                  return;
-                }
-                final linkUrl = _submission?.linkUrl?.trim();
-                if (linkUrl != null && linkUrl.isNotEmpty) {
-                  _launchUrl(linkUrl);
-                  return;
-                }
-                final textContent = _submission?.textContent?.trim();
-                if (textContent != null && textContent.isNotEmpty) {
-                  _showTextSubmissionDialog(textContent);
-                  return;
-                }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('No submitted assignment found'),
-                    backgroundColor: Colors.red,
+
+                // Buttons Row
+                Row(
+                  children: [
+                    // Preview Button
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          if (_effectiveAssignmentUrl == null || 
+                              _effectiveAssignmentUrl!.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No assignment file available'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          _previewAssignment(_effectiveAssignmentUrl!);
+                        },
+                        icon: const Icon(Icons.visibility, size: 18),
+                        label: const Text('Preview'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2196F3),
+                          side: const BorderSide(color: Color(0xFF2196F3)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Download Button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            _downloadAssignment(_effectiveAssignmentUrl!),
+                        icon: const Icon(Icons.download, size: 18),
+                        label: const Text('Download'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2196F3),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Submit Assignment Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with icon
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.upload_file,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
-                );
-              },
-              icon: const Icon(Icons.visibility, size: 18),
-              label: const Text('Preview'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF6366F1),
-                side: const BorderSide(color: Color(0xFF6366F1)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 12),
+                  Text(
+                    _hasSubmittedAssignment ? 'Submitted Assignment' : 'Submit Assignment',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF6366F1),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Message
+              Text(
+                _hasSubmittedAssignment
+                    ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
+                    : 'Once you\'ve completed the assignment, submit your work here for review.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.4,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: isPastDue
-                  ? null
-                  : () {
-                      _openSubmitAssignmentPage(context);
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isPastDue
-                    ? Colors.grey.shade400
-                    : const Color(0xFF6366F1),
-                disabledBackgroundColor: Colors.grey.shade400,
-                disabledForegroundColor: Colors.white,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Resubmit',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      )
-                    : SizedBox(
-                        width: double.infinity,
+              const SizedBox(height: 16),
+              // Buttons
+              _hasSubmittedAssignment
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final submittedFileUrl = _submittedAssignmentUrl;
+                            if (submittedFileUrl != null && submittedFileUrl.isNotEmpty) {
+                              _previewAssignment(submittedFileUrl);
+                              return;
+                            }
+                            final linkUrl = _submission?.linkUrl?.trim();
+                            if (linkUrl != null && linkUrl.isNotEmpty) {
+                              _launchUrl(linkUrl);
+                              return;
+                            }
+                            final textContent = _submission?.textContent?.trim();
+                            if (textContent != null && textContent.isNotEmpty) {
+                              _showTextSubmissionDialog(textContent);
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No submitted assignment found'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.visibility, size: 18),
+                          label: const Text('Preview'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            side: const BorderSide(color: Color(0xFF6366F1)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: ElevatedButton(
                           onPressed: isPastDue
                               ? null
                               : () {
+                                  if (!_assignmentResubmitUnlocked) {
+                                    _showUnlockRewardDialog(_RewardAction.assignmentResubmit);
+                                    return;
+                                  }
                                   _openSubmitAssignmentPage(context);
                                 },
                           style: ElevatedButton.styleFrom(
@@ -5858,7 +5938,7 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                             elevation: 0,
                           ),
                           child: const Text(
-                            'Submit Assignment',
+                            'Resubmit',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -5866,27 +5946,144 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                           ),
                         ),
                       ),
-              ],
-            ),
+                    ],
+                  )
+                : SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isPastDue
+                          ? null
+                          : () {
+                              _openSubmitAssignmentPage(context);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isPastDue
+                            ? Colors.grey.shade400
+                            : const Color(0xFF6366F1),
+                        disabledBackgroundColor: Colors.grey.shade400,
+                        disabledForegroundColor: Colors.white,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Submit Assignment',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+            ],
           ),
-        ],
+        ),
 
         const SizedBox(height: 24),
 
         // Additional Info
-        
+      ],
+    ],
+  );
+}
+
+Widget _buildReviewsTab() {
+  print('=== _buildReviewsTab ===');
+  print('_dataLoaded: $_dataLoaded');
+  print('_lessonHasQuiz: $_lessonHasQuiz');
+  print('_quizTaken: $_quizTaken');
+  print('_quizScore: $_quizScore');
+
+  // Show loading while waiting for data
+  if (!_dataLoaded) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: Color(0xFFFFA500)),
+          SizedBox(height: 16),
+          Text('Loading quiz data...'),
+        ],
+      ),
+    );
+  }
+
+  // If we have data but no quiz, show empty state
+  if (!_lessonHasQuiz) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Empty state icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.quiz_outlined,
+                  size: 60,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              const Text(
+                'No Quiz Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              
+              // Description
+              Text(
+                'There is no quiz available for this lesson.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 32),
+              Builder(
+                builder: (adContext) => Center(
+                  child: _CourseBannerAd(
+                    key: const ValueKey('quiz_empty_banner'),
+                    adUnitId: EnvConfig.programBannersAdsKey,
+                    size: AdSize.mediumRectangle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildReviewsTab() {
-  // Check if score is below threshold
+  // If we have a quiz, show the quiz UI
   final bool isBelowThreshold = _quizTaken && _quizScore < 50;
 
   return ListView(
     padding: const EdgeInsets.all(16),
     children: [
-      // Low Score Warning - Only show if score is below 50
+      // Low Score Warning - Only shown if score is below 50 and quiz taken
       if (isBelowThreshold) ...[
         Container(
           padding: const EdgeInsets.all(16),
@@ -5961,9 +6158,9 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
-                    if (isBelowThreshold && !_quizUnlocked) {
-                      _showUnlockQuizDialog();
+                    // Check if retake needs to be unlocked
+                    if (_quizTaken && !_quizUnlocked) {
+                      _showUnlockRewardDialog(_RewardAction.quizRetake);
                       return;
                     }
 
@@ -5980,8 +6177,7 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                     elevation: 0,
                   ),
                   child:  Text( 
-                    _quizRetryMessage != null ? 'Retake Quiz' :
-                    'Retake Quiz',
+                    _quizRetryMessage != null ? 'Retake Quiz' : 'Retake Quiz',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -5995,7 +6191,7 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
         const SizedBox(height: 16),
       ],
 
-      // Take Quiz Card (hide when below threshold)
+      // Take Quiz Card (show only if lesson has quiz and not below threshold or not taken)
       if (!isBelowThreshold)
         Container(
           padding: const EdgeInsets.all(16),
@@ -6058,9 +6254,9 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
-                    if (isBelowThreshold && !_quizUnlocked) {
-                      _showUnlockQuizDialog();
+                    // Check if retake needs to be unlocked
+                    if (_quizTaken && !_quizUnlocked) {
+                      _showUnlockRewardDialog(_RewardAction.quizRetake);
                       return;
                     }
 
@@ -6089,43 +6285,9 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
           ),
         ),
 
-      const SizedBox(height: 24),
-
-      // Lesson Assessment Progress
-      if (!_quizTaken)
-      // empty state
-       Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Lesson Assessment',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Text(
-                'Take the quiz to see your assessment progress.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
-          ],
-        ),
-       )
-      else
+      // Show quiz assessment only if quiz is taken
+      if (_quizTaken) ...[
+        const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -6181,12 +6343,12 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                           ),
                         ),
                       ),
-                      // Score text
+                      // Score text - FIX THIS PART
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '$_quizScore/100',
+                            '$_quizScore%', // Show actual score
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w700,
@@ -6195,14 +6357,13 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                                   : const Color(0xFFEF5350),
                             ),
                           ),
-                          if (_quizTaken)
-                            Text(
-                              '$_quizScore%',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
+                          Text(
+                            'Score',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
                             ),
+                          ),
                         ],
                       ),
                     ],
@@ -6212,10 +6373,10 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
             ],
           ),
         ),
+      ],
     ],
   );
 }
-
 // preview assignment 
 
 
@@ -7069,6 +7230,68 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     return false;
   }
 }
+
+class _CourseBannerAd extends StatefulWidget {
+  final String adUnitId;
+  final AdSize size;
+  final bool isMinor;
+
+  const _CourseBannerAd({
+    super.key,
+    required this.adUnitId,
+    required this.size,
+    this.isMinor = false,
+  });
+
+  @override
+  State<_CourseBannerAd> createState() => _CourseBannerAdState();
+}
+
+class _CourseBannerAdState extends State<_CourseBannerAd> {
+  BannerAd? _ad;
+  bool _isLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+   _ad = BannerAd(
+  adUnitId: widget.adUnitId,
+  size: widget.size,
+  request: AdRequest(nonPersonalizedAds: widget.isMinor),
+  listener: BannerAdListener(
+    onAdLoaded: (_) => mounted ? setState(() => _isLoaded = true) : null,
+    onAdFailedToLoad: (ad, error) {
+      print('Banner Ad failed: ${error.code} - ${error.message}');
+      ad.dispose();
+    },
+  ),
+)..load();
+  }
+
+  @override
+  void dispose() {
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ad = _ad;
+    if (!_isLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      color: Colors.white,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
+  }
+}
+
 
 
 

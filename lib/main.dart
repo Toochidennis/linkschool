@@ -10,6 +10,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:linkschool/modules/services/database/data_base_service.dart';
 import 'package:linkschool/modules/services/notification_navigation_service.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
@@ -43,6 +44,8 @@ Future<void> main() async {
 
   // Initialize service locator (required for auth)
   setupServiceLocator();
+
+    await CbtExamSyncService().syncOnStartup();
 
   // DEFERRED: Initialize MobileAds in background (not needed for launch)
   // This will run after the app is visible

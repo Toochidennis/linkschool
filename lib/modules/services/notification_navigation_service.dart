@@ -68,7 +68,12 @@ Future<void> _handleMessage(RemoteMessage message) async {
     case 'live_class_reminder':
     case 'assignment_due_reminder':
       await _navigateToCourseContent(data); // ✅ all go to CourseDetailScreen
+    case "news_update":
+        // For news updates, we might want to navigate to a news detail screen or just open the app
+        // Here, we'll just print the data for demonstration
+        print('News update notification received with data: $data');
       break;
+  
     default:
       print('Unknown notification type: $type');
   }

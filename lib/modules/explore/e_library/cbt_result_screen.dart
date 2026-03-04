@@ -9,6 +9,7 @@ import 'package:linkschool/modules/services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -78,6 +79,19 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
   /// Check if user is already signed in
   Future<void> _checkUserSigninStatus() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isLoggedIn) {
+      await _subscriptionService.setAdMode('continue_with_ads');
+      if (mounted) {
+        setState(() {
+          _userSignedIn = true;
+        });
+      }
+      _saveTestResult();
+      _showScorePopup();
+      return;
+    }
+
     final isSignedIn = await _authService.isUserSignedUp();
 
     if (!isSignedIn && mounted) {

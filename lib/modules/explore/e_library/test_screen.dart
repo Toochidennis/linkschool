@@ -7,6 +7,8 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
 import 'package:linkschool/modules/explore/e_library/backward_slash_clipper.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -28,6 +30,7 @@ class TestScreen extends StatefulWidget {
   final int? totalExams;
   final Map<String, Map<int, int>>? allAnswers;
   final Map<String, List<QuestionModel>>? allQuestions;
+  final bool preferTrialLabel;
 
   const TestScreen({
     super.key,
@@ -44,6 +47,7 @@ class TestScreen extends StatefulWidget {
     this.totalExams,
     this.allAnswers,
     this.allQuestions,
+    this.preferTrialLabel = false,
   });
 
   @override
@@ -55,6 +59,9 @@ class _TestScreenState extends State<TestScreen>
   late double opacity;
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
+  final Set<int> _answeredQuestionIndexes = {};
+  bool _isContinueWithAds = false;
+  bool _isShowingAdsGate = false;
   int? remainingSeconds;
   final int _lastDisplayedQuestionIndex =
       -1; // Track which question's instruction/passage was shown
@@ -69,6 +76,7 @@ class _TestScreenState extends State<TestScreen>
     super.initState();
     remainingSeconds = widget.totalDurationInSeconds;
     AdManager.instance.preload();
+    _loadAdMode();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -117,6 +125,118 @@ class _TestScreenState extends State<TestScreen>
     _textController.dispose();
     _bounceController.dispose();
     super.dispose();
+  }
+
+  Future<bool> _isContinueWithAdsActive() async {
+    final hasPaid = await _subscriptionService.hasPaid();
+    if (hasPaid) return false;
+    final mode = await _subscriptionService.getAdMode();
+    final isActive = mode == 'continue_with_ads';
+    print('[_isContinueWithAdsActive] adMode: $mode, isActive: $isActive');
+    return isActive;
+  }
+
+  Future<void> _loadAdMode() async {
+    final isActive = await _isContinueWithAdsActive();
+    print('[_loadAdMode] Loaded ad mode - isActive: $isActive');
+    if (!mounted) return;
+    setState(() {
+      _isContinueWithAds = isActive;
+    });
+  }
+
+  Future<void> _maybeShowAdsGate() async {
+    if (_isShowingAdsGate) return;
+    final isActive = await _isContinueWithAdsActive();
+    final answeredCount = _answeredQuestionIndexes.length;
+    
+    // Debug logging
+    print('=== ADS GATE DEBUG ===');
+    print('_isShowingAdsGate: $_isShowingAdsGate');
+    print('isActive: $isActive');
+    print('answeredCount: $answeredCount');
+    print('Divisible by 10: ${answeredCount % 10 == 0}');
+    print('Condition check - answeredCount == 0: ${answeredCount == 0}');
+    print('Condition check - answeredCount % 10 != 0: ${answeredCount % 10 != 0}');
+    print('======================');
+    
+    if (!isActive) {
+      print('Not continuing with ads. Returning early.');
+      return;
+    }
+    if (answeredCount == 0 || answeredCount % 10 != 0) {
+      print('Answered count not at 10-question threshold. Returning early.');
+      return;
+    }
+
+    _isShowingAdsGate = true;
+    try {
+      print('==== Showing ADS GATE at question $answeredCount ====');
+      if (!mounted) return;
+
+      final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => const CbtContinueAdsDialog(),
+      );
+
+      if (!mounted) return;
+
+      // Handle user's choice
+      if (result == 'ads') {
+        print('User chose to continue with ads');
+        await _subscriptionService.setAdMode('continue_with_ads');
+        await AdManager.instance.showIfEligible(
+          context: context,
+          trigger: AdTrigger.paywallContinue,
+        );
+        // User continues with ads - dismiss dialog and continue test
+        return;
+      } else if (result == 'subscribe') {
+        print('User chose to subscribe');
+        final planResult = await Navigator.of(context).push<Object?>(
+          MaterialPageRoute(
+            builder: (_) => CbtPlansScreen(
+              showTrialButton: false,
+              preferTrialLabel: false,
+            ),
+          ),
+        );
+
+        if (!mounted) return;
+
+        if (planResult == 'continue_ads') {
+          await _subscriptionService.setAdMode('continue_with_ads');
+          await AdManager.instance.showIfEligible(
+            context: context,
+            trigger: AdTrigger.paywallContinue,
+          );
+          return;
+        }
+
+        if (planResult == true) {
+          print('User completed subscription flow');
+          return;
+        }
+        return;
+      }
+    } finally {
+      _isShowingAdsGate = false;
+    }
+  }
+
+  Future<void> _handleAnswerTap(ExamProvider provider, int index) async {
+    final questionIndex = provider.currentQuestionIndex;
+    final wasAnswered = _answeredQuestionIndexes.contains(questionIndex);
+    print('[_handleAnswerTap] Question $questionIndex answered. Was previously answered: $wasAnswered');
+    provider.selectAnswer(questionIndex, index);
+    if (wasAnswered) {
+      print('[_handleAnswerTap] Question already answered, skipping ad gate check');
+      return;
+    }
+    _answeredQuestionIndexes.add(questionIndex);
+    print('[_handleAnswerTap] Total answered questions: ${_answeredQuestionIndexes.length}');
+    await _maybeShowAdsGate();
   }
 
   void _showLoadingCountdown() {
@@ -988,8 +1108,7 @@ class _TestScreenState extends State<TestScreen>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(8.0),
-          onTap: () =>
-              provider.selectAnswer(provider.currentQuestionIndex, index),
+          onTap: () => _handleAnswerTap(provider, index),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(

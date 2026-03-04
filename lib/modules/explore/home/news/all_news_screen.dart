@@ -35,7 +35,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     _scrollController = ScrollController();
     _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<NewsProvider>(context, listen: false).fetchNews(refresh: true);
+      Provider.of<NewsProvider>(context, listen: false).fetchAllNews(refresh: true);
     });
     _loadAppOpenAd();
   }
@@ -54,19 +54,18 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     }
   }
 
-void _loadNativeAds(int newsCount) {
-  // Clear existing ads
-  _disposeAds();
-  _adPositions.clear();
-  
+  void _loadNativeAds(int newsCount) {
   // Calculate ad positions in the list (ads after every 5 news items)
   final listItemCount = _getListItemCount(newsCount);
+  final positions = <int>[];
   for (int position = 5; position < listItemCount; position += 6) {
-    _adPositions.add(position);
+    positions.add(position);
   }
 
-  // Load native ads for each position
-  for (int position in _adPositions) {
+  // Load native ads only for newly added positions
+  for (int position in positions) {
+    if (_nativeAds.containsKey(position)) continue;
+    _adPositions.add(position);
     final nativeAd = NativeAd(
       
       adUnitId: EnvConfig.newsNativeAds,
@@ -99,7 +98,6 @@ void _loadNativeAds(int newsCount) {
         templateType: TemplateType.small
       )
     );
-    
     nativeAd.load();
   }
 
@@ -335,7 +333,9 @@ void _loadNativeAds(int newsCount) {
     if (latestNews.length != _lastAdNewsCount) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _lastAdNewsCount = latestNews.length;
-        _loadNativeAds(latestNews.length);
+        if (_lastAdNewsCount > 0) {
+          _loadNativeAds(latestNews.length);
+        }
       });
     }
     
@@ -347,7 +347,7 @@ void _loadNativeAds(int newsCount) {
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
             Provider.of<NewsProvider>(context, listen: false)
-                .fetchNews(refresh: true);
+                .fetchAllNews(refresh: true);
             _lastAdNewsCount = -1;
           }
         },
@@ -500,20 +500,24 @@ void _loadNativeAds(int newsCount) {
             ),
 
             if (newsProvider.isLoadingMore)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: CircularProgressIndicator(),
+              Center(
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: CircularProgressIndicator(),
+                ),
               ),
 
             if (!newsProvider.hasNextPage && newsProvider.newsmodel.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  'No more news to load',
-                  style: TextStyle(
-                    fontFamily: 'Urbanist',
-                    fontSize: 14,
-                    color: Colors.grey[500],
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    'No more news to load',
+                    style: TextStyle(
+                      fontFamily: 'Urbanist',
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
                   ),
                 ),
               ),
@@ -552,7 +556,7 @@ void _loadNativeAds(int newsCount) {
     if (position.pixels >= position.maxScrollExtent - 200) {
       final provider = Provider.of<NewsProvider>(context, listen: false);
       if (provider.hasNextPage && !provider.isLoadingMore) {
-        provider.loadMore();
+        provider.loadMoreAll();
         // Reload ads when more news is loaded
         _lastAdNewsCount = -1;
       }

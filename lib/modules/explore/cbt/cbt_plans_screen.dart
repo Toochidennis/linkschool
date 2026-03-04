@@ -10,7 +10,13 @@ import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:provider/provider.dart';
 
 class CbtPlansScreen extends StatefulWidget {
-  const CbtPlansScreen({super.key});
+  final bool showTrialButton;
+  final bool preferTrialLabel;
+  const CbtPlansScreen({
+    super.key,
+    this.showTrialButton = true,
+    this.preferTrialLabel = false,
+  });
 
   @override
   State<CbtPlansScreen> createState() => _CbtPlansScreenState();
@@ -23,6 +29,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   int _remainingDays = 0;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
+  bool _forceContinueWithAds = false;
+  bool _trialStarted = false;
 
   @override
   void didChangeDependencies() {
@@ -140,6 +148,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                   const EdgeInsets.symmetric(horizontal: 24),
                               child: Row(
                                 children: [
+                                  if (widget.showTrialButton)
                                   Expanded(
                                     child: SizedBox(
                                       height: 54,
@@ -181,7 +190,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  if (widget.showTrialButton) const SizedBox(width: 12), 
                                   Expanded(
                                     child: SizedBox(
                                       height: 54,
@@ -281,10 +290,28 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   Future<void> _loadTrialState() async {
     try {
       final remaining = await CbtSubscriptionService().getRemainingFreeTests();
+      bool forceContinue = false;
+      bool trialStarted = false;
+      
+      final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      
+      // Check if user has already paid
+      final hasPaid = await CbtSubscriptionService().hasPaid();
+      
+      if (!hasPaid) {
+        // Check if trial has been started
+        final trialStartDate = await CbtSubscriptionService().getTrialStartDate();
+        trialStarted = trialStartDate != null;
+        // Once trial has started, keep CTA as "Continue with Ads"
+        forceContinue = trialStarted;
+      }
+      
       if (mounted) {
         setState(() {
           _remainingDays = remaining;
           _isLoadingTrial = false;
+          _forceContinueWithAds = forceContinue;
+          _trialStarted = trialStarted;
         });
       }
     } catch (_) {
@@ -292,13 +319,14 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         setState(() {
           _remainingDays = 0;
           _isLoadingTrial = false;
+          _forceContinueWithAds = false;
         });
       }
     }
   }
 
   String _trialLabel() {
-    if (_remainingDays <= 1) {
+    if (_trialStarted || _forceContinueWithAds) {
       return 'Continue with Ads';
     }
     return 'Start $_remainingDays days Trial';
@@ -317,7 +345,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       return;
     }
 
-    final isContinueWithAds = _remainingDays <= 1;
+    final isContinueWithAds = _forceContinueWithAds || _remainingDays <= 1;
 
     setState(() => _isStartingTrial = true);
     try {
@@ -329,9 +357,17 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         return;
       }
 
+      // Get the selected plan's trial duration
+      final plans = context.read<CbtPlanProvider>().plans;
+      final selectedPlan = plans.isNotEmpty
+          ? plans[_currentIndex.clamp(0, plans.length - 1)]
+          : null;
+      final planTrialDays = selectedPlan?.freeTrialDays ?? 3;
+
       await CbtSubscriptionService().setAdMode('free_trial');
       await CbtLicenseService().startFreeTrial(userId: user!.id!);
-      await CbtSubscriptionService().setTrialStartDate();
+      // Pass the plan's trial duration, not the global subscription service value
+      await CbtSubscriptionService().setTrialStartDate(originalDuration: planTrialDays);
       if (!mounted) return;
       final isActive = await CbtLicenseService()
           .isLicenseActive(userId: user.id!, forceRefresh: true);
