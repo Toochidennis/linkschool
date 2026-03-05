@@ -1,4 +1,6 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/timer_widget.dart';
@@ -59,9 +61,11 @@ class _TestScreenState extends State<TestScreen>
   late double opacity;
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
-  final Set<int> _answeredQuestionIndexes = {};
+  final Set<int> _attemptedQuestionIndexes = {};
   bool _isContinueWithAds = false;
   bool _isShowingAdsGate = false;
+  int _lastGateAtAttemptCount = 0;
+  bool _adsGatePending = false;
   int? remainingSeconds;
   final int _lastDisplayedQuestionIndex =
       -1; // Track which question's instruction/passage was shown
@@ -145,98 +149,153 @@ class _TestScreenState extends State<TestScreen>
     });
   }
 
-  Future<void> _maybeShowAdsGate() async {
-    if (_isShowingAdsGate) return;
+  Future<void> _goToResultsFromGate() async {
+    final provider = Provider.of<ExamProvider>(context, listen: false);
+    await AdManager.instance.showIfEligible(
+      context: context,
+      trigger: AdTrigger.resultNavigation,
+    );
+
+    if (widget.onExamComplete != null && !widget.isLastInMultiSubject) {
+      _proceedToNextExam(provider);
+    } else if (widget.onExamComplete != null && widget.isLastInMultiSubject) {
+      widget.onExamComplete!(
+        provider.userAnswers,
+        remainingSeconds ?? 0,
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CbtResultScreen(
+            questions: provider.questions,
+            userAnswers: provider.userAnswers,
+            subject:
+                widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
+            year: widget.year ?? DateTime.now().year,
+            examType: provider.examInfo?.title ?? 'Test',
+            examId: widget.examTypeId,
+            calledFrom: widget.calledFrom,
+            isFullyCompleted: false,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _maybeShowAdsGate({required int attemptedCount}) async {
+    if (_isShowingAdsGate) return false;
     final isActive = await _isContinueWithAdsActive();
-    final answeredCount = _answeredQuestionIndexes.length;
+    if (!isActive) {
+      _adsGatePending = false;
+      return true;
+    }
     
     // Debug logging
     print('=== ADS GATE DEBUG ===');
     print('_isShowingAdsGate: $_isShowingAdsGate');
     print('isActive: $isActive');
-    print('answeredCount: $answeredCount');
-    print('Divisible by 10: ${answeredCount % 10 == 0}');
-    print('Condition check - answeredCount == 0: ${answeredCount == 0}');
-    print('Condition check - answeredCount % 10 != 0: ${answeredCount % 10 != 0}');
+    print('attemptedCount: $attemptedCount');
+    print('attemptedCount: $attemptedCount');
     print('======================');
     
-    if (!isActive) {
-      print('Not continuing with ads. Returning early.');
-      return;
-    }
-    if (answeredCount == 0 || answeredCount % 10 != 0) {
-      print('Answered count not at 10-question threshold. Returning early.');
-      return;
-    }
-
     _isShowingAdsGate = true;
+    _adsGatePending = true;
     try {
-      print('==== Showing ADS GATE at question $answeredCount ====');
-      if (!mounted) return;
+      print('==== Showing ADS GATE at attempt $attemptedCount ====');
+      if (!mounted) return false;
 
       final result = await showDialog<String>(
         context: context,
-        barrierDismissible: true,
-        builder: (context) => const CbtContinueAdsDialog(),
+        barrierDismissible: false,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: CbtContinueAdsDialog(
+            onWatchAds: () async {
+              await _subscriptionService.setAdMode('continue_with_ads');
+              final rewarded = await AdManager.instance.showRewardedForPaywall();
+              if (!rewarded) return false;
+              _adsGatePending = false;
+              _lastGateAtAttemptCount = attemptedCount;
+              return true;
+            },
+            onSubscribe: () async {
+              final planResult = await Navigator.of(context).push<Object?>(
+                MaterialPageRoute(
+                  builder: (_) => CbtPlansScreen(
+                    showTrialButton: false,
+                    preferTrialLabel: false,
+                  ),
+                ),
+              );
+
+              if (!mounted) return false;
+
+              if (planResult == 'continue_ads') {
+                await _subscriptionService.setAdMode('continue_with_ads');
+                final rewarded =
+                    await AdManager.instance.showRewardedForPaywall();
+                if (!rewarded) return false;
+                _adsGatePending = false;
+                _lastGateAtAttemptCount = attemptedCount;
+                return true;
+              }
+
+              if (planResult == true) {
+                _adsGatePending = false;
+                _lastGateAtAttemptCount = attemptedCount;
+                return true;
+              }
+              return false;
+            },
+            onSubmitTest: () async {
+              Navigator.of(context).pop();
+              await _goToResultsFromGate();
+            },
+          ),
+        ),
       );
 
-      if (!mounted) return;
+      if (!mounted) return false;
 
       // Handle user's choice
-      if (result == 'ads') {
-        print('User chose to continue with ads');
-        await _subscriptionService.setAdMode('continue_with_ads');
-        await AdManager.instance.showIfEligible(
-          context: context,
-          trigger: AdTrigger.paywallContinue,
-        );
-        // User continues with ads - dismiss dialog and continue test
-        return;
-      } else if (result == 'subscribe') {
-        print('User chose to subscribe');
-        final planResult = await Navigator.of(context).push<Object?>(
-          MaterialPageRoute(
-            builder: (_) => CbtPlansScreen(
-              showTrialButton: false,
-              preferTrialLabel: false,
-            ),
-          ),
-        );
-
-        if (!mounted) return;
-
-        if (planResult == 'continue_ads') {
-          await _subscriptionService.setAdMode('continue_with_ads');
-          await AdManager.instance.showIfEligible(
-            context: context,
-            trigger: AdTrigger.paywallContinue,
-          );
-          return;
-        }
-
-        if (planResult == true) {
-          print('User completed subscription flow');
-          return;
-        }
-        return;
-      }
+      return result == 'ads' || result == 'subscribe';
     } finally {
       _isShowingAdsGate = false;
     }
   }
 
+  Future<bool> _registerAttemptAndGate(ExamProvider provider) async {
+    final questionIndex = provider.currentQuestionIndex;
+    final wasAttempted = _attemptedQuestionIndexes.contains(questionIndex);
+
+    if (!wasAttempted) {
+      _attemptedQuestionIndexes.add(questionIndex);
+      print('[_registerAttemptAndGate] Attempted count: ${_attemptedQuestionIndexes.length}');
+    }
+
+    final attemptedCount = _attemptedQuestionIndexes.length;
+    final justHitThreshold =
+        !wasAttempted && attemptedCount % 10 == 0;
+    if (_adsGatePending) {
+      return _maybeShowAdsGate(attemptedCount: attemptedCount);
+    }
+    if (!justHitThreshold || attemptedCount == _lastGateAtAttemptCount) {
+      return true;
+    }
+    return _maybeShowAdsGate(attemptedCount: attemptedCount);
+  }
+
   Future<void> _handleAnswerTap(ExamProvider provider, int index) async {
     final questionIndex = provider.currentQuestionIndex;
-    final wasAnswered = _answeredQuestionIndexes.contains(questionIndex);
-    print('[_handleAnswerTap] Question $questionIndex answered. Was previously answered: $wasAnswered');
+    final wasAttempted = _attemptedQuestionIndexes.contains(questionIndex);
+    print('[_handleAnswerTap] Question $questionIndex answered. Was previously attempted: $wasAttempted');
     provider.selectAnswer(questionIndex, index);
-    if (wasAnswered) {
-      print('[_handleAnswerTap] Question already answered, skipping ad gate check');
+    if (wasAttempted) {
+      print('[_handleAnswerTap] Question already attempted, skipping gate increment');
       return;
     }
-    _answeredQuestionIndexes.add(questionIndex);
-    print('[_handleAnswerTap] Total answered questions: ${_answeredQuestionIndexes.length}');
-    await _maybeShowAdsGate();
+    await _registerAttemptAndGate(provider);
   }
 
   void _showLoadingCountdown() {
@@ -244,31 +303,32 @@ class _TestScreenState extends State<TestScreen>
       _isCountdownActive = true;
     });
 
-    showDialog(
+    AdManager.instance
+        .showIfEligible(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => _LoadingCountdownDialog(
-        onComplete: () {
-          if (!mounted) return;
-          Navigator.of(context).pop();
-          AdManager.instance
-              .showIfEligible(
-            context: context,
-            trigger: AdTrigger.topicStart,
-          )
-              .then((_) {
+      trigger: AdTrigger.topicStart,
+    )
+        .then((_) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _LoadingCountdownDialog(
+          onComplete: () {
+            if (!mounted) return;
+            Navigator.of(context).pop();
             if (mounted) {
               setState(() {
                 _isCountdownActive = false;
               });
             }
-          });
 
-          // Dialog will only show when Read More is clicked
-          // No auto-showing of instruction/passage dialog
-        },
-      ),
-    );
+            // Dialog will only show when Read More is clicked
+            // No auto-showing of instruction/passage dialog
+          },
+        ),
+      );
+    });
 
     // Start fetching data immediately when countdown begins
     final provider = Provider.of<ExamProvider>(context, listen: false);
@@ -1178,17 +1238,42 @@ class _TestScreenState extends State<TestScreen>
   }
 
   Widget _getImageWidget(String url, {double? width, double? height}) {
+    if (url.isEmpty) {
+      return Container(width: width, height: height, color: Colors.grey.shade200);
+    }
+
+    // ── 1. Base64 inline image ─────────────────────────────────────
     if (_isBase64(url)) {
       try {
         final bytes = base64.decode(url.split(',').last);
-        return Image.memory(bytes,
-            width: width, height: height, fit: BoxFit.cover);
+        return Image.memory(
+          bytes,
+          width: width,
+          height: height,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              Container(width: width, height: height, color: Colors.grey.shade200),
+        );
       } catch (e) {
-        return Container(
-            width: width, height: height, color: Colors.grey.shade200);
+        return Container(width: width, height: height, color: Colors.grey.shade200);
       }
     }
 
+    // ── 2. Local file path (downloaded images) ─────────────────────
+    // Local paths start with '/' (absolute) or contain app docs dir markers
+    if (url.startsWith('/') || url.startsWith('file://')) {
+      final file = File(url.replaceFirst('file://', ''));
+      return Image.file(
+        file,
+        width: width,
+        height: height,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) =>
+            Container(width: width, height: height, color: Colors.grey.shade200),
+      );
+    }
+
+    // ── 3. Network image ───────────────────────────────────────────
     // Prepend base URL if it's a relative path
     String imageUrl = url;
     if (!url.startsWith('http') && !url.startsWith('data:')) {
@@ -1200,14 +1285,15 @@ class _TestScreenState extends State<TestScreen>
       width: width,
       height: height,
       fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) =>
+      errorBuilder: (_, __, ___) =>
           Container(width: width, height: height, color: Colors.grey.shade200),
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
         return SizedBox(
-            width: width,
-            height: height,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+          width: width,
+          height: height,
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
       },
     );
   }
@@ -1486,16 +1572,25 @@ class _TestScreenState extends State<TestScreen>
           Expanded(
             child: OutlinedButton(
               onPressed: !isLastQuestion
-                  ? () {
+                  ? () async {
+                      final canContinue =
+                          await _registerAttemptAndGate(provider);
+                      if (!canContinue) return;
                       provider.nextQuestion();
                     }
                   : (widget.onExamComplete != null && !isLastSubject)
-                      ? () {
+                      ? () async {
+                          final canContinue =
+                              await _registerAttemptAndGate(provider);
+                          if (!canContinue) return;
                           // Auto-proceed to next exam without dialog
                           _proceedToNextExam(provider);
                         }
                       : (isLastQuestion && isLastSubject)
-                          ? () {
+                          ? () async {
+                              final canContinue =
+                                  await _registerAttemptAndGate(provider);
+                              if (!canContinue) return;
                               // Show submit modal on last question of last subject
                               _submitQuiz(provider, isFullyCompleted: true);
                             }

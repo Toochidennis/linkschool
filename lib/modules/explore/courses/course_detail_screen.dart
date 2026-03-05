@@ -4833,8 +4833,9 @@ Widget _buildVideoPlayer() {
   if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
       (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty) ||
       (_effectiveSessionStart != null && _effectiveSessionStart!.isNotEmpty)) ...[
-  Builder(
-    builder: (context) {
+  StreamBuilder<int>(
+    stream: _countdownStream,
+    builder: (context, snapshot) {
       final zoomStatus = _getZoomStatus();
       final status = zoomStatus['status'] as String;
       final message = zoomStatus['message'] as String;
@@ -4993,9 +4994,8 @@ Widget _buildVideoPlayer() {
             ),
             if (status == 'scheduled' && scheduledStart != null) ...[
               const SizedBox(height: 12),
-              StreamBuilder<int>(
-                stream: _countdownStream,
-                builder: (context, snapshot) {
+              Builder(
+                builder: (context) {
                   final now = DateTime.now();
                   final diff = now.isAfter(scheduledStart)
                       ? Duration.zero
@@ -5121,8 +5121,9 @@ Widget _buildVideoPlayer() {
 ],
 if (_hasAttendance == false &&
     (_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty)) ...[
-  Builder(
-    builder: (context) {
+  StreamBuilder<int>(
+    stream: _countdownStream,
+    builder: (context, snapshot) {
       final zoomStatus = _getZoomStatus();
       final status = zoomStatus['status'] as String;
       final shouldWarn = status == 'scheduled' || status == 'ongoing';
@@ -7265,7 +7266,9 @@ class _CourseBannerAdState extends State<_CourseBannerAd> {
       ad.dispose();
     },
   ),
-)..load();
+); Future.delayed(const Duration(seconds: 3), () {
+    if (mounted) _ad?.load();
+  });
   }
 
   @override

@@ -2,10 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-class CbtContinueAdsDialog extends StatelessWidget {
+class CbtContinueAdsDialog extends StatefulWidget {
+  final Future<bool> Function()? onWatchAds;
+  final Future<bool> Function()? onSubscribe;
+  final VoidCallback? onSubmitTest;
+
   const CbtContinueAdsDialog({
     super.key,
+    this.onWatchAds,
+    this.onSubscribe,
+    this.onSubmitTest,
   });
+
+  @override
+  State<CbtContinueAdsDialog> createState() => _CbtContinueAdsDialogState();
+}
+
+class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
+  bool _isProcessing = false;
+
+  Future<void> _handleWatchAds() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    final success = await (widget.onWatchAds?.call() ?? Future.value(false));
+    if (!mounted) return;
+    setState(() => _isProcessing = false);
+    if (success) {
+      Navigator.pop(context, 'ads');
+    }
+  }
+
+  Future<void> _handleSubscribe() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    final success = await (widget.onSubscribe?.call() ?? Future.value(false));
+    if (!mounted) return;
+    setState(() => _isProcessing = false);
+    if (success) {
+      Navigator.pop(context, 'subscribe');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +110,7 @@ class CbtContinueAdsDialog extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context, 'subscribe'),
+                  onPressed: _isProcessing ? null : _handleSubscribe,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber.shade500,
                     elevation: 0,
@@ -86,7 +122,7 @@ class CbtContinueAdsDialog extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.star_rounded,
+                      const Icon(Icons.payments_sharp,
                           color: Colors.white, size: 20),
                       const SizedBox(width: 8),
                       Text(
@@ -135,7 +171,7 @@ class CbtContinueAdsDialog extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context, 'ads'),
+                  onPressed: _isProcessing ? null : _handleWatchAds,
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
                       color: AppColors.eLearningBtnColor1,
@@ -168,14 +204,16 @@ class CbtContinueAdsDialog extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // ── Dismiss link ──
-              GestureDetector(
-                onTap: () => Navigator.pop(context, 'dismiss'),
+              // ── Submit Test link ──
+              InkWell(
+                onTap: _isProcessing ? null : widget.onSubmitTest,
                 child: Text(
-                  'Maybe later',
+                  'Submit Test',
                   style: AppTextStyles.normal500(
-                    fontSize: 13,
-                    color: Colors.grey.shade400,
+                    fontSize:20,
+                    color: Colors.grey.shade600,
+                  ).copyWith(
+                    decoration: TextDecoration.underline,
                   ),
                 ),
               ),

@@ -3,7 +3,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/cbt/widgets/downloads_update_modal.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
@@ -217,6 +216,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                           ),
                         ),
                       ),
+                      
                     ],
                   ),
                 ),
@@ -266,7 +266,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     );
   }
 
- Widget _buildHeader(String boardName) {
+Widget _buildHeader(String boardName) {
   return Container(
     color: Colors.white,
     padding: EdgeInsets.only(
@@ -655,26 +655,6 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
   final List<int> timeOptions = [60, 45, 40, 35, 30, 25, 20, 10];
   final List<int> questionOptions = [60, 55, 50, 45, 40, 35, 30, 25, 10];
 
-  @override
-  void initState() {
-    super.initState();
-    // Preselect the first year for each subject
-    for (final subject in widget.selectedSubjects) {
-      final years = subject.years ?? [];
-      if (years.isNotEmpty) {
-        final sorted = List<YearModel>.from(years)
-          ..sort((a, b) => b.year.compareTo(a.year));
-        final firstYear = sorted.first;
-        _yearSelections[subject.id] = _SelectedEntry(
-          subjectName: _sentenceCase(subject.name),
-          subjectId: subject.id,
-          year: firstYear.year,
-          examId: firstYear.id,
-        );
-      }
-    }
-  }
-
   Future<void> _showYearPicker(SubjectModel subject) async {
     final years = subject.years ?? [];
     if (years.isEmpty) {
@@ -881,35 +861,32 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
   Widget _buildSettingsBar() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: SizedBox(
-          width: 250,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SettingDropdown<int>(
-                icon: Icons.timer_outlined,
-                label: 'Time :',
-                value: timeInMinutes,
-                items: timeOptions,
-                itemLabel: (v) => '${v} minutes',
-                onChanged: (v) => setState(() => timeInMinutes = v),
-              ),
-              const SizedBox(height: 12),
-              _SettingDropdown<int>(
-                icon: Icons.quiz_outlined,
-                label: 'Questions :',
-                value: questionLimit,
-                items: questionOptions,
-                itemLabel: (v) => '$v Questions',
-                onChanged: (v) => setState(() => questionLimit = v),
-              ),
-            ],
+      padding: const EdgeInsets.fromLTRB(8, 4, 0, 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SettingDropdown<int>(
+              icon: Icons.timer_outlined,
+              label: 'Time :',
+              value: timeInMinutes,
+              items: timeOptions,
+              itemLabel: (v) => '${v}min',
+              onChanged: (v) => setState(() => timeInMinutes = v),
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _SettingDropdown<int>(
+              icon: Icons.quiz_outlined,
+              label: 'Questions :',
+              value: questionLimit,
+              items: questionOptions,
+              itemLabel: (v) => '$v Qs',
+              onChanged: (v) => setState(() => questionLimit = v),
+            ),
+          ),
+             const SizedBox(width: 5),
+        ],
       ),
     );
   }
@@ -1611,6 +1588,323 @@ class _ContinueBar extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// showUpdateSubjectsModal — Shows modal to update subjects
+// ═══════════════════════════════════════════════════════════════════
+
+Future<void> showUpdateSubjectsModal(
+  BuildContext context,
+  List<SubjectModel> subjects,
+  String examTypeId,
+) async {
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => _UpdateSubjectsSheet(
+      subjects: subjects,
+      examTypeId: examTypeId,
+    ),
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// _UpdateSubjectsSheet — Bottom sheet for updating subjects
+// ═══════════════════════════════════════════════════════════════════
+
+class _UpdateSubjectsSheet extends StatefulWidget {
+  final List<SubjectModel> subjects;
+  final String examTypeId;
+
+  const _UpdateSubjectsSheet({
+    required this.subjects,
+    required this.examTypeId,
+  });
+
+  @override
+  State<_UpdateSubjectsSheet> createState() => _UpdateSubjectsSheetState();
+}
+
+class _UpdateSubjectsSheetState extends State<_UpdateSubjectsSheet> {
+  final _downloadService = CbtDownloadService();
+  final Map<String, DownloadState> _downloadStates = {};
+  final List<SubjectModel> _downloadedSubjects = [];
+  bool _loadingDownloaded = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDownloadedSubjects();
+  }
+
+  Future<void> _loadDownloadedSubjects() async {
+    _downloadedSubjects.clear();
+    for (final subject in widget.subjects) {
+      final downloaded = await _downloadService.isSubjectDownloaded(
+        examTypeId: widget.examTypeId,
+        courseId: subject.id,
+      );
+      if (downloaded) _downloadedSubjects.add(subject);
+    }
+    if (!mounted) return;
+    setState(() => _loadingDownloaded = false);
+  }
+
+  Future<void> _refreshSubject(SubjectModel subject) async {
+    if (_downloadStates[subject.id]?.isDownloading ?? false) return;
+
+    final canUseNetwork = await NetworkDialog.ensureOnline(context);
+    if (!canUseNetwork || !mounted) return;
+
+    setState(() {
+      _downloadStates[subject.id] =
+          const DownloadState(isDownloading: true, progress: 0.0);
+    });
+
+    await _downloadService.clearSubjectData(
+      examTypeId: widget.examTypeId,
+      courseId: subject.id,
+    );
+
+    await _downloadService.downloadSubject(
+      examTypeId: widget.examTypeId,
+      courseId: subject.id,
+      onProgress: (progress) {
+        if (mounted) {
+          setState(() {
+            _downloadStates[subject.id] =
+                DownloadState(isDownloading: true, progress: progress);
+          });
+        }
+      },
+      onComplete: () {
+        if (!mounted) return;
+        setState(() {
+          _downloadStates[subject.id] = const DownloadState(
+            isDownloading: false,
+            isDownloaded: true,
+            progress: 1.0,
+          );
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_sentenceCase(subject.name)} updated!'),
+            backgroundColor: AppColors.eLearningBtnColor1,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+        Provider.of<CBTProvider>(context, listen: false).loadBoards();
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() {
+          _downloadStates[subject.id] =
+              const DownloadState(isDownloading: false);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Update failed: $error'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Title row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Update Subjects',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.eLearningBtnColor1,
+                          fontFamily: 'Urbanist',
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Refresh your downloaded subjects',
+                        style: TextStyle(
+                            fontSize: 13, color: Colors.grey.shade500),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close,
+                        size: 18, color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          Container(height: 1, color: Colors.grey.shade100),
+          const SizedBox(height: 8),
+
+          // Subject list
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5,
+            ),
+            child: _loadingDownloaded
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(
+                        color: AppColors.eLearningBtnColor1,
+                      ),
+                    ),
+                  )
+                : _downloadedSubjects.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        'No downloaded subjects yet',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    itemCount: _downloadedSubjects.length,
+                    itemBuilder: (context, index) {
+                      final subject = _downloadedSubjects[index];
+                      final downloadState = _downloadStates[subject.id];
+                      final isDownloading =
+                          downloadState?.isDownloading ?? false;
+                      final progress = downloadState?.progress ?? 0.0;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.grey.shade200,
+                            ),
+                            color: Colors.grey.shade50,
+                          ),
+                          child: Row(
+                            children: [
+                              
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _sentenceCase(subject.name),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      isDownloading
+                                          ? 'Updating... ${(progress * 100).toStringAsFixed(0)}%'
+                                          : 'Your downloaded version',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              InkWell(
+                                borderRadius: BorderRadius.circular(18),
+                                onTap: isDownloading
+                                    ? null
+                                    : () => _refreshSubject(subject),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6),
+                                  child: isDownloading
+                                      ? SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            value:
+                                                progress > 0 ? progress : null,
+                                            strokeWidth: 2.2,
+                                            color: AppColors.eLearningBtnColor1,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.refresh_rounded,
+                                          size: 18,
+                                          color: AppColors.eLearningBtnColor1,
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

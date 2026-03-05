@@ -31,6 +31,10 @@ class AdManager {
   bool _isLoading = false;
   bool _isLoaded = false;
   bool _isShowing = false;
+  RewardedAd? _rewardedAd;
+  bool _isRewardedLoading = false;
+  bool _isRewardedShowing = false;
+  Completer<bool>? _rewardedLoadCompleter;
 int _retryAttempt = 0;
 static const int _maxRetryAttempts = 3;
 
@@ -68,6 +72,79 @@ Future<void> preload() async {
     ),
   );
 }
+
+  Future<bool> _ensureRewardedLoaded() async {
+    if (_rewardedAd != null) return true;
+    if (_isRewardedLoading) {
+      return await (_rewardedLoadCompleter?.future ?? Future.value(false));
+    }
+
+    _isRewardedLoading = true;
+    _rewardedLoadCompleter = Completer<bool>();
+
+    RewardedAd.load(
+      adUnitId: EnvConfig.googleAdsApiKey,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          _rewardedAd = ad;
+          _isRewardedLoading = false;
+          _rewardedLoadCompleter?.complete(true);
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          _rewardedAd = null;
+          _isRewardedLoading = false;
+          _rewardedLoadCompleter?.complete(false);
+          print('Rewarded ad failed to load: $error');
+        },
+      ),
+    );
+
+    return await _rewardedLoadCompleter!.future;
+  }
+
+  Future<bool> showRewardedForPaywall() async {
+    if (_isRewardedShowing) return false;
+    final isReady = await _ensureRewardedLoaded();
+    if (!isReady || _rewardedAd == null) {
+      print('Rewarded ad not ready');
+      return false;
+    }
+
+    _isRewardedShowing = true;
+    final completer = Completer<bool>();
+    var rewardEarned = false;
+
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (RewardedAd ad) {
+        ad.dispose();
+        _rewardedAd = null;
+        _isRewardedShowing = false;
+        _ensureRewardedLoaded();
+        if (!completer.isCompleted) {
+          completer.complete(rewardEarned);
+        }
+      },
+      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        ad.dispose();
+        _rewardedAd = null;
+        _isRewardedShowing = false;
+        _ensureRewardedLoaded();
+        print('Rewarded ad failed to show: $error');
+        if (!completer.isCompleted) {
+          completer.complete(false);
+        }
+      },
+    );
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (_, __) {
+        rewardEarned = true;
+      },
+    );
+
+    return await completer.future;
+  }
 
   Future<void> showIfEligible({
     required BuildContext context,
@@ -119,13 +196,14 @@ Future<void> preload() async {
     if (tier == AdTier.paid) return false;
 
     if (tier == AdTier.freeTrial) {
-      return  trigger == AdTrigger.topicCompletion ||
+      return  trigger == AdTrigger.topicStart ||
+          trigger == AdTrigger.topicCompletion ||
           trigger == AdTrigger.resultNavigation;
     }
 
     // freeAds
     return  trigger == AdTrigger.topicCompletion ||
-         // AdTrigger.topicStart ||
+         trigger == AdTrigger.topicStart ||
         // trigger == AdTrigger.questionFailure ||
        
         trigger == AdTrigger.resultNavigation ||

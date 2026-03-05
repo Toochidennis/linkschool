@@ -7,6 +7,13 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum SilentLoginResult {
+  success,
+  invalidCredentials,
+  networkError,
+  unknownError,
+}
+
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = locator<AuthService>();
   final _secureStorage = const FlutterSecureStorage();
@@ -178,10 +185,15 @@ class AuthProvider with ChangeNotifier {
       // If we have saved credentials, always attempt a fresh login
       if (hasSecureCredentials) {
         print('🔑 Found saved credentials - attempting login...');
-        final success = await _attemptSilentLogin();
+        final result = await _attemptSilentLogin();
 
-        if (success) {
+        if (result == SilentLoginResult.success) {
           print('✅ Login successful with saved credentials');
+          return;
+        } else if (result == SilentLoginResult.networkError) {
+          print(
+              '⚠️ Silent login failed due to network - restoring cached session');
+          await _restoreFromSavedSession();
           return;
         } else {
           print('⚠️ Login failed with saved credentials - clearing them');
@@ -218,7 +230,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Attempt silent login using saved credentials
-  Future<bool> _attemptSilentLogin() async {
+  Future<SilentLoginResult> _attemptSilentLogin() async {
     try {
       _isSilentLoginInProgress = true;
       notifyListeners();
@@ -230,7 +242,7 @@ class AuthProvider with ChangeNotifier {
 
       if (username == null || password == null || schoolCode == null) {
         print('❌ Missing credentials for silent login');
-        return false;
+        return SilentLoginResult.invalidCredentials;
       }
 
       print('🔄 Performing silent login for user: $username');
@@ -246,14 +258,26 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
 
         print('✅ Silent login completed - Fresh data loaded');
-        return true;
+        return SilentLoginResult.success;
       } else {
         print('❌ Silent login failed: ${response.message}');
-        return false;
+        final message = response.message.toLowerCase();
+        if (message.contains('network') ||
+            message.contains('socketexception') ||
+            message.contains('failed host lookup')) {
+          return SilentLoginResult.networkError;
+        }
+        return SilentLoginResult.invalidCredentials;
       }
     } catch (e) {
       print('❌ Silent login error: $e');
-      return false;
+      final message = e.toString().toLowerCase();
+      if (message.contains('network') ||
+          message.contains('socketexception') ||
+          message.contains('failed host lookup')) {
+        return SilentLoginResult.networkError;
+      }
+      return SilentLoginResult.unknownError;
     } finally {
       _isSilentLoginInProgress = false;
     }

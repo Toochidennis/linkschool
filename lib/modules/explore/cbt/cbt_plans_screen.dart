@@ -287,118 +287,118 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     );
   }
 
-  Future<void> _loadTrialState() async {
-    try {
-      final remaining = await CbtSubscriptionService().getRemainingFreeTests();
-      bool forceContinue = false;
-      bool trialStarted = false;
-      
-      final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-      
-      // Check if user has already paid
-      final hasPaid = await CbtSubscriptionService().hasPaid();
-      
-      if (!hasPaid) {
-        // Check if trial has been started
-        final trialStartDate = await CbtSubscriptionService().getTrialStartDate();
-        trialStarted = trialStartDate != null;
-        // Once trial has started, keep CTA as "Continue with Ads"
-        forceContinue = trialStarted;
-      }
-      
-      if (mounted) {
-        setState(() {
-          _remainingDays = remaining;
-          _isLoadingTrial = false;
-          _forceContinueWithAds = forceContinue;
-          _trialStarted = trialStarted;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _remainingDays = 0;
-          _isLoadingTrial = false;
-          _forceContinueWithAds = false;
-        });
-      }
-    }
-  }
-
-  String _trialLabel() {
-    if (_trialStarted || _forceContinueWithAds) {
-      return 'Continue with Ads';
-    }
-    return 'Start $_remainingDays days Trial';
-  }
-
-  Future<void> _startTrial() async {
+ Future<void> _loadTrialState() async {
+  try {
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
     final user = userProvider.currentUser;
-    if (user?.id == null) {
+
+    bool trialStarted = false;
+    bool forceContinue = false;
+
+    if (user?.id != null) {
+      // Check expiry date from license cache
+      final expiresAt = await CbtLicenseService().getCachedLicenseExpiresAt();
+      if (expiresAt != null) {
+        trialStarted = true;
+        // If expired, force "Continue with Ads"
+        forceContinue = DateTime.now().isAfter(expiresAt);
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoadingTrial = false;
+        _trialStarted = trialStarted;
+        _forceContinueWithAds = forceContinue;
+      });
+    }
+  } catch (_) {
+    if (mounted) {
+      setState(() => _isLoadingTrial = false);
+    }
+  }
+}
+
+ String _trialLabel() {
+  if (_trialStarted || _forceContinueWithAds) {
+    return 'Continue with Ads';
+  }
+  // Use selected plan's freeTrialDays, not global remaining
+  final plans = context.read<CbtPlanProvider>().plans;
+  final selectedPlan = plans.isNotEmpty
+      ? plans[_currentIndex.clamp(0, plans.length - 1)]
+      : null;
+  final days = selectedPlan?.freeTrialDays ?? 3;
+  return 'Start $days days Trial';
+}
+
+  Future<void> _startTrial() async {
+  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  final user = userProvider.currentUser;
+  if (user?.id == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please sign in to continue.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  // ✅ Use _trialStarted or _forceContinueWithAds, NOT _remainingDays
+  final isContinueWithAds = _trialStarted || _forceContinueWithAds;
+
+  setState(() => _isStartingTrial = true);
+  try {
+    if (isContinueWithAds) {
+      await CbtSubscriptionService().setAdMode('continue_with_ads');
+      if (mounted) {
+        Navigator.of(context).pop('continue_ads');
+      }
+      return;
+    }
+
+    // Get the selected plan's trial duration
+    final plans = context.read<CbtPlanProvider>().plans;
+    final selectedPlan = plans.isNotEmpty
+        ? plans[_currentIndex.clamp(0, plans.length - 1)]
+        : null;
+    final planTrialDays = selectedPlan?.freeTrialDays ?? 3;
+
+    await CbtSubscriptionService().setAdMode('free_trial');
+    await CbtLicenseService().startFreeTrial(userId: user!.id!);
+    await CbtSubscriptionService().setTrialStartDate(originalDuration: planTrialDays);
+    if (!mounted) return;
+
+    final isActive = await CbtLicenseService()
+        .isLicenseActive(userId: user.id!, forceRefresh: true);
+    if (!mounted) return;
+
+    if (!isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please sign in to continue.'),
+          content: Text('Trial not active yet. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    final isContinueWithAds = _forceContinueWithAds || _remainingDays <= 1;
+    if (mounted) Navigator.of(context).pop(true);
 
-    setState(() => _isStartingTrial = true);
-    try {
-      if (isContinueWithAds) {
-        await CbtSubscriptionService().setAdMode('continue_with_ads');
-        if (mounted) {
-          Navigator.of(context).pop('continue_ads');
-        }
-        return;
-      }
-
-      // Get the selected plan's trial duration
-      final plans = context.read<CbtPlanProvider>().plans;
-      final selectedPlan = plans.isNotEmpty
-          ? plans[_currentIndex.clamp(0, plans.length - 1)]
-          : null;
-      final planTrialDays = selectedPlan?.freeTrialDays ?? 3;
-
-      await CbtSubscriptionService().setAdMode('free_trial');
-      await CbtLicenseService().startFreeTrial(userId: user!.id!);
-      // Pass the plan's trial duration, not the global subscription service value
-      await CbtSubscriptionService().setTrialStartDate(originalDuration: planTrialDays);
-      if (!mounted) return;
-      final isActive = await CbtLicenseService()
-          .isLicenseActive(userId: user.id!, forceRefresh: true);
-      if (!mounted) return;
-      if (!isActive) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Trial not active yet. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-      if (mounted) {
-        Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_cleanError(e.toString())),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isStartingTrial = false);
-      }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_cleanError(e.toString())),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
+  } finally {
+    if (mounted) setState(() => _isStartingTrial = false);
   }
+}
 
   String _cleanError(String error) {
     final trimmed = error.replaceFirst('Exception: ', '').trim();

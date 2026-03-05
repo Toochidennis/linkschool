@@ -19,12 +19,84 @@ class CbtDbHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,           // ✅ bumped from 1 → 2
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade, // ✅ handles existing installs
     );
   }
 
+  // ─────────────────────────────────────────
+  // Fresh install — create all tables at once
+  // ─────────────────────────────────────────
   Future<void> _onCreate(Database db, int version) async {
+    await _createAllTables(db);
+    print('✅ CBT local database created (v$version)');
+  }
+
+  // ─────────────────────────────────────────
+  // Existing install — add tables that are missing
+  // ─────────────────────────────────────────
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    print('🔄 Upgrading CBT DB from v$oldVersion → v$newVersion');
+
+    if (oldVersion < 2) {
+      // Version 1 was missing: images, questions, options tables
+      await db.execute('PRAGMA foreign_keys = ON;');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS images (
+          id TEXT PRIMARY KEY,
+          local_path TEXT NOT NULL,
+          mime_type TEXT,
+          checksum TEXT
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS questions (
+          id INTEGER PRIMARY KEY,
+          exam_id INTEGER NOT NULL,
+          text TEXT NOT NULL,
+          image_id TEXT,
+          explanation TEXT,
+          instruction TEXT,
+          passage TEXT,
+          type TEXT NOT NULL DEFAULT 'multiple_choice',
+          topic TEXT,
+          year INTEGER,
+          FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL,
+          FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS options (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          question_id INTEGER NOT NULL,
+          label TEXT,
+          text TEXT NOT NULL,
+          image_id TEXT,
+          is_correct INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+          FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
+        )
+      ''');
+
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_questions_exam ON questions(exam_id)'
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_options_question ON options(question_id)'
+      );
+
+      print('✅ Upgrade v1→v2: added images, questions, options tables');
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // All tables — used by _onCreate
+  // ─────────────────────────────────────────
+  Future<void> _createAllTables(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON;');
 
     await db.execute('''
@@ -58,6 +130,15 @@ class CbtDbHelper {
     ''');
 
     await db.execute('''
+      CREATE TABLE IF NOT EXISTS images (
+        id TEXT PRIMARY KEY,
+        local_path TEXT NOT NULL,
+        mime_type TEXT,
+        checksum TEXT
+      )
+    ''');
+
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS exams (
         id INTEGER PRIMARY KEY,
         exam_type_id INTEGER NOT NULL,
@@ -75,6 +156,36 @@ class CbtDbHelper {
     ''');
 
     await db.execute('''
+      CREATE TABLE IF NOT EXISTS questions (
+        id INTEGER PRIMARY KEY,
+        exam_id INTEGER NOT NULL,
+        text TEXT NOT NULL,
+        image_id TEXT,
+        explanation TEXT,
+        instruction TEXT,
+        passage TEXT,
+        type TEXT NOT NULL DEFAULT 'multiple_choice',
+        topic TEXT,
+        year INTEGER,
+        FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL,
+        FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS options (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question_id INTEGER NOT NULL,
+        label TEXT,
+        text TEXT NOT NULL,
+        image_id TEXT,
+        is_correct INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+        FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
+      )
+    ''');
+
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS seed_meta (
         name TEXT PRIMARY KEY,
         version INTEGER NOT NULL,
@@ -83,17 +194,11 @@ class CbtDbHelper {
     ''');
 
     // Indexes
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_exam_type_courses_exam ON exam_type_courses(exam_type_id)'
-    );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_exam_type_courses_course ON exam_type_courses(course_id)'
-    );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_exams_type_course ON exams(exam_type_id, course_id)'
-    );
-
-    print('✅ CBT local database created');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_exam_type_courses_exam ON exam_type_courses(exam_type_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_exam_type_courses_course ON exam_type_courses(course_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_exams_type_course ON exams(exam_type_id, course_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_questions_exam ON questions(exam_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_options_question ON options(question_id)');
   }
 
   // ─────────────────────────────────────────
@@ -128,10 +233,11 @@ class CbtDbHelper {
   }
 
   // ─────────────────────────────────────────
-  // SAVE BOARDS (exam_types + courses + bridge)
+  // SAVE BOARDS
   // ─────────────────────────────────────────
 
-  Future<void> saveExamTypesAndCourses(List<Map<String, dynamic>> rawData) async {
+  Future<void> saveExamTypesAndCourses(
+      List<Map<String, dynamic>> rawData) async {
     final db = await database;
 
     await db.transaction((txn) async {
@@ -142,7 +248,6 @@ class CbtDbHelper {
             ? item['id']
             : int.parse(item['id'].toString());
 
-        // Save exam type
         await txn.insert(
           'exam_types',
           {
@@ -156,14 +261,12 @@ class CbtDbHelper {
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
 
-        // Save each course + bridge link
         final courses = item['courses'] as List<dynamic>? ?? [];
         for (final course in courses) {
           final int courseId = course['id'] is int
               ? course['id']
               : int.parse(course['id'].toString());
 
-          // Save course
           await txn.insert(
             'courses',
             {
@@ -173,7 +276,6 @@ class CbtDbHelper {
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
 
-          // Save bridge
           await txn.insert(
             'exam_type_courses',
             {
@@ -190,7 +292,7 @@ class CbtDbHelper {
   }
 
   // ─────────────────────────────────────────
-  // READ BOARDS FROM DB
+  // READ BOARDS
   // ─────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> getExamTypes() async {
@@ -203,7 +305,8 @@ class CbtDbHelper {
     );
   }
 
-  Future<List<Map<String, dynamic>>> getCoursesForExamType(int examTypeId) async {
+  Future<List<Map<String, dynamic>>> getCoursesForExamType(
+      int examTypeId) async {
     final db = await database;
     return await db.rawQuery('''
       SELECT c.id, c.name as course_name
@@ -232,33 +335,21 @@ class CbtDbHelper {
   }
 
   // ─────────────────────────────────────────
-  // SAVE DOWNLOADED EXAM
+  // CHECK IF SUBJECT DOWNLOADED
   // ─────────────────────────────────────────
 
-  Future<void> saveDownloadedExam({
-    required int examId,
+  Future<bool> isSubjectDownloaded({
     required int examTypeId,
     required int courseId,
-    required int year,
-    required int totalQuestions,
-    required String title,
   }) async {
     final db = await database;
-    await db.insert(
+    final result = await db.query(
       'exams',
-      {
-        'id': examId,
-        'exam_type_id': examTypeId,
-        'course_id': courseId,
-        'title': title,
-        'year': year,
-        'total_questions': totalQuestions,
-        'duration_minutes': 60,
-        'version': 1,
-        'downloaded_at': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      where: 'exam_type_id = ? AND course_id = ?',
+      whereArgs: [examTypeId, courseId],
+      limit: 1,
     );
+    return result.isNotEmpty;
   }
 
   // ─────────────────────────────────────────
@@ -268,6 +359,9 @@ class CbtDbHelper {
   Future<void> clearAll() async {
     final db = await database;
     await db.transaction((txn) async {
+      await txn.delete('options');
+      await txn.delete('questions');
+      await txn.delete('images');
       await txn.delete('exam_type_courses');
       await txn.delete('courses');
       await txn.delete('exam_types');

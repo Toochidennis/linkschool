@@ -68,8 +68,16 @@ class CBTProvider extends ChangeNotifier {
       // — If SQLite is empty → fetches from network, saves to DB
       _boards = await _cbtService.fetchCBTBoards();
 
-      if (_boards.isNotEmpty && _selectedBoard == null) {
-        _selectedBoard = _boards.first;
+      if (_boards.isNotEmpty) {
+        if (_selectedBoard == null) {
+          _selectedBoard = _boards.first;
+        } else {
+          final selectedCode = _selectedBoard!.boardCode;
+          _selectedBoard = _boards.firstWhere(
+            (board) => board.boardCode == selectedCode,
+            orElse: () => _boards.first,
+          );
+        }
       }
 
       // Load dashboard statistics
@@ -90,8 +98,16 @@ class CBTProvider extends ChangeNotifier {
       // Last resort — try forcing network even if we thought we were offline
       try {
         _boards = await _cbtService.fetchCBTBoards(forceNetwork: true);
-        if (_boards.isNotEmpty && _selectedBoard == null) {
-          _selectedBoard = _boards.first;
+        if (_boards.isNotEmpty) {
+          if (_selectedBoard == null) {
+            _selectedBoard = _boards.first;
+          } else {
+            final selectedCode = _selectedBoard!.boardCode;
+            _selectedBoard = _boards.firstWhere(
+              (board) => board.boardCode == selectedCode,
+              orElse: () => _boards.first,
+            );
+          }
         }
         await loadDashboardStats();
         _error = null;

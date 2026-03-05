@@ -139,7 +139,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       }
     } catch (e) {
       print('Error loading user data: $e');
-      CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+     // CustomToaster.toastError(context, 'Error', 'Failed to load user data');
     }
   }
 

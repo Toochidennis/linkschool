@@ -638,7 +638,7 @@ _wasLoading = loading;
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text(
-              'Exam Boards',
+              'All Exams',
               style: AppTextStyles.normal600(
                 fontSize: 22.0,
                 color: AppColors.text4Light,
@@ -1291,8 +1291,6 @@ _wasLoading = loading;
     CbtHistoryModel test,
     CBTProvider provider,
   ) async {
-    final canUseNetwork = await NetworkDialog.ensureOnline(context);
-    if (!canUseNetwork || !mounted) return;
     final canProceed = await _checkSubscriptionBeforeTest();
     if (!canProceed || !mounted) return;
 
@@ -1325,8 +1323,6 @@ _wasLoading = loading;
               titleSize: 18.0,
               titleColor: AppColors.text4Light,
               onPressed: () async {
-                final canUseNetwork = await NetworkDialog.ensureOnline(context);
-                if (!canUseNetwork || !mounted) return;
                 final canProceed = await _checkSubscriptionBeforeTest();
                 if (!canProceed || !mounted) return;
                 Navigator.push(
@@ -1435,8 +1431,6 @@ _wasLoading = loading;
   }) {
     return GestureDetector(
       onTap: () async {
-        final canUseNetwork = await NetworkDialog.ensureOnline(context);
-        if (!canUseNetwork || !mounted) return;
         final canProceed = await _checkSubscriptionBeforeTest();
         if (!canProceed || !mounted) return;
         Navigator.push(
