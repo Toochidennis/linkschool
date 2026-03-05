@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/promo_model.dart' show PromoInterstitialDialog;
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
@@ -87,62 +88,100 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   }
 
   @override
-  void initState() {
-    super.initState();
+ @override
+void initState() {
+  super.initState();
 
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
+  _fadeController = AnimationController(
+    duration: const Duration(milliseconds: 800),
+    vsync: this,
+  );
+  _slideController = AnimationController(
+    duration: const Duration(milliseconds: 600),
+    vsync: this,
+  );
+  _bounceController = AnimationController(
+    duration: const Duration(milliseconds: 1200),
+    vsync: this,
+  );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
+  _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+  );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-    );
+  _slideAnimation = Tween<Offset>(
+    begin: const Offset(0, 0.3),
+    end: Offset.zero,
+  ).animate(
+    CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+  );
 
-    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
-    );
+  _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+  );
 
-    // Add mounted checks
-    _fadeController.forward();
+  _fadeController.forward();
 
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) _slideController.forward();
-    });
+  Future.delayed(const Duration(milliseconds: 200), () {
+    if (mounted) _slideController.forward();
+  });
 
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _bounceController.forward();
-    });
+  Future.delayed(const Duration(milliseconds: 400), () {
+    if (mounted) _bounceController.forward();
+  });
 
-    _controller = ScrollController();
-    _controller.addListener(_onScroll);
+  _controller = ScrollController();
+  _controller.addListener(_onScroll);
 
-    // Fetch news and announcements data when the widget is initialized
-    Future.microtask(() {
-      Provider.of<NewsProvider>(context, listen: false).fetchLatestNews();
-      Provider.of<AnnouncementProvider>(context, listen: false)
-          .fetchAnnouncements();
-    });
+  Future.microtask(() {
+    Provider.of<NewsProvider>(context, listen: false).fetchLatestNews();
+    Provider.of<AnnouncementProvider>(context, listen: false)
+        .fetchAnnouncements();
+  });
 
-    setState(() {
-      isLoading = false;
-    });
-  }
+  setState(() {
+    isLoading = false;
+  });
+
+  // ── Show promo dialog on first open of the day ──────────────
+  // WidgetsBinding.instance.addPostFrameCallback((_) {
+  //   _maybeShowPromo();
+  // });
+}
+
+// Future<void> _maybeShowPromo() async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final lastShown = prefs.getString('promo_last_shown');
+//   final today = DateTime.now().toIso8601String().substring(0, 10);
+
+//   //if (lastShown == today) return;
+
+//   await prefs.setString('promo_last_shown', today);
+
+//   if (!mounted) return;
+//   final random = DateTime.now().millisecond % 10;
+//   final bannerUrls = [
+//     'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1516321318423-f06f70504504?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1515378791036-0648a3ad77c0?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1552821206-e3db9b1ede8e?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1514306688772-e1b33d271cef?w=600&h=300&fit=crop',
+//   ];
+  
+//   PromoInterstitialDialog.show(
+//     context: context,
+//     imageUrl: bannerUrls[random],
+//     ctaLabel: 'Tap to learn more',
+//     onTap: () {
+//       Navigator.of(context).pop();
+//     },
+//   );
+// }
 
   @override
   void dispose() {

@@ -71,100 +71,112 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool _skipNextPlanPrompt = false;
   bool _isHandlingBoardTap = false;
 
-  Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
-    var allowAdsOverride = allowAds;
-    final portalLoggedIn = await _handlePortalLogin();
-    if (portalLoggedIn) {
-      allowAdsOverride = true;
-      return true;
-    }
+ Future<bool> _handlePortalLogin() async {
+  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  if (!authProvider.isLoggedIn) return false;
 
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
-    if (cbtUserProvider.currentUser == null) {
-      await cbtUserProvider.initialize();
-    }
-    final isSignedIn = cbtUserProvider.currentUser != null;
-    if (isSignedIn) {
-      final userId = cbtUserProvider.currentUser?.id;
-      print('[CBT_FLOW] Authenticated userId=$userId');
-      if (userId == null) return false;
-      try {
-        final cachedStatus =
-            await _licenseService.getCachedLicenseStatus(userId);
-        if (cachedStatus == true) {
-          print('[CBT_FLOW] License active from cache');
-          return true;
-        }
-        if (cachedStatus == false) {
-          print('[CBT_FLOW] License inactive from cache');
-          if (allowAdsOverride) return true;
-          return await _showPlansAndReturn();
-        }
+  // Portal is logged in — ensure they also have a CBT account
+  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  if (cbtUserProvider.currentUser == null) {
+    await cbtUserProvider.initialize();
+  }
 
-        final isActive = await _licenseService.isLicenseActive(userId: userId);
-        print('[CBT_FLOW] License active=$isActive (post-auth)');
-        if (!mounted) return false;
-        if (!isActive) {
-          if (allowAdsOverride) return true;
-          return await _showPlansAndReturn();
-        }
-        return true;
-      } catch (e) {
-        print('[CBT_FLOW] License check failed: $e');
-        if (!mounted) return false;
-        await NetworkDialog.ensureOnline(
-          context,
-          message:
-              'Unable to verify license status. Please check your internet connection and try again.',
-        );
-        return false;
-      }
-    }
-    if (!mounted) return false;
-
+  // If still no CBT account, prompt them to sign up for CBT
+  if (cbtUserProvider.currentUser == null) {
     final signedIn = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => const CbtAuthDialog(),
+      builder: (context) => const CbtAuthDialog(), // normal CBT signup
     );
-    if (signedIn == true && mounted) {
-      final userId = cbtUserProvider.currentUser?.id;
-      print('[CBT_FLOW] Signed in via dialog userId=$userId');
-      if (userId == null) return false;
-      final cachedStatus =
-          await _licenseService.getCachedLicenseStatus(userId);
-      if (cachedStatus == true) {
-        print('[CBT_FLOW] License active from cache (post-signin)');
-        return true;
-      }
+    if (signedIn != true) return false;
+    await cbtUserProvider.initialize();
+  }
+
+  // Portal user is always on free trial — no license check
+  await _subscriptionService.setAdMode('free_trial');
+  return true;
+}
+
+Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
+  var allowAdsOverride = allowAds;
+
+  // ✅ Portal login takes priority — skips license check entirely
+  final portalLoggedIn = await _handlePortalLogin();
+  if (portalLoggedIn) return true;
+
+  // --- From here: user is NOT portal logged in ---
+  // Full CBT auth + license check applies
+
+  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  if (cbtUserProvider.currentUser == null) {
+    await cbtUserProvider.initialize();
+  }
+
+  final isSignedIn = cbtUserProvider.currentUser != null;
+
+  if (isSignedIn) {
+    final userId = cbtUserProvider.currentUser?.id;
+    if (userId == null) return false;
+
+    try {
+      // Cache-first license check
+      final cachedStatus = await _licenseService.getCachedLicenseStatus(userId);
+      if (cachedStatus == true) return true;
       if (cachedStatus == false) {
-        print('[CBT_FLOW] License inactive from cache (post-signin)');
         if (allowAdsOverride) return true;
         return await _showPlansAndReturn();
       }
 
+      // Fresh license check
       final isActive = await _licenseService.isLicenseActive(userId: userId);
-      print('[CBT_FLOW] License active=$isActive (post-signin)');
       if (!mounted) return false;
       if (!isActive) {
         if (allowAdsOverride) return true;
         return await _showPlansAndReturn();
       }
       return true;
-    }
-    return false;
-  }
-
-  Future<bool> _handlePortalLogin() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (!authProvider.isLoggedIn) {
+    } catch (e) {
+      print('[CBT_FLOW] License check failed: $e');
+      if (!mounted) return false;
+      await NetworkDialog.ensureOnline(
+        context,
+        message: 'Unable to verify license status. Please check your connection.',
+      );
       return false;
     }
+  }
 
-    await _subscriptionService.setAdMode('free_trial');
+  // No CBT account at all — show signup dialog
+  if (!mounted) return false;
+  final signedIn = await showDialog<bool>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) => const CbtAuthDialog(),
+  );
+
+  if (signedIn == true && mounted) {
+    final userId = cbtUserProvider.currentUser?.id;
+    if (userId == null) return false;
+
+    // Check license after fresh signup
+    final cachedStatus = await _licenseService.getCachedLicenseStatus(userId);
+    if (cachedStatus == true) return true;
+    if (cachedStatus == false) {
+      if (allowAdsOverride) return true;
+      return await _showPlansAndReturn();
+    }
+
+    final isActive = await _licenseService.isLicenseActive(userId: userId);
+    if (!mounted) return false;
+    if (!isActive) {
+      if (allowAdsOverride) return true;
+      return await _showPlansAndReturn();
+    }
     return true;
   }
+
+  return false;
+}
 
 
   @override
@@ -702,7 +714,7 @@ _wasLoading = loading;
           duration: const Duration(milliseconds: 120),
           scale: isPressed ? 0.98 : 1.0, // ✅ subtle press-down effect
           child: SizedBox(
-            height: 150,
+            height: 120,
             child: Stack(
               children: [
                 // Background
@@ -710,6 +722,11 @@ _wasLoading = loading;
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: boardColor.withOpacity(0.15),
+                      border: Border.all(
+                        color: boardColor.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
                           color: boardColor.withOpacity(0.18),
@@ -738,7 +755,7 @@ _wasLoading = loading;
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Row(
                         children: [
@@ -778,58 +795,47 @@ _wasLoading = loading;
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                height: 30,
-                                decoration: BoxDecoration(
-                                  color: boardColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: boardColor.withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: TextButton(
-                                  onPressed: () async {
-                                    setState(() => _pressedBoardCode = board.boardCode);
-                                    await Future.delayed(const Duration(milliseconds: 120));
-                                    if (!mounted) return;
-                                    setState(() => _pressedBoardCode = null);
-
-                                    await _handleBoardTap(board, provider);
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 8,
-                                    ),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      Text('Start',style: TextStyle(
-                                        color: Colors.white
-                                      ),),
-                                      SizedBox(width: 6),
-                                      Icon(Icons.arrow_forward_rounded, size: 16,color: Colors.white),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ],
+                  ),
+                ),
+
+                // Circular arrow button at top right
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () async {
+                      setState(() => _pressedBoardCode = board.boardCode);
+                      await Future.delayed(const Duration(milliseconds: 120));
+                      if (!mounted) return;
+                      setState(() => _pressedBoardCode = null);
+
+                      await _handleBoardTap(board, provider);
+                    },
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: boardColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: boardColor.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 24,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
 

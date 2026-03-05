@@ -54,6 +54,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   final _subscriptionService = CbtSubscriptionService();
   bool _isSaved = false;
   bool _userSignedIn = false;
+  bool _showUnansweredQuestions = true;
   late PageController _pageController;
   int _currentSubjectIndex = 0;
 
@@ -64,6 +65,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    _loadQuestionListVisibility();
 
     // Check if user is signed in on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -77,6 +79,15 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     super.dispose();
   }
 
+  Future<void> _loadQuestionListVisibility() async {
+    final mode = await _subscriptionService.getAdMode();
+    final showUnanswered = mode != 'continue_with_ads';
+    if (!mounted) return;
+    setState(() {
+      _showUnansweredQuestions = showUnanswered;
+    });
+  }
+
   /// Check if user is already signed in
   Future<void> _checkUserSigninStatus() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -85,6 +96,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
       if (mounted) {
         setState(() {
           _userSignedIn = true;
+           _showUnansweredQuestions = false;
         });
       }
       _saveTestResult();
@@ -336,6 +348,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             widget.calledFrom == 'multi-subject') {
           Navigator.of(context).pop();
           Navigator.of(context).pop();
+          Navigator.of(context).pop();
         } else {
           Navigator.of(context).pop();
           Navigator.of(context).pop();
@@ -351,6 +364,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
                     if (widget.calledFrom == 'dashboard' ||
                         widget.calledFrom == 'multi-subject') {
+                      Navigator.of(context).pop();
                       Navigator.of(context).pop();
                       Navigator.of(context).pop();
                     } else {
@@ -399,6 +413,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   }
 
   Widget _buildSingleSubjectView() {
+    final questionIndexes =
+        _visibleQuestionIndexes(widget.questions, widget.userAnswers);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -434,13 +451,13 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
           _buildScoreCard(widget.questions, widget.userAnswers),
           const SizedBox(height: 16),
           // Dynamic question list
-          ...List.generate(widget.questions.length, (index) {
+          ...questionIndexes.map((index) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: _buildQuestionCard(
                   index, widget.questions, widget.userAnswers),
             );
-          }),
+          }).toList(),
         ],
       ),
     );
@@ -562,16 +579,30 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     final subjectData = widget.allSubjectsData![subjectIndex];
     final questions = subjectData['questions'] as List<QuestionModel>;
     final userAnswers = subjectData['userAnswers'] as Map<int, int>;
+    final questionIndexes = _visibleQuestionIndexes(questions, userAnswers);
 
     return Column(
-      children: List.generate(
-        questions.length,
-        (index) => Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: _buildQuestionCard(index, questions, userAnswers),
-        ),
-      ),
+      children: questionIndexes
+          .map(
+            (index) => Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: _buildQuestionCard(index, questions, userAnswers),
+            ),
+          )
+          .toList(),
     );
+  }
+
+  List<int> _visibleQuestionIndexes(
+    List<QuestionModel> questions,
+    Map<int, int> userAnswers,
+  ) {
+    if (_showUnansweredQuestions) {
+      return List<int>.generate(questions.length, (index) => index);
+    }
+    return List<int>.generate(questions.length, (index) => index)
+        .where(userAnswers.containsKey)
+        .toList();
   }
 
   Widget _buildScoreCard(

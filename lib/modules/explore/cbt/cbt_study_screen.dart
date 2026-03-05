@@ -9,7 +9,6 @@ import 'package:linkschool/modules/model/explore/study/studies_questions_model.d
 import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/ai_chat_screen.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
-import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -219,13 +218,6 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     final apiExplanation =
         question.explanation.isNotEmpty ? question.explanation : null;
 
-    if (!isCorrect) {
-      await AdManager.instance.showIfEligible(
-        context: context,
-        trigger: AdTrigger.questionFailure,
-      );
-    }
-
     // Show modal with loading state or cached/API explanation
     await _showExplanationModal(
       isCorrect: isCorrect,
@@ -304,54 +296,82 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     _isShowingAdsGate = true;
     try {
       print('==== question $answeredCount ====');
-      final settings = await CbtSettingsHelper.getSettings();
       if (!mounted) return false;
 
       final result = await showDialog<String>(
         context: context,
-        barrierDismissible: true,
-        builder: (context) => CbtContinueAdsDialog(
-        
+        barrierDismissible: false,
+        builder: (dialogContext) => WillPopScope(
+          onWillPop: () async => false,
+          child: CbtContinueAdsDialog(
+            onWatchAds: () async {
+              await _subscriptionService.setAdMode('continue_with_ads');
+              final rewarded = await AdManager.instance.showRewardedForPaywall();
+              if (!rewarded) return false;
+              if (!mounted) return false;
+              setState(() {
+                _isContinueWithAds = true;
+              });
+              return true;
+            },
+            onSubscribe: () async {
+              final planResult = await Navigator.of(context).push<Object?>(
+                MaterialPageRoute(
+                  builder: (_) => const CbtPlansScreen(
+                    showTrialButton: false,
+                    preferTrialLabel: false,
+                  ),
+                ),
+              );
+
+              if (!mounted) return false;
+
+              if (planResult == 'continue_ads') {
+                await _subscriptionService.setAdMode('continue_with_ads');
+                final rewarded =
+                    await AdManager.instance.showRewardedForPaywall();
+                if (!rewarded) return false;
+                if (!mounted) return false;
+                setState(() {
+                  _isContinueWithAds = true;
+                });
+                return true;
+              }
+
+              if (planResult == true) {
+                if (!mounted) return false;
+                setState(() {
+                  _isContinueWithAds = false;
+                });
+                return true;
+              }
+              return false;
+            },
+            onSubmitTest: () async {
+              Navigator.of(dialogContext).pop();
+              final provider =
+                  Provider.of<QuestionsProvider>(context, listen: false);
+              final sessionStats =
+                  provider.generateSessionStats(widget.subject);
+              await AdManager.instance.showIfEligible(
+                context: context,
+                trigger: AdTrigger.resultNavigation,
+              );
+              if (!mounted) return;
+              _isNavigatingAway = true;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      StudyProgressDashboard(sessionStats: sessionStats),
+                ),
+              );
+            },
+          ),
         ),
       );
 
       if (!mounted) return false;
-
-      if (result == 'ads') {
-        await _subscriptionService.setAdMode('continue_with_ads');
-        await AdManager.instance.showIfEligible(
-          context: context,
-          trigger: AdTrigger.paywallContinue,
-        );
-        return true;
-      }
-
-      if (result == 'subscribe') {
-        final planResult = await Navigator.of(context).push<Object?>(
-          MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
-        );
-
-        if (!mounted) return false;
-
-        if (planResult == 'continue_ads') {
-          await _subscriptionService.setAdMode('continue_with_ads');
-          await AdManager.instance.showIfEligible(
-            context: context,
-            trigger: AdTrigger.paywallContinue,
-          );
-          return true;
-        }
-
-        if (planResult == true) {
-          return true;
-        }
-      }
-
-      final mode = await _subscriptionService.getAdMode();
-      final hasPaid = await _subscriptionService.hasPaid();
-      setState(() {
-        _isContinueWithAds = mode == 'continue_with_ads' && !hasPaid;
-      });
 
       return result == 'ads' || result == 'subscribe';
     } finally {

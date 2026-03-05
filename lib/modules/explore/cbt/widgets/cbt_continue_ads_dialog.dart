@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 
 class CbtContinueAdsDialog extends StatefulWidget {
   final Future<bool> Function()? onWatchAds;
@@ -20,20 +23,39 @@ class CbtContinueAdsDialog extends StatefulWidget {
 
 class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
   bool _isProcessing = false;
+  int _retrySeconds = 0;
+  Timer? _retryTimer;
+  String? _retryMessage;
+
+  bool get _isRetrying => _retrySeconds > 0;
 
   Future<void> _handleWatchAds() async {
-    if (_isProcessing) return;
-    setState(() => _isProcessing = true);
-    final success = await (widget.onWatchAds?.call() ?? Future.value(false));
+    if (_isProcessing || _isRetrying) return;
+    final online = await NetworkDialog.ensureOnline(context);
+    if (!online) return;
+    _retryTimer?.cancel();
+    setState(() {
+      _isProcessing = true;
+      _retrySeconds = 0;
+      _retryMessage = null;
+    });
+    bool success = false;
+    try {
+      success = await (widget.onWatchAds?.call() ?? Future.value(false));
+    } catch (_) {
+      success = false;
+    }
     if (!mounted) return;
     setState(() => _isProcessing = false);
     if (success) {
       Navigator.pop(context, 'ads');
+    } else {
+      _startRetryCountdown();
     }
   }
 
   Future<void> _handleSubscribe() async {
-    if (_isProcessing) return;
+    if (_isProcessing || _isRetrying) return;
     setState(() => _isProcessing = true);
     final success = await (widget.onSubscribe?.call() ?? Future.value(false));
     if (!mounted) return;
@@ -41,6 +63,33 @@ class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
     if (success) {
       Navigator.pop(context, 'subscribe');
     }
+  }
+
+  void _startRetryCountdown() {
+    _retryTimer?.cancel();
+    setState(() {
+      _retrySeconds = 10;
+      _retryMessage = 'Ad failed to load. Retry in $_retrySeconds s';
+    });
+    _retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() {
+        _retrySeconds -= 1;
+        if (_retrySeconds <= 0) {
+          _retrySeconds = 0;
+          _retryMessage = 'Please try again.';
+          timer.cancel();
+        } else {
+          _retryMessage = 'Ad failed to load. Retry in $_retrySeconds s';
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -110,7 +159,8 @@ class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isProcessing ? null : _handleSubscribe,
+                  onPressed:
+                      (_isProcessing || _isRetrying) ? null : _handleSubscribe,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber.shade500,
                     elevation: 0,
@@ -171,7 +221,8 @@ class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: _isProcessing ? null : _handleWatchAds,
+                  onPressed:
+                      (_isProcessing || _isRetrying) ? null : _handleWatchAds,
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
                       color: AppColors.eLearningBtnColor1,
@@ -204,14 +255,40 @@ class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
               ),
               const SizedBox(height: 20),
 
+              if (_isProcessing) ...[
+                const LinearProgressIndicator(),
+                const SizedBox(height: 12),
+                Text(
+                  'Loading ad...',
+                  style: AppTextStyles.normal500(
+                    fontSize: 13,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              if (_retryMessage != null) ...[
+                Text(
+                  _retryMessage!,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.normal500(
+                    fontSize: 13,
+                    color: Colors.redAccent,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               // ── Submit Test link ──
               InkWell(
-                onTap: _isProcessing ? null : widget.onSubmitTest,
+                onTap:
+                    (_isProcessing || _isRetrying) ? null : widget.onSubmitTest,
                 child: Text(
                   'Submit Test',
                   style: AppTextStyles.normal500(
-                    fontSize:20,
-                    color: Colors.grey.shade600,
+                    fontSize:18,
+                    color: AppColors.eLearningBtnColor1,
                   ).copyWith(
                     decoration: TextDecoration.underline,
                   ),

@@ -183,16 +183,17 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Consumer<CBTProvider>(
-        builder: (context, provider, _) {
-          final subjects = provider.currentBoardSubjects;
-          final boardName =
-              provider.selectedBoard?.shortName ?? 'Subject Selection';
-          final sortedSubjects = List<SubjectModel>.from(subjects)
-            ..sort((a, b) =>
-                _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
+      body: SafeArea(
+        child: Consumer<CBTProvider>(
+          builder: (context, provider, _) {
+            final subjects = provider.currentBoardSubjects;
+            final boardName =
+                provider.selectedBoard?.shortName ?? 'Subject Selection';
+            final sortedSubjects = List<SubjectModel>.from(subjects)
+              ..sort((a, b) =>
+                  _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
 
-          return Column(
+            return Column(
             children: [
               // ── Header ──────────────────────────────────────────────
               _buildHeader(boardName),
@@ -249,7 +250,8 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
               ),
             ],
           );
-        },
+          },
+        ),
       ),
 
       // ── Continue button ────────────────────────────────────────────
@@ -269,8 +271,8 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
  Widget _buildHeader(String boardName) {
   return Container(
     color: Colors.white,
-    padding: EdgeInsets.only(
-      top: MediaQuery.of(context).padding.top + 8,
+    padding: const EdgeInsets.only(
+      top: 8,
       left: 8,
       right: 16,
       bottom: 14,
@@ -430,7 +432,11 @@ class _SubjectDownloadCard extends StatelessWidget {
     final accent = _accentForSubject(subject);
 
     return GestureDetector(
-      onTap: isDownloaded ? onToggleSelect : null,
+      onTap: isDownloading || isCheckingDownload
+          ? null
+          : isDownloaded
+              ? onToggleSelect
+              : onDownload,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
@@ -921,7 +927,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
 
     return Container(
       padding: EdgeInsets.fromLTRB(
-          20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+          10, 12, 20, MediaQuery.of(context).padding.bottom + 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -1202,17 +1208,32 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                               ),
                             ),
                             const Spacer(),
-                            GestureDetector(
-                              onTap: onPickYear,
-                              child: Text(
-                                'Change',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade500,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
+               GestureDetector(
+  onTap: onPickYear,
+  child: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: accent.withOpacity(0.12), // ← move color into decoration
+      border: Border.all(
+        color: accent.withOpacity(0.4),
+        width: 1,
+      ),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+       
+        const SizedBox(width: 4),
+        Icon(
+          Icons.keyboard_arrow_down_rounded,
+          size: 14,
+          color: accent,
+        ),
+      ],
+    ),
+  ),
+),
                           ],
                         ),
                       ),
@@ -1447,7 +1468,7 @@ class _SummaryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
         color:  AppColors.eLearningBtnColor1.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
@@ -1455,12 +1476,12 @@ class _SummaryChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color:  AppColors.eLearningBtnColor1),
+          Icon(icon, size: 14, color:  AppColors.eLearningBtnColor1),
           const SizedBox(width: 5),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 11.5,
+              fontSize: 13,
               color: AppColors.eLearningBtnColor1,
               fontWeight: FontWeight.w600,
             ),

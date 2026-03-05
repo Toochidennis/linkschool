@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/config/notification_service.dart';
 import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_content_screen.dart';
+import 'package:linkschool/modules/explore/home/news/news_details.dart';
+import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
+import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -68,10 +72,8 @@ Future<void> _handleMessage(RemoteMessage message) async {
     case 'live_class_reminder':
     case 'assignment_due_reminder':
       await _navigateToCourseContent(data); // ✅ all go to CourseDetailScreen
-    case "news_update":
-        // For news updates, we might want to navigate to a news detail screen or just open the app
-        // Here, we'll just print the data for demonstration
-        print('News update notification received with data: $data');
+    case "news_posted":
+        await _navigateToNewsDetails(data);
       break;
   
     default:
@@ -129,7 +131,60 @@ Future<void> _handleMessage(RemoteMessage message) async {
     );
   }
 
-Future<void> _navigateToCourseContent(Map<String, dynamic> data) async {
+Future<void> _navigateToNewsDetails(Map<String, dynamic> data) async {
+  final newsId = _intFrom(data, ['news_id', 'newsId', 'id']);
+  if (newsId == null) {
+    print('Notification missing news_id, cannot navigate');
+    return;
+  }
+
+  final navigator = _navigatorKey?.currentState;
+  final context = _navigatorKey?.currentContext;
+  if (navigator == null || context == null) {
+    print('Navigator not ready, cannot open NewsDetails');
+    return;
+  }
+
+  final provider = Provider.of<NewsProvider>(context, listen: false);
+  if (provider.newsmodel.isEmpty) {
+    await provider.fetchAllNews(refresh: true);
+  }
+
+  NewsModel? target = _findNewsById(provider.newsmodel, newsId);
+
+  if (target == null) {
+    // Try loading more pages (up to 5) to find the news
+    int attempts = 0;
+    while (provider.hasNextPage && attempts < 5 && target == null) {
+      attempts++;
+      await provider.loadMoreAll();
+      target = _findNewsById(provider.newsmodel, newsId);
+    }
+  }
+
+  if (target == null) {
+    print('News with id $newsId not found after fetch');
+    return;
+  }
+
+  final timeAgo = _formatDuration(DateTime.now().difference(
+    DateTime.tryParse(target.date_posted) ?? DateTime.now(),
+  ));
+
+  final targetNews = target;
+  if (targetNews == null) return;
+
+  navigator.push(
+    MaterialPageRoute(
+      builder: (context) => NewsDetails(
+        news: targetNews,
+        time: timeAgo,
+      ),
+    ),
+  );
+}
+
+  Future<void> _navigateToCourseContent(Map<String, dynamic> data) async {
   final cohortId = _stringFrom(data, ['cohort_id', 'cohortId']);
   final lessonId = _intFrom(data, ['lesson_id', 'lessonId']);
   int? profileId = _intFrom(data, ['profile_id', 'profileId']);
@@ -196,6 +251,31 @@ Future<void> _navigateToCourseContent(Map<String, dynamic> data) async {
     }
     return null;
   }
+}
+
+NewsModel? _findNewsById(List<NewsModel> list, int id) {
+  for (final item in list) {
+    if (item.id == id) return item;
+  }
+  return null;
+}
+
+String _formatDuration(Duration duration) {
+  if (duration.isNegative) return 'just now';
+
+  final seconds = duration.inSeconds;
+  if (seconds < 60) return '$seconds seconds ago';
+
+  final minutes = duration.inMinutes;
+  if (minutes < 60) return '$minutes minutes ago';
+
+  final hours = duration.inHours;
+  if (hours < 24) return '$hours hours ago';
+
+  final days = duration.inDays;
+  if (days < 7) return '$days days ago';
+
+  return '${days ~/ 7} weeks ago';
 }
 
 /**

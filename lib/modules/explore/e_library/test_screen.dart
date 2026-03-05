@@ -58,6 +58,7 @@ class TestScreen extends StatefulWidget {
 
 class _TestScreenState extends State<TestScreen>
     with SingleTickerProviderStateMixin {
+      
   late double opacity;
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
@@ -74,7 +75,7 @@ class _TestScreenState extends State<TestScreen>
   // Animation controller for bouncing arrow
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
-
+final TimerController _timerController = TimerController();
   @override
   void initState() {
     super.initState();
@@ -198,7 +199,7 @@ class _TestScreenState extends State<TestScreen>
     print('attemptedCount: $attemptedCount');
     print('attemptedCount: $attemptedCount');
     print('======================');
-    
+    _timerController.pause();
     _isShowingAdsGate = true;
     _adsGatePending = true;
     try {
@@ -262,6 +263,7 @@ class _TestScreenState extends State<TestScreen>
       return result == 'ads' || result == 'subscribe';
     } finally {
       _isShowingAdsGate = false;
+      _timerController.resume();
     }
   }
 
@@ -292,10 +294,8 @@ class _TestScreenState extends State<TestScreen>
     print('[_handleAnswerTap] Question $questionIndex answered. Was previously attempted: $wasAttempted');
     provider.selectAnswer(questionIndex, index);
     if (wasAttempted) {
-      print('[_handleAnswerTap] Question already attempted, skipping gate increment');
-      return;
+      print('[_handleAnswerTap] Question already attempted');
     }
-    await _registerAttemptAndGate(provider);
   }
 
   void _showLoadingCountdown() {
@@ -427,6 +427,7 @@ class _TestScreenState extends State<TestScreen>
           padding: const EdgeInsets.only(right: 16.0),
           child: Center(
             child: TimerWidget(
+              controller: _timerController,
               initialSeconds:
                   remainingSeconds ?? widget.totalDurationInSeconds ?? 3600,
               onTimeUp: () =>

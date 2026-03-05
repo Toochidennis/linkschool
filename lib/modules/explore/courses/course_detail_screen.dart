@@ -3823,8 +3823,6 @@ Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
   }
 }
 
-
-
 Future<String?> _saveToDownloadsUsingMediaStore(
   Uint8List bytes,
   String fileName,
@@ -3887,7 +3885,7 @@ Future<void> _downloadMaterial(String materialUrl) async {
     
     if (response.statusCode == 200) {
       final fileName = _getFileNameFromUrl(materialUrl);
-      
+
       // Save to Downloads
       final savedPath = await _saveToPublicDownloads(
         response.bodyBytes,
@@ -4024,8 +4022,8 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
     final response = await http.get(Uri.parse("https://linkskool.net/$assignmentUrl"));
     
     if (response.statusCode == 200) {
- final fileName = _getFileNameFromUrl(assignmentUrl);
-      
+      final fileName = _getFileNameFromUrl(assignmentUrl);
+
       final savedPath = await _saveToPublicDownloads(
         response.bodyBytes,
         fileName,
