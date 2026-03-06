@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/services/explore/cache/explore_dashboard_cache.dart';
 
 class CourseResponse {
   final int statusCode;
@@ -36,7 +37,29 @@ class CourseService {
   final String _enrollmentBaseUrl =
       "https://linkskool.net/api/v3/public/learning/cohorts";
 
-  Future<CourseResponse> getAllCategoriesAndCourses({int? profileId, String? dateOfBirth}) async {
+  Future<CourseResponse> _loadCachedOrThrow({
+    int? profileId,
+    String? dateOfBirth,
+  }) async {
+    final key = ExploreDashboardCache.coursesKey(
+      profileId: profileId,
+      dateOfBirth: dateOfBirth,
+    );
+    final cached = await ExploreDashboardCache.load(key);
+    if (cached?.data is Map<String, dynamic>) {
+      return CourseResponse.fromJson(Map<String, dynamic>.from(cached!.data));
+    }
+    throw Exception('No cached courses available');
+  }
+
+  Future<CourseResponse> getAllCategoriesAndCourses({
+    int? profileId,
+    String? dateOfBirth,
+    bool allowNetwork = true,
+  }) async {
+    if (!allowNetwork) {
+      return _loadCachedOrThrow(profileId: profileId, dateOfBirth: dateOfBirth);
+    }
     try {
       final apiKey = EnvConfig.apiKey;
 
@@ -70,13 +93,25 @@ class CourseService {
 
         debugPrint(
             "✅ Categories and courses fetched successfully: ${jsonData['message']}");
+        final key = ExploreDashboardCache.coursesKey(
+          profileId: profileId,
+          dateOfBirth: dateOfBirth,
+        );
+        await ExploreDashboardCache.save(key, jsonData);
         return CourseResponse.fromJson(jsonData);
       } else {
         throw Exception(
             "Failed to load categories and courses: ${response.statusCode}");
       }
     } catch (e) {
-      throw Exception("Failed to load categories and courses: $e");
+      try {
+        return await _loadCachedOrThrow(
+          profileId: profileId,
+          dateOfBirth: dateOfBirth,
+        );
+      } catch (_) {
+        throw Exception("Failed to load categories and courses: $e");
+      }
     }
   }
   Future<bool> checkIsEnrolled({

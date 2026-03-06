@@ -102,7 +102,7 @@ class CbtUserModel {
         createdAt: user['created_at'] as String?,
         first_name: user['first_name'] as String?,
         last_name: user['last_name'] as String?,
-        fcmToken: user['fcm_token'] as String?,
+        fcmToken: user['fcm_token'] as String? ,
         profiles: profiles,
       );
     } else {
@@ -119,7 +119,7 @@ class CbtUserModel {
         createdAt: json['created_at'] as String?,
           first_name: json['first_name'] as String?,
         last_name: json['last_name'] as String?,
-        fcmToken: json['fcm_token'] as String?,
+        fcmToken: json['fcm_token'] as String? ,
         profiles: [],
       );
     }

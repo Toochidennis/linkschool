@@ -262,13 +262,13 @@ class CbtUserService {
         print("👤 Existing user found, not updating (login only)");
         return existingUser;
       } else {
-        print("🆕 New user, creating with subscribed=1...");
+        print("🆕 New user, creating with subscribed=0...");
         final newUser = CbtUserModel(
           name: name,
           email: email,
           profilePicture: profilePicture,
           attempt: attemptCount ?? 0,
-          subscribed: 1,
+          subscribed: 0,
           reference: reference,
         );
         return await createUser(newUser);

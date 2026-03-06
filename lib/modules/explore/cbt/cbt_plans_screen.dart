@@ -10,7 +10,13 @@ import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:provider/provider.dart';
 
 class CbtPlansScreen extends StatefulWidget {
-  const CbtPlansScreen({super.key});
+  final bool showTrialButton;
+  final bool preferTrialLabel;
+  const CbtPlansScreen({
+    super.key,
+    this.showTrialButton = true,
+    this.preferTrialLabel = false,
+  });
 
   @override
   State<CbtPlansScreen> createState() => _CbtPlansScreenState();
@@ -23,6 +29,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   int _remainingDays = 0;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
+  bool _forceContinueWithAds = false;
+  bool _trialStarted = false;
 
   @override
   void didChangeDependencies() {
@@ -54,7 +62,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
               children: [
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     children: [
                       IconButton(
@@ -91,7 +99,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                         const Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         )
-                      else if (provider.errorMessage != null)
+                      else if (provider.errorMessage != null &&
+                          plans.isEmpty)
                         _buildErrorState(provider.errorMessage!)
                       else if (plans.isEmpty)
                         _buildEmptyState()
@@ -139,6 +148,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                   const EdgeInsets.symmetric(horizontal: 24),
                               child: Row(
                                 children: [
+                                  if (widget.showTrialButton)
                                   Expanded(
                                     child: SizedBox(
                                       height: 54,
@@ -180,7 +190,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  if (widget.showTrialButton) const SizedBox(width: 12), 
                                   Expanded(
                                     child: SizedBox(
                                       height: 54,
@@ -277,79 +287,118 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     );
   }
 
-  Future<void> _loadTrialState() async {
-    try {
-      final remaining = await CbtSubscriptionService().getRemainingFreeTests();
-      if (mounted) {
-        setState(() {
-          _remainingDays = remaining;
-          _isLoadingTrial = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _remainingDays = 0;
-          _isLoadingTrial = false;
-        });
-      }
-    }
-  }
-
-  String _trialLabel() {
-    if (_remainingDays <= 1) {
-      return 'Continue with Ads';
-    }
-    return 'Start $_remainingDays days Trial';
-  }
-
-  Future<void> _startTrial() async {
+ Future<void> _loadTrialState() async {
+  try {
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
     final user = userProvider.currentUser;
-    if (user?.id == null) {
+
+    bool trialStarted = false;
+    bool forceContinue = false;
+
+    if (user?.id != null) {
+      // Check expiry date from license cache
+      final expiresAt = await CbtLicenseService().getCachedLicenseExpiresAt();
+      if (expiresAt != null) {
+        trialStarted = true;
+        // If expired, force "Continue with Ads"
+        forceContinue = DateTime.now().isAfter(expiresAt);
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoadingTrial = false;
+        _trialStarted = trialStarted;
+        _forceContinueWithAds = forceContinue;
+      });
+    }
+  } catch (_) {
+    if (mounted) {
+      setState(() => _isLoadingTrial = false);
+    }
+  }
+}
+
+ String _trialLabel() {
+  if (_trialStarted || _forceContinueWithAds) {
+    return 'Continue with Ads';
+  }
+  // Use selected plan's freeTrialDays, not global remaining
+  final plans = context.read<CbtPlanProvider>().plans;
+  final selectedPlan = plans.isNotEmpty
+      ? plans[_currentIndex.clamp(0, plans.length - 1)]
+      : null;
+  final days = selectedPlan?.freeTrialDays ?? 3;
+  return 'Start $days days Trial';
+}
+
+  Future<void> _startTrial() async {
+  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  final user = userProvider.currentUser;
+  if (user?.id == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please sign in to continue.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  // ✅ Use _trialStarted or _forceContinueWithAds, NOT _remainingDays
+  final isContinueWithAds = _trialStarted || _forceContinueWithAds;
+
+  setState(() => _isStartingTrial = true);
+  try {
+    if (isContinueWithAds) {
+      await CbtSubscriptionService().setAdMode('continue_with_ads');
+      if (mounted) {
+        Navigator.of(context).pop('continue_ads');
+      }
+      return;
+    }
+
+    // Get the selected plan's trial duration
+    final plans = context.read<CbtPlanProvider>().plans;
+    final selectedPlan = plans.isNotEmpty
+        ? plans[_currentIndex.clamp(0, plans.length - 1)]
+        : null;
+    final planTrialDays = selectedPlan?.freeTrialDays ?? 3;
+
+    await CbtSubscriptionService().setAdMode('free_trial');
+    await CbtLicenseService().startFreeTrial(userId: user!.id!);
+    await CbtSubscriptionService().setTrialStartDate(originalDuration: planTrialDays);
+    if (!mounted) return;
+
+    final isActive = await CbtLicenseService()
+        .isLicenseActive(userId: user.id!, forceRefresh: true);
+    if (!mounted) return;
+
+    if (!isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please sign in to continue.'),
+          content: Text('Trial not active yet. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    setState(() => _isStartingTrial = true);
-    try {
-      await CbtLicenseService().startFreeTrial(userId: user!.id!);
-      if (!mounted) return;
-      final isActive = await CbtLicenseService()
-          .isLicenseActive(userId: user.id!, forceRefresh: true);
-      if (!mounted) return;
-      if (!isActive) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Trial not active yet. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-      if (mounted) {
-        Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_cleanError(e.toString())),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isStartingTrial = false);
-      }
+    if (mounted) Navigator.of(context).pop(true);
+
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_cleanError(e.toString())),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
+  } finally {
+    if (mounted) setState(() => _isStartingTrial = false);
   }
+}
 
   String _cleanError(String error) {
     final trimmed = error.replaceFirst('Exception: ', '').trim();
@@ -392,13 +441,13 @@ class _PlanCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: accent.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 60, color: accent),
+              child: Icon(icon, size: 40, color: accent),
             ),
             const SizedBox(height: 20),
             Text(
@@ -428,7 +477,7 @@ class _PlanCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _buildFeaturesList(plan.features),

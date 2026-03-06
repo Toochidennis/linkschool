@@ -6,10 +6,12 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/config/providers_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:linkschool/modules/services/database/data_base_service.dart';
+import 'package:linkschool/modules/services/notification_navigation_service.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
@@ -17,12 +19,16 @@ import 'package:provider/provider.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
+final GlobalKey<NavigatorState> appNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Initialize Firebase (required for auth)
   await Firebase.initializeApp();
   print('Firebase initialized successfully');
+
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize Hive (required for session management)
   try {
@@ -38,6 +44,8 @@ Future<void> main() async {
 
   // Initialize service locator (required for auth)
   setupServiceLocator();
+
+    await CbtExamSyncService().syncOnStartup();
 
   // DEFERRED: Initialize MobileAds in background (not needed for launch)
   // This will run after the app is visible
@@ -88,6 +96,7 @@ class MyApp extends StatelessWidget {
                 : AppThemes.lightTheme,
             themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const AppInitializer(),
+            navigatorKey: appNavigatorKey,
             navigatorObservers: [routeObserver],
           ),
         );
@@ -112,6 +121,7 @@ class _AppInitializerState extends State<AppInitializer> {
   void initState() {
     
     super.initState();
+    NotificationNavigationService().initialize(appNavigatorKey);
    _initializeApp();
     //_bootstrap();
   }

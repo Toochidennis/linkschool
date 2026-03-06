@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/services/explore/cache/explore_dashboard_cache.dart';
 
 class NewsResponse {
   final Map<String, List<int>> groups;
@@ -69,10 +70,26 @@ class NewsMetaData {
 class NewsService {
   final String baseUrl = "https://linkskool.net/api/v3/public/news";
 
+  NewsResponse _parseResponse(Map<String, dynamic> dataWrapper) {
+    return NewsResponse.fromJson(dataWrapper);
+  }
+
+  Future<NewsResponse> _loadCachedOrThrow() async {
+    final cached = await ExploreDashboardCache.load('explore_home:news');
+    if (cached?.data is Map<String, dynamic>) {
+      return _parseResponse(Map<String, dynamic>.from(cached!.data));
+    }
+    throw Exception('No cached news available');
+  }
+
   Future<NewsResponse> getAllNews({
     int page = 1,
     int perPage = 10,
+    bool allowNetwork = true,
   }) async {
+    if (!allowNetwork) {
+      return _loadCachedOrThrow();
+    }
     try {
       final apiKey = EnvConfig.apiKey;
       if (apiKey.isEmpty) {
@@ -107,14 +124,19 @@ class NewsService {
         final dataWrapper = jsonData['data'] ?? {};
 
         print("✅ News fetched successfully: ${jsonData['message']}");
-        return NewsResponse.fromJson(dataWrapper);
+        await ExploreDashboardCache.save('explore_home:news', dataWrapper);
+        return _parseResponse(Map<String, dynamic>.from(dataWrapper));
       } else {
         print("❌ Failed to load news: ${response.statusCode} ${response.body}");
         throw Exception("Failed to load news: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching news: $e");
-      throw Exception("Failed to load news: $e");
+      try {
+        return await _loadCachedOrThrow();
+      } catch (_) {
+        print("❌ Error fetching news: $e");
+        throw Exception("Failed to load news: $e");
+      }
     }
   }
 }

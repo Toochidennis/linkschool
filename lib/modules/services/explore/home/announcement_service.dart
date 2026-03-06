@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:linkschool/modules/model/explore/home/announcement_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/services/explore/cache/explore_dashboard_cache.dart';
 
 class AnnouncementResponse {
   final int statusCode;
@@ -30,7 +31,22 @@ class AnnouncementService {
   final String baseUrl =
       "https://linkskool.net/api/v3/public/advertisements/published";
 
-  Future<AnnouncementResponse> getAllAnnouncements() async {
+  Future<AnnouncementResponse> _loadCachedOrThrow() async {
+    final cached =
+        await ExploreDashboardCache.load('explore_home:announcements');
+    if (cached?.data is Map<String, dynamic>) {
+      return AnnouncementResponse.fromJson(
+          Map<String, dynamic>.from(cached!.data));
+    }
+    throw Exception('No cached announcements available');
+  }
+
+  Future<AnnouncementResponse> getAllAnnouncements({
+    bool allowNetwork = true,
+  }) async {
+    if (!allowNetwork) {
+      return _loadCachedOrThrow();
+    }
     try {
       final apiKey = EnvConfig.apiKey;
       if (apiKey.isEmpty) {
@@ -56,6 +72,8 @@ class AnnouncementService {
         }
 
         print("✅ Announcements fetched successfully: ${jsonData['message']}");
+        await ExploreDashboardCache.save(
+            'explore_home:announcements', jsonData);
         return AnnouncementResponse.fromJson(jsonData);
       } else {
         print(
@@ -63,8 +81,12 @@ class AnnouncementService {
         throw Exception("Failed to load announcements: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching announcements: $e");
-      throw Exception("Failed to load announcements: $e");
+      try {
+        return await _loadCachedOrThrow();
+      } catch (_) {
+        print("❌ Error fetching announcements: $e");
+        throw Exception("Failed to load announcements: $e");
+      }
     }
   }
 }

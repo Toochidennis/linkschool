@@ -16,8 +16,19 @@ class CbtPlanProvider extends ChangeNotifier {
     if (_isLoading) return;
     if (_plans.isNotEmpty && !force) return;
 
-    _isLoading = true;
     _errorMessage = null;
+
+    var hasCached = false;
+    if (_plans.isEmpty) {
+      final cached = await _service.getCachedPlans();
+      if (cached.isNotEmpty) {
+        _plans = cached;
+        hasCached = true;
+        notifyListeners();
+      }
+    }
+
+    _isLoading = !hasCached;
     notifyListeners();
 
     try {

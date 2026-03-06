@@ -266,14 +266,12 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                             fit: StackFit.expand,
                             children: [
                               CachedNetworkImage(
-                                imageUrl: () {
-                                  String url = cohort.imageUrl.isNotEmpty
-                                      ? cohort.imageUrl
-                                      : widget.course.imageUrl;
-                                  return url.startsWith('https')
-                                      ? url
-                                      : "https://linkskool.net/$url";
-                                }(),
+                              imageUrl: () {
+  final raw = cohort.imageUrl.isNotEmpty
+      ? cohort.imageUrl
+      : widget.course.imageUrl;
+  return raw.isNotEmpty ? "https://linkskool.net/$raw" : "";
+}(),
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => Container(
                                   color: Colors.grey.shade200,
@@ -501,14 +499,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                     ),
                                   ],
                                 )
-                              else ...[
-                                _buildObjectiveItem(
-                                    "Master the fundamentals of ${cohort.title}"),
-                                _buildObjectiveItem(
-                                    "Key concepts and practical applications"),
-                                _buildObjectiveItem(
-                                    "Industry-relevant skills and best practices"),
-                              ],
+                              ,
                               const SizedBox(height: 24),
 
                               if (isFree) ...[

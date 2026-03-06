@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
+import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:provider/provider.dart';
 import 'course_detail_screen.dart';
 import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
 import 'reading_lesson_screen.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/lesson_performance_provider.dart';
+import 'package:linkschool/modules/model/explore/courses/lesson_performance_model.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -12,6 +17,9 @@ import 'dart:io' show Platform, Directory, File;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'course_payment_dialog.dart';
+import 'package:intl/intl.dart';
+import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
+import 'package:linkschool/modules/services/explore/courses/cohort_service.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final String courseTitle;
@@ -62,6 +70,12 @@ class CourseContentScreen extends StatefulWidget {
 class _CourseContentScreenState extends State<CourseContentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final Stream<int> _countdownStream;
+  late final CohortProvider _cohortProvider;
+  DateTime? _courseStartDate;
+  bool _isStartDateLoading = true;
+  bool _lessonsLocked = false;
+  Timer? _startTimer;
   int _localLessonsTaken = 0;
   bool _hasPaid = false;
   final Set<int> _completedLessonIds = {};
@@ -69,6 +83,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     final cost = widget.cohortCost ?? 0;
     return cost;
   }
+  NextCourseModel? nextCourse = null;
 
   bool _isTrialDaysExpired() {
     final expiry = widget.trialExpiryDate;
@@ -87,6 +102,232 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     return (widget.trialType?.toLowerCase() == 'views') &&
         widget.trialValue > 0 &&
         _localLessonsTaken >= widget.trialValue;
+  }
+
+  DateTime? _parseStartDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    return DateTime.tryParse(raw.trim());
+  }
+
+  String _formatStartDate(DateTime date) {
+    return DateFormat('E, dd MMM yyyy (hh:mm a)').format(date);
+  }
+
+  void _scheduleStartTimer(DateTime startDate) {
+    _startTimer?.cancel();
+    final diff = startDate.difference(DateTime.now());
+    if (diff.isNegative || diff.inSeconds <= 0) {
+      _unlockLessonsAndLoad();
+      return;
+    }
+    _startTimer = Timer(diff, _unlockLessonsAndLoad);
+  }
+
+  Future<void> _loadCohortAndMaybeLock() async {
+    setState(() {
+      _isStartDateLoading = true;
+    });
+
+    try {
+      await _cohortProvider.loadCohort(widget.cohortId);
+      if (_cohortProvider.error != null) {
+        _courseStartDate = null;
+        _lessonsLocked = false;
+        _isStartDateLoading = false;
+        if (mounted) {
+          setState(() {});
+        }
+        _loadLessonsNow();
+        return;
+      }
+
+      final startDate = _parseStartDate(_cohortProvider.cohort?.startDate);
+      _courseStartDate = startDate;
+      final now = DateTime.now();
+      if (startDate != null && startDate.isAfter(now)) {
+        _lessonsLocked = true;
+        _isStartDateLoading = false;
+        _scheduleStartTimer(startDate);
+      } else {
+        _lessonsLocked = false;
+        _isStartDateLoading = false;
+        _loadLessonsNow();
+      }
+    } catch (_) {
+      _courseStartDate = null;
+      _lessonsLocked = false;
+      _isStartDateLoading = false;
+      _loadLessonsNow();
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _unlockLessonsAndLoad() {
+    if (!_lessonsLocked) return;
+    if (mounted) {
+      setState(() {
+        _lessonsLocked = false;
+      });
+    } else {
+      _lessonsLocked = false;
+    }
+    _loadLessonsNow();
+  }
+
+  void _loadLessonsNow() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final profileId = widget.profileId;
+      if (profileId == null) return;
+      await context.read<LessonProvider>().loadLessons(
+            cohortId: widget.cohortId,
+            profileId: profileId,
+          );
+      if (profileId != null) {
+        await context.read<LessonPerformanceProvider>().loadLessonPerformance(
+              cohortId: widget.cohortId,
+              profileId: profileId,
+              silent: true,
+            );
+      }
+      _refreshPaymentStatus();
+    });
+  }
+
+  Widget _buildCountdownItem(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: 50,
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111827),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF0F172A)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStartCountdownCard(DateTime startDate) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.schedule, color: Color(0xFF1D4ED8)),
+              SizedBox(width: 8),
+              Text(
+                'Course starts in',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start date: ${_formatStartDate(startDate)}',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          StreamBuilder<int>(
+            stream: _countdownStream,
+            builder: (context, snapshot) {
+              final now = DateTime.now();
+              final diff =
+                  now.isAfter(startDate) ? Duration.zero : startDate.difference(now);
+              final days = diff.inDays;
+              final hours = diff.inHours % 24;
+              final minutes = diff.inMinutes % 60;
+              final seconds = diff.inSeconds % 60;
+
+              if (diff.inSeconds <= 0 && _lessonsLocked) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _unlockLessonsAndLoad();
+                });
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildCountdownItem(
+                    'DAYS',
+                    days.toString().padLeft(2, '0'),
+                  ),
+                  _buildCountdownItem(
+                    'HOURS',
+                    hours.toString().padLeft(2, '0'),
+                  ),
+                  _buildCountdownItem(
+                    'MINUTES',
+                    minutes.toString().padLeft(2, '0'),
+                  ),
+                  _buildCountdownItem(
+                    'SECONDS',
+                    seconds.toString().padLeft(2, '0'),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Lessons will be available as soon as the countdown ends.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPaymentDialog({
@@ -111,6 +352,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 builder: (context) => CourseDetailScreen(
                   courseTitle: lesson.title,
                   courseName: widget.courseTitle,
+                  courseId: widget.courseId,
                   courseDescription: lesson.description,
                   provider: widget.provider,
                   videoUrl: lesson.videoUrl,
@@ -170,7 +412,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     }
   }
 
-  
   Future<bool> _refreshPaymentStatus() async {
     if (widget.isFree || widget.profileId == null) {
       _hasPaid = true;
@@ -194,6 +435,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       return false;
     }
   }
+
   String _completedLessonsKey() {
     final profileId = widget.profileId;
     return "completed_lessons_${profileId ?? 'guest'}_${widget.courseId}";
@@ -228,171 +470,128 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     }
   }
 
-    @override
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabChange);
     _loadCompletionStatus();
-    _localLessonsTaken = 0; // start at 0 by default regardless of server
+    _localLessonsTaken = 0;
     _initTrialViewsCounter();
     _loadCompletedLessons();
-    // Fetch lessons for this course
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LessonProvider>().loadLessons(
-            cohortId: widget.cohortId,
-          );
-      _refreshPaymentStatus();
-    });
+    _countdownStream = Stream<int>.periodic(
+      const Duration(seconds: 1),
+      (i) => i,
+    ).asBroadcastStream();
+    _cohortProvider = CohortProvider(CohortService());
+    _loadCohortAndMaybeLock();
   }
 
   Future<void> _loadCompletionStatus() async {
     setState(() {});
   }
 
-  Future<void> _previewMaterial(String materialUrl, String materialName) async {
-    // Navigate to a PDF preview screen
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
+    _startTimer?.cancel();
+    super.dispose();
+  }
+
+  void _refreshPerformanceSilent() {
+    final profileId = widget.profileId;
+    if (profileId != null) {
+      context.read<LessonPerformanceProvider>().loadLessonPerformance(
+            cohortId: widget.cohortId,
+            profileId: profileId,
+            silent: true,
+          );
+    }
+  }
+
+  void _handleTabChange() {
+    if (!_tabController.indexIsChanging && _tabController.index == 1) {
+      _refreshPerformanceSilent();
+    }
+  }
+
+  // handle next course navigation
+  void _navigateToNextCourse() {
+    if (nextCourse == null) return;
+    if (nextCourse!.isEnrolled == true) {
+      final image = "https://linkskool.net/${nextCourse!.image}";
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseContentScreen(
+            courseTitle: nextCourse!.courseName,
+            courseDescription: nextCourse!.description,
+            provider: widget.provider,
+            courseId: widget.courseId,
+            categoryId: widget.categoryId,
+            cohortId: nextCourse!.id.toString(),
+            isFree: widget.isFree,
+            providerSubtitle: widget.providerSubtitle,
+            category: widget.category,
+            categoryColor: widget.categoryColor,
+            profileId: widget.profileId,
+            courseName: nextCourse!.courseName,
+            lessonImage: image,
+            trialType: widget.trialType,
+            trialValue: widget.trialValue,
+            lessonsTaken: widget.lessonsTaken,
+            cohortCost: widget.cohortCost,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final nextCourseModel = CourseModel(
+      id: nextCourse!.courseId ?? 0,
+      programId: widget.categoryId,
+      courseName: nextCourse!.courseName,
+      description: nextCourse!.description,
+      imageUrl: '',
+      hasActiveCohort: true,
+      cohortId: int.tryParse(nextCourse!.id),
+      isFree: false,
+      trialType: null,
+      trialValue: 0,
+      cost: 0.0,
+      isEnrolled: nextCourse!.isEnrolled,
+      isCompleted: false,
+      enrollmentStatus: null,
+      paymentStatus: null,
+      lessonsTaken: 0,
+      trialExpiryDate: null,
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => _MaterialPreviewScreen(
-          materialUrl: materialUrl,
-          materialTitle: materialName,
+        builder: (context) => CourseDescriptionScreen(
+          cohortId: nextCourse!.id,
+          categoryId: widget.categoryId,
+          categoryName: widget.category,
+          hasEnrolled: nextCourse!.isEnrolled,
+          course: nextCourseModel,
+          provider: widget.provider,
+          profileId: widget.profileId,
+          providerSubtitle: widget.providerSubtitle,
+          categoryColor: widget.categoryColor,
         ),
       ),
     );
   }
 
-  // Helper function to get public Downloads directory
-  Future<Directory?> _getDownloadsDirectory() async {
-    if (Platform.isAndroid) {
-      // For Android, use the public Downloads folder
-      final downloadsPath = '/storage/emulated/0/Download';
-      final downloadsDir = Directory(downloadsPath);
-
-      // Check if the directory exists, if not try alternative paths
-      if (await downloadsDir.exists()) {
-        return downloadsDir;
-      }
-
-      // Try alternative path (some devices use different paths)
-      final altPath = '/sdcard/Download';
-      final altDir = Directory(altPath);
-      if (await altDir.exists()) {
-        return altDir;
-      }
-
-      // If neither exists, create the standard one
-      try {
-        await downloadsDir.create(recursive: true);
-        return downloadsDir;
-      } catch (e) {
-        // Fallback to external storage directory
-        final dir = await getExternalStorageDirectory();
-        return Directory('${dir!.path}/Download');
-      }
-    } else if (Platform.isIOS) {
-      // For iOS, use the app's documents directory
-      final dir = await getApplicationDocumentsDirectory();
-      return Directory('${dir.path}/Downloads');
-    }
-    return null;
-  }
-
-  Future<void> _downloadMaterial(
-      String materialUrl, String materialName) async {
-    try {
-      // Request storage permission
-      var status = await Permission.storage.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Storage permission denied')),
-          );
-        }
-        return;
-      }
-
-      // Show loading dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Row(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text('Downloading material...'),
-              ],
-            ),
-          ),
-        );
-      }
-
-      final response = await http.get(Uri.parse(materialUrl));
-      if (response.statusCode == 200) {
-        final downloadsDir = await _getDownloadsDirectory();
-        if (downloadsDir == null) {
-          throw Exception('Could not access Downloads directory');
-        }
-
-        if (!await downloadsDir.exists()) {
-          await downloadsDir.create(recursive: true);
-        }
-
-        // Extract file extension from URL or default to .pdf
-        String extension = '.pdf';
-        if (materialUrl.contains('.')) {
-          extension = '.${materialUrl.split('.').last.split('?').first}';
-        }
-
-        final fileName =
-            '${materialName.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}$extension';
-        final file = File('${downloadsDir.path}/$fileName');
-        await file.writeAsBytes(response.bodyBytes, flush: true);
-
-        if (mounted) {
-          Navigator.pop(context); // Close loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Downloaded: $materialName to Downloads folder'),
-              duration: const Duration(seconds: 3),
-              backgroundColor: const Color(0xFF4CAF50),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to download material'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-    @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-    @override
+  @override
   Widget build(BuildContext context) {
+    final lessonProvider = context.watch<LessonProvider>();
+    final lessons = lessonProvider.lessons;
+    nextCourse = lessonProvider.nextCourse;
+
     const imageHeight = 240.0;
     return Scaffold(
       backgroundColor: Colors.white,
@@ -406,10 +605,23 @@ class _CourseContentScreenState extends State<CourseContentScreen>
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await context.read<LessonProvider>().loadLessons(
+    onRefresh: () async {
+          await _loadCohortAndMaybeLock();
+          if (!_lessonsLocked) {
+            final profileId = widget.profileId;
+            await context.read<LessonProvider>().loadLessons(
+                  cohortId: widget.cohortId,
+                  profileId: profileId ?? 0,
+                );
+            if (profileId != null) {
+              await context.read<LessonPerformanceProvider>()
+                  .loadLessonPerformance(
                 cohortId: widget.cohortId,
+                profileId: profileId,
+                silent: false,
               );
+            }
+          }
         },
         child: Column(
           children: [
@@ -418,26 +630,34 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 SizedBox(
                   height: imageHeight,
                   width: double.infinity,
-                  child: Image.network(
-                    widget.lessonImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child:
-                            Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                      ),
-                    ),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: Colors.grey.shade100,
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    },
-                  ),
+                  child: widget.lessonImage.isNotEmpty
+    ? Image.network(
+        widget.lessonImage.startsWith('http')
+            ? widget.lessonImage
+            : "https://linkskool.net/${widget.lessonImage}",
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey.shade200,
+          child: const Center(
+            child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+          ),
+        ),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: Colors.grey.shade100,
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      )
+    : Container(
+        color: Colors.grey.shade200,
+        child: const Center(
+          child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+        ),
+      ),
                 ),
                 Positioned.fill(
                   child: DecoratedBox(
@@ -491,6 +711,11 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                     ),
                     child: TabBar(
                       controller: _tabController,
+                      onTap: (index) {
+                        if (index == 1) {
+                          _refreshPerformanceSilent();
+                        }
+                      },
                       labelColor: const Color(0xFFFFA500),
                       unselectedLabelColor: Colors.grey.shade600,
                       indicatorColor: const Color(0xFFFFA500),
@@ -505,7 +730,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       ),
                       tabs: const [
                         Tab(text: 'Lessons'),
-                        Tab(text: 'Materials'),
+                        Tab(text: 'Performance'),
                       ],
                     ),
                   ),
@@ -517,7 +742,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 controller: _tabController,
                 children: [
                   _buildLessonsTab(),
-                  _buildMaterialsTab(),
+                  _buildPerformanceTab(),
                 ],
               ),
             ),
@@ -526,7 +751,25 @@ class _CourseContentScreenState extends State<CourseContentScreen>
       ),
     );
   }
+
   Widget _buildLessonsTab() {
+    if (_isStartDateLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFFFA500),
+        ),
+      );
+    }
+
+    if (_lessonsLocked && _courseStartDate != null) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildStartCountdownCard(_courseStartDate!),
+        ],
+      );
+    }
+
     return Consumer<LessonProvider>(
       builder: (context, lessonProvider, child) {
         if (lessonProvider.isLoading) {
@@ -573,14 +816,17 @@ class _CourseContentScreenState extends State<CourseContentScreen>
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: lessons.length,
-          itemBuilder: (context, index) {
+       return CustomScrollView(
+  slivers: [
+    SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
             final lesson = lessons[index];
             final isCompleted = _completedLessonIds.contains(lesson.id);
             final isVideo = lesson.videoUrl.isNotEmpty;
-            final hasReading = false;
+            const hasReading = false;
             return GestureDetector(
               onTap: () async {
                 final trialType = widget.trialType?.toLowerCase();
@@ -622,8 +868,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
 
                 if (isTrialCourse) {
                   try {
-                    final enrollmentProvider =
-                        context.read<EnrollmentProvider>();
+                    final enrollmentProvider = context.read<EnrollmentProvider>();
                     final prefs = await SharedPreferences.getInstance();
                     final savedPrefs = prefs.getInt(_trialViewsKey()) ?? 0;
 
@@ -673,6 +918,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                     builder: (context) => CourseDetailScreen(
                       courseTitle: lesson.title,
                       courseName: widget.courseTitle,
+                      courseId: widget.courseId,
                       courseDescription: lesson.description,
                       provider: widget.provider,
                       videoUrl: lesson.videoUrl,
@@ -725,9 +971,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       height: 26,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isCompleted
-                            ? const Color(0xFF10B981)
-                            : Colors.white,
+                        color: isCompleted ? const Color(0xFF10B981) : Colors.white,
                         border: Border.all(
                           color: isCompleted
                               ? const Color(0xFF10B981)
@@ -813,24 +1057,151 @@ class _CourseContentScreenState extends State<CourseContentScreen>
               ),
             );
           },
-        );
+          childCount: lessons.length,
+        ),
+      ),
+    ),
+
+  if (nextCourse != null)
+  SliverToBoxAdapter(
+  child: Padding(
+    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+    child: GestureDetector(
+      onTap: () {
+        _navigateToNextCourse();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          // ✅ gradient background to make it stand out
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.4)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFA500).withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ unique icon instead of checkbox
+         
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ✅ badge label
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFA500),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'NEXT COURSE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                         ' ${nextCourse!.courseName}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Great job completing this course! Enroll in the next course to continue your learning journey.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.school_rounded,
+                        size: 18,
+                        color: const Color(0xFFFFA500),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _completedLessonIds.length >= lessons.length
+                            ? 'Enroll Now'
+                            : 'Complete course to enroll',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFFFA500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+           Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFA500),
+                shape: BoxShape.circle,
+              ),
+              child:  Icon(
+              Icons.chevron_right,
+              color: Colors.white,
+              size: 24,
+            ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
+),
+  ],
+);
       },
     );
   }
 
+  // ─────────────────────────────────────────────
+  // PERFORMANCE TAB
+  // ─────────────────────────────────────────────
+  Widget _buildPerformanceTab() {
+    return Consumer<LessonPerformanceProvider>(
+      builder: (context, performanceProvider, child) {
+        final performance = performanceProvider.performance;
+        final lessons = performance?.lessons ?? const <LessonPerformanceItem>[];
 
-  Widget _buildMaterialsTab() {
-    return Consumer<LessonProvider>(
-      builder: (context, lessonProvider, child) {
-        if (lessonProvider.isLoading) {
+        if (performanceProvider.isLoading && performance == null) {
           return const Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFFFFA500),
-            ),
+            child: CircularProgressIndicator(color: Color(0xFFFFA500)),
           );
         }
 
-        if (lessonProvider.error != null) {
+        if (performanceProvider.error != null && performance == null) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -838,13 +1209,13 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                 const Icon(Icons.error_outline, size: 64, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
-                  lessonProvider.error!,
+                  performanceProvider.error!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 16, color: Colors.red),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () => lessonProvider.refreshLessons(),
+                  onPressed: () => performanceProvider.refresh(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFA500),
                   ),
@@ -855,235 +1226,533 @@ class _CourseContentScreenState extends State<CourseContentScreen>
           );
         }
 
-        final resources = lessonProvider.resources;
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            // -- Overview Summary Cards --
+            _buildPerformanceOverviewCards(performance),
+            const SizedBox(height: 28),
 
-        if (resources.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // -- Performance Breakdown header --
+            Row(
               children: [
-                Icon(Icons.folder_open, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
-                  'No materials available for this course',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                Container(
+                  width: 4,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA500),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Performance Breakdown',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A2E),
+                  ),
                 ),
               ],
             ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: resources.length,
-          itemBuilder: (context, index) {
-            final resource = resources[index];
-
-            return GestureDetector(
-              onTap: () {
-                // Preview the resource
-                _previewMaterial(resource.url, resource.name);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // File icon
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.description,
-                          color: Color(0xFF6366F1),
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Material details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              resource.name,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                                height: 1.3,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                          ],
-                        ),
-                      ),
-                      // Download icon
-                      IconButton(
-                        icon: const Icon(Icons.download),
-                        color: const Color(0xFFFFA500),
-                        onPressed: () =>
-                            _downloadMaterial(resource.url, resource.name),
-                      ),
-                    ],
-                  ),
-                ),
+            const SizedBox(height: 4),
+            Text(
+              'Per-lesson performance details',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade500,
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 16),
+
+            // -- Per-lesson cards --
+            if (lessons.isEmpty)
+              _buildEmptyPerformanceState()
+            else
+              ...lessons.asMap().entries.map(
+                    (entry) => _buildLessonPerformanceCard(
+                      entry.key,
+                      entry.value,
+                    ),
+                  ),
+          ],
         );
       },
     );
   }
-}
+  
 
-// Material Preview Screen
-class _MaterialPreviewScreen extends StatefulWidget {
-  final String materialUrl;
-  final String materialTitle;
+  Widget _buildPerformanceOverviewCards(LessonPerformanceData? performance) {
+    final resultValue = performance == null
+        ? '--'
+        : '${performance.overallScorePercentage}%';
+    final attendanceValue = performance == null
+        ? '--/--'
+        : '${performance.attendance.taken}/${performance.attendance.supposed}';
+    final quizValue = performance == null
+        ? '--/--'
+        : '${performance.quizzes.taken}/${performance.quizzes.supposed}';
+    final assignmentValue = performance == null
+        ? '--/--'
+        : '${performance.assignments.taken}/${performance.assignments.supposed}';
 
-  const _MaterialPreviewScreen({
-    required this.materialUrl,
-    required this.materialTitle,
-  });
+    final cards = [
+      _OverviewCardData(
+        title: 'Result',
+        value: resultValue,
+        icon: Icons.emoji_events_rounded,
+        gradient: [const Color(0xFF4F46E5), const Color(0xFF7C3AED)],
+        bgLight: const Color(0xFFEEF2FF),
+        iconColor: const Color(0xFF4F46E5),
+      ),
+      _OverviewCardData(
+        title: 'Attendance',
+        value: attendanceValue,
+        icon: Icons.how_to_reg_rounded,
+        gradient: [const Color(0xFF059669), const Color(0xFF10B981)],
+        bgLight: const Color(0xFFECFDF5),
+        iconColor: const Color(0xFF059669),
+      ),
+      _OverviewCardData(
+        title: 'Quiz',
+        value: quizValue,
+        icon: Icons.quiz_rounded,
+        gradient: [const Color(0xFFD97706), const Color(0xFFFBBF24)],
+        bgLight: const Color(0xFFFFFBEB),
+        iconColor: const Color(0xFFD97706),
+      ),
+      _OverviewCardData(
+        title: 'Assignment',
+        value: assignmentValue,
+        icon: Icons.assignment_turned_in_rounded,
+        gradient: [const Color(0xFFDB2777), const Color(0xFFF472B6)],
+        bgLight: const Color(0xFFFDF2F8),
+        iconColor: const Color(0xFFDB2777),
+      ),
+    ];
 
-    @override
-  State<_MaterialPreviewScreen> createState() => _MaterialPreviewScreenState();
-}
-
-class _MaterialPreviewScreenState extends State<_MaterialPreviewScreen> {
-  String? _localPath;
-  bool _isLoading = true;
-  String? _error;
-
-    @override
-  void initState() {
-    super.initState();
-    _downloadFile();
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.8,
+      children: cards.map((card) => _buildOverviewCard(card)).toList(),
+    );
   }
 
-  Future<void> _downloadFile() async {
-    try {
-      final response = await http.get(Uri.parse(widget.materialUrl));
-      if (response.statusCode == 200) {
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/temp_material.pdf');
-        await file.writeAsBytes(response.bodyBytes);
-        setState(() {
-          _localPath = file.path;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _error = 'Failed to load material';
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = 'Error loading material: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-    @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black87,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-            Navigator.pop(context);
-          },
+ Widget _buildOverviewCard(_OverviewCardData card) {
+  return Container(
+    decoration: BoxDecoration(
+      color: card.bgLight,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: card.iconColor.withOpacity(0.15),
+        width: 1.2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: card.iconColor.withOpacity(0.08),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         ),
-        title: Text(
-          widget.materialTitle,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+      ],
+    ),
+    padding: const EdgeInsets.symmetric(horizontal:10 , vertical: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Icon at top right
+        Align(
+          alignment: Alignment.topRight,
+          child: Container(
+  padding: const EdgeInsets.all(5), // was 7
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: card.gradient,
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    borderRadius: BorderRadius.circular(8), // was 10
+  ),
+  child: Icon(card.icon, color: Colors.white, size: 14), // was 18
+),
+        ),
+
+        // Value + Title left aligned
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+  card.value,
+  style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+    color: card.iconColor,
+    height: 1.1,
+  ),
+),
+const SizedBox(height: 2),
+Text(
+  card.title,
+  style: TextStyle(
+    fontSize: 11, // was 12
+    fontWeight: FontWeight.w600,
+    color: Colors.grey.shade600,
+  ),
+),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+  Widget _buildLessonPerformanceCard(
+    int index,
+    LessonPerformanceItem lesson,
+  ) {
+    final int displayIndex =
+        lesson.displayOrder > 0 ? lesson.displayOrder : index + 1;
+    final badgeGradients = [
+      const [Color(0xFF2563EB), Color(0xFF38BDF8)],
+      const [Color(0xFF059669), Color(0xFF34D399)],
+      const [Color(0xFFEA580C), Color(0xFFF97316)],
+      const [Color(0xFFDB2777), Color(0xFFF472B6)],
+    ];
+    final badgeGradient = badgeGradients[index % badgeGradients.length];
+    final double quizPct =
+        ((lesson.quizScore ?? 0).clamp(0, 100)) / 100.0;
+    final double assignmentPct =
+        ((lesson.assignmentScore ?? 0).clamp(0, 100)) / 100.0;
+//  card colors 
+
+
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header row
+         Padding(
+  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Lesson number badge
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: badgeGradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            '$displayIndex',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFFFA500),
-              ),
-            )
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Lesson $displayIndex',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade500,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: lesson.attendanceTaken
+                        ? const Color(0xFFECFDF5)
+                        : const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 64,
+                      Icon(
+                        lesson.attendanceTaken
+                            ? Icons.check_circle
+                            : Icons.cancel,
+                        size: 11,
+                        color: lesson.attendanceTaken
+                            ? const Color(0xFF059669)
+                            : const Color(0xFFDC2626),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(width: 4),
                       Text(
-                        _error!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+                        lesson.attendanceTaken ? 'Attended' : 'Absent',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: lesson.attendanceTaken
+                              ? const Color(0xFF059669)
+                              : const Color(0xFFDC2626),
                         ),
-                        textAlign: TextAlign.center,
                       ),
+                      
                     ],
                   ),
-                )
-              : PDFView(
-                  filePath: _localPath!,
-                  enableSwipe: true,
-                  swipeHorizontal: false,
-                  fitEachPage: true,
-                  autoSpacing: true,
-                  pageFling: true,
-                  pageSnap: true,
-                  defaultPage: 0,
-                  fitPolicy: FitPolicy.WIDTH,
-                  // password: _localPath,
-                  preventLinkNavigation: false,
-                  onError: (error) {
-                    setState(() {
-                      _error = error.toString();
-                    });
-                  },
-                  onPageError: (page, error) {
-                    setState(() {
-                      _error = '$page: ${error.toString()}';
-                    });
-                  },
                 ),
+
+              ],
+            ),
+            SizedBox(height: 8),
+            Text(
+              lesson.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Badge on its own line
+           
+          ],
+        ),
+      ),
+    ],
+  ),
+),
+
+          // Divider
+          // Divider
+Divider(height: 1, color: Colors.grey.shade100),
+
+// Metrics
+Padding(
+  padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+  child: Column(
+    children: [
+      // Individual quiz + assignment first
+      Row(
+        children: [
+          Expanded(
+            child: _buildMiniMetric(
+              label: 'Quiz',
+              percent: quizPct,
+              color: const Color(0xFFD97706),
+              icon: Icons.quiz_rounded,
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: Colors.grey.shade100,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+          Expanded(
+            child: _buildMiniMetric(
+              label: 'Assignment',
+              percent: assignmentPct,
+              color: const Color(0xFFDB2777),
+              icon: Icons.assignment_turned_in_rounded,
+            ),
+          ),
+        ],
+      ),
+
+     const SizedBox(height: 14),
+Divider(height: 1, color: Colors.grey.shade100),
+const SizedBox(height: 14),
+
+// Overall circular progress at the bottom
+Row(
+  children: [
+    const Text(
+      'Total Score',
+      style: TextStyle(
+        fontSize: 19,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF1A1A2E),
+      ),
+    ),
+    const Spacer(),
+    SizedBox(
+      width: 45,
+      height: 45,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CircularProgressIndicator(
+            value: (quizPct + assignmentPct) / 2,
+            backgroundColor: const Color(0xFF4F46E5).withOpacity(0.1),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              Color(0xFF4F46E5),
+            ),
+            strokeWidth: 6,
+          ),
+          Center(
+            child: Text(
+              '${(((quizPct + assignmentPct) / 2) * 100).toStringAsFixed(0)}%',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF4F46E5),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
+    ],
+  ),
+),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniMetric({
+    required String label,
+    required double percent,
+    required Color color,
+    required IconData icon,
+  }) {
+    final pct = (percent * 100).toStringAsFixed(0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '$pct%',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: percent,
+            backgroundColor: color.withOpacity(0.12),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 6,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyPerformanceState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.bar_chart_rounded,
+              size: 48,
+              color: Color(0xFFFFA500),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Performance Data Yet',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start attending lessons to track your progress here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
+// ─────────────────────────────────────────────
+// Helper data class for overview cards
+// ─────────────────────────────────────────────
+class _OverviewCardData {
+  final String title;
+  final String value;
+  final IconData icon;
+  final List<Color> gradient;
+  final Color bgLight;
+  final Color iconColor;
 
-
-
-
-
-
-
-
-
+  const _OverviewCardData({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.gradient,
+    required this.bgLight,
+    required this.iconColor,
+  });
+}
 
 
 

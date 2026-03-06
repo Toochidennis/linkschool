@@ -31,6 +31,7 @@ import 'package:flutter_html/flutter_html.dart';
 import '../../model/cbt_user_model.dart';
 import '../../providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
+import 'package:linkschool/modules/providers/explore/lesson_attendance_provider.dart';
 
 // Top-level function for compute isolate - encodes bytes to base64
 String _encodeToBase64(Uint8List bytes) {
@@ -89,6 +90,7 @@ class _DashedRRectPainter extends CustomPainter {
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
   final String courseName;
+  final int courseId;
   final String courseDescription;
   final String provider;
   final String? videoUrl;
@@ -110,6 +112,7 @@ class CourseDetailScreen extends StatefulWidget {
     super.key,
     required this.courseTitle,
     required this.courseName,
+    required this.courseId,
     required this.courseDescription,
     required this.provider,
     this.videoUrl,
@@ -131,10 +134,17 @@ class CourseDetailScreen extends StatefulWidget {
   State<CourseDetailScreen> createState() => _CourseDetailScreenState();
 }
 
+enum _RewardAction {
+  quizRetake,
+  assignmentResubmit,
+}
+
 class _CourseDetailScreenState extends State<CourseDetailScreen>
     with SingleTickerProviderStateMixin,WidgetsBindingObserver  {
       static const platform = MethodChannel('com.linkskool.app/downloads');
   late final LessonDetailProvider _lessonDetailProvider;
+  final LessonAttendanceProvider _lessonAttendanceProvider =
+      LessonAttendanceProvider();
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   YoutubePlayerController? _youtubeController;
@@ -182,6 +192,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isFinalLesson = false;
   bool _isMinor = false;
   bool _isNavigatingAway = false;
+  bool _hasAttendance = false;
 bool _shouldShowAdOnResume = false;
   String? _lastMetaSignature;
 
@@ -190,7 +201,7 @@ bool _isAppOpenAdLoaded = false;
 
 DateTime? _lastPauseTime;
 
-String? _assignmentSubmissionType; // Store the submission type
+  String? _assignmentSubmissionType; // Store the submission type
 final TextEditingController _linkController = TextEditingController();
 final TextEditingController _textController = TextEditingController();
   // Interstitial Ad
@@ -255,6 +266,39 @@ String? get _submittedAssignmentUrl {
       recordedUrl?.isNotEmpty == true ? recordedUrl : widget.recordedUrl;
   String? get _effectiveClassDate =>
       classDate?.isNotEmpty == true ? classDate : widget.classDate;
+
+  bool _hasLiveSessionEnded() {
+    final endRaw = _effectiveSessionEnd;
+    if (endRaw == null || endRaw.trim().isEmpty) return false;
+    final endTime = DateTime.tryParse(endRaw.trim());
+    if (endTime == null) return false;
+    return DateTime.now().isAfter(endTime);
+  }
+
+  Future<void> _logAttendanceIfLive(String status) async {
+    if (_hasAttendance) return;
+    if (_hasLiveSessionEnded()) return;
+    if (status != 'ongoing' && status != 'scheduled') return;
+    if (widget.lessonId == null || widget.profileId == null) return;
+    final payload = {
+      'profile_id': widget.profileId,
+      'lesson_id': widget.lessonId,
+      'cohort_id': widget.cohortId,
+      'course_id': widget.courseId,
+    };
+    print('attendance: $payload');
+    final success = await _lessonAttendanceProvider.submitAttendance(
+      lessonId: widget.lessonId!,
+      payload: payload,
+    );
+    if (!success) return;
+    if (mounted) {
+      setState(() {
+        _hasAttendance = true;
+      });
+    }
+    unawaited(_silentRefreshLessonDetail());
+  }
   String _formattedAssignmentDeadline() {
     final raw = assignmentDueDate;
     if (raw == null || raw.trim().isEmpty) {
@@ -306,6 +350,28 @@ String? get _submittedAssignmentUrl {
     return '${seconds}s ';
   }
 
+  String _liveCountdownText(DateTime startTime) {
+    final now = DateTime.now();
+    if (now.isAfter(startTime)) return 'Starting...';
+
+    final diff = startTime.difference(now);
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+
+    if (days > 0) {
+      return 'Starts in ${days}d ${hours}h ${minutes}m ${seconds}s';
+    }
+    if (diff.inHours > 0) {
+      return 'Starts in ${diff.inHours}h ${minutes}m ${seconds}s';
+    }
+    if (diff.inMinutes > 0) {
+      return 'Starts in ${diff.inMinutes}m ${seconds}s';
+    }
+    return 'Starts in ${seconds}s';
+  }
+
   Widget _buildCountdownItem(String label, String value) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -316,7 +382,7 @@ String? get _submittedAssignmentUrl {
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.6,
-            color: Color(0xFF6B7280),
+            color:Colors.black,
           ),
         ),
         const SizedBox(height: 6),
@@ -350,12 +416,49 @@ String? get _submittedAssignmentUrl {
       ],
     );
   }
+
+  Widget _buildCompactCountdownItem(String label, String value) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+        ),
+      ),
+      const SizedBox(height: 3),
+      Container(
+        width: 44,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.white30),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ],
+  );
+}
        bool _isInitializing = false;
        bool _hasAppliedLessonData = false;
 
-       RewardedAd? _rewardedAd;
+RewardedAd? _rewardedAd;
 bool _isRewardedAdLoaded = false;
+bool _isRewardedAdLoading = false;
   bool _quizUnlocked = false;
+  bool _assignmentResubmitUnlocked = false;
   String? _quizRetryMessage;
 
   bool _isValidEmail(String email) {
@@ -373,20 +476,7 @@ bool _isRewardedAdLoaded = false;
   String? _lastInitializedUrl;
   final bool _isSubmittingAssignment = false;
 
-  final List<Map<String, dynamic>> _courseVideos = [
-   
-    {
-      'title': 'Final Project and Next Steps',
-      'duration': '16:50',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description':
-          'Complete the final project and discover where to go next.',
-    },
-  ];
+  final List<Map<String, dynamic>> _courseVideos = [];
 
   @override
 void initState() {
@@ -401,6 +491,13 @@ void initState() {
   _loadActiveProfile();
 
   WidgetsBinding.instance.addObserver(this);
+
+
+  if (widget.courseTitle.isNotEmpty ||
+      widget.courseDescription.isNotEmpty ||
+      widget.videoUrl?.isNotEmpty == true) {
+    _seedContentFromWidget();
+  }
 
 
   
@@ -428,6 +525,8 @@ void initState() {
   
   // Initialize interstitial ad
   _loadInterstitialAd();
+  // Preload rewarded ad early so it's ready when user taps
+  _loadRewardedAd();
    Future.delayed(const Duration(seconds: 2), () {
     if (mounted) {
       _loadAppOpenAd();
@@ -616,6 +715,10 @@ void _showAppOpenAd() {
 }
 
 void _loadRewardedAd() {
+  if (_isRewardedAdLoaded || _isRewardedAdLoading) {
+    return;
+  }
+  _isRewardedAdLoading = true;
   final AdRequest request;
   if (_isMinor == true) {
     request = AdRequest(nonPersonalizedAds: true);
@@ -633,7 +736,10 @@ void _loadRewardedAd() {
         if (mounted) {
           setState(() {
             _isRewardedAdLoaded = true;
+            _isRewardedAdLoading = false;
           });
+        } else {
+          _isRewardedAdLoading = false;
         }
         print('Rewarded Ad loaded successfully');
       },
@@ -642,14 +748,17 @@ void _loadRewardedAd() {
         if (mounted) {
           setState(() {
             _isRewardedAdLoaded = false;
+            _isRewardedAdLoading = false;
           });
+        } else {
+          _isRewardedAdLoading = false;
         }
       },
     ),
   );
 }
 
-void _showRewardedAdAndUnlockQuiz() {
+void _showRewardedAdAndUnlock(_RewardAction action) {
   if (_isRewardedAdLoaded && _rewardedAd != null) {
     _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) {
@@ -676,23 +785,45 @@ void _showRewardedAdAndUnlockQuiz() {
     _rewardedAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
         print('User earned reward: ${reward.amount} ${reward.type}');
-        // Unlock the quiz
+        if (action == _RewardAction.quizRetake) {
+          // Unlock the quiz
+          setState(() {
+            _quizUnlocked = true;
+          });
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Quiz unlocked! You can now retake the quiz.'),
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 3),
+            ),
+          );
+
+          // Navigate to quiz after a short delay
+          Future.delayed(const Duration(seconds: 1), () {
+            _navigateToQuiz();
+          });
+          return;
+        }
+
+        // Unlock assignment resubmission
         setState(() {
-          _quizUnlocked = true;
+          _assignmentResubmitUnlocked = true;
         });
-        
-        // Show success message
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Quiz unlocked! You can now retake the quiz.'),
+            content: Text('Resubmission unlocked! You can now update your assignment.'),
             backgroundColor: Color(0xFF4CAF50),
             duration: Duration(seconds: 3),
           ),
         );
-        
-        // Navigate to quiz after a short delay
+
         Future.delayed(const Duration(seconds: 1), () {
-          _navigateToQuiz();
+          if (mounted) {
+            _openSubmitAssignmentPage(context);
+          }
         });
       },
     );
@@ -709,7 +840,7 @@ void _showRewardedAdAndUnlockQuiz() {
   }
 }
 
-void _showUnlockQuizDialog() {
+void _showUnlockRewardDialog(_RewardAction action) {
   int retrySeconds = 0;
   String? retryMessage;
   Timer? retryTimer;
@@ -741,6 +872,12 @@ void _showUnlockQuizDialog() {
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setDialogState) {
+          final title = action == _RewardAction.quizRetake
+              ? 'Quiz Locked'
+              : 'Resubmission Locked';
+          final message = action == _RewardAction.quizRetake
+              ? 'This feature is locked. Please watch a short ad to unlock quiz retake.'
+              : 'This feature is locked. Please watch a short ad to unlock assignment resubmission.';
           return Dialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
@@ -782,8 +919,8 @@ void _showUnlockQuizDialog() {
                     const SizedBox(height: 20),
                     
                     // Title
-                    const Text(
-                      'Quiz Locked',
+                    Text(
+                      title,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -793,8 +930,8 @@ void _showUnlockQuizDialog() {
                     const SizedBox(height: 12),
                     
                     // Message
-                    const Text(
-                      'This Feature is locked,please watch a short ad to unlock this feature ',
+                    Text(
+                      message,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
@@ -859,7 +996,7 @@ void _showUnlockQuizDialog() {
                                 if (!_isRewardedAdLoaded || _rewardedAd == null) {
                                   setState(() {
                                     _quizRetryMessage =
-                                        'Ad not ready yet. Please retry taking the quiz.';
+                                        'Ad not ready yet. Please retry to unlock.';
                                   });
                                   startRetryCountdown(setDialogState);
                                   _loadRewardedAd();
@@ -870,11 +1007,11 @@ void _showUnlockQuizDialog() {
                                   _quizRetryMessage = null;
                                 });
                                 Navigator.pop(context);
-                                _showRewardedAdAndUnlockQuiz();
+                                _showRewardedAdAndUnlock(action);
                               },
                         icon: const Icon(Icons.play_circle_outline, size: 20),
                         label: Text(
-                          retrySeconds > 0 ? 'Retry in ${retrySeconds}s' : 'Watch Ad',
+                          retrySeconds > 0 ? 'Retry in ${retrySeconds}s' : 'Watch Ad To Unlock',
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -1040,6 +1177,39 @@ Future<void> _navigateToQuiz() async {
     }
   }
 
+  Future<void> _showInterstitialAdAndPop(BuildContext popContext) async {
+    // if (_isMinor) {
+    //   if (popContext.mounted) Navigator.of(popContext).pop();
+    //   return;
+    // }
+    if (_isInterstitialAdLoaded && _interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (InterstitialAd ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          if (popContext.mounted) {
+            Navigator.of(popContext).pop();
+          }
+        },
+        onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          if (popContext.mounted) {
+            Navigator.of(popContext).pop();
+          }
+        },
+      );
+      _interstitialAd!.show();
+      _loadInterstitialAd();
+    } else {
+      if (popContext.mounted) {
+        Navigator.of(popContext).pop();
+      }
+    }
+  }
+
   bool get _hasLessonNavigation =>
       widget.lessons != null && widget.lessonIndex != null;
 
@@ -1060,6 +1230,7 @@ Future<void> _navigateToQuiz() async {
       builder: (context) => CourseDetailScreen(
         courseTitle: lesson.title,
         courseName: widget.courseName,
+        courseId: widget.courseId,
         courseDescription: lesson.description,
         provider: widget.provider,
         videoUrl: lesson.videoUrl,
@@ -1169,6 +1340,7 @@ Future<void> _navigateToQuiz() async {
   void _applyLessonData(Lesson lesson, {Submission? submission}) {
   final resolvedVideoUrl =
       lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
+  final metaSignature = _buildLessonMetaSignature(lesson, submission);
   
   print('=== APPLYING LESSON DATA ===');
   print('Video URL: $resolvedVideoUrl');
@@ -1176,7 +1348,7 @@ Future<void> _navigateToQuiz() async {
   print('Last initialized URL: $_lastInitializedUrl');
   
   // Prevent applying the same lesson data twice
-  if (_hasAppliedLessonData && _lastInitializedUrl == resolvedVideoUrl) {
+  if (_hasAppliedLessonData && _lastMetaSignature == metaSignature) {
     print('Same lesson already applied, skipping...');
     return;
   }
@@ -1194,6 +1366,7 @@ Future<void> _navigateToQuiz() async {
     assignmentDueDate = lesson.assignmentDueDate;
     _submission = submission;
     _assignmentSubmissionType = lesson.assignmentSubmissionType; // ADD THIS LINE
+    _hasAttendance = lesson.hasAttendance;
     zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
         ? lesson.liveSessionInfo!.url
         : widget.zoomUrl;
@@ -1205,6 +1378,8 @@ Future<void> _navigateToQuiz() async {
     _lessonHasQuiz = lesson.hasQuiz;
     _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
     _isFinalLesson = lesson.isFinalLesson;
+    _quizTaken = false;
+    _quizScore = 0;
     _courseVideos
       ..clear()
       ..add({
@@ -1217,7 +1392,7 @@ Future<void> _navigateToQuiz() async {
         'isCompleted': false,
       });
     _selectedVideoIndex = 0;
-    _lastMetaSignature = _buildLessonMetaSignature(lesson, submission);
+    _lastMetaSignature = metaSignature;
     
     // Pre-fill controllers if submission exists
     if (submission != null) {
@@ -1495,6 +1670,7 @@ Future<void> _navigateToQuiz() async {
       lesson.liveSessionInfo?.endTime ?? '',
       lesson.hasQuiz.toString(),
       lesson.isFinalLesson.toString(),
+      lesson.hasAttendance.toString(),
       submission?.submittedAt ?? '',
       submission?.assignment?.toString() ?? '',
       submission?.linkUrl ?? '',
@@ -1524,6 +1700,7 @@ Future<void> _navigateToQuiz() async {
       _lessonHasQuiz = lesson.hasQuiz;
       _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
       _isFinalLesson = lesson.isFinalLesson;
+      _hasAttendance = lesson.hasAttendance;
       _submission = submission;
       _lastMetaSignature = _buildLessonMetaSignature(lesson, submission);
     });
@@ -1866,7 +2043,7 @@ Map<String, dynamic> _getZoomStatus() {
       return {
         'status': 'available',
         'message': 'Live session link is available.',
-        'buttonText': 'Join Live Class',
+        'buttonText': 'Join Youtube Live Stream',
         'url': _effectiveZoomUrl,
       };
     }
@@ -1902,8 +2079,8 @@ Map<String, dynamic> _getZoomStatus() {
         return {
           'status': 'scheduled',
           'message': 'Live session scheduled for $dateStr$timeUntil',
-          'buttonText': 'Scheduled',
-          'url': null,
+          'buttonText': 'Join Zoom Live Class',
+          'url': _effectiveZoomUrl,
           'classDate': classDateTime,
         };
       }
@@ -1913,7 +2090,7 @@ Map<String, dynamic> _getZoomStatus() {
         return {
           'status': 'ongoing',
           'message': 'Live session is in progress! Join now to participate.',
-          'buttonText': 'Join Live Class',
+          'buttonText': 'Join Zoom Live Class',
           'url': _effectiveZoomUrl,
         };
       }
@@ -1943,7 +2120,7 @@ Map<String, dynamic> _getZoomStatus() {
       return {
         'status': 'available',
         'message': 'Live session link is available.',
-        'buttonText': 'Join Live Class',
+        'buttonText': 'Join Youtube Live Stream',
         'url': _effectiveZoomUrl,
       };
     }
@@ -2023,7 +2200,7 @@ Future<void> _initializeVideo(String url) async {
     final oldVideoController = _videoController;
     final oldChewieController = _chewieController;
     
-    // Clear references FIRST
+    
     if (mounted) {
       setState(() {
         _youtubeController = null;
@@ -2159,6 +2336,7 @@ Future<void> _initializeYouTubePlayer(String url) async {
   }
 }
 
+
 Future<void> _initializeDirectVideoPlayer(String url) async {
   try {
     print('Initializing direct video player for URL: $url');
@@ -2176,6 +2354,16 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
       autoPlay: true,
       looping: false,
       aspectRatio: 16 / 9,
+      allowFullScreen: true,
+      fullScreenByDefault: false,
+      deviceOrientationsOnEnterFullScreen: const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ],
+      deviceOrientationsAfterFullScreen: const [
+        DeviceOrientation.portraitUp,
+      ],
+      systemOverlaysAfterFullScreen: SystemUiOverlay.values,
       placeholder: Container(
         color: Colors.black,
         child: const Center(
@@ -2364,12 +2552,22 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     );
   }
 
-  void _toggleFullscreen() {
+  Future<void> _toggleFullscreen() async {
+    if (_videoController == null || !_isVideoInitialized) {
+      return;
+    }
     setState(() {
       _isFullscreen = !_isFullscreen;
     });
 
     if (_isFullscreen) {
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersiveSticky,
+      );
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -2471,7 +2669,7 @@ Future<void> _handleBackButton() async {
   }
 }
 
- void _showSubmitAssignmentModal(BuildContext context) {
+  Future<void> _openSubmitAssignmentPage(BuildContext context) async {
   // Get active profile
   final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
   final user = cbtUserProvider.currentUser;
@@ -2482,764 +2680,914 @@ Future<void> _handleBackButton() async {
   String? selectedFileName;
   String? selectedFilePath;
   String? selectedFileBase64;
+  String? linkError;
   bool _isPickingFile = false;
+  final FocusNode linkFocusNode = FocusNode();
   
   // Get the submission type
   final submissionType = _assignmentSubmissionType ?? 'upload';
+  final isPastDue = _isAssignmentPastDue();
+  _loadInterstitialAd();
 
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierLabel: '',
-    barrierColor: Colors.black54,
-    transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (context, animation1, animation2) {
-      return Container();
-    },
-    transitionBuilder: (context, animation1, animation2, child) {
-      return ScaleTransition(
-        scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-          CurvedAnimation(
-            parent: animation1,
-            curve: Curves.easeOutCubic,
-          ),
-        ),
-        child: FadeTransition(
-          opacity: animation1,
-          child: Center(
-            child: Container(
-              width: 500,
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+  await Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) {
+        return WillPopScope(
+          onWillPop: () async {
+            if (mounted) {
+              setState(() {
+                _isNavigatingAway = true;
+              });
+            }
+            _showInterstitialAdAndPop(context);
+            return false;
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xFFFAFAFA),
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () {
+                  if (mounted) {
+                    setState(() {
+                      _isNavigatingAway = true;
+                    });
+                  }
+                  _showInterstitialAdAndPop(context);
+                },
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setModalState) {
-                    return SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Submit Assignment',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black87,
+              title: const Text(
+                'Submit Assignment',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            body: SafeArea(
+              child: StatefulBuilder(
+                builder: (BuildContext context, StateSetter setModalState) {
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 500),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Profile Section
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.04),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Submitting as:',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF6B7280),
+                                              ),
+                                            ),
+                                            TextButton.icon(
+                                              onPressed: () {
+                                                _showAccountSwitcherDialog(context, user, 
+                                                  onProfileSelected: (profile) {
+                                                    setModalState(() {
+                                                      modalActiveProfile = profile;
+                                                    });
+                                                  });
+                                              },
+                                              icon: const Icon(Icons.swap_horiz, size: 18),
+                                              label: const Text('Change'),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: const Color(0xFF6366F1),
+                                                textStyle: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _buildProfileItem(
+                                          name: _profileName(modalActiveProfile!),
+                                          email: user?.email ?? '',
+                                          phone: user?.phone ?? '',
+                                          imageUrl: modalActiveProfile!.avatar,
+                                          isSelected: true,
+                                          onTap: () {},
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Submitting as:',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
-                                  height: 1.5,
-                                ),
-                              ),
-                              TextButton.icon(
-                                onPressed: () {
-                                  _showAccountSwitcherDialog(context, user, 
-                                    onProfileSelected: (profile) {
-                                      setModalState(() {
-                                        modalActiveProfile = profile;
-                                      });
-                                    });
-                                },
-                                icon: const Icon(Icons.swap_horiz, size: 18),
-                                label: const Text('Change Profile'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF6366F1),
-                                  textStyle: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
+                                  const SizedBox(height: 24),
+                                  
+                                  // Submission Content Section
+                                  Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.04),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Dynamic submission fields based on type
+                                        if (submissionType == 'upload') ...[
+                                          Builder(
+                                            builder: (context) {
+                                              Future<void> pickFile() async {
+                                                if (_isPickingFile) return;
+                                                setModalState(() {
+                                                  _isPickingFile = true;
+                                                });
+                                                if (mounted) {
+                                                  setState(() {
+                                                    _isNavigatingAway = true;
+                                                  });
+                                                }
+                                                try {
+                                                  FilePickerResult? result =
+                                                      await FilePicker.platform.pickFiles(
+                                                    type: FileType.custom,
+                                                    allowedExtensions: ['pdf'],
+                                                  );
+                                                  if (result != null) {
+                                                    final filePath = result.files.single.path;
+                                                    final fileName = result.files.single.name;
+                                                    final ext =
+                                                        fileName.split('.').last.toLowerCase();
+                                                    if (filePath != null) {
+                                                      if (ext != 'pdf') {
+                                                        setModalState(() {
+                                                          selectedFileName = null;
+                                                          pdfError = 'Only PDF files are allowed.';
+                                                        });
+                                                        return;
+                                                      }
+                                                      // Check file size (limit to 1MB)
+                                                      final file = File(filePath);
+                                                      final fileSize = await file.length();
+                                                      if (fileSize > 1024 * 1024) {
+                                                        setModalState(() {
+                                                          selectedFileName = null;
+                                                          pdfError = 'PDF file must not exceed 1MB.';
+                                                        });
+                                                        return;
+                                                      }
+                                                      // Show loading indicator while encoding
+                                                      setModalState(() {
+                                                        selectedFileName = 'Encoding file...';
+                                                        pdfError = null;
+                                                      });
+                                                      // Read file bytes
+                                                      final bytes = await file.readAsBytes();
+                                                      // Encode to base64
+                                                      final base64String =
+                                                          await compute(_encodeToBase64, bytes);
+                                                      setModalState(() {
+                                                        selectedFileName = fileName;
+                                                        selectedFilePath = filePath;
+                                                        selectedFileBase64 = base64String;
+                                                        pdfError = null;
+                                                      });
+                                                    }
+                                                  }
+                                                } catch (e) {
+                                                  setModalState(() {
+                                                    selectedFileName = null;
+                                                  });
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('Error picking file: $e'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                } finally {
+                                                  setModalState(() {
+                                                    _isPickingFile = false;
+                                                  });
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      _isNavigatingAway = false;
+                                                    });
+                                                  }
+                                                }
+                                              }
 
-                          // Active Profile Display
-                          _buildProfileItem(
-                            name: _profileName(modalActiveProfile!),
-                            email: user?.email ?? '',
-                            phone: user?.phone ?? '',
-                            imageUrl: modalActiveProfile!.avatar,
-                            isSelected: true,
-                            onTap: () {},
+                                              return Column(
+                                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                children: [
+                                                  CustomPaint(
+                                                    painter: _DashedRRectPainter(
+                                                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                                                      strokeWidth: 2,
+                                                      dashLength: 8,
+                                                      gapLength: 6,
+                                                      radius: 16,
+                                                    ),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        vertical: 32,
+                                                        horizontal: 24,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF6366F1).withOpacity(0.02),
+                                                        borderRadius: BorderRadius.circular(16),
+                                                      ),
+                                                      child: Column(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Container(
+                                                            padding: const EdgeInsets.all(16),
+                                                            decoration: BoxDecoration(
+                                                              color: const Color(0xFF6366F1).withOpacity(0.1),
+                                                              shape: BoxShape.circle,
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons.cloud_upload_outlined,
+                                                              size: 40,
+                                                              color: Color(0xFF6366F1),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 16),
+                                                          const Text(
+                                                            'Drag & Drop your file here',
+                                                            textAlign: TextAlign.center,
+                                                            style: TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight: FontWeight.w600,
+                                                              color: Color(0xFF1A1A2E),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 8),
+                                                          Text(
+                                                            'or',
+                                                            style: TextStyle(
+                                                              fontSize: 13,
+                                                              color: Colors.grey.shade500,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 12),
+                                                          SizedBox(
+                                                            width: double.infinity,
+                                                            child: ElevatedButton.icon(
+                                                              onPressed: _isPickingFile ? null : pickFile,
+                                                              icon: const Icon(Icons.folder_open, size: 20),
+                                                              label: const Text('Browse File'),
+                                                              style: ElevatedButton.styleFrom(
+                                                                backgroundColor: const Color(0xFF6366F1),
+                                                                foregroundColor: Colors.white,
+                                                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                                                elevation: 0,
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 12),
+                                                          Text(
+                                                            '1 file only • PDF • max 1MB',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors.grey.shade500,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (selectedFileName != null) ...[
+                                                    const SizedBox(height: 16),
+                                                    Container(
+                                                      padding: const EdgeInsets.all(16),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF6366F1).withOpacity(0.05),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                        border: Border.all(
+                                                          color: const Color(0xFF6366F1).withOpacity(0.2),
+                                                        ),
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Container(
+                                                            padding: const EdgeInsets.all(8),
+                                                            decoration: BoxDecoration(
+                                                              color: const Color(0xFF6366F1).withOpacity(0.1),
+                                                              borderRadius: BorderRadius.circular(8),
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons.picture_as_pdf,
+                                                              color: Color(0xFF6366F1),
+                                                              size: 20,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 12),
+                                                          Expanded(
+                                                            child: Text(
+                                                              selectedFileName!,
+                                                              style: const TextStyle(
+                                                                fontSize: 14,
+                                                                fontWeight: FontWeight.w500,
+                                                              ),
+                                                              overflow: TextOverflow.ellipsis,
+                                                            ),
+                                                          ),
+                                                          IconButton(
+                                                            icon: const Icon(Icons.close, size: 20),
+                                                            onPressed: () {
+                                                              setModalState(() {
+                                                                selectedFileName = null;
+                                                                selectedFilePath = null;
+                                                                selectedFileBase64 = null;
+                                                              });
+                                                            },
+                                                            color: Colors.grey.shade600,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                  if (pdfError != null)
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(top: 12),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.all(12),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.red.withOpacity(0.05),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          border: Border.all(
+                                                            color: Colors.red.withOpacity(0.2),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons.error_outline,
+                                                              color: Colors.red.shade700,
+                                                              size: 18,
+                                                            ),
+                                                            const SizedBox(width: 8),
+                                                            Expanded(
+                                                              child: Text(
+                                                                pdfError!,
+                                                                style: TextStyle(
+                                                                  color: Colors.red.shade700,
+                                                                  fontSize: 13,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              );
+                                            },
+                                          ),
+                                        ] else if (submissionType == 'link' || submissionType == 'url') ...[
+                                          // URL/Link input field
+                                          TextField(
+                                            controller: _linkController,
+                                            focusNode: linkFocusNode,
+                                            autofocus: true,
+                                            decoration: InputDecoration(
+                                              labelText: 'Assignment Link/URL',
+                                              hintText: 'Enter the link to your assignment',
+                                              prefixIcon: const Icon(Icons.link),
+                                              errorText: linkError,
+                                              filled: true,
+                                              fillColor: Colors.grey.shade50,
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: const BorderSide(
+                                                  color: Color(0xFF6366F1),
+                                                  width: 2,
+                                                ),
+                                              ),
+                                            ),
+                                            keyboardType: TextInputType.url,
+                                            textInputAction: TextInputAction.done,
+                                            onChanged: (_) {
+                                              if (linkError != null) {
+                                                setModalState(() {
+                                                  linkError = null;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ] else if (submissionType == 'text') ...[
+                                          // Text input field
+                                          TextField(
+                                            controller: _textController,
+                                            decoration: InputDecoration(
+                                              labelText: 'Assignment Text',
+                                              hintText: 'Type your assignment here',
+                                              alignLabelWithHint: true,
+                                              filled: true,
+                                              fillColor: Colors.grey.shade50,
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: const BorderSide(
+                                                  color: Color(0xFF6366F1),
+                                                  width: 2,
+                                                ),
+                                              ),
+                                            ),
+                                            maxLines: 8,
+                                            keyboardType: TextInputType.multiline,
+                                          ),
+                                        ],
+                                        
+                                        const SizedBox(height: 16),
+                                        
+                                        // Info text
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF6366F1).withOpacity(0.05),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(
+                                                Icons.info_outline,
+                                                size: 18,
+                                                color: const Color(0xFF6366F1),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  submissionType == 'upload'
+                                                      ? 'Upload your assignment as a PDF file (max 1MB).'
+                                                      : submissionType == 'link' || submissionType == 'url'
+                                                          ? 'Provide a link to your assignment (e.g., Google Drive, Dropbox).'
+                                                          : 'Type your assignment directly in the text field above.',
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: Color(0xFF6B7280),
+                                                    height: 1.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          
-                          // Dynamic submission fields based on type
-                          if (submissionType == 'upload') ...[
-                            Builder(
-                              builder: (context) {
-                                Future<void> pickFile() async {
-                                  if (_isPickingFile) return;
-                                  if (mounted) {
-                                    setState(() {
-                                      _isPickingFile = true;
-                                      _isNavigatingAway = true;
-                                    });
-                                  }
-                                  try {
-                                    FilePickerResult? result =
-                                        await FilePicker.platform.pickFiles(
-                                      type: FileType.custom,
-                                      allowedExtensions: ['pdf'],
-                                    );
-                                    if (result != null) {
-                                      final filePath = result.files.single.path;
-                                      final fileName = result.files.single.name;
-                                      final ext =
-                                          fileName.split('.').last.toLowerCase();
-                                      if (filePath != null) {
-                                        if (ext != 'pdf') {
-                                          setModalState(() {
-                                            selectedFileName = null;
-                                            pdfError = 'Only PDF files are allowed.';
-                                          });
-                                          return;
-                                        }
-                                        // Check file size (limit to 1MB)
-                                        final file = File(filePath);
-                                        final fileSize = await file.length();
-                                        if (fileSize > 1024 * 1024) {
-                                          setModalState(() {
-                                            selectedFileName = null;
-                                            pdfError = 'PDF file must not exceed 1MB.';
-                                          });
-                                          return;
-                                        }
-                                        // Show loading indicator while encoding
-                                        setModalState(() {
-                                          selectedFileName = 'Encoding file...';
-                                          pdfError = null;
-                                        });
-                                        // Read file bytes
-                                        final bytes = await file.readAsBytes();
-                                        // Encode to base64
-                                        final base64String =
-                                            await compute(_encodeToBase64, bytes);
-                                        setModalState(() {
-                                          selectedFileName = fileName;
-                                          selectedFilePath = filePath;
-                                          selectedFileBase64 = base64String;
-                                          pdfError = null;
-                                        });
-                                      }
-                                    }
-                                  } catch (e) {
-                                    setModalState(() {
-                                      selectedFileName = null;
-                                    });
+                        ),
+                      ),
+                      
+                      // Bottom Submit Button (Fixed)
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, -2),
+                            ),
+                          ],
+                        ),
+                        child: SafeArea(
+                          top: false,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: isPastDue
+                                  ? null
+                                  : () async {
+                                // Get selected profile data
+                                final name = _profileName(modalActiveProfile!);
+                                final phone = user?.phone ?? '';
+                                final email = user?.email;
+                                
+                                // Validate based on submission type
+                                if (submissionType == 'upload') {
+                                  if (selectedFileName == null ||
+                                      selectedFileBase64 == null) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Error picking file: $e'),
+                                      const SnackBar(
+                                        content: Text(
+                                            'Please upload your assignment file'),
                                         backgroundColor: Colors.red,
                                       ),
                                     );
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() {
-                                        _isPickingFile = false;
-                                        _isNavigatingAway = false;
-                                      });
-                                    }
+                                    return;
+                                  }
+                                } else if (submissionType == 'link' || 
+                                           submissionType == 'url') {
+                                  if (_linkController.text.trim().isEmpty) {
+                                    setModalState(() {
+                                      linkError =
+                                          'Please enter the assignment link';
+                                    });
+                                    return;
+                                  }
+                                  // Basic URL validation
+                                  if (!_linkController.text.trim().startsWith('http')) {
+                                    setModalState(() {
+                                      linkError =
+                                          'Please enter a valid URL (starting with http:// or https://)';
+                                    });
+                                    return;
+                                  }
+                                  final isReachable = await _verifyLinkReachable(
+                                    _linkController.text,
+                                  );
+                                  if (!isReachable) {
+                                    setModalState(() {
+                                      linkError =
+                                     'The link could not be reached';
+                                    });
+                                    return;
+                                  }
+                                } else if (submissionType == 'text') {
+                                  if (_textController.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Please enter your assignment text'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
                                   }
                                 }
 
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    InkWell(
-                                      onTap: _isPickingFile ? null : pickFile,
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: CustomPaint(
-                                        painter: _DashedRRectPainter(
-                                          color: Colors.grey.shade400,
-                                          strokeWidth: 1,
-                                          dashLength: 6,
-                                          gapLength: 6,
-                                          radius: 12,
-                                        ),
+                                // Store the navigator context before showing dialog
+                                final navigatorContext =
+                                    Navigator.of(context).context;
+
+                                // Show loading dialog
+                                showDialog(
+                                  context: navigatorContext,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext dialogContext) {
+                                    return PopScope(
+                                      canPop: false,
+                                      child: Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        elevation: 0,
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 24,
-                                            horizontal: 20,
-                                          ),
+                                          padding: const EdgeInsets.all(32),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey.shade50,
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(12),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  shape: BoxShape.circle,
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black.withOpacity(0.05),
-                                                      blurRadius: 8,
-                                                      offset: const Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Icon(
-                                                  Icons.cloud_upload_outlined,
-                                                  size: 36,
-                                                  color: Colors.grey.shade500,
+                                              const CircularProgressIndicator(
+                                                color: Color(0xFF6366F1),
+                                                strokeWidth: 3,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const Text(
+                                                'Submitting Assignment...',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black87,
                                                 ),
                                               ),
-                                              const SizedBox(height: 12),
+                                              const SizedBox(height: 8),
                                               Text(
-                                                'Drag & Drop your file here',
+                                                'Please wait while we submit your work',
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.grey.shade700,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text(
-                                                    'or ',
-                                                    style: TextStyle(
-                                                      fontSize: 13,
-                                                      color: Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed:
-                                                        _isPickingFile ? null : pickFile,
-                                                    style: TextButton.styleFrom(
-                                                      padding: EdgeInsets.zero,
-                                                      minimumSize: Size.zero,
-                                                      tapTargetSize:
-                                                          MaterialTapTargetSize.shrinkWrap,
-                                                    ),
-                                                    child: const Text(
-                                                      'browse.',
-                                                      style: TextStyle(fontSize: 13),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '1 file only • PDF • max 1MB',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey.shade500,
+                                                  fontSize: 14,
+                                                  color: Colors.grey.shade600,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    if (selectedFileName != null) ...[
-                                      const SizedBox(height: 10),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 10,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
-                                            color: Colors.grey.shade300,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.picture_as_pdf,
-                                              color: Color(0xFF6366F1),
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                selectedFileName!,
-                                                style: const TextStyle(fontSize: 13),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              icon:
-                                                  const Icon(Icons.close, size: 18),
-                                              onPressed: () {
-                                                setModalState(() {
-                                                  selectedFileName = null;
-                                                  selectedFilePath = null;
-                                                  selectedFileBase64 = null;
-                                                });
-                                              },
-                                              color: Colors.grey.shade600,
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 8),
-                                    if (pdfError != null)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 8.0),
-                                        child: Text(
-                                          pdfError!,
-                                          style: const TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ] else if (submissionType == 'link' || submissionType == 'url') ...[
-                            // URL/Link input field
-                            TextField(
-                              controller: _linkController,
-                              decoration: InputDecoration(
-                                labelText: 'Assignment Link/URL',
-                                hintText: 'Enter the link to your assignment',
-                                prefixIcon: const Icon(Icons.link),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF6366F1),
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              keyboardType: TextInputType.url,
-                            ),
-                          ] else if (submissionType == 'text') ...[
-                            // Text input field
-                            TextField(
-                              controller: _textController,
-                              decoration: InputDecoration(
-                                labelText: 'Assignment Text',
-                                hintText: 'Type your assignment here',
-                                alignLabelWithHint: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF6366F1),
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              maxLines: 8,
-                              keyboardType: TextInputType.multiline,
-                            ),
-                          ],
-                          
-                          const SizedBox(height: 8),
-                          RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.black87,
-                                height: 1.5,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: submissionType == 'upload'
-                                      ? 'Upload your assignment as a PDF file (max 1MB).'
-                                      : submissionType == 'link' || submissionType == 'url'
-                                          ? 'Provide a link to your assignment (e.g., Google Drive, Dropbox).'
-                                          : 'Type your assignment directly in the text field above.',
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
+                                    );
                                   },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.grey.shade700,
-                                    side: BorderSide(
-                                        color: Colors.grey.shade400, width: 1.5),
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    // Get selected profile data
-                                    final name = _profileName(modalActiveProfile!);
-                                    final phone = user?.phone ?? '';
-                                    final email = user?.email;
+                                );
+
+                                // Submit assignment using provider
+                                try {
+                                  final provider =
+                                      AssignmentSubmissionProvider();
+
+                                  // Use 0 as score if quiz not taken
+                                  final quizScoreToSubmit =
+                                      _quizTaken ? _quizScore : 0;
+
+                                  // Prepare submission data based on type
+                                  Map<String, dynamic> submissionData = {
+                                    'name': name,
+                                    'email': email ?? '',
+                                    'phone': phone ?? '',
+                                    'quiz_score': quizScoreToSubmit.toString(),
+                                    'lesson_id': widget.lessonId.toString(),
+                                    'cohort_id': widget.cohortId,
+                                    'profile_id': widget.profileId.toString(),
+                                    'submission_type': submissionType,
+                                  };
+
+                                  if (submissionType == 'upload') {
+                                    submissionData['assignments'] = [
+                                      {
+                                        'file_name': selectedFileName!,
+                                        'type': 'pdf',
+                                        'file': selectedFileBase64!,
+                                      }
+                                    ];
+                                  } else if (submissionType == 'link' || 
+                                             submissionType == 'url') {
+                                    submissionData['link_url'] = 
+                                        _linkController.text.trim();
+                                  } else if (submissionType == 'text') {
+                                    submissionData['text_content'] = 
+                                        _textController.text.trim();
+                                  }
+
+                                  // Debug: print final payload per submission type
+                                  try {
+                                    final payloadJson = jsonEncode(submissionData);
+                                    print('Assignment submission payload: $payloadJson');
+                                  } catch (e) {
+                                    print('Failed to encode submission payload: $e');
+                                  }
+
+                                  final success = await provider.submitAssignment(
+                                    name: submissionData['name'],
+                                    email: submissionData['email'],
+                                    phone: submissionData['phone'],
+                                    quizScore: submissionData['quiz_score'],
+                                    lessonId: submissionData['lesson_id'],
+                                    cohortId: submissionData['cohort_id'],
+                                    profileId: submissionData['profile_id'],
+                                    submissionType: submissionData['submission_type'],
+                                    assignments: submissionData['assignments'],
+                                    linkUrl: submissionData['link_url'],
+                                    textContent: submissionData['text_content'],
+                                  );
+
+                                  // Close loading dialog
+                                  if (navigatorContext.mounted) {
+                                    Navigator.of(navigatorContext,
+                                            rootNavigator: true)
+                                        .pop();
+                                  }
+
+                                  if (success) {
+                                    // Save submission status
+                                    await _saveSubmissionStatus();
+                                    await _clearPendingAssignmentData();
                                     
-                                    // Validate based on submission type
-                                    if (submissionType == 'upload') {
-                                      if (selectedFileName == null ||
-                                          selectedFileBase64 == null) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Please upload your assignment file'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                    } else if (submissionType == 'link' || 
-                                               submissionType == 'url') {
-                                      if (_linkController.text.trim().isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Please enter the assignment link'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      // Basic URL validation
-                                      if (!_linkController.text.trim().startsWith('http')) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Please enter a valid URL (starting with http:// or https://)'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                    } else if (submissionType == 'text') {
-                                      if (_textController.text.trim().isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Please enter your assignment text'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                    }
+                                    // Clear controllers
+                                    _linkController.clear();
+                                    _textController.clear();
 
-                                    // Close the modal first
-                                    Navigator.of(context).pop();
+                                    unawaited(_silentRefreshLessonDetail());
 
-                                    // Store the navigator context before showing dialog
-                                    final navigatorContext =
-                                        Navigator.of(context).context;
-
-                                    // Show loading dialog
-                                    showDialog(
-                                      context: navigatorContext,
-                                      barrierDismissible: false,
-                                      builder: (BuildContext dialogContext) {
-                                        return PopScope(
-                                          canPop: false,
-                                          child: Dialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(24.0),
+                                    // Show success message
+                                    if (navigatorContext.mounted) {
+                                      showDialog(
+                                        context: navigatorContext,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext successContext) {
+                                          return Dialog(
+                                            backgroundColor: Colors.transparent,
+                                            elevation: 0,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(24),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.1),
+                                                    blurRadius: 40,
+                                                    offset: const Offset(0, 10),
+                                                  ),
+                                                ],
+                                              ),
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                const CircularProgressIndicator(
-                                                  color: Colors.blueAccent,
-                                                ),
-                                                  const SizedBox(height: 24),
-                                                  const Text(
-                                                    'Submitting Assignment...',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Colors.black87,
+                                                  // Success Icon
+                                                  Container(
+                                                    width: 80,
+                                                    height: 80,
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF10B981).withOpacity(0.1),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.check_circle_rounded,
+                                                      color: Color(0xFF10B981),
+                                                      size: 48,
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                    'Please wait while we submit your work',
+                                                  const SizedBox(height: 20),
+
+                                                  // Title
+                                                  const Text(
+                                                    'Success!',
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: Colors.grey.shade600,
+                                                      fontSize: 24,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Color(0xFF1A1A2E),
+                                                      letterSpacing: -0.5,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 12),
+
+                                                  // Message
+                                                  const Text(
+                                                    'Your assignment has been submitted successfully and is pending review.',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 15,
+                                                      color: Color(0xFF6B7280),
+                                                      height: 1.6,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 28),
+
+                                                  // Button
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: ElevatedButton(
+                                                      onPressed: () {
+                                                        Navigator.of(successContext).pop();
+                                                        if (mounted) {
+                                                          setState(() {
+                                                            _isNavigatingAway = true;
+                                                          });
+                                                        }
+                                                        Future.delayed(const Duration(milliseconds: 100), () {
+                                                          _showInterstitialAdAndPop(navigatorContext);
+                                                        });
+                                                      },
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: const Color(0xFF6366F1),
+                                                        foregroundColor: Colors.white,
+                                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(12),
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'OK',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.w600,
+                                                          letterSpacing: 0.5,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    );
-
-                                    // Submit assignment using provider
-                                    try {
-                                      final provider =
-                                          AssignmentSubmissionProvider();
-
-                                      // Use 0 as score if quiz not taken
-                                      final quizScoreToSubmit =
-                                          _quizTaken ? _quizScore : 0;
-
-                                      // Prepare submission data based on type
-                                      Map<String, dynamic> submissionData = {
-                                        'name': name,
-                                        'email': email ?? '',
-                                        'phone': phone ?? '',
-                                        'quiz_score': quizScoreToSubmit.toString(),
-                                        'lesson_id': widget.lessonId.toString(),
-                                        'cohort_id': widget.cohortId,
-                                        'profile_id': widget.profileId.toString(),
-                                        'submission_type': submissionType,
-                                      };
-
-                                      if (submissionType == 'upload') {
-                                        submissionData['assignments'] = [
-                                          {
-                                            'file_name': selectedFileName!,
-                                            'type': 'pdf',
-                                            'file': selectedFileBase64!,
-                                          }
-                                        ];
-                                      } else if (submissionType == 'link' || 
-                                                 submissionType == 'url') {
-                                        submissionData['link_url'] = 
-                                            _linkController.text.trim();
-                                      } else if (submissionType == 'text') {
-                                        submissionData['text_content'] = 
-                                            _textController.text.trim();
-                                      }
-
-                                      // Debug: print final payload per submission type
-                                      try {
-                                        final payloadJson = jsonEncode(submissionData);
-                                        print('Assignment submission payload: $payloadJson');
-                                      } catch (e) {
-                                        print('Failed to encode submission payload: $e');
-                                      }
-
-                                      final success = await provider.submitAssignment(
-                                        name: submissionData['name'],
-                                        email: submissionData['email'],
-                                        phone: submissionData['phone'],
-                                        quizScore: submissionData['quiz_score'],
-                                        lessonId: submissionData['lesson_id'],
-                                        cohortId: submissionData['cohort_id'],
-                                        profileId: submissionData['profile_id'],
-                                        submissionType: submissionData['submission_type'],
-                                        assignments: submissionData['assignments'],
-                                        linkUrl: submissionData['link_url'],
-                                        textContent: submissionData['text_content'],
+                                          );
+                                        },
                                       );
-
-                                      // Close loading dialog
-                                      if (navigatorContext.mounted) {
-                                        Navigator.of(navigatorContext,
-                                                rootNavigator: true)
-                                            .pop();
-                                      }
-
-                                      if (success) {
-                                        // Save submission status
-                                        await _saveSubmissionStatus();
-                                        await _clearPendingAssignmentData();
-                                        
-                                        // Clear controllers
-                                        _linkController.clear();
-                                        _textController.clear();
-
-                                        unawaited(_silentRefreshLessonDetail());
-
-                                        // Show success message
-                                        if (navigatorContext.mounted) {
-                                          showDialog(
-                                            context: navigatorContext,
-                                            builder: (BuildContext successContext) {
-                                              return AlertDialog(
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                title: const Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.check_circle,
-                                                      color: Colors.green,
-                                                      size: 28,
-                                                    ),
-                                                    SizedBox(width: 12),
-                                                    Text(
-                                                      'Success!',
-                                                      style: TextStyle(
-                                                        fontSize: 20,
-                                                        fontWeight: FontWeight.w700,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                content: const Text(
-                                                  'Your assignment has been submitted successfully and is pending review.',
-                                                  style: TextStyle(
-                                                    fontSize: 15,
-                                                    height: 1.5,
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.of(successContext)
-                                                          .pop();
-                                                    },
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor:
-                                                          const Color(0xFF6366F1),
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(8),
-                                                      ),
-                                                    ),
-                                                    child: const Text(
-                                                      'OK',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight: FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        }
-                                      } else {
-                                        // Show error message
-                                        if (navigatorContext.mounted) {
-                                          ScaffoldMessenger.of(navigatorContext)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                provider.errorMessage ??
-                                                    'Failed to submit assignment',
-                                              ),
-                                              backgroundColor: Colors.red,
-                                              duration: const Duration(seconds: 5),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    } catch (e) {
-                                      // Close loading dialog
-                                      if (navigatorContext.mounted) {
-                                        Navigator.of(navigatorContext,
-                                                rootNavigator: true)
-                                            .pop();
-                                      }
-
-                                      // Show error message
-                                      if (navigatorContext.mounted) {
-                                        ScaffoldMessenger.of(navigatorContext)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text('Error: $e'),
-                                            backgroundColor: Colors.red,
-                                            duration: const Duration(seconds: 5),
-                                          ),
-                                        );
-                                      }
                                     }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF6366F1),
-                                    foregroundColor: Colors.white,
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text(
-                                    'Submit',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  } else {
+                                    // Show error message
+                                    if (navigatorContext.mounted) {
+                                      ScaffoldMessenger.of(navigatorContext)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            provider.errorMessage ??
+                                                'Failed to submit assignment',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  // Close loading dialog
+                                  if (navigatorContext.mounted) {
+                                    Navigator.of(navigatorContext,
+                                            rootNavigator: true)
+                                        .pop();
+                                  }
+
+                                  // Show error message
+                                  if (navigatorContext.mounted) {
+                                    ScaffoldMessenger.of(navigatorContext)
+                                        .showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error: $e'),
+                                        backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 5),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isPastDue
+                                    ? Colors.grey.shade400
+                                    : const Color(0xFF6366F1),
+                                disabledBackgroundColor: Colors.grey.shade400,
+                                disabledForegroundColor: Colors.white,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                            ],
+                              child: const Text(
+                                'Submit Assignment',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                    );
-                  },
-                ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
+
+  if (mounted) {
+    setState(() {
+      _assignmentResubmitUnlocked = false;
+    });
+  }
 }
+
+
 
   Widget _buildProfileItem({
     required String name,
@@ -3349,6 +3697,36 @@ Future<void> _handleBackButton() async {
     }
   }
 
+  Future<bool> _verifyLinkReachable(String rawUrl) async {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return false;
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+      return false;
+    }
+
+    try {
+      final headResponse = await http
+          .head(uri)
+          .timeout(const Duration(seconds: 8));
+      if (headResponse.statusCode >= 200 && headResponse.statusCode < 400) {
+        return true;
+      }
+    } catch (_) {
+      // Some hosts block HEAD; fall back to GET below.
+    }
+
+    try {
+      final getResponse = await http
+          .get(uri)
+          .timeout(const Duration(seconds: 8));
+      return getResponse.statusCode >= 200 && getResponse.statusCode < 400;
+    } catch (_) {
+      return false;
+    }
+  }
+
   String _getFileNameFromUrl(String url) {
   try {
     // Remove query parameters if any
@@ -3445,8 +3823,6 @@ Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
   }
 }
 
-
-
 Future<String?> _saveToDownloadsUsingMediaStore(
   Uint8List bytes,
   String fileName,
@@ -3509,7 +3885,7 @@ Future<void> _downloadMaterial(String materialUrl) async {
     
     if (response.statusCode == 200) {
       final fileName = _getFileNameFromUrl(materialUrl);
-      
+
       // Save to Downloads
       final savedPath = await _saveToPublicDownloads(
         response.bodyBytes,
@@ -3646,8 +4022,8 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
     final response = await http.get(Uri.parse("https://linkskool.net/$assignmentUrl"));
     
     if (response.statusCode == 200) {
- final fileName = _getFileNameFromUrl(assignmentUrl);
-      
+      final fileName = _getFileNameFromUrl(assignmentUrl);
+
       final savedPath = await _saveToPublicDownloads(
         response.bodyBytes,
         fileName,
@@ -3774,18 +4150,23 @@ Widget build(BuildContext context) {
                 'url': _effectiveVideoUrl ?? '',
               };
 
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: _handleBackButton,
+        return WillPopScope(
+          onWillPop: () async {
+            await _handleBackButton();
+            return false;
+          },
+          child: Scaffold(
+            extendBodyBehindAppBar: true,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: _handleBackButton,
+              ),
             ),
-          ),
-          backgroundColor: Colors.white,
-          body: NestedScrollView(
+            backgroundColor: Colors.white,
+            body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
                 SliverToBoxAdapter(
@@ -3845,6 +4226,7 @@ Widget build(BuildContext context) {
                 _buildReviewsTab(),
                 _buildAssignmentsTab(currentVideo),
               ],
+            ),
             ),
           ),
         );
@@ -3999,7 +4381,29 @@ Widget _buildVideoPlayer() {
     return AspectRatio(
       aspectRatio: 16 / 9,
       key: ValueKey(_videoController.hashCode),
-      child: Chewie(controller: _chewieController!),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Chewie(controller: _chewieController!),
+          ),
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Material(
+              color: Colors.black54,
+              shape: const CircleBorder(),
+              child: IconButton(
+                onPressed: _toggleFullscreen,
+                icon: const Icon(
+                  Icons.fullscreen,
+                  color: Colors.white,
+                ),
+                tooltip: 'Fullscreen',
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -4424,15 +4828,22 @@ Widget _buildVideoPlayer() {
 
       // Join/Watch Button with Zoom-style banner - Show if zoom URL or recorded URL exists
       // Join/Watch Button with class status banner
-if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
-    (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty)) ...[
-  Builder(
-    builder: (context) {
+  if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
+      (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty) ||
+      (_effectiveSessionStart != null && _effectiveSessionStart!.isNotEmpty)) ...[
+  StreamBuilder<int>(
+    stream: _countdownStream,
+    builder: (context, snapshot) {
       final zoomStatus = _getZoomStatus();
       final status = zoomStatus['status'] as String;
       final message = zoomStatus['message'] as String;
       final buttonText = zoomStatus['buttonText'] as String;
       final url = zoomStatus['url'] as String?;
+      final scheduledStart = zoomStatus['classDate'] as DateTime?;
+      final recordedUrl = _effectiveRecordedUrl;
+     final showRecordedButton = (status == 'ongoing' || status == 'scheduled') &&
+    recordedUrl != null &&
+    recordedUrl.isNotEmpty;
 
       // Determine button style and behavior based on status
       Color backgroundColor;
@@ -4441,20 +4852,20 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
       bool isButtonEnabled;
       String cardTitle;
 
-      switch (status) {
-        case 'scheduled':
-          backgroundColor = Colors.grey.shade300;
-          iconColor = Colors.grey.shade600;
-          iconData = Icons.schedule;
-          isButtonEnabled = false;
-          cardTitle = 'Upcoming Live Class';
-          break;
+        switch (status) {
+          case 'scheduled':
+            backgroundColor = const Color(0xFF2D8CFF);
+            iconColor = Colors.white;
+            iconData = Icons.videocam;
+            isButtonEnabled = true;
+            cardTitle = 'Live Class';
+            break;
         case 'ongoing':
           backgroundColor = const Color(0xFF2D8CFF);
           iconColor = Colors.white;
           iconData = Icons.videocam;
           isButtonEnabled = true;
-          cardTitle = 'Live Class Now';
+          cardTitle = 'Live Class';
           break;
         case 'recorded':
           backgroundColor = const Color(0xFF10B981);
@@ -4508,19 +4919,19 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
             // Header with icon
             Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    iconData,
-                    color: iconColor,
-                    size: 24,
-                  ),
-                ),
+                // Container(
+                //   width: 40,
+                //   height: 40,
+                //   decoration: BoxDecoration(
+                //     color: backgroundColor,
+                //     borderRadius: BorderRadius.circular(8),
+                //   ),
+                //   child: Icon(
+                //     iconData,
+                //     color: iconColor,
+                //     size: 24,
+                //   ),
+                // ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -4579,6 +4990,34 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                 height: 1.4,
               ),
             ),
+            if (status == 'scheduled' && scheduledStart != null) ...[
+              const SizedBox(height: 12),
+              Builder(
+                builder: (context) {
+                  final now = DateTime.now();
+                  final diff = now.isAfter(scheduledStart)
+                      ? Duration.zero
+                      : scheduledStart.difference(now);
+                  final days = diff.inDays;
+                  final hours = diff.inHours % 24;
+                  final minutes = diff.inMinutes % 60;
+                  final seconds = diff.inSeconds % 60;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildCompactCountdownItem('D', days.toString().padLeft(2, '0')),
+                      const SizedBox(width: 8),
+                      _buildCompactCountdownItem('H', hours.toString().padLeft(2, '0')),
+                      const SizedBox(width: 8),
+                      _buildCompactCountdownItem('M', minutes.toString().padLeft(2, '0')),
+                      const SizedBox(width: 8),
+                      _buildCompactCountdownItem('S', seconds.toString().padLeft(2, '0')),
+                    ],
+                  );
+                },
+              ),
+            ],
             if (buttonText.isNotEmpty) ...[
               const SizedBox(height: 16),
               // Button
@@ -4586,25 +5025,28 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: isButtonEnabled && url != null
-                      ? () => _launchUrl(url)
-                      : null,
+    ? () {
+        if (status == 'ongoing') {
+          unawaited(_logAttendanceIfLive(status));
+        }
+        _launchUrl(url);
+      }
+    : null,
                   icon: Icon(
                     iconData,
                     size: 20,
                   ),
                   label: Text(
                     buttonText,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: backgroundColor,
                     foregroundColor: iconColor,
                     disabledBackgroundColor: backgroundColor,
                     disabledForegroundColor: iconColor,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8), // reduced vertical, add horizontal
+                    minimumSize: const Size(double.infinity, 54),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -4613,6 +5055,61 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                 ),
               ),
             ],
+            if (showRecordedButton) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: const [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'or',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                onPressed: () {
+        // Only log attendance if session is ongoing, NOT scheduled
+        if (status == 'ongoing') {
+          unawaited(_logAttendanceIfLive(status));
+        }
+        _launchUrl(recordedUrl!);
+      },
+                //  image
+            icon: Image.asset(
+    'assets/images/explore-images/youtube-live.png',
+    width: 20,
+    height: 20,
+  ),
+                  label: const Text(
+                    'Join Youtube Live Stream',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                     backgroundColor: const Color(0xFFEF5350),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ]
           ],
         ),
       );
@@ -4620,162 +5117,374 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
   ),
   const SizedBox(height: 16),
 ],
-    ]);
+if (_hasAttendance == false &&
+    (_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty)) ...[
+  StreamBuilder<int>(
+    stream: _countdownStream,
+    builder: (context, snapshot) {
+      final zoomStatus = _getZoomStatus();
+      final status = zoomStatus['status'] as String;
+      final shouldWarn = status == 'scheduled' || status == 'ongoing';
+      if (!shouldWarn) return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF7ED),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFDBA74)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+  
+              decoration: BoxDecoration(
+                color: const Color(0xFFF97316),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Attendance ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Joining the live stream also counts as attendance.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  ),
+  const SizedBox(height: 16),
+],
+if (_hasAttendance) ...[
+  // Attendance card
+  Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const  Color(0xFF2E7D32),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.check_circle_outline,
+            color: Colors.white,
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Attendance',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Attendance completion',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F5E9),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Text(
+            'Completed',
+            style: TextStyle(
+              color: Color(0xFF2E7D32),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+  const SizedBox(height: 16),
+] else if (_hasAttendance == false ) ...[
+
+    ],
+  ]);
   }
 
   Widget _buildAssignmentsTab(Map<String, dynamic> currentVideo) {
-    final remark = _submission?.remark?.trim();
-    final comment = _submission?.comment?.trim();
-    final hasRemark = remark != null && remark.isNotEmpty;
-    final hasComment = comment != null && comment.isNotEmpty;
-    final hasFeedback = hasRemark || hasComment;
-    final assignedScore = _submission?.assignedScore;
+  final remark = _submission?.remark?.trim();
+  final comment = _submission?.comment?.trim();
+  final hasRemark = remark != null && remark.isNotEmpty;
+  final hasComment = comment != null && comment.isNotEmpty;
+  final hasFeedback = hasRemark || hasComment;
+  final assignedScore = _submission?.assignedScore;
+  final isPastDue = _isAssignmentPastDue();
+  
+  // Check if lesson has assignment
+  final bool hasAssignment = _effectiveAssignmentUrl != null && 
+                             _effectiveAssignmentUrl!.isNotEmpty;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (hasFeedback) ...[
-          const SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+  return ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      if (hasFeedback) ...[
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Performance',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (assignedScore != null) ...[
+                Center(
+                  child: SizedBox(
+                    width: 120,
+                    height: 120,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: 1.0,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              const Color(0xFF1D4ED8).withOpacity(0.15),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: assignedScore / 100,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${assignedScore}/100',
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1D4ED8),
+                              ),
+                            ),
+                            const Text(
+                              'Score',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (hasRemark) ...[
                 const Text(
-                  'Feedback',
+                  'Remark:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 12),
-                if (assignedScore != null) ...[
-                  Center(
-                    child: SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 160,
-                            height: 160,
-                            child: CircularProgressIndicator(
-                              value: 1.0,
-                              strokeWidth: 12,
-                              backgroundColor: Colors.transparent,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                const Color(0xFF1D4ED8).withOpacity(0.15),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 160,
-                            height: 160,
-                            child: CircularProgressIndicator(
-                              value: assignedScore / 100,
-                              strokeWidth: 12,
-                              backgroundColor: Colors.transparent,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Color(0xFF1D4ED8),
-                              ),
-                            ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${assignedScore}/100',
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1D4ED8),
-                                ),
-                              ),
-                              const Text(
-                                'Score',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                const SizedBox(height: 6),
+                Text(
+                  remark!,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF374151),
+                    height: 1.4,
                   ),
-                  const SizedBox(height: 16),
-                ],
-                if (hasRemark) ...[
-                  const Text(
-                    'Remark:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    remark!,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF374151),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (hasComment) ...[
-                  const Text(
-                    'Instructor Feedback:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    comment!,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF374151),
-                      height: 1.4,
-                    ),
-                  ),
-                ],
+                ),
+                const SizedBox(height: 16),
               ],
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-        const Text(
-          'Lesson Assignment',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+              if (hasComment) ...[
+                const Text(
+                  'Instructor Feedback:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  comment!,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF374151),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-       
+        const SizedBox(height: 24),
+      ],
+      
+      if (!hasAssignment) ...[
+        // EMPTY STATE - No assignment available
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Empty state icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.assignment_outlined,
+                  size: 60,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              const Text(
+                'No Assignment Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              
+              // Description
+              Text(
+                'No assignment for this lesson.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 32),
+              Center(
+                child: _CourseBannerAd(
+                  key: const ValueKey('assignment_empty_banner'),
+                  adUnitId: EnvConfig.programBannersAdsKey,
+                  size: AdSize.mediumRectangle,
+                ),
+              ),
+              
+            
+              
+              
+            ],
+          ),
+        ),
+      ] else ...[
+        // HAS ASSIGNMENT - Show all assignment-related content
         if (!hasFeedback) ...[
+          const Text(
+            'Lesson Assignment',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
           const SizedBox(height: 16),
+
+          // Assignment Guidelines Card (always shown)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
+              border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -4811,7 +5520,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                       Text(
                         'Deadline: ${_formattedAssignmentDeadline()}',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: Colors.grey.shade900,
                         ),
@@ -4855,8 +5564,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                                   ),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     _buildCountdownItem(
                                       'DAYS',
@@ -4879,12 +5587,14 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
                               ),
                               if (isPastDue) ...[
                                 const SizedBox(height: 6),
-                                const Text(
-                                  'Deadline passed',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFFB91C1C),
+                                Center(
+                                  child: const Text(
+                                    'Deadline passed',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFB91C1C),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -4899,10 +5609,10 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
             ),
           ),
         ],
-        // Current Video/Lesson Info Card
 
         const SizedBox(height: 24),
 
+        // Assignment Instructions (if available)
         if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
@@ -4983,129 +5693,7 @@ if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
           const SizedBox(height: 10),
 
         // Download Assignment Card
-        // Download Assignment Card
-if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
-  Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header with icon
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2196F3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.assignment,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Assignment',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF2196F3),
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Use the buttons below to preview or download the assignment file.',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey.shade700,
-            height: 1.4,
-          ),
-        ),
-       
-        const SizedBox(height: 16),
-
-        // Buttons Row
-        Row(
-          children: [
-            // Preview Button - FIXED: Preview the lesson assignment, not submitted
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  // Use lesson assignment URL, not submitted assignment
-                  if (_effectiveAssignmentUrl == null || 
-                      _effectiveAssignmentUrl!.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('No assignment file available'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                  _previewAssignment(_effectiveAssignmentUrl!); // CHANGED THIS LINE
-                },
-                icon: const Icon(Icons.visibility, size: 18),
-                label: const Text('Preview'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF2196F3),
-                  side: const BorderSide(color: Color(0xFF2196F3)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Download Button
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    _downloadAssignment(_effectiveAssignmentUrl!),
-                icon: const Icon(Icons.download, size: 18),
-                label: const Text('Download'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  ),
-
-        const SizedBox(height: 16),
-       
-
-        // Submit Assignment Card - Only show if assignmentUrl exists
-        if (_effectiveAssignmentUrl != null &&
-            _effectiveAssignmentUrl!.isNotEmpty) ...[
-          const SizedBox(height: 16),
+        if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -5130,118 +5718,217 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
+                        color: const Color(0xFF2196F3),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
-                        Icons.upload_file,
+                        Icons.assignment,
                         color: Colors.white,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                     Text(
-                      _hasSubmittedAssignment ? 'Submitted Assignment' : 'Submit Assignment',
-                      
+                    const Text(
+                      'Assignment',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF6366F1),
+                        color: Color(0xFF2196F3),
                         letterSpacing: -0.5,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Message
                 Text(
-                  _hasSubmittedAssignment
-                      ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
-                      : 'Once you\'ve completed the assignment, submit your work here for review.',
-                  style: const TextStyle(
+                  'Use the buttons below to preview or download the assignment file.',
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Colors.black87,
+                    color: Colors.grey.shade700,
                     height: 1.4,
                   ),
                 ),
+               
                 const SizedBox(height: 16),
-                // Buttons
-                _hasSubmittedAssignment
-    ? Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                final submittedFileUrl = _submittedAssignmentUrl;
-                if (submittedFileUrl != null && submittedFileUrl.isNotEmpty) {
-                  _previewAssignment(submittedFileUrl);
-                  return;
-                }
-                final linkUrl = _submission?.linkUrl?.trim();
-                if (linkUrl != null && linkUrl.isNotEmpty) {
-                  _launchUrl(linkUrl);
-                  return;
-                }
-                final textContent = _submission?.textContent?.trim();
-                if (textContent != null && textContent.isNotEmpty) {
-                  _showTextSubmissionDialog(textContent);
-                  return;
-                }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('No submitted assignment found'),
-                    backgroundColor: Colors.red,
+
+                // Buttons Row
+                Row(
+                  children: [
+                    // Preview Button
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          if (_effectiveAssignmentUrl == null || 
+                              _effectiveAssignmentUrl!.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No assignment file available'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          _previewAssignment(_effectiveAssignmentUrl!);
+                        },
+                        icon: const Icon(Icons.visibility, size: 18),
+                        label: const Text('Preview'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2196F3),
+                          side: const BorderSide(color: Color(0xFF2196F3)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Download Button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            _downloadAssignment(_effectiveAssignmentUrl!),
+                        icon: const Icon(Icons.download, size: 18),
+                        label: const Text('Download'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2196F3),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Submit Assignment Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with icon
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.upload_file,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
-                );
-              },
-              icon: const Icon(Icons.visibility, size: 18),
-              label: const Text('Preview'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF6366F1),
-                side: const BorderSide(color: Color(0xFF6366F1)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 12),
+                  Text(
+                    _hasSubmittedAssignment ? 'Submitted Assignment' : 'Submit Assignment',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF6366F1),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Message
+              Text(
+                _hasSubmittedAssignment
+                    ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
+                    : 'Once you\'ve completed the assignment, submit your work here for review.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.4,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                _showSubmitAssignmentModal(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Resubmit',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      )
-                    : SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
+              const SizedBox(height: 16),
+              // Buttons
+              _hasSubmittedAssignment
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
                           onPressed: () {
-                            _showSubmitAssignmentModal(context);
+                            final submittedFileUrl = _submittedAssignmentUrl;
+                            if (submittedFileUrl != null && submittedFileUrl.isNotEmpty) {
+                              _previewAssignment(submittedFileUrl);
+                              return;
+                            }
+                            final linkUrl = _submission?.linkUrl?.trim();
+                            if (linkUrl != null && linkUrl.isNotEmpty) {
+                              _launchUrl(linkUrl);
+                              return;
+                            }
+                            final textContent = _submission?.textContent?.trim();
+                            if (textContent != null && textContent.isNotEmpty) {
+                              _showTextSubmissionDialog(textContent);
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No submitted assignment found'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
                           },
+                          icon: const Icon(Icons.visibility, size: 18),
+                          label: const Text('Preview'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            side: const BorderSide(color: Color(0xFF6366F1)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isPastDue
+                              ? null
+                              : () {
+                                  if (!_assignmentResubmitUnlocked) {
+                                    _showUnlockRewardDialog(_RewardAction.assignmentResubmit);
+                                    return;
+                                  }
+                                  _openSubmitAssignmentPage(context);
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6366F1),
+                            backgroundColor: isPastDue
+                                ? Colors.grey.shade400
+                                : const Color(0xFF6366F1),
+                            disabledBackgroundColor: Colors.grey.shade400,
+                            disabledForegroundColor: Colors.white,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -5250,7 +5937,7 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                             elevation: 0,
                           ),
                           child: const Text(
-                            'Submit Assignment',
+                            'Resubmit',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -5258,27 +5945,144 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                           ),
                         ),
                       ),
-              ],
-            ),
+                    ],
+                  )
+                : SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isPastDue
+                          ? null
+                          : () {
+                              _openSubmitAssignmentPage(context);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isPastDue
+                            ? Colors.grey.shade400
+                            : const Color(0xFF6366F1),
+                        disabledBackgroundColor: Colors.grey.shade400,
+                        disabledForegroundColor: Colors.white,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Submit Assignment',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+            ],
           ),
-        ],
+        ),
 
         const SizedBox(height: 24),
 
         // Additional Info
-        
+      ],
+    ],
+  );
+}
+
+Widget _buildReviewsTab() {
+  print('=== _buildReviewsTab ===');
+  print('_dataLoaded: $_dataLoaded');
+  print('_lessonHasQuiz: $_lessonHasQuiz');
+  print('_quizTaken: $_quizTaken');
+  print('_quizScore: $_quizScore');
+
+  // Show loading while waiting for data
+  if (!_dataLoaded) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: Color(0xFFFFA500)),
+          SizedBox(height: 16),
+          Text('Loading quiz data...'),
+        ],
+      ),
+    );
+  }
+
+  // If we have data but no quiz, show empty state
+  if (!_lessonHasQuiz) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Empty state icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.quiz_outlined,
+                  size: 60,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              const Text(
+                'No Quiz Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              
+              // Description
+              Text(
+                'There is no quiz available for this lesson.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 32),
+              Builder(
+                builder: (adContext) => Center(
+                  child: _CourseBannerAd(
+                    key: const ValueKey('quiz_empty_banner'),
+                    adUnitId: EnvConfig.programBannersAdsKey,
+                    size: AdSize.mediumRectangle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildReviewsTab() {
-  // Check if score is below threshold
+  // If we have a quiz, show the quiz UI
   final bool isBelowThreshold = _quizTaken && _quizScore < 50;
 
   return ListView(
     padding: const EdgeInsets.all(16),
     children: [
-      // Low Score Warning - Only show if score is below 50
+      // Low Score Warning - Only shown if score is below 50 and quiz taken
       if (isBelowThreshold) ...[
         Container(
           padding: const EdgeInsets.all(16),
@@ -5353,9 +6157,9 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
-                    if (isBelowThreshold && !_quizUnlocked) {
-                      _showUnlockQuizDialog();
+                    // Check if retake needs to be unlocked
+                    if (_quizTaken && !_quizUnlocked) {
+                      _showUnlockRewardDialog(_RewardAction.quizRetake);
                       return;
                     }
 
@@ -5372,8 +6176,7 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                     elevation: 0,
                   ),
                   child:  Text( 
-                    _quizRetryMessage != null ? 'Retake Quiz' :
-                    'Retake Quiz',
+                    _quizRetryMessage != null ? 'Retake Quiz' : 'Retake Quiz',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -5387,7 +6190,7 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
         const SizedBox(height: 16),
       ],
 
-      // Take Quiz Card (hide when below threshold)
+      // Take Quiz Card (show only if lesson has quiz and not below threshold or not taken)
       if (!isBelowThreshold)
         Container(
           padding: const EdgeInsets.all(16),
@@ -5450,9 +6253,9 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // Check if quiz needs to be unlocked (score < 50 and not unlocked yet)
-                    if (isBelowThreshold && !_quizUnlocked) {
-                      _showUnlockQuizDialog();
+                    // Check if retake needs to be unlocked
+                    if (_quizTaken && !_quizUnlocked) {
+                      _showUnlockRewardDialog(_RewardAction.quizRetake);
                       return;
                     }
 
@@ -5481,99 +6284,98 @@ if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
           ),
         ),
 
-      const SizedBox(height: 24),
-
-      // Lesson Assessment Progress
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Lesson Assessment',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
+      // Show quiz assessment only if quiz is taken
+      if (_quizTaken) ...[
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Lesson Assessment',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            // Circular Progress
-            Center(
-              child: SizedBox(
-                width: 160,
-                height: 160,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Background circle
-                    SizedBox(
-                      width: 160,
-                      height: 160,
-                      child: CircularProgressIndicator(
-                        value: 1.0,
-                        strokeWidth: 12,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          const Color(0xFFFFA500).withOpacity(0.15),
-                        ),
-                      ),
-                    ),
-                    // Progress circle with color based on score
-                    SizedBox(
-                      width: 160,
-                      height: 160,
-                      child: CircularProgressIndicator(
-                        value: _quizScore / 100,
-                        strokeWidth: 12,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          _quizScore >= 50
-                              ? const Color(0xFF4CAF50) // Green for passing
-                              : const Color(0xFFEF5350), // Red for failing
-                        ),
-                      ),
-                    ),
-                    // Score text
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '$_quizScore/100',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: _quizScore >= 50
-                                ? const Color(0xFF4CAF50)
-                                : const Color(0xFFEF5350),
+              const SizedBox(height: 20),
+              // Circular Progress
+              Center(
+                child: SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Background circle
+                      SizedBox(
+                        width: 160,
+                        height: 160,
+                        child: CircularProgressIndicator(
+                          value: 1.0,
+                          strokeWidth: 12,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            const Color(0xFFFFA500).withOpacity(0.15),
                           ),
                         ),
-                        if (_quizTaken)
+                      ),
+                      // Progress circle with color based on score
+                      SizedBox(
+                        width: 160,
+                        height: 160,
+                        child: CircularProgressIndicator(
+                          value: _quizScore / 100,
+                          strokeWidth: 12,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _quizScore >= 50
+                                ? const Color(0xFF4CAF50) // Green for passing
+                                : const Color(0xFFEF5350), // Red for failing
+                          ),
+                        ),
+                      ),
+                      // Score text - FIX THIS PART
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                           Text(
-                            '$_quizScore%',
+                            '$_quizScore%', // Show actual score
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              color: _quizScore >= 50
+                                  ? const Color(0xFF4CAF50)
+                                  : const Color(0xFFEF5350),
+                            ),
+                          ),
+                          Text(
+                            'Score',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey.shade600,
                             ),
                           ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     ],
   );
 }
-
 // preview assignment 
 
 
@@ -5848,6 +6650,8 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final videoSize = widget.controller.value.size;
+    final isVideoReady = videoSize != Size.zero;
 
     return WillPopScope(
       onWillPop: () async {
@@ -5862,14 +6666,20 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
             children: [
               // Full screen video player
               SizedBox.expand(
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: SizedBox(
-                    width: widget.controller.value.size.width,
-                    height: widget.controller.value.size.height,
-                    child: VideoPlayer(widget.controller),
-                  ),
-                ),
+                child: isVideoReady
+                    ? FittedBox(
+                        fit: BoxFit.contain,
+                        child: SizedBox(
+                          width: videoSize.width,
+                          height: videoSize.height,
+                          child: VideoPlayer(widget.controller),
+                        ),
+                      )
+                    : const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      ),
               ),
               // Controls overlay
               AnimatedOpacity(
@@ -6419,6 +7229,71 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     return false;
   }
 }
+
+class _CourseBannerAd extends StatefulWidget {
+  final String adUnitId;
+  final AdSize size;
+  final bool isMinor;
+
+  const _CourseBannerAd({
+    super.key,
+    required this.adUnitId,
+    required this.size,
+    this.isMinor = false,
+  });
+
+  @override
+  State<_CourseBannerAd> createState() => _CourseBannerAdState();
+}
+
+class _CourseBannerAdState extends State<_CourseBannerAd> {
+  BannerAd? _ad;
+  bool _isLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+   _ad = BannerAd(
+  adUnitId: widget.adUnitId,
+  size: widget.size,
+  request: AdRequest(nonPersonalizedAds: widget.isMinor),
+  listener: BannerAdListener(
+    onAdLoaded: (_) => mounted ? setState(() => _isLoaded = true) : null,
+    onAdFailedToLoad: (ad, error) {
+      print('Banner Ad failed: ${error.code} - ${error.message}');
+      ad.dispose();
+    },
+  ),
+); Future.delayed(const Duration(seconds: 3), () {
+    if (mounted) _ad?.load();
+  });
+  }
+
+  @override
+  void dispose() {
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ad = _ad;
+    if (!_isLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      color: Colors.white,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
+  }
+}
+
+
 
 
 

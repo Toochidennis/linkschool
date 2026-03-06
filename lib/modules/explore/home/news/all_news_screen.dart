@@ -17,36 +17,55 @@ class AllnewsScreen extends StatefulWidget {
   State<AllnewsScreen> createState() => _AllnewsScreenState();
 }
 
-class _AllnewsScreenState extends State<AllnewsScreen> {
+class _AllnewsScreenState extends State<AllnewsScreen>
+    with WidgetsBindingObserver {
   Set<String> selectedCategories = {};
   late final ScrollController _scrollController;
   final Map<int, NativeAd?> _nativeAds = {};
   final List<int> _adPositions = [];
   int _lastAdNewsCount = -1;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController = ScrollController();
     _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<NewsProvider>(context, listen: false).fetchNews(refresh: true);
+      Provider.of<NewsProvider>(context, listen: false).fetchAllNews(refresh: true);
     });
+    _loadAppOpenAd();
   }
 
-void _loadNativeAds(int newsCount) {
-  // Clear existing ads
-  _disposeAds();
-  _adPositions.clear();
-  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
+  }
+
+  void _loadNativeAds(int newsCount) {
   // Calculate ad positions in the list (ads after every 5 news items)
   final listItemCount = _getListItemCount(newsCount);
+  final positions = <int>[];
   for (int position = 5; position < listItemCount; position += 6) {
-    _adPositions.add(position);
+    positions.add(position);
   }
 
-  // Load native ads for each position
-  for (int position in _adPositions) {
+  // Load native ads only for newly added positions
+  for (int position in positions) {
+    if (_nativeAds.containsKey(position)) continue;
+    _adPositions.add(position);
     final nativeAd = NativeAd(
       
       adUnitId: EnvConfig.newsNativeAds,
@@ -79,7 +98,6 @@ void _loadNativeAds(int newsCount) {
         templateType: TemplateType.small
       )
     );
-    
     nativeAd.load();
   }
 
@@ -93,6 +111,50 @@ void _loadNativeAds(int newsCount) {
       ad?.dispose();
     }
     _nativeAds.clear();
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.newsAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
   }
 
   Color getCategoryColor(String category) {
@@ -271,7 +333,9 @@ void _loadNativeAds(int newsCount) {
     if (latestNews.length != _lastAdNewsCount) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _lastAdNewsCount = latestNews.length;
-        _loadNativeAds(latestNews.length);
+        if (_lastAdNewsCount > 0) {
+          _loadNativeAds(latestNews.length);
+        }
       });
     }
     
@@ -283,7 +347,7 @@ void _loadNativeAds(int newsCount) {
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
             Provider.of<NewsProvider>(context, listen: false)
-                .fetchNews(refresh: true);
+                .fetchAllNews(refresh: true);
             _lastAdNewsCount = -1;
           }
         },
@@ -436,20 +500,24 @@ void _loadNativeAds(int newsCount) {
             ),
 
             if (newsProvider.isLoadingMore)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: CircularProgressIndicator(),
+              Center(
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: CircularProgressIndicator(),
+                ),
               ),
 
             if (!newsProvider.hasNextPage && newsProvider.newsmodel.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  'No more news to load',
-                  style: TextStyle(
-                    fontFamily: 'Urbanist',
-                    fontSize: 14,
-                    color: Colors.grey[500],
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    'No more news to load',
+                    style: TextStyle(
+                      fontFamily: 'Urbanist',
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
                   ),
                 ),
               ),
@@ -488,7 +556,7 @@ void _loadNativeAds(int newsCount) {
     if (position.pixels >= position.maxScrollExtent - 200) {
       final provider = Provider.of<NewsProvider>(context, listen: false);
       if (provider.hasNextPage && !provider.isLoadingMore) {
-        provider.loadMore();
+        provider.loadMoreAll();
         // Reload ads when more news is loaded
         _lastAdNewsCount = -1;
       }
@@ -497,9 +565,11 @@ void _loadNativeAds(int newsCount) {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _disposeAds();
+    _appOpenAd?.dispose();
     super.dispose();
   }
 

@@ -3,6 +3,7 @@ import 'package:linkschool/config/env_config.dart' show EnvConfig;
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
@@ -10,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 
 /// Dialog to enforce subscription after free trial ends
 class SubscriptionEnforcementDialog extends StatefulWidget {
@@ -594,6 +596,12 @@ class _ChallengeAccessDialogState extends State<ChallengeAccessDialog>
   Future<void> _handleSubscribe() async {
     if (!mounted || _isProcessing) return;
 
+    final canUseNetwork = await NetworkDialog.ensureOnline(
+      context,
+      message: 'Please connect to the internet to continue payment.',
+    );
+    if (!canUseNetwork || !mounted) return;
+
     setState(() => _isProcessing = true);
 
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
@@ -783,6 +791,11 @@ class _SubscriptionEnforcementDialogState
         });
       }
     }
+  }
+
+  Future<void> _handleContinueWithAds() async {
+    await CbtSubscriptionService().setAdMode('continue_with_ads');
+    _closeDialogWithResult(true);
   }
 
   @override
@@ -1100,8 +1113,11 @@ class _SubscriptionEnforcementDialogState
         onPressed: _isProcessing
             ? null
             : () {
-                // TODO: hook ads flow here when needed.
-                _closeDialogWithResult(true);
+                if (widget.remainingTests <= 1) {
+                  _handleContinueWithAds();
+                } else {
+                  _closeDialogWithResult(true);
+                }
               },
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: AppColors.eLearningBtnColor1),

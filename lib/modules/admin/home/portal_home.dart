@@ -178,7 +178,7 @@ void initState() {
     } catch (e, stack) {
       debugPrint(stack.toString());
       if (mounted) {
-        CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+     //   CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
     }
   }

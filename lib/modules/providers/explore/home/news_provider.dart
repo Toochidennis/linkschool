@@ -1,36 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/services/explore/home/news_service.dart';
+import 'package:linkschool/modules/services/network/connectivity_service.dart';
 
 class NewsProvider with ChangeNotifier {
+  // All news state (used by All News screen)
   List<NewsModel> _newsmodel = [];
   Map<String, List<int>> _groups = {};
   Map<String, List<int>> _categories = {};
-  List<int> _latestIds = [];
   NewsMetaData? _meta;
   bool _isLoading = false;
   bool _isLoadingMore = false;
-  String _errorMessage = '';
   int _currentPage = 1;
   bool _hasNextPage = true;
-  static const int _pageSize = 10;
   final Set<int> _newsIds = {};
+
+  // Latest news state (used by Explore Home)
+  final List<NewsModel> _latestNews = [];
+  final Set<int> _latestNewsIds = {};
+  NewsMetaData? _metaLatest;
+  bool _isLoadingLatest = false;
+  bool _isLoadingMoreLatest = false;
+  int _currentPageLatest = 1;
+  bool _hasNextPageLatest = true;
+
+  static const int _pageSize = 10;
+  String _errorMessage = '';
 
   List<NewsModel> get newsmodel => _newsmodel;
   Map<String, List<int>> get groups => _groups;
   Map<String, List<int>> get categories => _categories;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
+  bool get isLoadingLatest => _isLoadingLatest;
+  bool get isLoadingMoreLatest => _isLoadingMoreLatest;
   String get errorMessage => _errorMessage;
   bool get hasNextPage => _hasNextPage;
+  bool get hasNextPageLatest => _hasNextPageLatest;
   NewsMetaData? get meta => _meta;
+  NewsMetaData? get metaLatest => _metaLatest;
 
-  // Get news by group
-  List<NewsModel> get latestNews {
-    final latestIds = _latestIds.isNotEmpty ? _latestIds : (_groups['latest'] ?? []);
-    return _newsmodel.where((news) => latestIds.contains(news.id)).toList();
-  }
+  // Latest list used by Explore Home
+  List<NewsModel> get latestNews => _latestNews;
 
+  // Get news by group (all-news stream)
   List<NewsModel> get relatedNews {
     final relatedIds = _groups['related'] ?? [];
     return _newsmodel.where((news) => relatedIds.contains(news.id)).toList();
@@ -41,13 +54,13 @@ class NewsProvider with ChangeNotifier {
     return _newsmodel.where((news) => recommendedIds.contains(news.id)).toList();
   }
 
-  // Get news by category
+  // Get news by category (all-news stream)
   List<NewsModel> getNewsByCategory(String category) {
     final categoryIds = _categories[category] ?? [];
     return _newsmodel.where((news) => categoryIds.contains(news.id)).toList();
   }
 
-  // Get category name for a specific news item
+  // Get category name for a specific news item (all-news stream)
   String? getCategoryForNews(int newsId) {
     for (var entry in _categories.entries) {
       if (entry.value.contains(newsId)) {
@@ -57,13 +70,15 @@ class NewsProvider with ChangeNotifier {
     return null;
   }
 
-  // Get all available categories
+  // Get all available categories (all-news stream)
   List<String> get availableCategories => _categories.keys.toList();
 
   final NewsService _newsService = NewsService();
 
-  Future<void> fetchNews({bool refresh = true}) async {
+  Future<void> fetchAllNews({bool refresh = true}) async {
     if (_isLoading || _isLoadingMore) return;
+
+    final isOnline = await ConnectivityService.isOnline();
 
     if (refresh) {
       _currentPage = 1;
@@ -71,7 +86,6 @@ class NewsProvider with ChangeNotifier {
       _newsmodel.clear();
       _groups.clear();
       _categories.clear();
-      _latestIds.clear();
       _newsIds.clear();
       _isLoading = true;
     } else {
@@ -85,6 +99,7 @@ class NewsProvider with ChangeNotifier {
       final response = await _newsService.getAllNews(
         page: _currentPage,
         perPage: _pageSize,
+        allowNetwork: isOnline,
       );
 
       // Merge news items by id (avoid duplicates)
@@ -103,9 +118,6 @@ class NewsProvider with ChangeNotifier {
           }
         }
       });
-      if (refresh) {
-        _latestIds = List<int>.from(response.groups['latest'] ?? const []);
-      }
 
       // Merge categories
       response.categories.forEach((key, ids) {
@@ -121,12 +133,17 @@ class NewsProvider with ChangeNotifier {
       _hasNextPage = response.meta.hasNext;
       _currentPage = response.meta.currentPage + 1;
 
-      // Log the fetched news for debugging
+      if (!isOnline) {
+        _errorMessage = 'You are offline. Showing saved news.';
+      }
+
       print('✅ Fetched ${response.news.length} news items (page ${response.meta.currentPage})');
       print('📊 Groups: ${_groups.keys.join(", ")}');
       print('🏷️ Categories: ${_categories.keys.join(", ")}');
     } catch (e) {
-      _errorMessage = 'Error fetching News: $e';
+      _errorMessage = isOnline
+          ? 'Network error. Please try again.'
+          : 'No internet connection. Connect and try again.';
       print('❌ Error in NewsProvider: $_errorMessage');
     } finally {
       _isLoading = false;
@@ -135,8 +152,80 @@ class NewsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadMore() async {
+  Future<void> fetchLatestNews({bool refresh = true}) async {
+    if (_isLoadingLatest || _isLoadingMoreLatest) return;
+
+    final isOnline = await ConnectivityService.isOnline();
+
+    if (refresh) {
+      _currentPageLatest = 1;
+      _hasNextPageLatest = true;
+      _latestNews.clear();
+      _latestNewsIds.clear();
+      _isLoadingLatest = true;
+    } else {
+      _isLoadingMoreLatest = true;
+    }
+
+    _errorMessage = '';
+    notifyListeners();
+
+    try {
+      final response = await _newsService.getAllNews(
+        page: _currentPageLatest,
+        perPage: _pageSize,
+        allowNetwork: isOnline,
+      );
+
+      final latestIds = response.groups['latest'] ?? const [];
+      final Map<int, NewsModel> newsById = {
+        for (final item in response.news) item.id: item
+      };
+
+      for (final id in latestIds) {
+        final item = newsById[id];
+        if (item != null && _latestNewsIds.add(id)) {
+          _latestNews.add(item);
+        }
+      }
+
+      _metaLatest = response.meta;
+      _hasNextPageLatest = response.meta.hasNext;
+      _currentPageLatest = response.meta.currentPage + 1;
+
+      if (!isOnline) {
+        _errorMessage = 'You are offline. Showing saved news.';
+      }
+
+      print('✅ Fetched ${latestIds.length} latest ids (page ${response.meta.currentPage})');
+    } catch (e) {
+      _errorMessage = isOnline
+          ? 'Network error. Please try again.'
+          : 'No internet connection. Connect and try again.';
+      print('❌ Error in NewsProvider (latest): $_errorMessage');
+    } finally {
+      _isLoadingLatest = false;
+      _isLoadingMoreLatest = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMoreAll() async {
     if (_isLoading || _isLoadingMore || !_hasNextPage) return;
-    await fetchNews(refresh: false);
+    await fetchAllNews(refresh: false);
+  }
+
+  Future<void> loadMoreLatest() async {
+    if (_isLoadingLatest || _isLoadingMoreLatest || !_hasNextPageLatest) return;
+    await fetchLatestNews(refresh: false);
+  }
+
+  // Backward compatibility
+  Future<void> fetchNews({bool refresh = true}) async {
+    await fetchAllNews(refresh: refresh);
+  }
+
+  Future<void> loadMore() async {
+    await loadMoreAll();
   }
 }

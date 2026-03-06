@@ -3,17 +3,16 @@ import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/services/explore/courses/course_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:linkschool/modules/services/network/connectivity_service.dart';
+import 'package:linkschool/modules/services/explore/cache/explore_dashboard_cache.dart';
 
 class ExploreCourseProvider with ChangeNotifier {
   List<CategoryModel> _categories = [];
   bool _isLoading = false;
   String _errorMessage = '';
-  DateTime? _lastFetchTime;
   int? _lastProfileId;
   String? _lastDateOfBirth;
-
-  // Cache duration - adjust as needed (5 minutes is reasonable)
-  final Duration _cacheDuration = const Duration(minutes: 5);
+  static const String _lastCacheKeyPref = 'courses_last_cache_key';
 
   List<CategoryModel> get categories => _categories;
   bool get isLoading => _isLoading;
@@ -53,16 +52,49 @@ class ExploreCourseProvider with ChangeNotifier {
 
   final CourseService _courseService = CourseService();
 
+  ExploreCourseProvider() {
+    // Pre-hydrate persisted cache as early as possible (no loading UI).
+    Future.microtask(_hydrateFromPersistedCache);
+  }
+
+  Future<void> _hydrateFromPersistedCache() async {
+    if (_categories.isNotEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedId = prefs.getInt('active_profile_id');
+      final savedDob = prefs.getString('active_profile_dob');
+
+      try {
+        final cachedResponse = await _courseService.getAllCategoriesAndCourses(
+          profileId: savedId,
+          dateOfBirth: savedDob,
+          allowNetwork: false,
+        );
+        _categories = cachedResponse.categories.reversed.toList();
+        _lastProfileId = savedId;
+        _lastDateOfBirth = savedDob;
+        _errorMessage = '';
+        notifyListeners();
+        return;
+      } catch (_) {
+        final lastKey = prefs.getString(_lastCacheKeyPref);
+        if (lastKey != null && lastKey.isNotEmpty) {
+          final loaded = await _loadCachedByKey(lastKey);
+          if (loaded) {
+            _errorMessage = '';
+            notifyListeners();
+          }
+        }
+      }
+    } catch (_) {
+      // Ignore hydrate errors; normal fetch path will handle.
+    }
+  }
+
   /// Check if cached data is still valid
   bool _isCacheValid(int? profileId, String? dateOfBirth) {
     if (_categories.isEmpty) return false;
-    if (_lastFetchTime == null) return false;
-    
-    // Check if cache has expired
-    if (DateTime.now().difference(_lastFetchTime!) > _cacheDuration) {
-      return false;
-    }
-    
+
     // Check if profile parameters have changed
     if (_lastProfileId != profileId || _lastDateOfBirth != dateOfBirth) {
       return false;
@@ -77,18 +109,6 @@ class ExploreCourseProvider with ChangeNotifier {
     bool showLoading = true,
     bool forceRefresh = false,
   }) async {
-    // Check if we can use cached data
-    if (!forceRefresh && _isCacheValid(profileId, dateOfBirth)) {
-      debugPrint('✅ Using cached course data (${_categories.length} categories)');
-      return;
-    }
-
-    if (showLoading) {
-      _isLoading = true;
-      _errorMessage = '';
-      notifyListeners();
-    }
-    
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -104,30 +124,105 @@ class ExploreCourseProvider with ChangeNotifier {
       if (profileId != null) await prefs.setInt('active_profile_id', profileId);
       if (dateOfBirth != null) await prefs.setString('active_profile_dob', dateOfBirth);
 
-      debugPrint('🔄 Fetching fresh course data from server...');
+      // Explicitly load persisted cache first (cold start / empty state).
+      if (!forceRefresh && _categories.isEmpty) {
+        try {
+          final cachedResponse = await _courseService.getAllCategoriesAndCourses(
+            profileId: usedProfileId,
+            dateOfBirth: usedDob,
+            allowNetwork: false,
+          );
+          _categories = cachedResponse.categories.reversed.toList();
+          _lastProfileId = usedProfileId;
+          _lastDateOfBirth = usedDob;
+          _errorMessage = '';
+          notifyListeners();
+        } catch (_) {
+          // If key-specific cache misses, try last known cache key.
+          final lastKey = prefs.getString(_lastCacheKeyPref);
+          if (lastKey != null && lastKey.isNotEmpty) {
+            final loaded = await _loadCachedByKey(lastKey);
+            if (loaded) {
+              _errorMessage = '';
+              notifyListeners();
+            }
+          }
+        }
+      }
+
+      final hasValidCache = _isCacheValid(usedProfileId, usedDob);
+      final hasAnyCache = _categories.isNotEmpty;
+
+      if (showLoading && !hasAnyCache) {
+        _isLoading = true;
+        _errorMessage = '';
+        notifyListeners();
+      }
+
+      final isOnline = await ConnectivityService.isOnline();
+      if (!isOnline && _categories.isNotEmpty) {
+        _isLoading = false;
+        _errorMessage = 'You are offline. Showing saved courses.';
+        notifyListeners();
+        return;
+      }
+
+      // If we already have valid cache, keep UI responsive and refresh silently.
+      if (!forceRefresh && hasValidCache && showLoading) {
+        _isLoading = false;
+        notifyListeners();
+      }
+
       final response = await _courseService.getAllCategoriesAndCourses(
         profileId: usedProfileId,
         dateOfBirth: usedDob,
+        allowNetwork: isOnline,
       );
       
       _categories = response.categories.reversed.toList();
-      _lastFetchTime = DateTime.now();
       _lastProfileId = usedProfileId;
       _lastDateOfBirth = usedDob;
-      _errorMessage = '';
+      final cacheKey = ExploreDashboardCache.coursesKey(
+        profileId: usedProfileId,
+        dateOfBirth: usedDob,
+      );
+      await prefs.setString(_lastCacheKeyPref, cacheKey);
+      _errorMessage = isOnline
+          ? ''
+          : 'You are offline. Showing saved courses.';
       
       debugPrint('✅ Successfully fetched ${_categories.length} categories');
     } catch (e) {
-      _errorMessage = 'Error fetching categories and courses: $e';
+      final isOnline = await ConnectivityService.isOnline();
+      _errorMessage = isOnline
+          ? 'Network error. Please try again.'
+          : 'No internet connection. Connect and try again.';
       debugPrint('❌ Error fetching courses: $e');
     } finally {
       if (showLoading) {
         _isLoading = false;
-        notifyListeners();
-      } else {
-        notifyListeners();
       }
+      notifyListeners();
     }
+  }
+
+  Future<bool> _loadCachedByKey(String key) async {
+    try {
+      final cached = await ExploreDashboardCache.load(key);
+      if (cached?.data is Map<String, dynamic>) {
+        final response = CourseResponse.fromJson(
+          Map<String, dynamic>.from(cached!.data),
+        );
+        _categories = response.categories.reversed.toList();
+        _lastProfileId = null;
+        _lastDateOfBirth = null;
+        debugPrint('✅ Loaded courses from fallback cache key: $key');
+        return true;
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to load fallback cache key: $e');
+    }
+    return false;
   }
 
   /// Force refresh data (for pull-to-refresh)
@@ -146,7 +241,6 @@ class ExploreCourseProvider with ChangeNotifier {
 
   /// Clear cache and force next fetch
   void invalidateCache() {
-    _lastFetchTime = null;
     _lastProfileId = null;
     _lastDateOfBirth = null;
     debugPrint('🗑️ Cache invalidated');
@@ -159,8 +253,5 @@ class ExploreCourseProvider with ChangeNotifier {
     invalidateCache(); // Also clear cache when clearing profile
   }
 
-  /// Update cache duration if needed
-  void setCacheDuration(Duration duration) {
-    // You can make _cacheDuration non-final and update it if needed
-  }
+  
 }

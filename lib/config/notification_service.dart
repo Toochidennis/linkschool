@@ -13,7 +13,7 @@ class NotificationService {
     if (_initialized) return;
 
     await AwesomeNotifications().initialize(
-      null,
+      'resource://mipmap/ic_launcher',
       [
         NotificationChannel(
           channelKey: 'download_channel',
@@ -25,6 +25,8 @@ class NotificationService {
           playSound: true,
           enableVibration: true,
         )
+        ,
+       
       ],
     );
 
@@ -75,6 +77,24 @@ class NotificationService {
         channelKey: 'download_channel',
         title: title,
         body: error,
+        notificationLayout: NotificationLayout.Default,
+      ),
+    );
+  }
+
+  Future<void> showFirebaseNotification({
+    required String title,
+    required String body,
+    required Map<String, String> payload,
+  }) async {
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        channelKey: 'firebase_channel',
+        title: title,
+        body: body,
+        icon: 'resource://mipmap/ic_launcher',
+        payload: payload,
         notificationLayout: NotificationLayout.Default,
       ),
     );

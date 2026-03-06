@@ -1,7 +1,5 @@
 import 'dart:ui';
 
-// import 'video_model.dart';
-
 class SubjectModel {
   final String id;
   final String name;
@@ -17,14 +15,38 @@ class SubjectModel {
     this.years,
   });
 
+  // ✅ Used when parsing the STARTUP API response
+  // courses from startup have: id, course_name (NO years)
+  factory SubjectModel.fromStartupJson(Map<String, dynamic> json) {
+    return SubjectModel(
+      id: json['id'].toString(),
+      name: json['course_name'] ?? '',
+      years: [], // years are empty until the exam is downloaded
+    );
+  }
+
+  // ✅ Used when parsing DOWNLOADED exam data
+  // courses from downloaded exam have: course_id, course_name, years[]
   factory SubjectModel.fromJson(Map<String, dynamic> json) {
     return SubjectModel(
-      id: json['course_id'].toString() ?? '',
+      id: json['course_id'].toString(),
       name: json['course_name'] ?? '',
       years: (json['years'] as List<dynamic>?)
               ?.map((year) => YearModel.fromJson(year))
               .toList() ??
           [],
+    );
+  }
+
+  // ✅ Used when reading back from local SQLite
+  factory SubjectModel.fromDb(
+    Map<String, dynamic> row, {
+    List<YearModel>? years,
+  }) {
+    return SubjectModel(
+      id: row['id'].toString(),
+      name: row['course_name'] ?? row['name'] ?? '',
+      years: years ?? [],
     );
   }
 }
@@ -38,37 +60,19 @@ class YearModel {
     required this.year,
   });
 
+  // ✅ Used when parsing downloaded exam zip
   factory YearModel.fromJson(Map<String, dynamic> json) {
     return YearModel(
-      id: json['exam_id'].toString() ?? '',
+      id: json['exam_id'].toString(),
       year: json['year'] ?? '',
     );
   }
+
+  // ✅ Used when reading back from local SQLite exams table
+  factory YearModel.fromDb(Map<String, dynamic> row) {
+    return YearModel(
+      id: row['id'].toString(),
+      year: row['year'].toString(),
+    );
+  }
 }
-// class Category {
-//   final String id;
-//   final String level;
-//   final String levelName;
-//   final String name;
-//   final List<Video> videos;
-
-//   Category({
-//     required this.id,
-//     required this.level,
-//     required this.levelName,
-//     required this.name,
-//     required this.videos,
-//   });
-
-//   factory Category.fromJson(Map<String, dynamic> json) {
-//     return Category(
-//       id: json['id'] ?? '',
-//       level: json['level'] ?? '',
-//       levelName: json['level_name'] ?? '',
-//       name: json['name'] ?? '',
-//       videos: (json['videos'] as List)
-//           .map((video) => Video.fromJson(video))
-//           .toList(),
-//     );
-//   }
-// }
