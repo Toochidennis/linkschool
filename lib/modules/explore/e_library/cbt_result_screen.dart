@@ -79,23 +79,17 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
 
   void _navigateBackFromResults() {
     context.read<CBTProvider>().refreshStats();
-
-    if (widget.calledFrom == 'dashboard' ||
-        widget.calledFrom == 'multi-subject') {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => const CBTDashboard(),
-          settings: const RouteSettings(name: '/cbt_dashboard'),
-        ),
-        (route) => false,
-      );
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
       return;
     }
 
-    Navigator.of(context).pop();
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => const CBTDashboard(),
+        settings: const RouteSettings(name: '/cbt_dashboard'),
+      ),
+    );
   }
 
   @override
@@ -401,7 +395,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
           ),
         ),
         body: !_userSignedIn
-            ? const SizedBox() // Empty body while waiting for signin
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
             : Container(
                 decoration: Constants.customBoxDecoration(context),
                 child: isMultiSubject

@@ -1124,7 +1124,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                                           Text(
                                             'Year ${selection!.year} selected',
                                             style: TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 14,
                                               color: accent,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -1198,7 +1198,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                                         ? '${selection!.year} (Simulation)'
                                         : selection!.year,
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 14,
                                       color: accent,
                                       fontWeight: FontWeight.w600,
                                     ),

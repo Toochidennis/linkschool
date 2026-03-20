@@ -541,6 +541,56 @@ class DiscussionProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> discussionLike({
+    required String cohortId,
+    required int discussionId,
+    required int authorId,
+    required bool isLiked,
+  }) async {
+    bool updated = false;
+
+    final discussionIndex =
+        _discussions.indexWhere((discussion) => discussion.id == discussionId);
+    if (discussionIndex != -1) {
+      final discussion = _discussions[discussionIndex];
+      final nextLiked = !isLiked;
+      final nextCount =
+          nextLiked ? discussion.likesCount + 1 : discussion.likesCount - 1;
+      _discussions[discussionIndex] = discussion.copyWith(
+        isLiked: nextLiked,
+        likesCount: nextCount < 0 ? 0 : nextCount,
+      );
+      updated = true;
+    }
+
+    if (_activeDiscussion?.id == discussionId) {
+      final discussion = _activeDiscussion!;
+      final nextLiked = !isLiked;
+      final nextCount =
+          nextLiked ? discussion.likesCount + 1 : discussion.likesCount - 1;
+      _activeDiscussion = discussion.copyWith(
+        isLiked: nextLiked,
+        likesCount: nextCount < 0 ? 0 : nextCount,
+      );
+      updated = true;
+    }
+
+    if (updated) {
+      notifyListeners();
+    }
+
+    try {
+      await _service.discussionLike(
+        cohortId: cohortId,
+        discussionId: discussionId.toString(),
+        authorId: authorId,
+        unlike: isLiked,
+      );
+    } catch (_) {
+      // Silent fail: UI already updated optimistically.
+    }
+  }
+
   void addLocalPost({
     required int discussionId,
     required String message,

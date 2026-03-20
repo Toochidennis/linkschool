@@ -205,6 +205,7 @@ class DiscussionItem {
   final bool isLocked;
   final int postsCount;
   final int likesCount;
+  final bool isLiked;
 
   DiscussionItem({
     required this.id,
@@ -219,6 +220,7 @@ class DiscussionItem {
     required this.isLocked,
     required this.postsCount,
     required this.likesCount,
+    this.isLiked = false,
   });
 
   factory DiscussionItem.fromJson(Map<String, dynamic> json) {
@@ -242,6 +244,39 @@ class DiscussionItem {
       isLocked: _asBool(json['is_locked'] ?? json['isLocked']),
       likesCount: _asInt(json['likes_count'] ?? json['likesCount']),
       postsCount: _asInt(json['posts_count']),
+      isLiked: _asBool(json['is_liked'] ?? json['isLiked']),
+    );
+  }
+
+  DiscussionItem copyWith({
+    int? id,
+    int? cohortId,
+    int? authorId,
+    DiscussionAuthor? author,
+    String? title,
+    String? body,
+    String? createdAt,
+    List<DiscussionImage>? images,
+    bool? isPinned,
+    bool? isLocked,
+    int? postsCount,
+    int? likesCount,
+    bool? isLiked,
+  }) {
+    return DiscussionItem(
+      id: id ?? this.id,
+      cohortId: cohortId ?? this.cohortId,
+      authorId: authorId ?? this.authorId,
+      author: author ?? this.author,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      createdAt: createdAt ?? this.createdAt,
+      images: images ?? this.images,
+      isPinned: isPinned ?? this.isPinned,
+      isLocked: isLocked ?? this.isLocked,
+      postsCount: postsCount ?? this.postsCount,
+      likesCount: likesCount ?? this.likesCount,
+      isLiked: isLiked ?? this.isLiked,
     );
   }
 

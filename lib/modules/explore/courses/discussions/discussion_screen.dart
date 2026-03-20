@@ -772,9 +772,10 @@ class _DiscussionCard extends StatelessWidget {
                     discussion.body,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style:  TextStyle(
+                      fontSize: 15,
                       height: 1.4,
+                        fontWeight: FontWeight.w700,
                       color: Color(0xFF374151),
                     ),
                   ),
@@ -817,7 +818,7 @@ class _DiscussionCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      '${discussion.postsCount} Posts',
+                      '${discussion.postsCount} Comments',
                       style: const TextStyle(
                         fontFamily: 'Urbanist',
                         fontSize: 13,
@@ -826,6 +827,51 @@ class _DiscussionCard extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
+                    GestureDetector(
+                      onTap: authorId == null
+                          ? null
+                          : () => context.read<DiscussionProvider>().discussionLike(
+                                cohortId: discussion.cohortId.toString(),
+                                discussionId: discussion.id,
+                                authorId: authorId!,
+                                isLiked: discussion.isLiked,
+                              ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: const Color(0xFF2563EB),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              discussion.isLiked
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 14,
+                              color: const Color(0xFF2563EB),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${discussion.likesCount}',
+                              style: TextStyle(
+                                fontFamily: 'Urbanist',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF2563EB),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
 
                     if (!discussion.isLocked)
                       GestureDetector(
@@ -840,25 +886,29 @@ class _DiscussionCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF3F4F6),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: const Color(0xFF2563EB),
+                              width: 1.2,
+                            ),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.reply_rounded,
+                                Icons.comment,
                                 size: 14,
-                                color: Color(0xFF6B7280),
+                                color: Color(0xFF2563EB),
                               ),
                               SizedBox(width: 5),
                               Text(
-                                'Reply',
+                                'Comment',
                                 style: TextStyle(
                                   fontFamily: 'Urbanist',
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF4B5563),
+                                  color: Color(0xFF2563EB),
                                 ),
                               ),
                             ],

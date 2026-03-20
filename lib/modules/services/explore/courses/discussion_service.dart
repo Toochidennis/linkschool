@@ -266,6 +266,53 @@ class DiscussionService {
     }
   }
 
+
+   Future<bool> discussionLike({
+    required String cohortId,
+    required String discussionId,
+    required int authorId,
+    required bool unlike,
+  }) async {
+    try {
+      final apiKey = EnvConfig.apiKey;
+
+      if (apiKey.isEmpty) {
+        throw Exception("API KEY not found");
+      }
+
+      final action = unlike ? 'unlike' : 'like';
+      final uri = Uri.parse(
+        "${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions/$discussionId/$action",
+      );
+      print("📡 toggling discussion like → $uri");
+
+      final response = await http.post(
+        uri,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-API-KEY": apiKey,
+        },
+        body: json.encode({
+          'author_id': authorId,
+        }),
+      );
+
+      print("📦 Response: ${response.body}");
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        print("❌ Failed to toggle discussion like");
+        print("📦 Response: ${response.body}");
+        throw Exception("Failed: ${response.body}");
+      }
+
+      return true;
+    } catch (e) {
+      print("❌ Error toggling discussion like: $e");
+      throw Exception("Error toggling discussion like: $e");
+    }
+  }
+
 Future<bool> deleteDiscussion({
   required String cohortId,
   required String discussionId,

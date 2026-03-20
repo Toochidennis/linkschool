@@ -112,6 +112,7 @@ final TimerController _timerController = TimerController();
         provider.fetchExamData(
           widget.examTypeId,
           limit: widget.questionLimit,
+          randomizeQuestions: true,
         );
         print("Fetching exam data for examTypeId: ${widget.examTypeId}");
         print(
@@ -335,6 +336,7 @@ final TimerController _timerController = TimerController();
     provider.fetchExamData(
       widget.examTypeId,
       limit: widget.questionLimit,
+      randomizeQuestions: true,
     );
     print("Fetching exam data for examTypeId: ${widget.examTypeId}");
     print(
