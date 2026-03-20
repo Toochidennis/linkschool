@@ -126,6 +126,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       if (signedIn == true) {
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
+        if (cbtUserProvider.currentUser == null) {
+          await cbtUserProvider.initialize();
+        }
+        await cbtUserProvider.refreshCurrentUser();
         final updatedUser = cbtUserProvider.currentUser;
 
         if (updatedUser != null) {

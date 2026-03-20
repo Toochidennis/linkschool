@@ -3076,6 +3076,78 @@ Future<void> _handleBackButton() async {
                                             },
                                           ),
                                         ] else if (submissionType == 'link' || submissionType == 'url') ...[
+                                          if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty) ...[
+                                            const SizedBox(height: 12),
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade50,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Colors.grey.shade200,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        width: 28,
+                                                        height: 28,
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(0xFF1F2937),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: const Icon(
+                                                          Icons.list_alt,
+                                                          color: Colors.white,
+                                                          size: 16,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      const Text(
+                                                        'Assignment Instructions',
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.w700,
+                                                          color: Color(0xFF111827),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Html(
+                                                    data: _effectiveAssignmentDescription,
+                                                    style: {
+                                                      "body": Style(
+                                                        fontSize: FontSize(14),
+                                                        color: Colors.black87,
+                                                        lineHeight: LineHeight(1.4),
+                                                        margin: Margins.zero,
+                                                        padding: HtmlPaddings.zero,
+                                                      ),
+                                                      "p": Style(
+                                                        margin: Margins(bottom: Margin(6)),
+                                                      ),
+                                                      "ul": Style(
+                                                        margin: Margins(bottom: Margin(6)),
+                                                        padding: HtmlPaddings(left: HtmlPadding(18)),
+                                                      ),
+                                                      "ol": Style(
+                                                        margin: Margins(bottom: Margin(6)),
+                                                        padding: HtmlPaddings(left: HtmlPadding(18)),
+                                                      ),
+                                                      "li": Style(
+                                                        margin: Margins(bottom: Margin(2)),
+                                                        padding: HtmlPaddings.zero,
+                                                      ),
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                           // URL/Link input field
                                           TextField(
                                             controller: _linkController,
@@ -3114,6 +3186,7 @@ Future<void> _handleBackButton() async {
                                               }
                                             },
                                           ),
+                                          
                                         ] else if (submissionType == 'text') ...[
                                           // Text input field
                                           TextField(
@@ -3802,6 +3875,44 @@ Future<void> _previewAssignment(String assignmentUrl) async {
   return null;
 }
 
+Future<String?> _getCachedFilePath(String url) async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'downloaded_file_${url.hashCode}';
+  final cachedPath = prefs.getString(key);
+  if (cachedPath == null) return null;
+
+  if (Platform.isAndroid && cachedPath.contains('/app_flutter/')) {
+    final oldFile = File(cachedPath);
+    if (await oldFile.exists()) {
+      final fileName = oldFile.uri.pathSegments.isNotEmpty
+          ? oldFile.uri.pathSegments.last
+          : 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final bytes = await oldFile.readAsBytes();
+      final newPath = await _saveToAppStorage(bytes, fileName);
+      if (newPath != null) {
+        await _cacheFilePath(url, newPath);
+        return newPath;
+      }
+    }
+    await prefs.remove(key);
+    return null;
+  }
+  
+  // Verify the file still exists on disk
+  final file = File(cachedPath);
+  if (await file.exists()) return cachedPath;
+  
+  // File was deleted, remove stale cache entry
+  await prefs.remove(key);
+  return null;
+}
+
+Future<void> _cacheFilePath(String url, String filePath) async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'downloaded_file_${url.hashCode}';
+  await prefs.setString(key, filePath);
+}
+
 Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
   if (!Platform.isAndroid) {
     return null;
@@ -3863,7 +3974,13 @@ Future<void> _openFileWithChooser(String filePath) async {
 // Download Material - simplified version
 Future<void> _downloadMaterial(String materialUrl) async {
   try {
-    // Show loading
+    // Check if already downloaded
+    final cachedPath = await _getCachedFilePath(materialUrl);
+    if (cachedPath != null) {
+      await _openFileWithChooser(cachedPath);
+      return; // Skip re-download
+    }
+
     if (mounted) {
       showDialog(
         context: context,
@@ -3880,23 +3997,24 @@ Future<void> _downloadMaterial(String materialUrl) async {
       );
     }
 
-    // Download file
-    final response = await http.get(Uri.parse("https://linkskool.net/$materialUrl"));
-    
+    final response = await http.get(
+      Uri.parse("https://linkskool.net/$materialUrl"),
+    );
+
     if (response.statusCode == 200) {
       final fileName = _getFileNameFromUrl(materialUrl);
-
-      // Save to Downloads
-      final savedPath = await _saveToPublicDownloads(
+       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+     await _saveToPublicDownloads(
         response.bodyBytes,
         fileName,
       );
 
       if (mounted) {
-        Navigator.pop(context); // Close loading
-        
+        Navigator.pop(context);
+
         if (savedPath != null) {
-          // Open with system chooser immediately
+          // Cache the path for future use
+          await _cacheFilePath(materialUrl, savedPath);
           await _openFileWithChooser(savedPath);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -3919,7 +4037,6 @@ Future<void> _downloadMaterial(String materialUrl) async {
       }
     }
   } catch (e) {
-    print('Download error: $e');
     if (mounted) {
       if (Navigator.canPop(context)) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -3957,7 +4074,9 @@ Future<void> _downloadCertificate(String certificateUrl) async {
     if (response.statusCode == 200) {
       final fileName = _getFileNameFromUrl(certificateUrl);
 
-      final savedPath = await _saveToPublicDownloads(
+       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+
+    await _saveToPublicDownloads(
         response.bodyBytes,
         fileName,
       );
@@ -4000,9 +4119,34 @@ Future<void> _downloadCertificate(String certificateUrl) async {
   }
 }
 
+
+// New helper — saves to app-private storage, returns a real file path
+Future<String?> _saveToAppStorage(Uint8List bytes, String fileName) async {
+  try {
+    final Directory baseDir = Platform.isAndroid
+        ? await getApplicationSupportDirectory()
+        : await getApplicationDocumentsDirectory();
+    final downloadsDir = Directory('${baseDir.path}/downloads');
+    if (!await downloadsDir.exists()) {
+      await downloadsDir.create(recursive: true);
+    }
+    final file = File('${downloadsDir.path}/$fileName');
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
+  } catch (e) {
+    print('Error saving to app storage: $e');
+    return null;
+  }
+}
+
 // Download Assignment - simplified version
 Future<void> _downloadAssignment(String assignmentUrl) async {
   try {
+     final cachedPath = await _getCachedFilePath(assignmentUrl);
+    if (cachedPath != null) {
+      await _openFileWithChooser(cachedPath);
+      return;
+    }
     if (mounted) {
       showDialog(
         context: context,
@@ -4024,16 +4168,20 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
     if (response.statusCode == 200) {
       final fileName = _getFileNameFromUrl(assignmentUrl);
 
-      final savedPath = await _saveToPublicDownloads(
+       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+
+      await _saveToPublicDownloads(
         response.bodyBytes,
         fileName,
       );
+
 
       if (mounted) {
         Navigator.pop(context);
         
         if (savedPath != null) {
           // Open with system chooser immediately
+          await _cacheFilePath(assignmentUrl, savedPath);
           await _openFileWithChooser(savedPath);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

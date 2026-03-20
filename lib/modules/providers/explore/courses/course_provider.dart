@@ -249,6 +249,7 @@ class ExploreCourseProvider with ChangeNotifier {
   Future<void> clearPersistedProfile() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('active_profile_id');
+    await prefs.remove('active_profile_name');
     await prefs.remove('active_profile_dob');
     invalidateCache(); // Also clear cache when clearing profile
   }

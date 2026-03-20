@@ -850,7 +850,7 @@ void initState() {
                             ),
                         child: _buildNewsItem(
                           title: news.title,
-                          newsContent: news.content,
+                          newsContent: stripHtml(news.content),
                           time: formatDuration(difference),
                           imageUrl: news.imageUrl,
                           authorName: news.author_name,
@@ -888,6 +888,19 @@ void initState() {
     Duration difference = nowDateTime.difference(dop);
     return difference;
   }
+
+
+  String stripHtml(String html) {
+  return html
+    .replaceAll(RegExp(r'<[^>]*>'), '')      // remove tags
+    .replaceAll('&amp;', '&')
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&quot;', '"')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .trim();
+}
 
   //  String timeAgo = formatDuration(difference);
 
@@ -1305,7 +1318,7 @@ void initState() {
 
                 // Description
                 Text(
-                  newsContent,
+                    stripHtml(newsContent),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal400(

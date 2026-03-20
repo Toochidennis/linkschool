@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:linkfy_text/linkfy_text.dart';
 // import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
 // import 'package:share_plus/share_plus.dart';
@@ -482,20 +483,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                LinkifyText(
-                                  currentNews.content,
-                                  textStyle: AppTextStyles.normal400(
-                                    fontSize: 16.0,
-                                    color: Colors.black,
-                                  ).copyWith(height: 1.7),
-                                  linkStyle: TextStyle(
-                                    color: AppColors.primaryLight,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                  onTap: (link) {
-                                    launchURL(link.value.toString());
-                                  },
-                                ),
+                         _buildHtmlContent(currentNews.content),
                                 const SizedBox(height: 12),
                                 _NewsBannerAd(
                                   adUnitId: EnvConfig.googleBannerAdsApiKey,
@@ -575,6 +563,122 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
       ),
     );
   }
+
+
+  Widget _buildHtmlContent(String htmlData, {int depth = 0}) {
+  return Html(
+    data: htmlData,
+    style: {
+      "body": Style(
+        fontSize: FontSize(15.0),
+        lineHeight: LineHeight(1.7),
+        color: Colors.black87,
+        fontFamily: 'Urbanist',
+        margin: Margins.zero,
+        padding: HtmlPaddings.zero,
+      ),
+      "p": Style(
+        margin: Margins.only(bottom: 8, top: 0),
+        padding: HtmlPaddings.zero,
+        fontSize: FontSize(15.0),
+        color: Colors.black87,
+      ),
+      "a": Style(
+        color: AppColors.primaryLight,
+        textDecoration: TextDecoration.underline,
+        fontSize: FontSize(15.0),
+      ),
+      "strong": Style(
+        fontWeight: FontWeight.w700,
+        color: Colors.black,
+      ),
+      "em": Style(
+        fontStyle: FontStyle.italic,
+      ),
+      "ul": Style(
+        margin: Margins.only(left: 0, bottom: 8, top: 4),
+        padding: HtmlPaddings.only(left: 16),
+        listStyleType: ListStyleType.none,
+      ),
+      "ol": Style(
+        margin: Margins.only(left: 0, bottom: 8, top: 4),
+        padding: HtmlPaddings.only(left: 16),
+        listStyleType: ListStyleType.none,
+      ),
+      "li": Style(
+        margin: Margins.only(bottom: 6, top: 0),
+        padding: HtmlPaddings.zero,
+        fontSize: FontSize(15.0),
+        color: Colors.black87,
+      ),
+      "ul ul": Style(
+        margin: Margins.only(left: 0, top: 4, bottom: 4),
+        padding: HtmlPaddings.only(left: 12),
+        listStyleType: ListStyleType.none,
+      ),
+      "ol ol": Style(
+        margin: Margins.only(left: 0, top: 4, bottom: 4),
+        padding: HtmlPaddings.only(left: 12),
+        listStyleType: ListStyleType.none,
+      ),
+      "h1": Style(
+        fontSize: FontSize(22.0),
+        fontWeight: FontWeight.w700,
+        margin: Margins.only(bottom: 8, top: 16),
+        color: AppColors.text2Light,
+      ),
+      "h2": Style(
+        fontSize: FontSize(19.0),
+        fontWeight: FontWeight.w700,
+        margin: Margins.only(bottom: 6, top: 14),
+        color: AppColors.text2Light,
+      ),
+      "h3": Style(
+        fontSize: FontSize(17.0),
+        fontWeight: FontWeight.w600,
+        margin: Margins.only(bottom: 6, top: 12),
+        color: AppColors.text2Light,
+      ),
+    },
+    extensions: [
+      TagExtension(
+        tagsToExtend: {"li"},
+        builder: (extensionContext) {
+          final isNested = depth > 0;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 6.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isNested ? "◦ " : "• ",
+                  style: TextStyle(
+                    fontSize: isNested ? 16 : 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                    height: 1.55,
+                  ),
+                ),
+                Expanded(
+                  child: extensionContext.innerHtml != null
+                      ? _buildHtmlContent(
+                          extensionContext.innerHtml!,
+                          depth: depth + 1, // increment depth for nested
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ],
+    onLinkTap: (url, attributes, element) {
+      if (url != null) launchURL(url);
+    },
+  );
+}
 
 
   Widget relatedCard(NewsModel news, BuildContext context) {

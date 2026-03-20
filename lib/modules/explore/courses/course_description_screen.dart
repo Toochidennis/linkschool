@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/model/explore/cohorts/cohort_model.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
@@ -6,6 +7,7 @@ import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
 import 'course_content_screen.dart';
+import 'course_waiting_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
 
@@ -13,6 +15,9 @@ import 'package:linkschool/modules/services/explore/courses/cohort_service.dart'
 import 'package:provider/provider.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:intl/intl.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 import 'course_payment_dialog.dart';
 
 class CourseDescriptionScreen extends StatefulWidget {
@@ -237,6 +242,21 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
               (trialType == 'views' || trialType == 'days');
 
           final String displayCost = _formatCostDisplay(cohort.cost);
+          final String mediaImageUrl = _buildMediaUrl(
+            cohort.imageUrl.isNotEmpty ? cohort.imageUrl : widget.course.imageUrl,
+          );
+          final String? rawVideoUrl = _normalizeOptionalValue(cohort.videoUrl);
+          final String? videoUrl =
+              rawVideoUrl != null ? _buildMediaUrl(rawVideoUrl) : null;
+          final String learningTypeLabel =
+              _formatLearningType(cohort.learningType);
+          final String? discountLabel = _formatDiscount(cohort.discount);
+          final DateTime? enrollmentDeadline =
+              _parseDateTime(cohort.enrollmentDeadline);
+          final bool isSelfPaced = _isSelfPaced(cohort.learningType);
+          final bool isEnrollmentClosed = enrollmentDeadline != null &&
+              enrollmentDeadline.isBefore(DateTime.now()) &&
+              !isSelfPaced;
 
           return Scaffold(
             backgroundColor: Colors.white,
@@ -246,74 +266,53 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 children: [
                   CustomScrollView(
                     slivers: [
-                      // 1. App Bar with Image
+                      // 1. App Bar
                       SliverAppBar(
-                        expandedHeight: 250,
                         pinned: true,
                         backgroundColor: Colors.white,
                         elevation: 0,
-                        iconTheme: const IconThemeData(color: Colors.white),
+                        iconTheme: const IconThemeData(color: Colors.black87),
                         leading: CircleAvatar(
-                          backgroundColor: Colors.black.withOpacity(0.4),
+                          backgroundColor: Colors.black.withOpacity(0.08),
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back,
-                                color: Colors.white),
+                                color: Colors.black87),
                             onPressed: () => Navigator.pop(context),
-                          ),
-                        ),
-                        flexibleSpace: FlexibleSpaceBar(
-                          background: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              CachedNetworkImage(
-                              imageUrl: () {
-  final raw = cohort.imageUrl.isNotEmpty
-      ? cohort.imageUrl
-      : widget.course.imageUrl;
-  return raw.isNotEmpty ? "https://linkskool.net/$raw" : "";
-}(),
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: Colors.grey.shade200,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Color(0xFFFFA500),
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) {
-                                  return Container(
-                                    color: Colors.grey.shade200,
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.image_not_supported,
-                                        size: 50,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              // Gradient overlay for better text visibility (optional)
-                              Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.black.withOpacity(0.3),
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
 
                       // 2. Content
+                      SliverToBoxAdapter(
+                        child: Stack(
+                          children: [
+                            SizedBox(
+                              height: 250,
+                              width: double.infinity,
+                              child: _CourseMediaHeader(
+                                videoUrl: videoUrl,
+                                imageUrl: mediaImageUrl,
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.black.withOpacity(0.12),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.all(20.0),
@@ -550,6 +549,48 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildInfoCard(
+                                      'Learning type',
+                                      learningTypeLabel,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildInfoCard(
+                                      'Enrollment deadline',
+                                      enrollmentDeadline != null
+                                          ? _formatDateTime(enrollmentDeadline)
+                                          : 'Open',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (isEnrollmentClosed) ...[
+                                const SizedBox(height: 16),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEE2E2),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFFFCA5A5),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Enrollment closed on ${_formatDateTime(enrollmentDeadline!)}.',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFB91C1C),
+                                    ),
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 24),
 
                               const Text(
@@ -566,6 +607,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                 _buildPricingRow('Cost', 'Free'),
                               ] else ...[
                                 _buildPricingRow('Cost', displayCost),
+                                if (discountLabel != null)
+                                  _buildPricingRow('Discount', discountLabel),
                                 if (hasValidTrial)
                                   _buildPricingRow(
                                     'Trial',
@@ -602,6 +645,32 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                       ),
                       child: Builder(
                         builder: (buttonContext) {
+                          if (isEnrollmentClosed) {
+                            return SizedBox(
+                              width: double.infinity,
+                              height: 54,
+                              child: ElevatedButton(
+                                onPressed: null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFFA500),
+                                  disabledBackgroundColor: Colors.grey.shade300,
+                                  disabledForegroundColor: Colors.grey.shade700,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  'Enrollment Closed',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
                           final String enrollmentType = isFree
                               ? 'free'
                               : (hasValidTrial ? 'trial' : 'paid');
@@ -610,6 +679,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                               !isFree && hasValidTrial;
 
                           Future<void> handlePaidEnrollment() async {
+                            if (isEnrollmentClosed) return;
                             final amount = _parseCostToInt(cohort.cost);
                             int lastPaidAmount = amount;
                             showDialog(
@@ -618,41 +688,17 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                 amount: amount,
                                 onPaymentSuccess: () {
                                   if (!mounted) return;
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CourseContentScreen(
-                                        lessonImage: () {
-                                          String url = cohort.imageUrl.isNotEmpty
-                                              ? cohort.imageUrl
-                                              : widget.course.imageUrl;
-                                          return url.startsWith('https')
-                                              ? url
-                                              : "https://linkskool.net/$url";
-                                        }(),
-                                        cohortId: widget.cohortId,
-                                        isFree: cohort.isFree == 1,
-                                        trialExpiryDate:
-                                            widget.course.trialExpiryDate,
-                                        courseTitle: cohort.title,
-                                        courseDescription: cohort.description,
-                                        provider: widget.provider,
-                                        courseId: widget.course.id,
-                                        courseName: cohort.courseName,
-                                        categoryId: widget.categoryId,
-                                        providerSubtitle:
-                                            widget.providerSubtitle,
-                                        category:
-                                            widget.categoryName.toUpperCase(),
-                                        categoryColor: widget.categoryColor,
-                                        profileId: widget.profileId,
-                                        trialType: widget.course.trialType,
-                                        trialValue: cohort.trialValue,
-                                        lessonsTaken:
-                                            widget.course.lessonsTaken,
-                                        cohortCost: lastPaidAmount,
-                                      ),
-                                    ),
+                                  final lessonImage =
+                                      cohort.imageUrl.isNotEmpty
+                                          ? cohort.imageUrl
+                                          : widget.course.imageUrl;
+                                  _navigateAfterEnrollment(
+                                    cohort: cohort,
+                                    isFree: cohort.isFree == 1,
+                                    courseTitle: cohort.title,
+                                    lessonImage: lessonImage,
+                                    lessonsTaken: widget.course.lessonsTaken,
+                                    cohortCost: lastPaidAmount,
                                   );
                                 },
                                 onPaymentCompleted:
@@ -726,6 +772,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                           }
 
                           Future<void> handleTrialEnrollment() async {
+                            if (isEnrollmentClosed) return;
                             DateTime? trialEndDate;
                             if (trialType == 'days' && trialValue > 0) {
                               trialEndDate = DateTime.now()
@@ -750,7 +797,6 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                               await enrollmentProvider.enrollUser(
                                   enrollmentData, widget.cohortId);
 
-                              // Navigate to Course Content screen after successful enrollment
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -760,30 +806,17 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                   ),
                                 );
 
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CourseContentScreen(
-                                      courseTitle: cohort.courseName,
-                                      courseDescription: cohort.description,
-                                      provider: widget.provider,
-                                      courseId: cohort.courseId,
-                                      categoryId: widget.categoryId,
-                                      cohortId: widget.cohortId,
-                                      isFree: isFree,
-                                      trialExpiryDate: widget.trialExpiryDate,
-                                      profileId: widget.profileId,
-                                      courseName: cohort.courseName,
-                                      lessonImage: cohort.imageUrl.isNotEmpty
-                                          ? cohort.imageUrl
-                                          : widget.course.imageUrl,
-                                      trialType: cohort.trialType,
-                                      trialValue: cohort.trialValue,
-                                      lessonsTaken: 0,
-                                      cohortCost:
-                                          _parseCostToInt(cohort.cost),
-                                    ),
-                                  ),
+                                final lessonImage =
+                                    cohort.imageUrl.isNotEmpty
+                                        ? cohort.imageUrl
+                                        : widget.course.imageUrl;
+                                _navigateAfterEnrollment(
+                                  cohort: cohort,
+                                  isFree: isFree,
+                                  courseTitle: cohort.courseName,
+                                  lessonImage: lessonImage,
+                                  lessonsTaken: 0,
+                                  cohortCost: _parseCostToInt(cohort.cost),
                                 );
                               }
                             } catch (e) {
@@ -864,7 +897,6 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                         await enrollmentProvider.enrollUser(
                                             enrollmentData, widget.cohortId);
 
-                                        // Navigate to Course Content screen after successful enrollment
                                         if (mounted) {
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
@@ -876,35 +908,18 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                             ),
                                           );
 
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  CourseContentScreen(
-                                                courseTitle: cohort.courseName,
-                                                courseDescription:
-                                                    cohort.description,
-                                                provider: widget.provider,
-                                                courseId: cohort.courseId,
-                                                categoryId: widget.categoryId,
-                                                cohortId: widget.cohortId,
-                                                isFree: isFree,
-                                                trialExpiryDate:
-                                                    widget.trialExpiryDate,
-                                                profileId: widget.profileId,
-                                                courseName: cohort.courseName,
-                                                lessonImage:
-                                                    cohort.imageUrl.isNotEmpty
-                                                        ? cohort.imageUrl
-                                                        : widget.course
-                                                            .imageUrl,
-                                                trialType: cohort.trialType,
-                                                trialValue: cohort.trialValue,
-                                                lessonsTaken: 0,
-                                                cohortCost:
-                                                    _parseCostToInt(cohort.cost),
-                                              ),
-                                            ),
+                                          final lessonImage =
+                                              cohort.imageUrl.isNotEmpty
+                                                  ? cohort.imageUrl
+                                                  : widget.course.imageUrl;
+                                          _navigateAfterEnrollment(
+                                            cohort: cohort,
+                                            isFree: isFree,
+                                            courseTitle: cohort.courseName,
+                                            lessonImage: lessonImage,
+                                            lessonsTaken: 0,
+                                            cohortCost:
+                                                _parseCostToInt(cohort.cost),
                                           );
                                         }
                                       } catch (e) {
@@ -996,6 +1011,67 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
   }
 
   
+
+  void _navigateAfterEnrollment({
+    required CohortModel cohort,
+    required bool isFree,
+    required String courseTitle,
+    required String lessonImage,
+    int? lessonsTaken,
+    int? cohortCost,
+  }) {
+    final startDate = _parseDateTime(cohort.startDate);
+    final trialExpiryDate =
+        widget.trialExpiryDate ?? widget.course.trialExpiryDate;
+    if (startDate != null && DateTime.now().isBefore(startDate)) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseWaitingScreen(
+            slug: (widget.course.slug ?? cohort.slug ?? ''),
+            providerSubtitle: widget.providerSubtitle,
+            category: widget.categoryName.toUpperCase(),
+            categoryColor: widget.categoryColor,
+            categoryId: widget.categoryId,
+            isFree: isFree,
+            trialExpiryDate: trialExpiryDate,
+            profileId: widget.profileId,
+            trialType: cohort.trialType,
+            trialValue: cohort.trialValue,
+            lessonsTaken: lessonsTaken,
+            cohortCost: cohortCost,
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CourseContentScreen(
+          courseTitle: courseTitle,
+          courseDescription: cohort.description,
+          provider: widget.provider,
+          courseId: cohort.courseId,
+          categoryId: widget.categoryId,
+          cohortId: widget.cohortId,
+          isFree: isFree,
+          trialExpiryDate: trialExpiryDate,
+          providerSubtitle: widget.providerSubtitle,
+          category: widget.categoryName.toUpperCase(),
+          categoryColor: widget.categoryColor,
+          profileId: widget.profileId,
+          courseName: cohort.courseName,
+          lessonImage: lessonImage,
+          trialType: cohort.trialType,
+          trialValue: cohort.trialValue,
+          lessonsTaken: lessonsTaken,
+          cohortCost: cohortCost,
+        ),
+      ),
+    );
+  }
 
   Widget _buildObjectiveItem(String text) {
     return Padding(
@@ -1100,6 +1176,68 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     }
   }
 
+  String _formatDateTime(DateTime value) {
+    return DateFormat('d MMM, yyyy h:mm a').format(value);
+  }
+
+  DateTime? _parseDateTime(String? raw) {
+    final normalized = _normalizeOptionalValue(raw);
+    if (normalized == null) return null;
+    try {
+      return DateTime.parse(normalized).toLocal();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _normalizeOptionalValue(String? raw) {
+    if (raw == null) return null;
+    final value = raw.trim();
+    if (value.isEmpty || value.toLowerCase() == 'null') return null;
+    return value;
+  }
+
+  bool _isSelfPaced(String raw) {
+    final normalized = raw.trim().toLowerCase().replaceAll('_', '');
+    return normalized == 'selfpaced';
+  }
+
+  String _formatLearningType(String raw) {
+    final normalized = _normalizeOptionalValue(raw) ?? 'Not specified';
+    if (normalized.toLowerCase() == 'selfpaced') {
+      return 'Self Paced';
+    }
+    if (normalized.toLowerCase() == 'instructor_led') {
+      return 'Instructor Led';
+    }
+    return normalized
+        .split('_')
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  String? _formatDiscount(String? raw) {
+    final normalized = _normalizeOptionalValue(raw);
+    if (normalized == null) return null;
+    if (normalized == '0' || normalized == '0.0') return null;
+    if (normalized.contains('%') ||
+        normalized.contains('\u20A6') ||
+        normalized.toLowerCase().contains('off')) {
+      return normalized;
+    }
+    return '$normalized%';
+  }
+
+  String _buildMediaUrl(String raw) {
+    final normalized = raw.trim();
+    if (normalized.isEmpty) return '';
+    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+      return normalized;
+    }
+    return 'https://linkskool.net/$normalized';
+  }
+
   String _formatCostDisplay(String raw) {
     const naira = '\u20A6';
     const legacy1 = '\u00E2\u201A\u00A6';
@@ -1127,6 +1265,514 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     final parsedDouble = double.tryParse(cleaned);
     if (parsedDouble == null) return 0;
     return parsedDouble.round();
+  }
+}
+
+class _CourseMediaHeader extends StatefulWidget {
+  final String? videoUrl;
+  final String imageUrl;
+
+  const _CourseMediaHeader({
+    required this.videoUrl,
+    required this.imageUrl,
+  });
+
+  @override
+  State<_CourseMediaHeader> createState() => _CourseMediaHeaderState();
+}
+
+class _CourseMediaHeaderState extends State<_CourseMediaHeader> {
+  YoutubePlayerController? _youtubeController;
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  String? _activeVideoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CourseMediaHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+  }
+
+  Future<void> _initializeForUrl(String? rawUrl) async {
+    print('🎬 Video URL received: $rawUrl');
+   if (_activeVideoUrl == rawUrl) return;
+    _activeVideoUrl = rawUrl;
+    await _disposeControllers();
+
+    final videoUrl = rawUrl?.trim();
+    if (videoUrl == null || videoUrl.isEmpty) {
+      print('⚠️ Video URL is empty or null');
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final videoId = _extractYouTubeId(videoUrl);
+    print('🔍 Extracted YouTube ID: $videoId from URL: $videoUrl');
+    if (videoId != null && videoId.isNotEmpty) {
+      print('✅ Creating YouTube player with ID: $videoId');
+      final controller = YoutubePlayerController(
+        initialVideoId: videoId,
+        flags: const YoutubePlayerFlags(
+          autoPlay: false,
+          mute: false,
+          enableCaption: true,
+          controlsVisibleAtStart: true,
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _youtubeController = controller;
+        });
+      }
+      return;
+    }
+
+    print('📹 Attempting to load as network video: $videoUrl');
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+      await controller.initialize();
+      print('✅ Network video initialized successfully');
+      final chewieController = ChewieController(
+        videoPlayerController: controller,
+        autoPlay: false,
+        looping: false,
+        aspectRatio: controller.value.aspectRatio == 0
+            ? 16 / 9
+            : controller.value.aspectRatio,
+        allowFullScreen: true,
+      );
+      if (mounted) {
+        setState(() {
+          _videoController = controller;
+          _chewieController = chewieController;
+        });
+      } else {
+        await controller.dispose();
+        chewieController.dispose();
+      }
+    } catch (e) {
+      print('❌ Failed to load network video: $e');
+      print('🖼️ Falling back to image thumbnail');
+      if (mounted) setState(() {});
+    }
+  }
+
+  String? _extractYouTubeId(String url) {
+    final sanitized = url.replaceAll(r'\/', '/').trim();
+    final converted = YoutubePlayer.convertUrlToId(sanitized);
+    if (converted != null && converted.isNotEmpty) {
+      return converted;
+    }
+
+    final uri = Uri.tryParse(sanitized);
+    if (uri == null) return null;
+
+    if (uri.host.contains('youtu.be')) {
+      return uri.pathSegments.isNotEmpty ? uri.pathSegments.last : null;
+    }
+
+    if (uri.host.contains('youtube.com') || uri.host.contains('m.youtube.com')) {
+      final vParam = uri.queryParameters['v'];
+      if (vParam != null && vParam.isNotEmpty) return vParam;
+      final segments = uri.pathSegments;
+      final idx = segments.indexWhere(
+        (s) => s == 'shorts' || s == 'embed' || s == 'live' || s == 'v',
+      );
+      if (idx != -1 && segments.length > idx + 1) {
+        return segments[idx + 1];
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _disposeControllers() async {
+    final youtubeController = _youtubeController;
+    final videoController = _videoController;
+    final chewieController = _chewieController;
+
+    _youtubeController = null;
+    _videoController = null;
+    _chewieController = null;
+
+    youtubeController?.dispose();
+    chewieController?.dispose();
+    await videoController?.dispose();
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _CourseMediaPlayer(
+      videoUrl: widget.videoUrl,
+      imageUrl: widget.imageUrl,
+    );
+  }
+}
+
+class _CourseMediaPlayer extends StatefulWidget {
+  final String? videoUrl;
+  final String imageUrl;
+
+  const _CourseMediaPlayer({
+    required this.videoUrl,
+    required this.imageUrl,
+  });
+
+  @override
+  State<_CourseMediaPlayer> createState() => _CourseMediaPlayerState();
+}
+
+class _CourseMediaPlayerState extends State<_CourseMediaPlayer> {
+  YoutubePlayerController? _youtubeController;
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  String? _lastInitializedUrl;
+  bool _isYoutubeVideo = false;
+  bool _isVideoInitialized = false;
+  bool _isInitializing = false;
+  String? _videoError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideo(widget.videoUrl);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CourseMediaPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoUrl != widget.videoUrl) {
+      _initializeVideo(widget.videoUrl);
+    }
+  }
+
+  Future<void> _initializeVideo(String? url) async {
+    final raw = url?.trim();
+    if (raw == null || raw.isEmpty) {
+      await _disposeControllers();
+      if (mounted) {
+        setState(() {
+          _lastInitializedUrl = null;
+          _isYoutubeVideo = false;
+          _isVideoInitialized = true;
+          _isInitializing = false;
+          _videoError = null;
+        });
+      }
+      return;
+    }
+
+    if (_lastInitializedUrl == raw) return;
+
+    if (mounted) {
+      setState(() {
+        _isInitializing = true;
+        _isVideoInitialized = false;
+        _videoError = null;
+      });
+    }
+
+    await _disposeControllers();
+
+    try {
+      final sanitized = raw.replaceAll(r'\/', '/').trim();
+      if (_isYouTubeUrl(sanitized)) {
+        await _initializeYouTubePlayer(sanitized);
+      } else {
+        await _initializeDirectVideoPlayer(sanitized);
+      }
+      _lastInitializedUrl = raw;
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = true;
+          _isYoutubeVideo = false;
+          _videoError = 'Failed to load video: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _initializeYouTubePlayer(String url) async {
+    final videoId = _extractYouTubeId(url);
+    if (videoId == null || videoId.isEmpty) {
+      throw Exception('Could not extract YouTube video ID from URL');
+    }
+    if (videoId.length != 11) {
+      throw Exception('Invalid YouTube video ID');
+    }
+
+    final controller = YoutubePlayerController(
+      initialVideoId: videoId,
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+        enableCaption: true,
+        controlsVisibleAtStart: true,
+        hideControls: false,
+      ),
+    );
+
+    controller.addListener(() {
+      if (controller.value.hasError && mounted) {
+        setState(() {
+          _videoError = 'YouTube player error';
+        });
+      }
+    });
+
+    if (mounted) {
+      setState(() {
+        _youtubeController = controller;
+        _isYoutubeVideo = true;
+        _isVideoInitialized = true;
+        _videoError = null;
+      });
+    }
+  }
+
+  Future<void> _initializeDirectVideoPlayer(String url) async {
+    if (url.contains('youtube') || url.contains('youtu.be')) {
+      throw Exception('Video URL was classified incorrectly');
+    }
+
+    final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+    await controller.initialize();
+    await controller.pause();
+
+    final chewieController = ChewieController(
+      videoPlayerController: controller,
+      autoPlay: true,
+      looping: false,
+      aspectRatio: 16 / 9,
+      allowFullScreen: true,
+      fullScreenByDefault: false,
+      placeholder: Container(
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFFA500),
+          ),
+        ),
+      ),
+      errorBuilder: (context, errorMessage) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              errorMessage,
+              style: const TextStyle(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      },
+    );
+
+    if (mounted) {
+      setState(() {
+        _videoController = controller;
+        _chewieController = chewieController;
+        _isYoutubeVideo = false;
+        _isVideoInitialized = true;
+        _videoError = null;
+      });
+    } else {
+      await controller.dispose();
+      chewieController.dispose();
+    }
+  }
+
+  bool _isYouTubeUrl(String url) {
+    if (url.isEmpty) return false;
+    final sanitized = url.toLowerCase();
+    return sanitized.contains('youtube.com') ||
+        sanitized.contains('youtu.be') ||
+        sanitized.contains('m.youtube.com') ||
+        sanitized.contains('youtube.com/shorts/') ||
+        sanitized.contains('youtube.com/live/') ||
+        sanitized.contains('youtube.com/embed/');
+  }
+
+  String? _extractYouTubeId(String url) {
+    final sanitized = url.replaceAll(r'\/', '/').trim();
+    final converted = YoutubePlayer.convertUrlToId(sanitized);
+    if (converted != null && converted.isNotEmpty) {
+      return converted;
+    }
+
+    final uri = Uri.tryParse(sanitized);
+    if (uri == null) return null;
+
+    if (uri.host.contains('youtu.be')) {
+      return uri.pathSegments.isNotEmpty ? uri.pathSegments.last : null;
+    }
+
+    if (uri.host.contains('youtube.com') || uri.host.contains('m.youtube.com')) {
+      final vParam = uri.queryParameters['v'];
+      if (vParam != null && vParam.isNotEmpty) return vParam;
+      final segments = uri.pathSegments;
+      final idx = segments.indexWhere(
+        (s) => s == 'shorts' || s == 'embed' || s == 'live' || s == 'v',
+      );
+      if (idx != -1 && segments.length > idx + 1) {
+        return segments[idx + 1];
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _disposeControllers() async {
+    final youtubeController = _youtubeController;
+    final videoController = _videoController;
+    final chewieController = _chewieController;
+
+    _youtubeController = null;
+    _videoController = null;
+    _chewieController = null;
+
+    youtubeController?.dispose();
+    chewieController?.dispose();
+    await videoController?.dispose();
+  }
+
+  Widget _buildImageFallback() {
+    return CachedNetworkImage(
+      imageUrl: widget.imageUrl,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => Container(
+        color: Colors.grey.shade200,
+        child: const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFFFFA500),
+          ),
+        ),
+      ),
+      errorWidget: (context, url, error) {
+        return Container(
+          color: Colors.grey.shade200,
+          child: const Center(
+            child: Icon(
+              Icons.image_not_supported,
+              size: 50,
+              color: Colors.grey,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVideoPlayer() {
+    if (_videoError != null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.black,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 40),
+              const SizedBox(height: 12),
+              const Text(
+                'Video Error',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _videoError!,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  _lastInitializedUrl = null;
+                  _initializeVideo(widget.videoUrl);
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_isYoutubeVideo && _youtubeController != null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: YoutubePlayerBuilder(
+          key: ValueKey(_youtubeController!.initialVideoId),
+          player: YoutubePlayer(
+            controller: _youtubeController!,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: const Color(0xFFFFA500),
+            progressColors: const ProgressBarColors(
+              playedColor: Color(0xFFFFA500),
+              handleColor: Color(0xFFFFA500),
+              backgroundColor: Colors.grey,
+              bufferedColor: Colors.grey,
+            ),
+          ),
+          builder: (context, player) => player,
+        ),
+      );
+    }
+
+    if (!_isYoutubeVideo && _chewieController != null && _isVideoInitialized) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        key: ValueKey(_videoController.hashCode),
+        child: Chewie(controller: _chewieController!),
+      );
+    }
+
+    if (_isInitializing) {
+      return const AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFFFA500),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _buildImageFallback();
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _buildVideoPlayer();
   }
 }
 

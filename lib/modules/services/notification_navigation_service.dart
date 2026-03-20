@@ -1,11 +1,15 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/config/notification_service.dart';
+import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_content_screen.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
+import 'package:linkschool/modules/services/explore/courses/discussion_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
@@ -66,14 +70,21 @@ Future<void> _handleMessage(RemoteMessage message) async {
   final type = _stringFrom(data, ['type']);
 
   switch (type) {
+    case 'discussion_started':
+    case 'discussion_comment_added':
+    case 'discussion_post_replied':
+    case 'discussion_reply_replied':
+      await _navigateToDiscussionDetail(data);
+      break;
     case 'lesson_published':
     case 'submission_graded':
     case 'class_reminder':
     case 'live_class_reminder':
     case 'assignment_due_reminder':
-      await _navigateToCourseContent(data); // ✅ all go to CourseDetailScreen
+      await _navigateToCourseContent(data);
+      break;
     case "news_posted":
-        await _navigateToNewsDetails(data);
+      await _navigateToNewsDetails(data);
       break;
   
     default:
@@ -126,6 +137,40 @@ Future<void> _handleMessage(RemoteMessage message) async {
           cohortId: cohortId,
           profileId: profileId,
           lessonId: lessonId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToDiscussionDetail(Map<String, dynamic> data) async {
+    final discussionId = _stringFrom(data, ['discussion_id', 'discussionId']);
+    final cohortId = _stringFrom(data, ['cohort_id', 'cohortId', 'cohortid']);
+    final courseId = _intFrom(data, ['course_id', 'courseId', 'courseid']);
+    final programId = _intFrom(data, ['program_id', 'programId', 'programid']);
+    final authorId = _intFrom(data, ['author_id', 'authorId']);
+
+    if (discussionId.isEmpty || cohortId.isEmpty) {
+      print('Notification missing discussionId/cohortId, cannot navigate');
+      return;
+    }
+
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      print('Navigator not ready, cannot open TopicDetailScreen');
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider(
+          create: (_) => DiscussionProvider(DiscussionService()),
+          child: TopicDetailScreen(
+            topicId: discussionId,
+            cohortId: cohortId,
+            authorId: authorId,
+            programId: programId,
+            courseId: courseId,
+          ),
         ),
       ),
     );

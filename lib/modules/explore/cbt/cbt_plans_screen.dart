@@ -179,14 +179,16 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                                   color: Colors.white,
                                                 ),
                                               )
-                                            : Text(
-                                                _trialLabel(),
-                                                style:
-                                                    AppTextStyles.normal600(
-                                                  fontSize: 14,
-                                                  color: Colors.black,
+                                            : Center(
+                                              child: Text(
+                                                  _trialLabel(),
+                                                  style:
+                                                      AppTextStyles.normal600(
+                                                    fontSize: 14,
+                                                    color: Colors.black,
+                                                  ),textAlign: TextAlign.center,
                                                 ),
-                                              ),
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -195,27 +197,29 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                     child: SizedBox(
                                       height: 54,
                                       child: ElevatedButton(
-                                        onPressed: () {
-                                          final selectedPlan = plans.isNotEmpty
-                                              ? plans[_currentIndex.clamp(
-                                                  0, plans.length - 1)]
-                                              : null;
-                                          if (selectedPlan == null) {
-                                            return;
-                                          }
-                                          showDialog<bool>(
-                                            context: context,
-                                            barrierDismissible: true,
-                                            builder: (context) =>
-                                                CbtPlanPaymentDialog(
-                                              plan: selectedPlan,
-                                            ),
-                                          ).then((didProceed) {
-                                            if (didProceed == true && mounted) {
-                                              Navigator.of(context).pop(true);
-                                            }
-                                          });
-                                        },
+                                        onPressed: () async {
+  final selectedPlan = plans.isNotEmpty
+      ? plans[_currentIndex.clamp(0, plans.length - 1)]
+      : null;
+
+  if (selectedPlan == null) return;
+
+  final result = await showDialog<Map<String, dynamic>>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => CbtPlanPaymentDialog(
+      plan: selectedPlan,
+    ),
+  );
+
+  if (!mounted || result == null) return;
+
+  final success = result['success'] == true;
+
+  if (success) {
+    Navigator.of(context).pop(result);
+  }
+},
                                         style: ElevatedButton.styleFrom(
                                            backgroundColor:
                                               AppColors.barColor3,

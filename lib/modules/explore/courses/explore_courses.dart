@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/courses/course_waiting_screen.dart';
 
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -1088,6 +1089,38 @@ class _ExploreCoursesState extends State<ExploreCourses>
           final imageUrl = course.imageUrl.startsWith('https')
               ? course.imageUrl
               : "https://linkskool.net/${course.imageUrl}";
+
+
+                 final cohortStart = course.cohortStartDate != null
+          ? DateTime.tryParse(course.cohortStartDate!)
+          : null;
+
+
+           if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CourseWaitingScreen(
+              slug: course.slug ?? '',
+              providerSubtitle: 'Powered By Digital Dreams',
+              category: category.name.toUpperCase(),
+              categoryColor: _getCategoryColor(category.name),
+              categoryId: course.programId ?? category.id,
+              isFree: course.isFree,
+              trialExpiryDate: course.trialExpiryDate,
+              profileId: _activeProfile?.id,
+              trialType: course.trialType,
+              trialValue: course.trialValue,
+              lessonsTaken: course.lessonsTaken,
+              cohortCost: course.cost.toInt(),
+            ),
+          ),
+        );
+        return;
+      }
+
+
+
           await Navigator.push(
             context,
             MaterialPageRoute(
@@ -1338,20 +1371,25 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (id != null) {
-      await prefs.setInt('active_profile_id', id);
-      if (birthDate != null) {
-        await prefs.setString('active_profile_dob', birthDate);
+      final prefs = await SharedPreferences.getInstance();
+      if (id != null) {
+        await prefs.setInt('active_profile_id', id);
+        final currentProfile = _activeProfile;
+        if (currentProfile != null && currentProfile.id == id) {
+          await prefs.setString('active_profile_name', _profileName(currentProfile));
+        }
+        if (birthDate != null) {
+          await prefs.setString('active_profile_dob', birthDate);
+        } else {
+          await prefs.remove('active_profile_dob');
+        }
       } else {
+        await prefs.remove('active_profile_id');
+        await prefs.remove('active_profile_name');
         await prefs.remove('active_profile_dob');
-      }
-    } else {
-      await prefs.remove('active_profile_id');
-      await prefs.remove('active_profile_dob');
-      // Also clear provider persisted values
-      if (mounted) {
-        Provider.of<ExploreCourseProvider>(context, listen: false)
+        // Also clear provider persisted values
+        if (mounted) {
+          Provider.of<ExploreCourseProvider>(context, listen: false)
             .clearPersistedProfile();
       }
     }

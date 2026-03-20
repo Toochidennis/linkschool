@@ -253,15 +253,19 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
 
 
     // Listen for payment reference changes to update state
-    cbtUserProvider.paymentReferenceNotifier.addListener(() {
+    cbtUserProvider.paymentReferenceNotifier.addListener(() async {
       final reference = cbtUserProvider.paymentReferenceNotifier.value;
       if (reference != null && reference.isNotEmpty) {
-        // User has paid, update cache and state
-        _cachedCanTakeTest = true;
-        if (mounted) setState(() {});
+        await cbtUserProvider.refreshCurrentUser();
+
+        if (!mounted) return;
+        _cachedCanTakeTest = cbtUserProvider.hasPaid;
+        setState(() {});
 
         final user = cbtUserProvider.currentUser;
-        if (user != null && (user.phone == null || user.phone!.trim().isEmpty)) {
+        if (user != null &&
+            cbtUserProvider.hasPaid &&
+            (user.phone == null || user.phone!.trim().isEmpty)) {
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (!mounted) return;
             await UserProfileUpdateModal.show(

@@ -100,7 +100,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
 
     if (errorMessage != null) {
       return Center(
-          child: Text(errorMessage!,
+          child: Text("error loading performance",
               style: AppTextStyles.normal400(fontSize: 14, color: Colors.red)));
     }
 
