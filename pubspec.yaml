@@ -1,7 +1,7 @@
 name: linkschool
 description: "School Management System"
 publish_to: 'none' 
-version: 1.5.4+47
+version: 1.5.5+48
 environment:
   sdk: '>=3.3.0 <4.0.0'
 dependencies: 
@@ -95,6 +95,7 @@ dependencies:
   firebase_messaging: ^15.2.10
   connectivity_plus: ^6.1.3
   archive: ^4.0.9
+  app_links: ^7.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

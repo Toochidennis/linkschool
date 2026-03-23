@@ -11,6 +11,7 @@ import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CbtPlanPaymentDialog extends StatefulWidget {
   final CbtPlanModel plan;
@@ -23,6 +24,10 @@ class CbtPlanPaymentDialog extends StatefulWidget {
 
 class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     with SingleTickerProviderStateMixin {
+  static final Uri _whatsappHelpUri = Uri.parse(
+    'https://wa.me/2349047697293',
+  );
+
   late TabController _tabController;
   final TextEditingController _voucherController = TextEditingController();
   bool _isProcessing = false;
@@ -420,16 +425,31 @@ final user = userProvider.currentUser;
   }
 
   Widget _buildFootnote() {
-    return Text(
-      'Your payment helps keep the CBT content updated and accessible.',
-      style: AppTextStyles.normal400(
-        fontSize: 12,
-        color: AppColors.text8Light,
-      ),
-      textAlign: TextAlign.center,
+    return Column(
+      children: [
+        Text(
+          'Your payment helps keep the CBT content updated and accessible.',
+          style: AppTextStyles.normal400(
+            fontSize: 12,
+            color: AppColors.text8Light,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: _openWhatsAppHelp,
+          child: Text(
+           "Need help? Chat with us on WhatsApp: +234 904 769 7293",
+            style: AppTextStyles.normal600(
+              fontSize: 12,
+              color: AppColors.eLearningBtnColor1,
+            ).copyWith(decoration: TextDecoration.underline),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
-
   // ─── RESULT DIALOG ───────────────────────────────────────────────────────
 
   Future<void> _showResultDialog({
@@ -934,5 +954,11 @@ Future<void> _activateAndFinish({required int userId}) async {
     final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(trimmed);
     if (match != null) return match.group(1) ?? trimmed;
     return trimmed;
+  }
+
+  Future<void> _openWhatsAppHelp() async {
+    final uri = _whatsappHelpUri;
+    if (!await canLaunchUrl(uri)) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

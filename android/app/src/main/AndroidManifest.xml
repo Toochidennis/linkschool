@@ -51,6 +51,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+              <intent-filter android:autoVerify="true">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+
+            <data
+                android:scheme="https"
+                android:host="linkskool.com"
+                android:pathPrefix="/" />
+        </intent-filter>
         </activity>
 
         <provider
@@ -82,15 +93,6 @@
             <data android:scheme="https" />
         </intent>
 
-        <!-- <intent-filter android:autoVerify="true">
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <category android:name="android.intent.category.BROWSABLE" />
-
-            <data
-                android:scheme="https"
-                android:host="app.linkskool.net"
-                android:pathPrefix="/submissions" />
-        </intent-filter> -->
+      
     </queries>
 </manifest>
