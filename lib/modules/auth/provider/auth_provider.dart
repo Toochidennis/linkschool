@@ -144,7 +144,9 @@ class AuthProvider with ChangeNotifier {
         await userBox.put('form_classes', userData['form_classes']);
       }
       if (userData.containsKey('courses')) {
-        await userBox.put('staff_courses', userData['courses']);
+        final staffCourses = userData['courses'];
+        await userBox.put('staff_courses', staffCourses);
+        await userBox.put('courses', staffCourses);
       }
     } else if (_user!.role == 'student') {
       final profile = userData['profile'] ?? {};
@@ -521,6 +523,10 @@ class AuthProvider with ChangeNotifier {
         return <String, dynamic>{};
       }).toList();
     }
+
+    final fallback = _getNestedRoleData('form_classes');
+    if (fallback.isNotEmpty) return fallback;
+
     return [];
   }
 
@@ -534,6 +540,10 @@ class AuthProvider with ChangeNotifier {
         return <String, dynamic>{};
       }).toList();
     }
+
+    final fallback = _getNestedRoleData('courses');
+    if (fallback.isNotEmpty) return fallback;
+
     return [];
   }
 
@@ -588,5 +598,31 @@ class AuthProvider with ChangeNotifier {
       await userBox.put('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
       print('♻️ Session refreshed');
     }
+  }
+
+  List<Map<String, dynamic>> _getNestedRoleData(String key) {
+    final userBox = Hive.box('userData');
+    final storedLogin = userBox.get('userData') ?? userBox.get('loginResponse');
+    if (storedLogin == null) return [];
+
+    final normalized = _deepConvertMap(storedLogin);
+    if (normalized == null) return [];
+
+    dynamic data = normalized['data'];
+    if (data == null && normalized['response'] is Map) {
+      final response = normalized['response'];
+      data = response is Map ? response['data'] ?? response : null;
+    }
+    data ??= normalized;
+
+    if (data is Map && data[key] is List) {
+      return (data[key] as List).map((item) {
+        if (item is Map<String, dynamic>) return item;
+        if (item is Map) return Map<String, dynamic>.from(item);
+        return <String, dynamic>{};
+      }).toList();
+    }
+
+    return [];
   }
 }

@@ -70,7 +70,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
-
+  print("Loading dashboard data...");
     fetchDashboard();
   }
 
