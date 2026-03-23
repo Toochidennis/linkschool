@@ -181,7 +181,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                 // Show full content when not searching
                 if (!_isSearching || _searchQuery.isEmpty) {
                   if (provider.attendanceRecords.isEmpty) {
-                    return _buildEmpty(true);
+                    
                   }
                   return _buildContent();
                 }

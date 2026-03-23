@@ -65,9 +65,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load user data')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Failed to load user data')),
+        // );
       }
     }
   }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+
 import 'package:provider/provider.dart';
 
 class AllnewsScreen extends StatefulWidget {
@@ -14,21 +17,144 @@ class AllnewsScreen extends StatefulWidget {
   State<AllnewsScreen> createState() => _AllnewsScreenState();
 }
 
-class _AllnewsScreenState extends State<AllnewsScreen> {
+class _AllnewsScreenState extends State<AllnewsScreen>
+    with WidgetsBindingObserver {
   Set<String> selectedCategories = {};
-  List<String> availableCategories = [];
+  late final ScrollController _scrollController;
+  final Map<int, NativeAd?> _nativeAds = {};
+  final List<int> _adPositions = [];
+  int _lastAdNewsCount = -1;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      final provider = Provider.of<NewsProvider>(context, listen: false);
-      provider.fetchNews();
-      // Load available categories after fetching news
-      setState(() {
-        availableCategories = provider.availableCategories;
-      });
+    WidgetsBinding.instance.addObserver(this);
+    _scrollController = ScrollController();
+    _scrollController.addListener(_handleScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<NewsProvider>(context, listen: false).fetchAllNews(refresh: true);
     });
+    _loadAppOpenAd();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
+  }
+
+  void _loadNativeAds(int newsCount) {
+  // Calculate ad positions in the list (ads after every 5 news items)
+  final listItemCount = _getListItemCount(newsCount);
+  final positions = <int>[];
+  for (int position = 5; position < listItemCount; position += 6) {
+    positions.add(position);
+  }
+
+  // Load native ads only for newly added positions
+  for (int position in positions) {
+    if (_nativeAds.containsKey(position)) continue;
+    _adPositions.add(position);
+    final nativeAd = NativeAd(
+      
+      adUnitId: EnvConfig.newsNativeAds,
+      
+      listener: NativeAdListener(
+        onAdLoaded: (ad) {
+          print('✅ Native ad loaded at position $position');
+          if (mounted) {
+            setState(() {
+              _nativeAds[position] = ad as NativeAd;
+            });
+          }
+        },
+        onAdFailedToLoad: (ad, error) {
+          print('❌ Native ad failed at position $position');
+          print('Error message: ${error.message}');
+          print('Error code: ${error.code}');
+          print('Error domain: ${error.domain}');
+          ad.dispose();
+          if (mounted) {
+            setState(() {
+              _nativeAds[position] = null;
+            });
+          }
+        },
+      ),
+      request: const AdRequest(),
+     // factoryId: 'newsCardAdFactory',
+      nativeTemplateStyle: NativeTemplateStyle(
+        templateType: TemplateType.small
+      )
+    );
+    nativeAd.load();
+  }
+
+  if (mounted) {
+    setState(() {});
+  }
+}
+
+  void _disposeAds() {
+    for (var ad in _nativeAds.values) {
+      ad?.dispose();
+    }
+    _nativeAds.clear();
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.newsAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
   }
 
   Color getCategoryColor(String category) {
@@ -58,6 +184,8 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
   }
 
   void _showFilterBottomSheet() {
+    final provider = Provider.of<NewsProvider>(context, listen: false);
+    final availableCategories = provider.availableCategories;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -179,6 +307,14 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
     final newsProvider = Provider.of<NewsProvider>(context);
     final allNews = getFilteredNews(newsProvider.newsmodel, newsProvider);
     
+    if (newsProvider.isLoading && allNews.isEmpty) {
+      return Scaffold(
+        appBar: Constants.customAppBar(
+            context: context, title: 'All News', centerTitle: true),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     // Check if we have news items
     if (allNews.isEmpty) {
       return Scaffold(
@@ -187,11 +323,21 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
         body: const Center(child: Text('No news available')),
       );
     }
-    
+
     // First news as headline
     final headlineNews = allNews.first;
     // Remaining news for Latest News section
     final latestNews = allNews.skip(1).toList();
+    
+    // Load ads when news list changes
+    if (latestNews.length != _lastAdNewsCount) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _lastAdNewsCount = latestNews.length;
+        if (_lastAdNewsCount > 0) {
+          _loadNativeAds(latestNews.length);
+        }
+      });
+    }
     
     return Scaffold(
       appBar: Constants.customAppBar(
@@ -200,10 +346,13 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
         onRefresh: () async {
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
-            Provider.of<NewsProvider>(context, listen: false).fetchNews();
+            Provider.of<NewsProvider>(context, listen: false)
+                .fetchAllNews(refresh: true);
+            _lastAdNewsCount = -1;
           }
         },
         child: SingleChildScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,13 +453,37 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
             
             const SizedBox(height: 8),
             
-            // Latest News List
+            // Latest News List with Ads
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: latestNews.length,
+              itemCount: _getListItemCount(latestNews.length),
               itemBuilder: (context, index) {
-                final news = latestNews[index];
+                // Check if this position should show an ad
+                if (_shouldShowAdAtPosition(index, latestNews.length)) {
+                  final ad = _nativeAds[index];
+                
+                  if (ad != null) {
+                 
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                      height: 100,
+                      child: AdWidget(ad: ad),
+                    );
+                  }else{
+                    print("leeeee ${ad?.responseInfo}");
+                  }
+                  // Return empty container if ad hasn't loaded yet
+                  return const SizedBox.shrink();
+                }
+                
+                // Calculate the actual news index (accounting for ads)
+                final newsIndex = _getNewsIndex(index, latestNews.length);
+                if (newsIndex >= latestNews.length) {
+                  return const SizedBox.shrink();
+                }
+                
+                final news = latestNews[newsIndex];
                 Duration difference = detemethods(news.date_posted);
                 return GestureDetector(
                     onTap: () => Navigator.push(
@@ -325,6 +498,29 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
                 );
               },
             ),
+
+            if (newsProvider.isLoadingMore)
+              Center(
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+
+            if (!newsProvider.hasNextPage && newsProvider.newsmodel.isNotEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    'No more news to load',
+                    style: TextStyle(
+                      fontFamily: 'Urbanist',
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
         ),
@@ -332,7 +528,64 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
     );
   }
 
-    String formatDuration(Duration duration) {
+  String stripHtml(String html) {
+  return html
+    .replaceAll(RegExp(r'<[^>]*>'), '')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&quot;', '"')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .trim();
+}
+
+  // Calculate total item count including ads
+  int _getListItemCount(int newsCount) {
+    if (newsCount == 0) return 0;
+    int adCount = (newsCount / 5).floor();
+    return newsCount + adCount;
+  }
+
+  // Check if current position should show an ad
+  bool _shouldShowAdAtPosition(int position, int newsCount) {
+    // Ad positions: 5 (after 5 items), 11 (after 10 items), 17 (after 15 items), etc.
+    // Pattern: 5, 11, 17, 23...
+    return position >= 5 && (position - 5) % 6 == 0;
+  }
+
+  // Get the actual news index from list position (accounting for ads)
+  int _getNewsIndex(int position, int newsCount) {
+    if (_shouldShowAdAtPosition(position, newsCount)) return -1;
+    // Calculate how many ads appear before this position (ads after every 5 items)
+    int adsBeforePosition = ((position + 1) / 6).floor();
+    return position - adsBeforePosition;
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      final provider = Provider.of<NewsProvider>(context, listen: false);
+      if (provider.hasNextPage && !provider.isLoadingMore) {
+        provider.loadMoreAll();
+        // Reload ads when more news is loaded
+        _lastAdNewsCount = -1;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    _disposeAds();
+    _appOpenAd?.dispose();
+    super.dispose();
+  }
+
+  String formatDuration(Duration duration) {
     if (duration.isNegative) return 'just now';
 
     final seconds = duration.inSeconds;
@@ -481,7 +734,8 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
                     
                     // Description
                     Text(
-                      news.content,
+                      stripHtml(news.content),
+                     // news.content,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -555,7 +809,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
               children: [
                 // Title
                 Text(
-                  news.title,
+                 stripHtml(news.title),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal600(
@@ -567,7 +821,8 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
                 
                 // Description
                 Text(
-                  news.content,
+                  stripHtml(news.content),
+                //  news.content,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal400(
@@ -624,6 +879,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
     );
   }
 }
+
 Duration detemethods(String dopString) {
     // String dopString = "2024-02-15T12:00:00.000Z"; // Example value from API
     DateTime dop = DateTime.parse(dopString); // Convert to DateTime
@@ -633,5 +889,3 @@ Duration detemethods(String dopString) {
     Duration difference = nowDateTime.difference(dop);
     return difference;
   }
-
-  

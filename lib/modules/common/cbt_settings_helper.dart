@@ -1,5 +1,6 @@
 import 'package:linkschool/modules/model/explore/cbt_settings_model.dart';
 import 'package:linkschool/modules/services/explore/cbt_settings_service.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 
 /// Helper class to easily access CBT settings throughout the app
 class CbtSettingsHelper {
@@ -26,6 +27,7 @@ class CbtSettingsHelper {
       final settings = await _service.fetchCbtSettings();
       _cachedSettings = settings;
       _lastFetchTime = DateTime.now();
+      await CbtSubscriptionService().setMaxFreeTests(settings.freeTrialDays);
       print(
           '✅ CBT settings loaded: amount=${settings.amount}, discount=${settings.discountRate}, trial=${settings.freeTrialDays}');
       return settings;
@@ -34,11 +36,14 @@ class CbtSettingsHelper {
       // If we have cached data, use it even if expired
       if (_cachedSettings != null) {
         print('⚠️ Using expired cached settings');
+        await CbtSubscriptionService().setMaxFreeTests(_cachedSettings!.freeTrialDays);
         return _cachedSettings!;
       }
       // Return default settings as fallback
       print('⚠️ Using default fallback settings');
-      return _getDefaultSettings();
+      final fallback = _getDefaultSettings();
+      await CbtSubscriptionService().setMaxFreeTests(fallback.freeTrialDays);
+      return fallback;
     }
   }
 
@@ -96,3 +101,4 @@ class CbtSettingsHelper {
     );
   }
 }
+

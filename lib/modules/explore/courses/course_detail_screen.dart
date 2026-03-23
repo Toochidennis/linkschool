@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:chewie/chewie.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/courses/create_user_profile_screen.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:provider/provider.dart';
@@ -20,21 +24,73 @@ import 'dart:io' show Platform, Directory, File;
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
 import 'dart:convert';
 import '../../providers/explore/assignment_submission_provider.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../model/cbt_user_model.dart';
 import '../../providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/model/explore/courses/lesson_model.dart';
+import 'package:linkschool/modules/providers/explore/lesson_attendance_provider.dart';
 
 // Top-level function for compute isolate - encodes bytes to base64
 String _encodeToBase64(Uint8List bytes) {
   return base64Encode(bytes);
 }
 
+class _DashedRRectPainter extends CustomPainter {
+  _DashedRRectPainter({
+    required this.color,
+    this.strokeWidth = 1,
+    this.dashLength = 6,
+    this.gapLength = 6,
+    this.radius = 12,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double dashLength;
+  final double gapLength;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+    final path = Path()..addRRect(rrect);
+    final dashedPath = Path();
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dashLength;
+        dashedPath.addPath(metric.extractPath(distance, next), Offset.zero);
+        distance = next + gapLength;
+      }
+    }
+
+    canvas.drawPath(dashedPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.dashLength != dashLength ||
+        oldDelegate.gapLength != gapLength ||
+        oldDelegate.radius != radius;
+  }
+}
+
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
   final String courseName;
+  final int courseId;
   final String courseDescription;
   final String provider;
   final String? videoUrl;
@@ -56,6 +112,7 @@ class CourseDetailScreen extends StatefulWidget {
     super.key,
     required this.courseTitle,
     required this.courseName,
+    required this.courseId,
     required this.courseDescription,
     required this.provider,
     this.videoUrl,
@@ -77,8 +134,17 @@ class CourseDetailScreen extends StatefulWidget {
   State<CourseDetailScreen> createState() => _CourseDetailScreenState();
 }
 
+enum _RewardAction {
+  quizRetake,
+  assignmentResubmit,
+}
+
 class _CourseDetailScreenState extends State<CourseDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin,WidgetsBindingObserver  {
+      static const platform = MethodChannel('com.linkskool.app/downloads');
+  late final LessonDetailProvider _lessonDetailProvider;
+  final LessonAttendanceProvider _lessonAttendanceProvider =
+      LessonAttendanceProvider();
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   YoutubePlayerController? _youtubeController;
@@ -94,6 +160,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isDescriptionExpanded = false;
   String? emailError;
   String? pdfError;
+  late final Stream<int> _countdownStream;
   // Quiz state variables
   int _quizScore = 0;
   bool _quizTaken = false;
@@ -107,9 +174,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   String? assignmentUrl;
   String? assignmentDescription;
   String? materialUrl;
+  String? certificateUrl;
+  Submission? _submission;
   String? zoomUrl;
   String? recordedUrl;
   String? classDate;
+  String? assignmentDueDate;
+  String? liveSessionStartTime;
+  String? liveSessionEndTime;
   bool _dataLoaded = false;
   bool _hasVideo = false;
   bool _requestSent = false;
@@ -117,6 +189,24 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _loadedActiveProfile = false;
   bool _lessonHasQuiz = false;
   bool _lessonHasAssignment = false;
+  bool _isFinalLesson = false;
+  bool _isMinor = false;
+  bool _isNavigatingAway = false;
+  bool _hasAttendance = false;
+bool _shouldShowAdOnResume = false;
+  String? _lastMetaSignature;
+
+  AppOpenAd? _appOpenAd;
+bool _isAppOpenAdLoaded = false;
+
+DateTime? _lastPauseTime;
+
+  String? _assignmentSubmissionType; // Store the submission type
+final TextEditingController _linkController = TextEditingController();
+final TextEditingController _textController = TextEditingController();
+  // Interstitial Ad
+  InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdLoaded = false;
 
   String get _displayTitle =>
       courseTitle?.isNotEmpty == true ? courseTitle! : widget.courseTitle;
@@ -127,20 +217,249 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       videoUrl?.isNotEmpty == true ? videoUrl : widget.videoUrl;
   String? get _effectiveMaterialUrl =>
       materialUrl?.isNotEmpty == true ? materialUrl : widget.materialUrl;
+  bool get _shouldShowCertificate =>
+      _isFinalLesson && certificateUrl?.isNotEmpty == true;
+// Check if user has submitted assignment
+bool get _hasSubmittedAssignment {
+  final submission = _submission;
+  if (submission == null) return false;
+
+  final assignment = submission.assignment;
+  final hasAssignment = assignment != null &&
+      (assignment is String
+          ? assignment.trim().isNotEmpty
+          : assignment is List
+              ? assignment.isNotEmpty
+              : assignment is Map
+                  ? assignment.isNotEmpty
+                  : true);
+  final hasLink = submission.linkUrl?.trim().isNotEmpty == true;
+  final hasText = submission.textContent?.trim().isNotEmpty == true;
+
+  return hasAssignment || hasLink || hasText;
+}
+
+// Get the submitted assignment URL
+String? get _submittedAssignmentUrl {
+  final submission = _submission;
+  if (submission == null) return null;
+  final assignmentFile = submission.assignmentFile;
+  if (assignmentFile == null) return null;
+  final value = assignmentFile.toString().trim();
+  return value.isEmpty ? null : value;
+}
+  String? get _effectiveSessionStart =>
+      liveSessionStartTime?.isNotEmpty == true ? liveSessionStartTime : null;
+  String? get _effectiveSessionEnd =>
+      liveSessionEndTime?.isNotEmpty == true ? liveSessionEndTime : null;
   String? get _effectiveAssignmentUrl =>
       assignmentUrl?.isNotEmpty == true ? assignmentUrl : widget.assignmentUrl;
   String? get _effectiveAssignmentDescription =>
+
       assignmentDescription?.isNotEmpty == true
           ? assignmentDescription
           : widget.assignmentDescription;
+
   String? get _effectiveZoomUrl =>
       zoomUrl?.isNotEmpty == true ? zoomUrl : widget.zoomUrl;
   String? get _effectiveRecordedUrl =>
       recordedUrl?.isNotEmpty == true ? recordedUrl : widget.recordedUrl;
   String? get _effectiveClassDate =>
       classDate?.isNotEmpty == true ? classDate : widget.classDate;
+
+  bool _hasLiveSessionEnded() {
+    final endRaw = _effectiveSessionEnd;
+    if (endRaw == null || endRaw.trim().isEmpty) return false;
+    final endTime = DateTime.tryParse(endRaw.trim());
+    if (endTime == null) return false;
+    return DateTime.now().isAfter(endTime);
+  }
+
+  Future<void> _logAttendanceIfLive(String status) async {
+    if (_hasAttendance) return;
+    if (_hasLiveSessionEnded()) return;
+    if (status != 'ongoing' && status != 'scheduled') return;
+    if (widget.lessonId == null || widget.profileId == null) return;
+    final payload = {
+      'profile_id': widget.profileId,
+      'lesson_id': widget.lessonId,
+      'cohort_id': widget.cohortId,
+      'course_id': widget.courseId,
+    };
+    print('attendance: $payload');
+    final success = await _lessonAttendanceProvider.submitAttendance(
+      lessonId: widget.lessonId!,
+      payload: payload,
+    );
+    if (!success) return;
+    if (mounted) {
+      setState(() {
+        _hasAttendance = true;
+      });
+    }
+    unawaited(_silentRefreshLessonDetail());
+  }
+  String _formattedAssignmentDeadline() {
+    final raw = assignmentDueDate;
+    if (raw == null || raw.trim().isEmpty) {
+      return 'Not set';
+    }
+    final parsed = DateTime.tryParse(raw.trim());
+    if (parsed == null) {
+      return raw;
+    }
+    return DateFormat('E, dd MMM yyyy (hh:mm a)').format(parsed);
+  }
+
+  DateTime? _assignmentDeadlineDate() {
+    final raw = assignmentDueDate;
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(raw.trim());
+  }
+
+  bool _isAssignmentPastDue() {
+    final deadline = _assignmentDeadlineDate();
+    if (deadline == null) return false;
+    return DateTime.now().isAfter(deadline);
+  }
+
+  String _assignmentCountdownText() {
+    final deadline = _assignmentDeadlineDate();
+    if (deadline == null) return 'No deadline set';
+
+    final now = DateTime.now();
+    if (now.isAfter(deadline)) return 'Deadline passed';
+
+    final diff = deadline.difference(now);
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+
+    if (days > 0) {
+      return '${days}d ${hours}h ${minutes}m ${seconds}s ';
+    }
+    if (diff.inHours > 0) {
+      return '${diff.inHours}h ${minutes}m ${seconds}s ';
+    }
+    if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m ${seconds}s ';
+    }
+    return '${seconds}s ';
+  }
+
+  String _liveCountdownText(DateTime startTime) {
+    final now = DateTime.now();
+    if (now.isAfter(startTime)) return 'Starting...';
+
+    final diff = startTime.difference(now);
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+
+    if (days > 0) {
+      return 'Starts in ${days}d ${hours}h ${minutes}m ${seconds}s';
+    }
+    if (diff.inHours > 0) {
+      return 'Starts in ${diff.inHours}h ${minutes}m ${seconds}s';
+    }
+    if (diff.inMinutes > 0) {
+      return 'Starts in ${diff.inMinutes}m ${seconds}s';
+    }
+    return 'Starts in ${seconds}s';
+  }
+
+  Widget _buildCountdownItem(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color:Colors.black,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: 50,
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111827),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF0F172A)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactCountdownItem(String label, String value) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+        ),
+      ),
+      const SizedBox(height: 3),
+      Container(
+        width: 44,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.white30),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ],
+  );
+}
        bool _isInitializing = false;
        bool _hasAppliedLessonData = false;
+
+RewardedAd? _rewardedAd;
+bool _isRewardedAdLoaded = false;
+bool _isRewardedAdLoading = false;
+  bool _quizUnlocked = false;
+  bool _assignmentResubmitUnlocked = false;
+  String? _quizRetryMessage;
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -149,32 +468,38 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     return emailRegex.hasMatch(email);
   }
 
+
+ 
+
   // Assignment submission state
   bool _isAssignmentSubmitted = false;
   String? _lastInitializedUrl;
   final bool _isSubmittingAssignment = false;
 
-  final List<Map<String, dynamic>> _courseVideos = [
-   
-    {
-      'title': 'Final Project and Next Steps',
-      'duration': '16:50',
-      'type': 'video',
-      'url':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-      'isIntro': false,
-      'isCompleted': false,
-      'description':
-          'Complete the final project and discover where to go next.',
-    },
-  ];
+  final List<Map<String, dynamic>> _courseVideos = [];
 
- @override
+  @override
 void initState() {
   super.initState();
+  _lessonDetailProvider = LessonDetailProvider();
   _tabController = TabController(length: 3, vsync: this);
+  _countdownStream = Stream<int>.periodic(
+    const Duration(seconds: 1),
+    (i) => i,
+  ).asBroadcastStream();
   _loadSubmissionStatus();
   _loadActiveProfile();
+
+  WidgetsBinding.instance.addObserver(this);
+
+
+  if (widget.courseTitle.isNotEmpty ||
+      widget.courseDescription.isNotEmpty ||
+      widget.videoUrl?.isNotEmpty == true) {
+    _seedContentFromWidget();
+  }
+
+
   
   // Only seed widget data, don't initialize video yet
   if (widget.courseTitle.isNotEmpty ||
@@ -197,6 +522,45 @@ void initState() {
   
   // DON'T initialize video here - wait for lesson data
   print('initState completed, waiting for lesson data...');
+  
+  // Initialize interstitial ad
+  _loadInterstitialAd();
+  // Preload rewarded ad early so it's ready when user taps
+  _loadRewardedAd();
+   Future.delayed(const Duration(seconds: 2), () {
+    if (mounted) {
+      _loadAppOpenAd();
+    }
+  });
+}
+
+
+@override
+void didChangeAppLifecycleState(AppLifecycleState state) {
+  super.didChangeAppLifecycleState(state);
+  
+  if (state == AppLifecycleState.paused) {
+    // Only mark for ad if not navigating away
+    if (!_isNavigatingAway) {
+      _lastPauseTime = DateTime.now();
+      _shouldShowAdOnResume = true;
+      print('App paused (real background) at: $_lastPauseTime');
+    } else {
+      print('App paused due to navigation, skipping ad flag');
+    }
+  } else if (state == AppLifecycleState.resumed) {
+    // Only show ad if it was a real background event
+    if (_shouldShowAdOnResume) {
+      print('App resumed from real background, attempting to show App Open Ad');
+      _showAppOpenAd();
+      _shouldShowAdOnResume = false;
+    } else {
+      print('App resumed from navigation, skipping ad');
+    }
+    
+    // Reset navigation flag
+    _isNavigatingAway = false;
+  }
 }
 
   void _seedContentFromWidget() {
@@ -214,39 +578,678 @@ void initState() {
       });
   }
 
+
+  // calculate age range for ads 
+  
+
+  int? _computeAgeFromBirthDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final trimmed = raw.trim();
+    DateTime? dob;
+    try {
+      dob = DateTime.tryParse(trimmed);
+    } catch (_) {
+      dob = null;
+    }
+    if (dob == null) {
+      final formats = [
+        DateFormat('yyyy-MM-dd'),
+        DateFormat('dd/MM/yyyy'),
+        DateFormat('MM/dd/yyyy'),
+      ];
+      for (final f in formats) {
+        try {
+          dob = f.parseStrict(trimmed);
+          break;
+        } catch (_) {}
+      }
+    }
+    if (dob == null) return null;
+    final now = DateTime.now();
+    int age = now.year - dob.year;
+    final hadBirthdayThisYear =
+        (now.month > dob.month) ||
+        (now.month == dob.month && now.day >= dob.day);
+    if (!hadBirthdayThisYear) age -= 1;
+    print('Computed age: $age from birth date: $raw');
+    return age < 0 ? null : age;
+  }
+
+  void _applyAgeGate(String? birthDate) {
+    final age = _computeAgeFromBirthDate(birthDate);
+    final isMinor = age != null && age < 13;
+    print('Applying age gate. Birth date: $birthDate, Computed age: $age, Is minor: $isMinor');
+    if (_isMinor == isMinor) return;
+    setState(() {
+      _isMinor = isMinor;
+      // if (_isMinor) {
+      //   _interstitialAd?.dispose();
+      //   _interstitialAd = null;
+      //   _isInterstitialAdLoaded = false;
+      // }
+    });
+  }
+
+  void _loadAppOpenAd() {
+  // Don't load if user is a minor
+  // if (_isMinor == true) return;
+  
+  final AdRequest request;
+  if (_isMinor == true) {
+    request = AdRequest(nonPersonalizedAds: true);
+    print('AppOpenAd: Loading with nonPersonalizedAds for minor');
+  } else {
+    request = AdRequest();
+  }
+
+  AppOpenAd.load(
+    adUnitId: EnvConfig.programAdsOpenApiKey,
+    request: request,
+  
+    adLoadCallback: AppOpenAdLoadCallback(
+      onAdLoaded: (AppOpenAd ad) {
+        _appOpenAd = ad;
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = true;
+          });
+        }
+        print('App Open Ad loaded successfully');
+      },
+      onAdFailedToLoad: (LoadAdError error) {
+        print('App Open Ad failed to load: $error');
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        }
+      },
+    ),
+   
+  );
+}
+
+
+
+
+void _showAppOpenAd() {
+  // Check if enough time has passed since last ad
+  // if (_lastAppOpenAdTime != null) {
+  //   final timeSinceLastAd = DateTime.now().difference(_lastAppOpenAdTime!);
+  //   if (timeSinceLastAd < _minTimeBetweenAds) {
+  //     print('App Open Ad: Cooling period active, ${_minTimeBetweenAds.inHours - timeSinceLastAd.inHours} hours remaining');
+  //     return;
+  //   }
+  // }
+
+  
+
+  if (_isAppOpenAdLoaded && _appOpenAd != null) {
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (AppOpenAd ad) {
+        print('App Open Ad showed');
+      },
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        print('App Open Ad dismissed');
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+    
+        // Reload for next time
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        print('App Open Ad failed to show: $error');
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        // Reload for next time
+        _loadAppOpenAd();
+      },
+    );
+    
+    _appOpenAd!.show();
+  } else {
+    print('App Open Ad not ready to show');
+  }
+}
+
+void _loadRewardedAd() {
+  if (_isRewardedAdLoaded || _isRewardedAdLoading) {
+    return;
+  }
+  _isRewardedAdLoading = true;
+  final AdRequest request;
+  if (_isMinor == true) {
+    request = AdRequest(nonPersonalizedAds: true);
+    print('RewardedAd: Loading with nonPersonalizedAds for minor');
+  } else {
+    request = AdRequest();
+  }
+
+  RewardedAd.load(
+    adUnitId: EnvConfig.programRewardsAdsKey,
+    request: request,
+    rewardedAdLoadCallback: RewardedAdLoadCallback(
+      onAdLoaded: (RewardedAd ad) {
+        _rewardedAd = ad;
+        if (mounted) {
+          setState(() {
+            _isRewardedAdLoaded = true;
+            _isRewardedAdLoading = false;
+          });
+        } else {
+          _isRewardedAdLoading = false;
+        }
+        print('Rewarded Ad loaded successfully');
+      },
+      onAdFailedToLoad: (LoadAdError error) {
+        print('Rewarded Ad failed to load: $error');
+        if (mounted) {
+          setState(() {
+            _isRewardedAdLoaded = false;
+            _isRewardedAdLoading = false;
+          });
+        } else {
+          _isRewardedAdLoading = false;
+        }
+      },
+    ),
+  );
+}
+
+void _showRewardedAdAndUnlock(_RewardAction action) {
+  if (_isRewardedAdLoaded && _rewardedAd != null) {
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (RewardedAd ad) {
+        print('Rewarded ad showed');
+      },
+      onAdDismissedFullScreenContent: (RewardedAd ad) {
+        print('Rewarded ad dismissed');
+        ad.dispose();
+        _rewardedAd = null;
+        _isRewardedAdLoaded = false;
+        // Reload for next time
+        _loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        print('Rewarded ad failed to show: $error');
+        ad.dispose();
+        _rewardedAd = null;
+        _isRewardedAdLoaded = false;
+        // Reload for next time
+        _loadRewardedAd();
+      },
+    );
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        print('User earned reward: ${reward.amount} ${reward.type}');
+        if (action == _RewardAction.quizRetake) {
+          // Unlock the quiz
+          setState(() {
+            _quizUnlocked = true;
+          });
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Quiz unlocked! You can now retake the quiz.'),
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 3),
+            ),
+          );
+
+          // Navigate to quiz after a short delay
+          Future.delayed(const Duration(seconds: 1), () {
+            _navigateToQuiz();
+          });
+          return;
+        }
+
+        // Unlock assignment resubmission
+        setState(() {
+          _assignmentResubmitUnlocked = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Resubmission unlocked! You can now update your assignment.'),
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            _openSubmitAssignmentPage(context);
+          }
+        });
+      },
+    );
+  } else {
+    // Ad not loaded, show error
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ad not ready yet. Please try again.'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    // Try to load the ad
+    _loadRewardedAd();
+  }
+}
+
+void _showUnlockRewardDialog(_RewardAction action) {
+  int retrySeconds = 0;
+  String? retryMessage;
+  Timer? retryTimer;
+
+  void startRetryCountdown(StateSetter setDialogState) {
+    retryTimer?.cancel();
+    retrySeconds = 10;
+    retryMessage = 'Ad not ready yet. Please retry in $retrySeconds seconds.';
+    setDialogState(() {});
+
+    retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (retrySeconds <= 1) {
+        timer.cancel();
+        retrySeconds = 0;
+        retryMessage = null;
+        setDialogState(() {});
+        return;
+      }
+      retrySeconds -= 1;
+      retryMessage = 'Ad not ready yet. Please retry in $retrySeconds seconds.';
+      setDialogState(() {});
+    });
+  }
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          final title = action == _RewardAction.quizRetake
+              ? 'Quiz Locked'
+              : 'Resubmission Locked';
+          final message = action == _RewardAction.quizRetake
+              ? 'This feature is locked. Please watch a short ad to unlock quiz retake.'
+              : 'This feature is locked. Please watch a short ad to unlock assignment resubmission.';
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.99,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black87),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        tooltip: 'Close',
+                      ),
+                    ),
+                    // Lock Icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFA500).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline,
+                        size: 40,
+                        color: Color(0xFFFFA500),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Title
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Message
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.black87,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Info box
+                    if (retryMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFFFFB74D).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Color(0xFFFF9800),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              retryMessage!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),],
+                    
+                      // const SizedBox(height: 12),
+                      // Text(
+                      //   retryMessage!,
+                      //   textAlign: TextAlign.center,
+                      //   style: const TextStyle(
+                      //     fontSize: 13,
+                      //     fontWeight: FontWeight.w600,
+                      //     color: Color(0xFFEF5350),
+                      //   ),
+                      // ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Buttons
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: retrySeconds > 0
+                            ? null
+                            : () {
+                                if (!_isRewardedAdLoaded || _rewardedAd == null) {
+                                  setState(() {
+                                    _quizRetryMessage =
+                                        'Ad not ready yet. Please retry to unlock.';
+                                  });
+                                  startRetryCountdown(setDialogState);
+                                  _loadRewardedAd();
+                                  return;
+                                }
+
+                                setState(() {
+                                  _quizRetryMessage = null;
+                                });
+                                Navigator.pop(context);
+                                _showRewardedAdAndUnlock(action);
+                              },
+                        icon: const Icon(Icons.play_circle_outline, size: 20),
+                        label: Text(
+                          retrySeconds > 0 ? 'Retry in ${retrySeconds}s' : 'Watch Ad To Unlock',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFA500),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  ).then((_) {
+    retryTimer?.cancel();
+  });
+}
+
+Future<void> _navigateToQuiz() async {
+  // Mark that we're navigating away
+  setState(() {
+    _isNavigatingAway = true;
+  });
+  
+  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  final user = cbtUserProvider.currentUser;
+  final activeProfile = _activeProfile ??
+      user?.profiles.firstWhere(
+        (p) => true,
+        orElse: () => CbtUserProfile(
+          id: 0,
+          firstName: 'User',
+          lastName: '',
+          avatar: null,
+        ),
+      );
+  final userName = activeProfile != null ? _profileName(activeProfile) : 'User';
+  final userEmail = user?.email ?? '';
+  final userPhone = user?.phone ?? '';
+  final profileId = activeProfile?.id?.toString() ??
+      widget.profileId?.toString() ??
+      '0';
+  final currentVideo = _courseVideos[_selectedVideoIndex];
+  final videoTitle = currentVideo['title'] as String;
+
+  final result = await Navigator.push<int>(
+    context,
+    MaterialPageRoute(
+      builder: (context) => QuizScreen(
+        courseTitle: widget.courseTitle,
+        lessonTitle: videoTitle,
+        lessonId: widget.lessonId!,
+        cohortId: widget.cohortId,
+        profileId: profileId,
+        userName: userName,
+        userEmail: userEmail,
+        userPhone: userPhone,
+      ),
+    ),
+  );
+
+  // Reset navigation flag when returning
+  setState(() {
+    _isNavigatingAway = false;
+  });
+
+  // Reload quiz data when returning from quiz
+  await _loadQuizData();
+
+  // Reset unlock status
+  setState(() {
+    _quizUnlocked = false;
+  });
+}
+
+  
+
+  void _loadInterstitialAd() {
+    
+    // if user is minor add non-personalized ads
+    final AdRequest request;
+     if (_isMinor == true) {
+    request = AdRequest(nonPersonalizedAds: true);
+     print('AdRequest created with nonPersonalizedAds: ${_isMinor}');
+
+  } else {
+
+    request = AdRequest();
+   
+  }
+  
+  
+ 
+  
+ 
+   
+    InterstitialAd.load(
+      adUnitId: EnvConfig.programInterstitialAdsApiKey,
+      request:request,
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          _interstitialAd = ad;
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAdAndNavigateBack() {
+    // if (_isMinor) {
+    //   Navigator.pop(context);
+    //   return;
+    // }
+    if (_isInterstitialAdLoaded && _interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (InterstitialAd ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back after ad is dismissed
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+        onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back if ad fails to show
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+      );
+      _interstitialAd!.show();
+      // Reload for next back action
+      _loadInterstitialAd();
+    } else {
+      // If ad is not loaded, just navigate back
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _showInterstitialAdAndPop(BuildContext popContext) async {
+    // if (_isMinor) {
+    //   if (popContext.mounted) Navigator.of(popContext).pop();
+    //   return;
+    // }
+    if (_isInterstitialAdLoaded && _interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (InterstitialAd ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          if (popContext.mounted) {
+            Navigator.of(popContext).pop();
+          }
+        },
+        onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          if (popContext.mounted) {
+            Navigator.of(popContext).pop();
+          }
+        },
+      );
+      _interstitialAd!.show();
+      _loadInterstitialAd();
+    } else {
+      if (popContext.mounted) {
+        Navigator.of(popContext).pop();
+      }
+    }
+  }
+
   bool get _hasLessonNavigation =>
       widget.lessons != null && widget.lessonIndex != null;
 
   void _navigateToLesson(int targetIndex) {
-    if (!_hasLessonNavigation) return;
-    final lessons = widget.lessons!;
-    if (targetIndex < 0 || targetIndex >= lessons.length) return;
-    final lesson = lessons[targetIndex];
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CourseDetailScreen(
-          courseTitle: lesson.title,
-          courseName: widget.courseName,
-          courseDescription: lesson.description,
-          provider: widget.provider,
-          videoUrl: lesson.videoUrl,
-          assignmentUrl: null,
-          assignmentDescription: null,
-          materialUrl: null,
-          zoomUrl: null,
-          recordedUrl: null,
-          classDate: null,
-          cohortId: widget.cohortId,
-          profileId: widget.profileId,
-          lessonId: lesson.id,
-          lessons: lessons,
-          lessonIndex: targetIndex,
-          onLessonCompleted: widget.onLessonCompleted,
-        ),
+  if (!_hasLessonNavigation) return;
+  final lessons = widget.lessons!;
+  if (targetIndex < 0 || targetIndex >= lessons.length) return;
+  final lesson = lessons[targetIndex];
+  
+  // Mark that we're navigating away
+  setState(() {
+    _isNavigatingAway = true;
+  });
+  
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CourseDetailScreen(
+        courseTitle: lesson.title,
+        courseName: widget.courseName,
+        courseId: widget.courseId,
+        courseDescription: lesson.description,
+        provider: widget.provider,
+        videoUrl: lesson.videoUrl,
+        assignmentUrl: null,
+        assignmentDescription: null,
+        materialUrl: null,
+        zoomUrl: null,
+        recordedUrl: null,
+        classDate: null,
+        cohortId: widget.cohortId,
+        profileId: widget.profileId,
+        lessonId: lesson.id,
+        lessons: lessons,
+        lessonIndex: targetIndex,
+        onLessonCompleted: widget.onLessonCompleted,
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _completeLesson() {
     final lessonId = widget.lessonId;
@@ -334,9 +1337,10 @@ void initState() {
     );
   }
 
-  void _applyLessonData(Lesson lesson) {
+  void _applyLessonData(Lesson lesson, {Submission? submission}) {
   final resolvedVideoUrl =
       lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
+  final metaSignature = _buildLessonMetaSignature(lesson, submission);
   
   print('=== APPLYING LESSON DATA ===');
   print('Video URL: $resolvedVideoUrl');
@@ -344,7 +1348,7 @@ void initState() {
   print('Last initialized URL: $_lastInitializedUrl');
   
   // Prevent applying the same lesson data twice
-  if (_hasAppliedLessonData && _lastInitializedUrl == resolvedVideoUrl) {
+  if (_hasAppliedLessonData && _lastMetaSignature == metaSignature) {
     print('Same lesson already applied, skipping...');
     return;
   }
@@ -358,12 +1362,24 @@ void initState() {
     assignmentUrl = lesson.assignmentUrl;
     assignmentDescription = lesson.assignmentInstructions;
     materialUrl = lesson.materialUrl;
-    zoomUrl = lesson.videoUrl;
+    certificateUrl = lesson.certificateUrl;
+    assignmentDueDate = lesson.assignmentDueDate;
+    _submission = submission;
+    _assignmentSubmissionType = lesson.assignmentSubmissionType; // ADD THIS LINE
+    _hasAttendance = lesson.hasAttendance;
+    zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
+        ? lesson.liveSessionInfo!.url
+        : widget.zoomUrl;
     recordedUrl = lesson.recordedVideoUrl;
     classDate = lesson.lessonDate;
+    liveSessionStartTime = lesson.liveSessionInfo?.startTime;
+    liveSessionEndTime = lesson.liveSessionInfo?.endTime;
     _hasVideo = resolvedVideoUrl.isNotEmpty;
     _lessonHasQuiz = lesson.hasQuiz;
-    _lessonHasAssignment = lesson.assignmentUrl.isNotEmpty;
+    _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
+    _isFinalLesson = lesson.isFinalLesson;
+    _quizTaken = false;
+    _quizScore = 0;
     _courseVideos
       ..clear()
       ..add({
@@ -376,12 +1392,22 @@ void initState() {
         'isCompleted': false,
       });
     _selectedVideoIndex = 0;
+    _lastMetaSignature = metaSignature;
+    
+    // Pre-fill controllers if submission exists
+    if (submission != null) {
+      if (submission.linkUrl != null) {
+        _linkController.text = submission.linkUrl!;
+      }
+      if (submission.textContent != null) {
+        _textController.text = submission.textContent!;
+      }
+    }
   });
 
   // NOW initialize video after lesson data is applied
   if (_hasVideo && resolvedVideoUrl.isNotEmpty) {
     print('Lesson data applied, now initializing video...');
-    // Use post frame callback to ensure state is updated first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isInitializing) {
         _initializeVideo(resolvedVideoUrl);
@@ -465,6 +1491,11 @@ void initState() {
     final currentVideo = _courseVideos[_selectedVideoIndex];
     final videoTitle = currentVideo['title'] as String;
 
+    final quizTaken = await QuizResultService.hasQuizBeenTaken(
+      courseTitle: widget.courseTitle,
+      lessonTitle: videoTitle,
+    );
+
     final quizScore = await QuizResultService.getQuizScore(
       courseTitle: widget.courseTitle,
       lessonTitle: videoTitle,
@@ -472,7 +1503,7 @@ void initState() {
 
     setState(() {
       _quizScore = quizScore;
-      _quizTaken = quizScore > 0;
+      _quizTaken = quizTaken;
     });
   }
 
@@ -609,11 +1640,83 @@ void initState() {
           setState(() {
             _activeProfile = profile;
           });
+          _applyAgeGate(profile.birthDate);
         }
+      }
+      if (_activeProfile == null) {
+        final dob = prefs.getString('active_profile_dob');
+        _applyAgeGate(dob);
       }
       setState(() => _loadedActiveProfile = true);
     } catch (e) {
       print('Error loading active profile: $e');
+    }
+  }
+
+  String _buildLessonMetaSignature(Lesson lesson, Submission? submission) {
+    return [
+      lesson.title,
+      lesson.description ?? '',
+      lesson.assignmentUrl ?? '',
+      lesson.assignmentInstructions,
+      lesson.assignmentDueDate ?? '',
+      lesson.assignmentSubmissionType ?? '',
+      lesson.materialUrl,
+      lesson.certificateUrl ?? '',
+      lesson.lessonDate,
+      lesson.recordedVideoUrl,
+      lesson.liveSessionInfo?.url ?? '',
+      lesson.liveSessionInfo?.startTime ?? '',
+      lesson.liveSessionInfo?.endTime ?? '',
+      lesson.hasQuiz.toString(),
+      lesson.isFinalLesson.toString(),
+      lesson.hasAttendance.toString(),
+      submission?.submittedAt ?? '',
+      submission?.assignment?.toString() ?? '',
+      submission?.linkUrl ?? '',
+      submission?.textContent ?? '',
+      submission?.assignedScore?.toString() ?? '',
+    ].join('|');
+  }
+
+  void _applyLessonMeta(Lesson lesson, {Submission? submission}) {
+    if (!mounted) return;
+    setState(() {
+      courseTitle = lesson.title;
+      courseDescription = lesson.description;
+      assignmentUrl = lesson.assignmentUrl;
+      assignmentDescription = lesson.assignmentInstructions;
+      materialUrl = lesson.materialUrl;
+      certificateUrl = lesson.certificateUrl;
+      assignmentDueDate = lesson.assignmentDueDate;
+      _assignmentSubmissionType = lesson.assignmentSubmissionType;
+      zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
+          ? lesson.liveSessionInfo!.url
+          : widget.zoomUrl;
+      recordedUrl = lesson.recordedVideoUrl;
+      classDate = lesson.lessonDate;
+      liveSessionStartTime = lesson.liveSessionInfo?.startTime;
+      liveSessionEndTime = lesson.liveSessionInfo?.endTime;
+      _lessonHasQuiz = lesson.hasQuiz;
+      _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
+      _isFinalLesson = lesson.isFinalLesson;
+      _hasAttendance = lesson.hasAttendance;
+      _submission = submission;
+      _lastMetaSignature = _buildLessonMetaSignature(lesson, submission);
+    });
+  }
+
+  Future<void> _silentRefreshLessonDetail() async {
+    if (widget.lessonId == null || widget.profileId == null) return;
+    final success = await _lessonDetailProvider.fetchLessonDetail(
+      lessonId: widget.lessonId!,
+      profileId: widget.profileId!,
+    );
+    if (!success) return;
+    final lesson = _lessonDetailProvider.lessonDetailData?.lesson;
+    final submission = _lessonDetailProvider.lessonDetailData?.submission;
+    if (lesson != null && mounted) {
+      _applyLessonMeta(lesson, submission: submission);
     }
   }
 
@@ -701,6 +1804,7 @@ void initState() {
                               _activeProfile = profile;
                             });
                             _saveActiveProfileId(profile.id, birthDate: profile.birthDate);
+                            _applyAgeGate(profile.birthDate);
                             onProfileSelected?.call(profile);
                           },
                         ),
@@ -733,10 +1837,12 @@ void initState() {
                           if (profiles.isNotEmpty) {
                             _activeProfile = profiles.last;
                             _saveActiveProfileId(_activeProfile?.id, birthDate: _activeProfile?.birthDate);
+                            _applyAgeGate(_activeProfile?.birthDate);
                             onProfileSelected?.call(_activeProfile!);
                           } else {
                             _activeProfile = null;
                             _saveActiveProfileId(null);
+                            _applyAgeGate(null);
                           }
                         });
                       }
@@ -912,101 +2018,132 @@ bool isYouTubeUrl(String url) {
   return false;
 }
 
-  /// Determine the zoom class status based on date and recorded URL
-  /// Priority: Check recorded_url first, then zoom_url
-  Map<String, dynamic> _getZoomStatus() {
-    final hasRecordedUrl =
-        _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
-    final hasZoomUrl = _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
+  /// Determine the live session status based on start/end time and recorded URL.
+  /// Priority: Check live session first, then fallback to recorded URL.
+Map<String, dynamic> _getZoomStatus() {
+  final hasRecordedUrl =
+      _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
+  final hasLiveUrl =
+      _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
 
-    // If neither URL exists, return unavailable
-    if (!hasRecordedUrl && !hasZoomUrl) {
-      return {
-        'status': 'unavailable',
-        'message': 'No Zoom class scheduled',
-        'buttonText': '',
-        'url': null,
-      };
-    }
-
-    // PRIORITY 1: If recorded URL exists, always show it first
-    if (hasRecordedUrl) {
-      return {
-        'status': 'recorded',
-        'message': 'Watch the recorded video.',
-        'buttonText': 'Watch Record video',
-        'url': _effectiveRecordedUrl,
-      };
-    }
-
-    // PRIORITY 2: Check zoom URL with date logic
-    if (hasZoomUrl) {
-      // If no date provided, assume class is available
-      if (_effectiveClassDate == null || _effectiveClassDate!.isEmpty) {
-        return {
-          'status': 'available',
-          'message': 'Join the  class',
-          'buttonText': 'Join class',
-          'url': _effectiveZoomUrl,
-        };
-      }
-
-      try {
-        final classDateTime = DateTime.parse(_effectiveClassDate!);
-        final now = DateTime.now();
-
-        // Assuming class duration is 2 hours (you can make this configurable)
-        final classEndTime = classDateTime.add(const Duration(hours: 3));
-
-        // Class hasn't started yet
-        if (now.isBefore(classDateTime)) {
-          final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
-          final dateStr = formatter.format(classDateTime);
-          return {
-            'status': 'scheduled',
-            'message': 'Class starts on $dateStr',
-            'buttonText': 'Scheduled',
-            'url': null,
-            'classDate': classDateTime,
-          };
-        }
-
-        // Class is ongoing
-        if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
-          return {
-            'status': 'ongoing',
-            'message': 'Class is ongoing. Join now!',
-            'buttonText': 'Join class',
-            'url': _effectiveZoomUrl,
-          };
-        }
-
-        // Class has ended but no recorded video
-        return {
-          'status': 'pending',
-          'message': 'Class has ended. Recorded video pending.',
-          'buttonText': 'Pending',
-          'url': null,
-        };
-      } catch (e) {
-        debugPrint('Error parsing class date: $e');
-        return {
-          'status': 'available',
-          'message': 'Join the class',
-          'buttonText': 'Join class',
-          'url': _effectiveZoomUrl,
-        };
-      }
-    }
-
-    // Fallback (should never reach here)
+  // If neither URL exists, return unavailable
+  if (!hasRecordedUrl && !hasLiveUrl) {
     return {
       'status': 'unavailable',
-      'message': 'No content available',
+      'message': 'No live class or recording available for this lesson.',
       'buttonText': '',
       'url': null,
     };
   }
+
+  // PRIORITY 1: Check zoom URL with date logic FIRST
+  if (hasLiveUrl) {
+    // If no time provided, assume session is available
+    if (_effectiveSessionStart == null || _effectiveSessionStart!.isEmpty) {
+      return {
+        'status': 'available',
+        'message': 'Live session link is available.',
+        'buttonText': 'Join Youtube Live Stream',
+        'url': _effectiveZoomUrl,
+      };
+    }
+
+    try {
+      final classDateTime = DateTime.parse(_effectiveSessionStart!);
+      final now = DateTime.now();
+
+      final DateTime classEndTime;
+      if (_effectiveSessionEnd != null && _effectiveSessionEnd!.isNotEmpty) {
+        classEndTime = DateTime.parse(_effectiveSessionEnd!);
+      } else {
+        // Assuming class duration is 3 hours (fallback)
+        classEndTime = classDateTime.add(const Duration(hours: 3));
+      }
+
+      // Session hasn't started yet
+      if (now.isBefore(classDateTime)) {
+        final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
+        final dateStr = formatter.format(classDateTime);
+        
+        // Calculate time until class starts
+        final difference = classDateTime.difference(now);
+        String timeUntil = '';
+        if (difference.inDays > 0) {
+          timeUntil = ' (in ${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'})';
+        } else if (difference.inHours > 0) {
+          timeUntil = ' (in ${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'})';
+        } else if (difference.inMinutes > 0) {
+          timeUntil = ' (in ${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'})';
+        }
+        
+        return {
+          'status': 'scheduled',
+          'message': 'Live session scheduled for $dateStr$timeUntil',
+          'buttonText': 'Join Zoom Live Class',
+          'url': _effectiveZoomUrl,
+          'classDate': classDateTime,
+        };
+      }
+
+      // Session is ongoing
+      if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
+        return {
+          'status': 'ongoing',
+          'message': 'Live session is in progress! Join now to participate.',
+          'buttonText': 'Join Zoom Live Class',
+          'url': _effectiveZoomUrl,
+        };
+      }
+
+      // Session has ended - check if recorded video is available
+      if (hasRecordedUrl) {
+        return {
+          'status': 'recorded',
+          'message':
+              'Live session has ended. Watch the recorded session at your convenience.',
+          'buttonText': 'Watch Recorded Class',
+          'url': _effectiveRecordedUrl,
+        };
+      }
+
+      // Session has ended but no recorded video yet
+      return {
+        'status': 'pending',
+        'message':
+            'Live session has ended. The recorded session will be available soon. Check back later.',
+        'buttonText': 'Recording Pending',
+        'url': null,
+      };
+    } catch (e) {
+      debugPrint('Error parsing class date: $e');
+      // If time parsing fails but we have a live URL, make it available
+      return {
+        'status': 'available',
+        'message': 'Live session link is available.',
+        'buttonText': 'Join Youtube Live Stream',
+        'url': _effectiveZoomUrl,
+      };
+    }
+  }
+
+  // PRIORITY 2: If only recorded URL exists (no live URL), show it
+  if (hasRecordedUrl) {
+    return {
+      'status': 'recorded',
+      'message': 'This lesson is available as a recorded class. Watch it anytime.',
+      'buttonText': 'Watch Recorded Class',
+      'url': _effectiveRecordedUrl,
+    };
+  }
+
+  // Fallback (should never reach here)
+  return {
+    'status': 'unavailable',
+    'message': 'No content available for this lesson at the moment.',
+    'buttonText': '',
+    'url': null,
+  };
+}
 
   /// Launch URL in browser
   Future<void> _launchUrl(String url) async {
@@ -1063,7 +2200,7 @@ Future<void> _initializeVideo(String url) async {
     final oldVideoController = _videoController;
     final oldChewieController = _chewieController;
     
-    // Clear references FIRST
+    
     if (mounted) {
       setState(() {
         _youtubeController = null;
@@ -1154,7 +2291,7 @@ Future<void> _initializeYouTubePlayer(String url) async {
     final controller = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
-        autoPlay: true,
+        autoPlay: false,
         mute: false,
         enableCaption: true,
         controlsVisibleAtStart: true,
@@ -1199,6 +2336,7 @@ Future<void> _initializeYouTubePlayer(String url) async {
   }
 }
 
+
 Future<void> _initializeDirectVideoPlayer(String url) async {
   try {
     print('Initializing direct video player for URL: $url');
@@ -1216,6 +2354,16 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
       autoPlay: true,
       looping: false,
       aspectRatio: 16 / 9,
+      allowFullScreen: true,
+      fullScreenByDefault: false,
+      deviceOrientationsOnEnterFullScreen: const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ],
+      deviceOrientationsAfterFullScreen: const [
+        DeviceOrientation.portraitUp,
+      ],
+      systemOverlaysAfterFullScreen: SystemUiOverlay.values,
       placeholder: Container(
         color: Colors.black,
         child: const Center(
@@ -1404,12 +2552,22 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     );
   }
 
-  void _toggleFullscreen() {
+  Future<void> _toggleFullscreen() async {
+    if (_videoController == null || !_isVideoInitialized) {
+      return;
+    }
     setState(() {
       _isFullscreen = !_isFullscreen;
     });
 
     if (_isFullscreen) {
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersiveSticky,
+      );
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -1458,743 +2616,1051 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
         : '$minutes:$seconds';
   }
 
-  @override
-  void dispose() {
-    _videoController?.dispose();
-    _chewieController?.dispose();
-    _youtubeController?.dispose();
-    _tabController.dispose();
+ @override
+void dispose() {
+  WidgetsBinding.instance.removeObserver(this);
+  
+  // Dispose app open ad
+  _appOpenAd?.dispose();
+  _videoController?.dispose();
+  _chewieController?.dispose();
+  _youtubeController?.dispose();
+  _interstitialAd?.dispose();
+  _tabController.dispose();
+  
+  // Dispose text controllers
+  _linkController.dispose();
+  _textController.dispose();
+  _lessonDetailProvider.dispose();
 
-    // Ensure system UI is restored when leaving this screen
-    SystemChrome.setEnabledSystemUIMode(
+  // Ensure system UI is restored when leaving this screen
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
+  );
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
+  super.dispose();
+}
+
+Future<void> _handleBackButton() async {
+  final currentOrientation = MediaQuery.of(context).orientation;
+
+  if (currentOrientation == Orientation.landscape) {
+    // In landscape: rotate to portrait, don't pop
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
     );
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-
-    super.dispose();
+  } else {
+    // In portrait: mark navigation and show interstitial ad then pop the screen
+    setState(() {
+      _isNavigatingAway = true;
+    });
+    _showInterstitialAdAndNavigateBack();
   }
+}
 
-  Future<void> _handleBackButton() async {
-    final currentOrientation = MediaQuery.of(context).orientation;
+  Future<void> _openSubmitAssignmentPage(BuildContext context) async {
+  // Get active profile
+  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  final user = cbtUserProvider.currentUser;
+  CbtUserProfile? modalActiveProfile = _activeProfile ?? 
+      user?.profiles.firstWhere((p) => true, 
+        orElse: () => CbtUserProfile(id: 0, firstName: 'User', lastName: '', avatar: null));
+  
+  String? selectedFileName;
+  String? selectedFilePath;
+  String? selectedFileBase64;
+  String? linkError;
+  bool _isPickingFile = false;
+  final FocusNode linkFocusNode = FocusNode();
+  
+  // Get the submission type
+  final submissionType = _assignmentSubmissionType ?? 'upload';
+  final isPastDue = _isAssignmentPastDue();
+  _loadInterstitialAd();
 
-    if (currentOrientation == Orientation.landscape) {
-      // In landscape: rotate to portrait, don't pop
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-      ]);
-      await SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual,
-        overlays: SystemUiOverlay.values,
-      );
-    } else {
-      // In portrait: pop the screen
-      Navigator.pop(context);
-    }
-  }
-
-  void _showSubmitAssignmentModal(BuildContext context) {
-    // Get active profile
-    final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    final user = cbtUserProvider.currentUser;
-    CbtUserProfile? modalActiveProfile = _activeProfile ?? user?.profiles.firstWhere((p) => true, orElse: () => CbtUserProfile(id: 0, firstName: 'User', lastName: '', avatar: null));
-    String? selectedFileName;
-    String? selectedFilePath;
-    String? selectedFileBase64;
-
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: '',
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation1, animation2) {
-        return Container();
-      },
-      transitionBuilder: (context, animation1, animation2, child) {
-        return ScaleTransition(
-          scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-            CurvedAnimation(
-              parent: animation1,
-              curve: Curves.easeOutCubic,
-            ),
-          ),
-          child: FadeTransition(
-            opacity: animation1,
-            child: Center(
-              child: Container(
-                width: 500,
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+  await Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) {
+        return WillPopScope(
+          onWillPop: () async {
+            if (mounted) {
+              setState(() {
+                _isNavigatingAway = true;
+              });
+            }
+            _showInterstitialAdAndPop(context);
+            return false;
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xFFFAFAFA),
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () {
+                  if (mounted) {
+                    setState(() {
+                      _isNavigatingAway = true;
+                    });
+                  }
+                  _showInterstitialAdAndPop(context);
+                },
+              ),
+              title: const Text(
+                'Submit Assignment',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: StatefulBuilder(
-                    builder: (BuildContext context, StateSetter setModalState) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Submit Assignment',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                          
-                              const Text(
-                                'Submitting as:',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
-                                  height: 1.5,
-                                ),
-                              ),
-
-                                TextButton.icon(
-                                onPressed: () {
-                                  _showAccountSwitcherDialog(context, user, onProfileSelected: (profile) {
-                                    setModalState(() {
-                                      modalActiveProfile = profile;
-                                    });
-                                  });
-                                },
-                                icon: const Icon(Icons.swap_horiz, size: 18),
-                                label: const Text('Change Profile'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF6366F1),
-                                  textStyle: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-
-                          // Active Profile Display
-                          _buildProfileItem(
-                            name: _profileName(modalActiveProfile!),
-                            email: user?.email ?? '',
-                            phone: user?.phone ?? '',
-                            imageUrl: modalActiveProfile!.avatar,
-                            isSelected: true,
-                            onTap: () {}, // No tap since it's display only
-                          ),
-                          const SizedBox(height: 16),
-                          // PDF Upload Button
-                          InkWell(
-                            onTap: () async {
-                              try {
-                                FilePickerResult? result =
-                                    await FilePicker.platform.pickFiles(
-                                  type: FileType.custom,
-                                  allowedExtensions: ['pdf'],
-                                );
-                                if (result != null) {
-                                  final filePath = result.files.single.path;
-                                  final fileName = result.files.single.name;
-                                  final ext =
-                                      fileName.split('.').last.toLowerCase();
-                                  if (filePath != null) {
-                                    if (ext != 'pdf') {
-                                      setModalState(() {
-                                        selectedFileName = null;
-                                        pdfError =
-                                            'Only PDF files are allowed.';
-                                      });
-                                      return;
-                                    }
-                                    // Check file size (limit to 1MB)
-                                    final file = File(filePath);
-                                    final fileSize = await file.length();
-                                    if (fileSize > 1024 * 1024) {
-                                      setModalState(() {
-                                        selectedFileName = null;
-                                        pdfError =
-                                            'PDF file must not exceed 1MB.';
-                                      });
-                                      return;
-                                    }
-                                    // Show loading indicator while encoding
-                                    setModalState(() {
-                                      selectedFileName = 'Encoding file...';
-                                      pdfError = null;
-                                    });
-                                    // Read file bytes
-                                    final bytes = await file.readAsBytes();
-                                    // Encode to base64 in background isolate to avoid blocking UI
-                                    final base64String =
-                                        await compute(_encodeToBase64, bytes);
-                                    setModalState(() {
-                                      selectedFileName = fileName;
-                                      selectedFilePath = filePath;
-                                      selectedFileBase64 = base64String;
-                                      pdfError = null;
-                                    });
-                                  }
-                                }
-                              } catch (e) {
-                                setModalState(() {
-                                  selectedFileName = null;
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error picking file: $e'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: selectedFileName != null
-                                    ? const Color(0xFF6366F1).withOpacity(0.1)
-                                    : Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: selectedFileName != null
-                                      ? const Color(0xFF6366F1)
-                                      : Colors.grey.shade300,
-                                  width: selectedFileName != null ? 2 : 1,
-                                ),
-                              ),
-                              child: Row(
+              ),
+            ),
+            body: SafeArea(
+              child: StatefulBuilder(
+                builder: (BuildContext context, StateSetter setModalState) {
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 500),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    selectedFileName != null
-                                        ? Icons.picture_as_pdf
-                                        : Icons.upload_file,
-                                    color: selectedFileName != null
-                                        ? const Color(0xFF6366F1)
-                                        : Colors.grey.shade600,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      selectedFileName ??
-                                          'Upload PDF Assignment',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: selectedFileName != null
-                                            ? FontWeight.w600
-                                            : FontWeight.w400,
-                                        color: selectedFileName != null
-                                            ? const Color(0xFF6366F1)
-                                            : Colors.grey.shade600,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
+                                  // Profile Section
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.04),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Submitting as:',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF6B7280),
+                                              ),
+                                            ),
+                                            TextButton.icon(
+                                              onPressed: () {
+                                                _showAccountSwitcherDialog(context, user, 
+                                                  onProfileSelected: (profile) {
+                                                    setModalState(() {
+                                                      modalActiveProfile = profile;
+                                                    });
+                                                  });
+                                              },
+                                              icon: const Icon(Icons.swap_horiz, size: 18),
+                                              label: const Text('Change'),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: const Color(0xFF6366F1),
+                                                textStyle: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _buildProfileItem(
+                                          name: _profileName(modalActiveProfile!),
+                                          email: user?.email ?? '',
+                                          phone: user?.phone ?? '',
+                                          imageUrl: modalActiveProfile!.avatar,
+                                          isSelected: true,
+                                          onTap: () {},
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  if (selectedFileName != null)
-                                    IconButton(
-                                      icon: const Icon(Icons.close, size: 20),
-                                      onPressed: () {
-                                        setModalState(() {
-                                          selectedFileName = null;
-                                          selectedFilePath = null;
-                                          selectedFileBase64 = null;
-                                        });
-                                      },
-                                      color: Colors.grey.shade600,
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
+                                  const SizedBox(height: 24),
+                                  
+                                  // Submission Content Section
+                                  Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.04),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Dynamic submission fields based on type
+                                        if (submissionType == 'upload') ...[
+                                          Builder(
+                                            builder: (context) {
+                                              Future<void> pickFile() async {
+                                                if (_isPickingFile) return;
+                                                setModalState(() {
+                                                  _isPickingFile = true;
+                                                });
+                                                if (mounted) {
+                                                  setState(() {
+                                                    _isNavigatingAway = true;
+                                                  });
+                                                }
+                                                try {
+                                                  FilePickerResult? result =
+                                                      await FilePicker.platform.pickFiles(
+                                                    type: FileType.custom,
+                                                    allowedExtensions: ['pdf'],
+                                                  );
+                                                  if (result != null) {
+                                                    final filePath = result.files.single.path;
+                                                    final fileName = result.files.single.name;
+                                                    final ext =
+                                                        fileName.split('.').last.toLowerCase();
+                                                    if (filePath != null) {
+                                                      if (ext != 'pdf') {
+                                                        setModalState(() {
+                                                          selectedFileName = null;
+                                                          pdfError = 'Only PDF files are allowed.';
+                                                        });
+                                                        return;
+                                                      }
+                                                      // Check file size (limit to 1MB)
+                                                      final file = File(filePath);
+                                                      final fileSize = await file.length();
+                                                      if (fileSize > 1024 * 1024) {
+                                                        setModalState(() {
+                                                          selectedFileName = null;
+                                                          pdfError = 'PDF file must not exceed 1MB.';
+                                                        });
+                                                        return;
+                                                      }
+                                                      // Show loading indicator while encoding
+                                                      setModalState(() {
+                                                        selectedFileName = 'Encoding file...';
+                                                        pdfError = null;
+                                                      });
+                                                      // Read file bytes
+                                                      final bytes = await file.readAsBytes();
+                                                      // Encode to base64
+                                                      final base64String =
+                                                          await compute(_encodeToBase64, bytes);
+                                                      setModalState(() {
+                                                        selectedFileName = fileName;
+                                                        selectedFilePath = filePath;
+                                                        selectedFileBase64 = base64String;
+                                                        pdfError = null;
+                                                      });
+                                                    }
+                                                  }
+                                                } catch (e) {
+                                                  setModalState(() {
+                                                    selectedFileName = null;
+                                                  });
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('Error picking file: $e'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                } finally {
+                                                  setModalState(() {
+                                                    _isPickingFile = false;
+                                                  });
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      _isNavigatingAway = false;
+                                                    });
+                                                  }
+                                                }
+                                              }
+
+                                              return Column(
+                                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                children: [
+                                                  CustomPaint(
+                                                    painter: _DashedRRectPainter(
+                                                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                                                      strokeWidth: 2,
+                                                      dashLength: 8,
+                                                      gapLength: 6,
+                                                      radius: 16,
+                                                    ),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        vertical: 32,
+                                                        horizontal: 24,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF6366F1).withOpacity(0.02),
+                                                        borderRadius: BorderRadius.circular(16),
+                                                      ),
+                                                      child: Column(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Container(
+                                                            padding: const EdgeInsets.all(16),
+                                                            decoration: BoxDecoration(
+                                                              color: const Color(0xFF6366F1).withOpacity(0.1),
+                                                              shape: BoxShape.circle,
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons.cloud_upload_outlined,
+                                                              size: 40,
+                                                              color: Color(0xFF6366F1),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 16),
+                                                          const Text(
+                                                            'Drag & Drop your file here',
+                                                            textAlign: TextAlign.center,
+                                                            style: TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight: FontWeight.w600,
+                                                              color: Color(0xFF1A1A2E),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 8),
+                                                          Text(
+                                                            'or',
+                                                            style: TextStyle(
+                                                              fontSize: 13,
+                                                              color: Colors.grey.shade500,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 12),
+                                                          SizedBox(
+                                                            width: double.infinity,
+                                                            child: ElevatedButton.icon(
+                                                              onPressed: _isPickingFile ? null : pickFile,
+                                                              icon: const Icon(Icons.folder_open, size: 20),
+                                                              label: const Text('Browse File'),
+                                                              style: ElevatedButton.styleFrom(
+                                                                backgroundColor: const Color(0xFF6366F1),
+                                                                foregroundColor: Colors.white,
+                                                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                                                elevation: 0,
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 12),
+                                                          Text(
+                                                            '1 file only • PDF • max 1MB',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors.grey.shade500,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (selectedFileName != null) ...[
+                                                    const SizedBox(height: 16),
+                                                    Container(
+                                                      padding: const EdgeInsets.all(16),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF6366F1).withOpacity(0.05),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                        border: Border.all(
+                                                          color: const Color(0xFF6366F1).withOpacity(0.2),
+                                                        ),
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Container(
+                                                            padding: const EdgeInsets.all(8),
+                                                            decoration: BoxDecoration(
+                                                              color: const Color(0xFF6366F1).withOpacity(0.1),
+                                                              borderRadius: BorderRadius.circular(8),
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons.picture_as_pdf,
+                                                              color: Color(0xFF6366F1),
+                                                              size: 20,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 12),
+                                                          Expanded(
+                                                            child: Text(
+                                                              selectedFileName!,
+                                                              style: const TextStyle(
+                                                                fontSize: 14,
+                                                                fontWeight: FontWeight.w500,
+                                                              ),
+                                                              overflow: TextOverflow.ellipsis,
+                                                            ),
+                                                          ),
+                                                          IconButton(
+                                                            icon: const Icon(Icons.close, size: 20),
+                                                            onPressed: () {
+                                                              setModalState(() {
+                                                                selectedFileName = null;
+                                                                selectedFilePath = null;
+                                                                selectedFileBase64 = null;
+                                                              });
+                                                            },
+                                                            color: Colors.grey.shade600,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                  if (pdfError != null)
+                                                    Padding(
+                                                      padding: const EdgeInsets.only(top: 12),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.all(12),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.red.withOpacity(0.05),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          border: Border.all(
+                                                            color: Colors.red.withOpacity(0.2),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons.error_outline,
+                                                              color: Colors.red.shade700,
+                                                              size: 18,
+                                                            ),
+                                                            const SizedBox(width: 8),
+                                                            Expanded(
+                                                              child: Text(
+                                                                pdfError!,
+                                                                style: TextStyle(
+                                                                  color: Colors.red.shade700,
+                                                                  fontSize: 13,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              );
+                                            },
+                                          ),
+                                        ] else if (submissionType == 'link' || submissionType == 'url') ...[
+                                          if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty) ...[
+                                            const SizedBox(height: 12),
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade50,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Colors.grey.shade200,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        width: 28,
+                                                        height: 28,
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(0xFF1F2937),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: const Icon(
+                                                          Icons.list_alt,
+                                                          color: Colors.white,
+                                                          size: 16,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      const Text(
+                                                        'Assignment Instructions',
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.w700,
+                                                          color: Color(0xFF111827),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Html(
+                                                    data: _effectiveAssignmentDescription,
+                                                    style: {
+                                                      "body": Style(
+                                                        fontSize: FontSize(14),
+                                                        color: Colors.black87,
+                                                        lineHeight: LineHeight(1.4),
+                                                        margin: Margins.zero,
+                                                        padding: HtmlPaddings.zero,
+                                                      ),
+                                                      "p": Style(
+                                                        margin: Margins(bottom: Margin(6)),
+                                                      ),
+                                                      "ul": Style(
+                                                        margin: Margins(bottom: Margin(6)),
+                                                        padding: HtmlPaddings(left: HtmlPadding(18)),
+                                                      ),
+                                                      "ol": Style(
+                                                        margin: Margins(bottom: Margin(6)),
+                                                        padding: HtmlPaddings(left: HtmlPadding(18)),
+                                                      ),
+                                                      "li": Style(
+                                                        margin: Margins(bottom: Margin(2)),
+                                                        padding: HtmlPaddings.zero,
+                                                      ),
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          // URL/Link input field
+                                          TextField(
+                                            controller: _linkController,
+                                            focusNode: linkFocusNode,
+                                            autofocus: true,
+                                            decoration: InputDecoration(
+                                              labelText: 'Assignment Link/URL',
+                                              hintText: 'Enter the link to your assignment',
+                                              prefixIcon: const Icon(Icons.link),
+                                              errorText: linkError,
+                                              filled: true,
+                                              fillColor: Colors.grey.shade50,
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: const BorderSide(
+                                                  color: Color(0xFF6366F1),
+                                                  width: 2,
+                                                ),
+                                              ),
+                                            ),
+                                            keyboardType: TextInputType.url,
+                                            textInputAction: TextInputAction.done,
+                                            onChanged: (_) {
+                                              if (linkError != null) {
+                                                setModalState(() {
+                                                  linkError = null;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          
+                                        ] else if (submissionType == 'text') ...[
+                                          // Text input field
+                                          TextField(
+                                            controller: _textController,
+                                            decoration: InputDecoration(
+                                              labelText: 'Assignment Text',
+                                              hintText: 'Type your assignment here',
+                                              alignLabelWithHint: true,
+                                              filled: true,
+                                              fillColor: Colors.grey.shade50,
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: const BorderSide(
+                                                  color: Color(0xFF6366F1),
+                                                  width: 2,
+                                                ),
+                                              ),
+                                            ),
+                                            maxLines: 8,
+                                            keyboardType: TextInputType.multiline,
+                                          ),
+                                        ],
+                                        
+                                        const SizedBox(height: 16),
+                                        
+                                        // Info text
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF6366F1).withOpacity(0.05),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(
+                                                Icons.info_outline,
+                                                size: 18,
+                                                color: const Color(0xFF6366F1),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  submissionType == 'upload'
+                                                      ? 'Upload your assignment as a PDF file (max 1MB).'
+                                                      : submissionType == 'link' || submissionType == 'url'
+                                                          ? 'Provide a link to your assignment (e.g., Google Drive, Dropbox).'
+                                                          : 'Type your assignment directly in the text field above.',
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: Color(0xFF6B7280),
+                                                    height: 1.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          if (pdfError != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Text(
-                                pdfError!,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 12,
-                                ),
-                              ),
+                        ),
+                      ),
+                      
+                      // Bottom Submit Button (Fixed)
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, -2),
                             ),
-                          const SizedBox(height: 8),
-                          RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.black87,
-                                height: 1.5,
-                              ),
-                              children: [
-                                const TextSpan(
-                                  text:
-                                      'After clicking "Send Email", your email app will open with the details. ',
-                                ),
-                                if (selectedFileName == null)
-                                  const TextSpan(
-                                    text:
-                                        'Please remember to attach your assignment file.',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.grey.shade700,
-                                    side: BorderSide(
-                                        color: Colors.grey.shade400,
-                                        width: 1.5),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    // Get selected profile data
-                                    final name = _profileName(modalActiveProfile!);
-                                    final phone = user?.phone ?? '';
-                                    final email = user?.email;
-                                    
-                                    // Check if lesson has both quiz and assignment
-                                    if (_lessonHasQuiz && _lessonHasAssignment) {
-                                      // Lesson requires quiz before assignment submission
-                                      if (!_quizTaken) {
-                                        // Check if assignment file is selected
-                                        if (selectedFileName == null ||
-                                            selectedFileBase64 == null) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  'Please upload your assignment file'),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                      // Save pending data
-                                        await _savePendingAssignmentData(name,
-                                            selectedFileName, selectedFileBase64);
-                                        Navigator.pop(context);
-                                        // Show dialog to take quiz
-                                        final shouldTakeQuiz =
-                                            await showDialog<bool>(
-                                          context: context,
-                                          barrierDismissible: false,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
+                          ],
+                        ),
+                        child: SafeArea(
+                          top: false,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: isPastDue
+                                  ? null
+                                  : () async {
+                                // Get selected profile data
+                                final name = _profileName(modalActiveProfile!);
+                                final phone = user?.phone ?? '';
+                                final email = user?.email;
+                                
+                                // Validate based on submission type
+                                if (submissionType == 'upload') {
+                                  if (selectedFileName == null ||
+                                      selectedFileBase64 == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Please upload your assignment file'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                } else if (submissionType == 'link' || 
+                                           submissionType == 'url') {
+                                  if (_linkController.text.trim().isEmpty) {
+                                    setModalState(() {
+                                      linkError =
+                                          'Please enter the assignment link';
+                                    });
+                                    return;
+                                  }
+                                  // Basic URL validation
+                                  if (!_linkController.text.trim().startsWith('http')) {
+                                    setModalState(() {
+                                      linkError =
+                                          'Please enter a valid URL (starting with http:// or https://)';
+                                    });
+                                    return;
+                                  }
+                                  final isReachable = await _verifyLinkReachable(
+                                    _linkController.text,
+                                  );
+                                  if (!isReachable) {
+                                    setModalState(() {
+                                      linkError =
+                                     'The link could not be reached';
+                                    });
+                                    return;
+                                  }
+                                } else if (submissionType == 'text') {
+                                  if (_textController.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Please enter your assignment text'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                }
+
+                                // Store the navigator context before showing dialog
+                                final navigatorContext =
+                                    Navigator.of(context).context;
+
+                                // Show loading dialog
+                                showDialog(
+                                  context: navigatorContext,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext dialogContext) {
+                                    return PopScope(
+                                      canPop: false,
+                                      child: Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        elevation: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(32),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const CircularProgressIndicator(
+                                                color: Color(0xFF6366F1),
+                                                strokeWidth: 3,
                                               ),
-                                              title: const Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.quiz,
-                                                    color: Color(0xFFFFA500),
-                                                    size: 28,
-                                                  ),
-                                                  SizedBox(width: 12),
-                                                  Text(
-                                                    'Take Quiz First',
-                                                    style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight: FontWeight.w700,
-                                                    ),
+                                              const SizedBox(height: 24),
+                                              const Text(
+                                                'Submitting Assignment...',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Please wait while we submit your work',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+
+                                // Submit assignment using provider
+                                try {
+                                  final provider =
+                                      AssignmentSubmissionProvider();
+
+                                  // Use 0 as score if quiz not taken
+                                  final quizScoreToSubmit =
+                                      _quizTaken ? _quizScore : 0;
+
+                                  // Prepare submission data based on type
+                                  Map<String, dynamic> submissionData = {
+                                    'name': name,
+                                    'email': email ?? '',
+                                    'phone': phone ?? '',
+                                    'quiz_score': quizScoreToSubmit.toString(),
+                                    'lesson_id': widget.lessonId.toString(),
+                                    'cohort_id': widget.cohortId,
+                                    'profile_id': widget.profileId.toString(),
+                                    'submission_type': submissionType,
+                                  };
+
+                                  if (submissionType == 'upload') {
+                                    submissionData['assignments'] = [
+                                      {
+                                        'file_name': selectedFileName!,
+                                        'type': 'pdf',
+                                        'file': selectedFileBase64!,
+                                      }
+                                    ];
+                                  } else if (submissionType == 'link' || 
+                                             submissionType == 'url') {
+                                    submissionData['link_url'] = 
+                                        _linkController.text.trim();
+                                  } else if (submissionType == 'text') {
+                                    submissionData['text_content'] = 
+                                        _textController.text.trim();
+                                  }
+
+                                  // Debug: print final payload per submission type
+                                  try {
+                                    final payloadJson = jsonEncode(submissionData);
+                                    print('Assignment submission payload: $payloadJson');
+                                  } catch (e) {
+                                    print('Failed to encode submission payload: $e');
+                                  }
+
+                                  final success = await provider.submitAssignment(
+                                    name: submissionData['name'],
+                                    email: submissionData['email'],
+                                    phone: submissionData['phone'],
+                                    quizScore: submissionData['quiz_score'],
+                                    lessonId: submissionData['lesson_id'],
+                                    cohortId: submissionData['cohort_id'],
+                                    profileId: submissionData['profile_id'],
+                                    submissionType: submissionData['submission_type'],
+                                    assignments: submissionData['assignments'],
+                                    linkUrl: submissionData['link_url'],
+                                    textContent: submissionData['text_content'],
+                                  );
+
+                                  // Close loading dialog
+                                  if (navigatorContext.mounted) {
+                                    Navigator.of(navigatorContext,
+                                            rootNavigator: true)
+                                        .pop();
+                                  }
+
+                                  if (success) {
+                                    // Save submission status
+                                    await _saveSubmissionStatus();
+                                    await _clearPendingAssignmentData();
+                                    
+                                    // Clear controllers
+                                    _linkController.clear();
+                                    _textController.clear();
+
+                                    unawaited(_silentRefreshLessonDetail());
+
+                                    // Show success message
+                                    if (navigatorContext.mounted) {
+                                      showDialog(
+                                        context: navigatorContext,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext successContext) {
+                                          return Dialog(
+                                            backgroundColor: Colors.transparent,
+                                            elevation: 0,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(24),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.1),
+                                                    blurRadius: 40,
+                                                    offset: const Offset(0, 10),
                                                   ),
                                                 ],
                                               ),
-                                              content: const Text(
-                                                'You need to take the quiz before submitting your assignment. Your assignment details have been saved.',
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  height: 1.5,
-                                                ),
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context, false);
-                                                  },
-                                                  child: Text(
-                                                    'Later',
-                                                    style: TextStyle(
-                                                      color: Colors.grey.shade600,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context, true);
-                                                  },
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        const Color(0xFFFFA500),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                  ),
-                                                  child: const Text(
-                                                    'Take Quiz Now',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-
-                                        if (shouldTakeQuiz == true) {
-                                          // Navigate to quiz screen
-                                          final currentVideo =
-                                              _courseVideos[_selectedVideoIndex];
-                                          final videoTitle =
-                                              currentVideo['title'] as String;
-
-                                          final result =
-                                              await Navigator.push<int>(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => QuizScreen(
-                                                courseTitle: widget.courseTitle,
-                                                lessonTitle: videoTitle,
-                                           
-                                                lessonId: widget.lessonId!,
-                                              ),
-                                            ),
-                                          );
-
-                                          // Reload quiz data
-                                          await _loadQuizData();
-                                        }
-                                        return;
-                                      }
-                                    } else if (!_lessonHasQuiz && _lessonHasAssignment) {
-                                      // Lesson has assignment but no quiz - allow submission with score 0
-                                      // Check if assignment file is selected
-                                      if (selectedFileName == null ||
-                                          selectedFileBase64 == null) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Please upload your assignment file'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                    } else {
-                                      // No assignment in this lesson
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'No assignment available for this lesson'),
-                                          backgroundColor: Colors.orange,
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    // Close the modal first
-                                    Navigator.of(context).pop();
-
-                                    // Store the navigator context before showing dialog
-                                    final navigatorContext =
-                                        Navigator.of(context).context;
-
-                                    // Show loading dialog
-                                    showDialog(
-                                      context: navigatorContext,
-                                      barrierDismissible: false,
-                                      builder: (BuildContext dialogContext) {
-                                        return PopScope(
-                                          canPop: false,
-                                          child: Dialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(24.0),
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  const CircularProgressIndicator(
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                            Color>(
-                                                      Color(0xFF6366F1),
+                                                  // Success Icon
+                                                  Container(
+                                                    width: 80,
+                                                    height: 80,
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF10B981).withOpacity(0.1),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.check_circle_rounded,
+                                                      color: Color(0xFF10B981),
+                                                      size: 48,
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 24),
+                                                  const SizedBox(height: 20),
+
+                                                  // Title
                                                   const Text(
-                                                    'Submitting Assignment...',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.black87,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                    'Please wait while we submit your work',
+                                                    'Success!',
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
-                                                      fontSize: 14,
-                                                      color:
-                                                          Colors.grey.shade600,
+                                                      fontSize: 24,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Color(0xFF1A1A2E),
+                                                      letterSpacing: -0.5,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 12),
+
+                                                  // Message
+                                                  const Text(
+                                                    'Your assignment has been submitted successfully and is pending review.',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 15,
+                                                      color: Color(0xFF6B7280),
+                                                      height: 1.6,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 28),
+
+                                                  // Button
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: ElevatedButton(
+                                                      onPressed: () {
+                                                        Navigator.of(successContext).pop();
+                                                        if (mounted) {
+                                                          setState(() {
+                                                            _isNavigatingAway = true;
+                                                          });
+                                                        }
+                                                        Future.delayed(const Duration(milliseconds: 100), () {
+                                                          _showInterstitialAdAndPop(navigatorContext);
+                                                        });
+                                                      },
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: const Color(0xFF6366F1),
+                                                        foregroundColor: Colors.white,
+                                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(12),
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'OK',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.w600,
+                                                          letterSpacing: 0.5,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    );
-
-                                    // Submit assignment using provider (run asynchronously without blocking UI)
-                                    try {
-                                      // Import the provider at the top of the file if not already imported
-                                      final provider =
-                                          AssignmentSubmissionProvider();
-
-                                      // Use 0 as score if no quiz was required/taken
-                                      final quizScoreToSubmit = _lessonHasQuiz ? _quizScore : 0;
-
-                                      final success =
-                                          await provider.submitAssignment(
-                                        name: name,
-                                        email: email ?? '', // You can add email field to modal if needed
-                                        phone:
-                                            phone ?? '', // You can add phone field to modal if needed
-                                        quizScore: quizScoreToSubmit.toString(),
-                                        lessonId: widget.lessonId.toString(),
-                                        cohortId: widget.cohortId,
-                                        profileId: widget.profileId.toString(),
-                                        assignments: [
-                                          {
-                                            'file_name': selectedFileName!,
-                                            'type': 'pdf',
-                                            'file': selectedFileBase64!,
-                                          }
-                                        ],
+                                          );
+                                        },
                                       );
-
-                                      // Close loading dialog using root navigator
-                                      if (navigatorContext.mounted) {
-                                        Navigator.of(navigatorContext,
-                                                rootNavigator: true)
-                                            .pop();
-                                      }
-
-                                      if (success) {
-                                        // Save submission status
-                                        await _saveSubmissionStatus();
-                                        await _clearPendingAssignmentData();
-
-                                        // Show success message
-                                        if (navigatorContext.mounted) {
-                                          showDialog(
-                                            context: navigatorContext,
-                                            builder:
-                                                (BuildContext successContext) {
-                                              return AlertDialog(
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                title: const Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.check_circle,
-                                                      color: Colors.green,
-                                                      size: 28,
-                                                    ),
-                                                    SizedBox(width: 12),
-                                                    Text(
-                                                      'Success!',
-                                                      style: TextStyle(
-                                                        fontSize: 20,
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                content: const Text(
-                                                  'Your assignment has been submitted successfully and is pending review.',
-                                                  style: TextStyle(
-                                                    fontSize: 15,
-                                                    height: 1.5,
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.of(
-                                                              successContext)
-                                                          .pop();
-                                                    },
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                      backgroundColor:
-                                                          const Color(
-                                                              0xFF6366F1),
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(8),
-                                                      ),
-                                                    ),
-                                                    child: const Text(
-                                                      'OK',
-                                                      style: TextStyle(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        }
-                                      } else {
-                                        // Show error message
-                                        if (navigatorContext.mounted) {
-                                          ScaffoldMessenger.of(navigatorContext)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                provider.errorMessage ??
-                                                    'Failed to submit assignment',
-                                              ),
-                                              backgroundColor: Colors.red,
-                                              duration:
-                                                  const Duration(seconds: 5),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    } catch (e) {
-                                      // Close loading dialog
-                                      if (navigatorContext.mounted) {
-                                        Navigator.of(navigatorContext,
-                                                rootNavigator: true)
-                                            .pop();
-                                      }
-
-                                      // Show error message
-                                      if (navigatorContext.mounted) {
-                                        ScaffoldMessenger.of(navigatorContext)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text('Error: $e'),
-                                            backgroundColor: Colors.red,
-                                            duration:
-                                                const Duration(seconds: 5),
-                                          ),
-                                        );
-                                      }
                                     }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF6366F1),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text(
-                                    'Submit ',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  } else {
+                                    // Show error message
+                                    if (navigatorContext.mounted) {
+                                      ScaffoldMessenger.of(navigatorContext)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            provider.errorMessage ??
+                                                'Failed to submit assignment',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  // Close loading dialog
+                                  if (navigatorContext.mounted) {
+                                    Navigator.of(navigatorContext,
+                                            rootNavigator: true)
+                                        .pop();
+                                  }
+
+                                  // Show error message
+                                  if (navigatorContext.mounted) {
+                                    ScaffoldMessenger.of(navigatorContext)
+                                        .showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error: $e'),
+                                        backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 5),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isPastDue
+                                    ? Colors.grey.shade400
+                                    : const Color(0xFF6366F1),
+                                disabledBackgroundColor: Colors.grey.shade400,
+                                disabledForegroundColor: Colors.white,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                            ],
+                              child: const Text(
+                                'Submit Assignment',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
         );
       },
-    );
+    ),
+  );
+
+  if (mounted) {
+    setState(() {
+      _assignmentResubmitUnlocked = false;
+    });
   }
+}
+
+
 
   Widget _buildProfileItem({
     required String name,
@@ -2304,61 +3770,217 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     }
   }
 
-  Future<void> _previewAssignment(String assignmentUrl) async {
-    // Navigate to a PDF preview screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _AssignmentPreviewScreen(
-          assignmentUrl: assignmentUrl,
-          assignmentTitle: 'Assignment',
-        ),
-      ),
-    );
+  Future<bool> _verifyLinkReachable(String rawUrl) async {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return false;
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+      return false;
+    }
+
+    try {
+      final headResponse = await http
+          .head(uri)
+          .timeout(const Duration(seconds: 8));
+      if (headResponse.statusCode >= 200 && headResponse.statusCode < 400) {
+        return true;
+      }
+    } catch (_) {
+      // Some hosts block HEAD; fall back to GET below.
+    }
+
+    try {
+      final getResponse = await http
+          .get(uri)
+          .timeout(const Duration(seconds: 8));
+      return getResponse.statusCode >= 200 && getResponse.statusCode < 400;
+    } catch (_) {
+      return false;
+    }
   }
+
+  String _getFileNameFromUrl(String url) {
+  try {
+    // Remove query parameters if any
+    final uri = Uri.parse(url);
+    final pathSegments = uri.pathSegments;
+    
+    if (pathSegments.isNotEmpty) {
+      // Get the last segment (filename)
+      String filename = pathSegments.last;
+      
+      // Decode URL encoding (e.g., %20 -> space)
+      filename = Uri.decodeComponent(filename);
+      
+      // If no extension, add .pdf
+      if (!filename.toLowerCase().endsWith('.pdf')) {
+        filename = '$filename.pdf';
+      }
+      
+      return filename;
+    }
+  } catch (e) {
+    print('Error extracting filename: $e');
+  }
+  
+  // Fallback to timestamp-based name
+  return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+}
+
+
+// In _previewAssignment
+Future<void> _previewAssignment(String assignmentUrl) async {
+  setState(() {
+    _isNavigatingAway = true;
+  });
+  
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => _AssignmentPreviewScreen(
+        assignmentUrl: assignmentUrl,
+        assignmentTitle: 'Assignment',
+      ),
+    ),
+  );
+  
+  setState(() {
+    _isNavigatingAway = false;
+  });
+}
 
   // Helper function to get public Downloads directory
   Future<Directory?> _getDownloadsDirectory() async {
-    if (Platform.isAndroid) {
-      // For Android, use the public Downloads folder
-      final downloadsPath = '/storage/emulated/0/Download';
-      final downloadsDir = Directory(downloadsPath);
-      
-      // Check if the directory exists, if not try alternative paths
-      if (await downloadsDir.exists()) {
-        return downloadsDir;
+  if (Platform.isAndroid) {
+    // For Android, use app-specific external storage (no permission needed)
+    // This is accessible via Files app and won't be deleted when app is uninstalled
+    final dir = await getExternalStorageDirectory();
+    if (dir != null) {
+      // Use a public-like directory within app space
+      final downloadDir = Directory('${dir.path}/Downloads');
+      if (!await downloadDir.exists()) {
+        await downloadDir.create(recursive: true);
       }
-      
-      // Try alternative path (some devices use different paths)
-      final altPath = '/sdcard/Download';
-      final altDir = Directory(altPath);
-      if (await altDir.exists()) {
-        return altDir;
-      }
-      
-      // If neither exists, create the standard one
-      try {
-        await downloadsDir.create(recursive: true);
-        return downloadsDir;
-      } catch (e) {
-        // Fallback to external storage directory
-        final dir = await getExternalStorageDirectory();
-        return Directory('${dir!.path}/Download');
-      }
-    } else if (Platform.isIOS) {
-      // For iOS, use the app's documents directory
-      final dir = await getApplicationDocumentsDirectory();
-      return Directory('${dir.path}/Downloads');
+      return downloadDir;
     }
+  } else if (Platform.isIOS) {
+    final dir = await getApplicationDocumentsDirectory();
+    final downloadDir = Directory('${dir.path}/Downloads');
+    if (!await downloadDir.exists()) {
+      await downloadDir.create(recursive: true);
+    }
+    return downloadDir;
+  }
+  return null;
+}
+
+Future<String?> _getCachedFilePath(String url) async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'downloaded_file_${url.hashCode}';
+  final cachedPath = prefs.getString(key);
+  if (cachedPath == null) return null;
+
+  if (Platform.isAndroid && cachedPath.contains('/app_flutter/')) {
+    final oldFile = File(cachedPath);
+    if (await oldFile.exists()) {
+      final fileName = oldFile.uri.pathSegments.isNotEmpty
+          ? oldFile.uri.pathSegments.last
+          : 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final bytes = await oldFile.readAsBytes();
+      final newPath = await _saveToAppStorage(bytes, fileName);
+      if (newPath != null) {
+        await _cacheFilePath(url, newPath);
+        return newPath;
+      }
+    }
+    await prefs.remove(key);
     return null;
   }
+  
+  // Verify the file still exists on disk
+  final file = File(cachedPath);
+  if (await file.exists()) return cachedPath;
+  
+  // File was deleted, remove stale cache entry
+  await prefs.remove(key);
+  return null;
+}
 
- Future<void> _downloadMaterial(String materialUrl) async {
+Future<void> _cacheFilePath(String url, String filePath) async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'downloaded_file_${url.hashCode}';
+  await prefs.setString(key, filePath);
+}
+
+Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
+  if (!Platform.isAndroid) {
+    return null;
+  }
+  
   try {
-    // No permission needed for app-specific storage on Android 10+
-    // Remove the permission check entirely
+    // Call native Android code to save to public Downloads
+    final String? result = await platform.invokeMethod(
+      'saveToDownloads',
+      {
+        'fileName': fileName,
+        'bytes': bytes,
+      },
+    );
+    return result;
+  } catch (e) {
+    print('Error saving to Downloads: $e');
+    return null;
+  }
+}
+
+Future<String?> _saveToDownloadsUsingMediaStore(
+  Uint8List bytes,
+  String fileName,
+) async {
+  if (!Platform.isAndroid) return null;
+  
+  try {
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
     
-    // Show loading dialog
+    // Only use MediaStore for Android 10+
+    if (sdkInt >= 29) {
+      // Call native Android code to save file using MediaStore
+      final String? filePath = await platform.invokeMethod(
+        'saveToDownloads',
+        {
+          'fileName': fileName,
+          'bytes': bytes,
+        },
+      );
+      return filePath;
+    }
+  } catch (e) {
+    print('MediaStore save failed: $e');
+  }
+  return null;
+}
+Future<void> _openFileWithChooser(String filePath) async {
+  if (!Platform.isAndroid) return;
+  
+  try {
+    await platform.invokeMethod('openFile', {'filePath': filePath});
+  } catch (e) {
+    print('Error opening file: $e');
+  }
+}
+
+// Download Material - simplified version
+Future<void> _downloadMaterial(String materialUrl) async {
+  try {
+    // Check if already downloaded
+    final cachedPath = await _getCachedFilePath(materialUrl);
+    if (cachedPath != null) {
+      await _openFileWithChooser(cachedPath);
+      return; // Skip re-download
+    }
+
     if (mounted) {
       showDialog(
         context: context,
@@ -2368,37 +3990,40 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 20),
-              Text('Downloading materials...'),
+              Text('Downloading...'),
             ],
           ),
         ),
       );
     }
 
-    final response = await http.get(Uri.parse("https://linkskool.net/$materialUrl"));
-    if (response.statusCode == 200) {
-      final downloadsDir = await _getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw Exception('Could not access Downloads directory');
-      }
-      
-      if (!await downloadsDir.exists()) {
-        await downloadsDir.create(recursive: true);
-      }
+    final response = await http.get(
+      Uri.parse("https://linkskool.net/$materialUrl"),
+    );
 
-      final fileName = 'Material_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${downloadsDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
+    if (response.statusCode == 200) {
+      final fileName = _getFileNameFromUrl(materialUrl);
+       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+     await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Downloaded to: ${file.path}'),
-            duration: const Duration(seconds: 3),
-            backgroundColor: const Color(0xFF4CAF50),
-          ),
-        );
+        Navigator.pop(context);
+
+        if (savedPath != null) {
+          // Cache the path for future use
+          await _cacheFilePath(materialUrl, savedPath);
+          await _openFileWithChooser(savedPath);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } else {
       if (mounted) {
@@ -2413,13 +4038,10 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     }
   } catch (e) {
     if (mounted) {
-      // Make sure dialog is showing before trying to pop
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context); // Close loading dialog
-      }
+      if (Navigator.canPop(context)) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Download failed: $e'),
+          content: Text('Download failed: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -2427,11 +4049,9 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
   }
 }
 
- Future<void> _downloadAssignment(String assignmentUrl) async {
+// Download Certificate - simplified version
+Future<void> _downloadCertificate(String certificateUrl) async {
   try {
-    // No permission needed - remove the wrong permission check
-    
-    // Show loading dialog
     if (mounted) {
       showDialog(
         context: context,
@@ -2441,7 +4061,102 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 20),
-              Text('Downloading assignment...'),
+              Text('Downloading...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final response =
+        await http.get(Uri.parse("https://linkskool.net/$certificateUrl"));
+
+    if (response.statusCode == 200) {
+      final fileName = _getFileNameFromUrl(certificateUrl);
+
+       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+
+    await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        if (savedPath != null) {
+          await _openFileWithChooser(savedPath);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to download certificate'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    print('Download error: $e');
+    if (mounted) {
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Download failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
+
+// New helper — saves to app-private storage, returns a real file path
+Future<String?> _saveToAppStorage(Uint8List bytes, String fileName) async {
+  try {
+    final Directory baseDir = Platform.isAndroid
+        ? await getApplicationSupportDirectory()
+        : await getApplicationDocumentsDirectory();
+    final downloadsDir = Directory('${baseDir.path}/downloads');
+    if (!await downloadsDir.exists()) {
+      await downloadsDir.create(recursive: true);
+    }
+    final file = File('${downloadsDir.path}/$fileName');
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
+  } catch (e) {
+    print('Error saving to app storage: $e');
+    return null;
+  }
+}
+
+// Download Assignment - simplified version
+Future<void> _downloadAssignment(String assignmentUrl) async {
+  try {
+     final cachedPath = await _getCachedFilePath(assignmentUrl);
+    if (cachedPath != null) {
+      await _openFileWithChooser(cachedPath);
+      return;
+    }
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Downloading...'),
             ],
           ),
         ),
@@ -2449,29 +4164,33 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
     }
 
     final response = await http.get(Uri.parse("https://linkskool.net/$assignmentUrl"));
+    
     if (response.statusCode == 200) {
-      final downloadsDir = await _getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw Exception('Could not access Downloads directory');
-      }
-      
-      if (!await downloadsDir.exists()) {
-        await downloadsDir.create(recursive: true);
-      }
+      final fileName = _getFileNameFromUrl(assignmentUrl);
 
-      final fileName = 'Assignment_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${downloadsDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
+       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+
+      await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
+
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Downloaded to Downloads folder'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Color(0xFF4CAF50),
-          ),
-        );
+        Navigator.pop(context);
+        
+        if (savedPath != null) {
+          // Open with system chooser immediately
+          await _cacheFilePath(assignmentUrl, savedPath);
+          await _openFileWithChooser(savedPath);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } else {
       if (mounted) {
@@ -2485,13 +4204,12 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
       }
     }
   } catch (e) {
+    print('Download error: $e');
     if (mounted) {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context); // Close loading dialog
-      }
+      if (Navigator.canPop(context)) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Download failed: $e'),
+          content: Text('Download failed: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -2504,8 +4222,8 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
   @override
   @override
 Widget build(BuildContext context) {
-  return ChangeNotifierProvider<LessonDetailProvider>(
-    create: (_) => LessonDetailProvider(),
+  return ChangeNotifierProvider<LessonDetailProvider>.value(
+    value: _lessonDetailProvider,
     child: Consumer<LessonDetailProvider>(
       builder: (context, provider, child) {
         final hasLessonRequest =
@@ -2522,10 +4240,31 @@ Widget build(BuildContext context) {
         }
 
         final lesson = provider.lessonDetailData?.lesson;
+        final submission = provider.lessonDetailData?.submission;
+
         if (lesson != null && !_dataLoaded) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              _applyLessonData(lesson);
+              _applyLessonData(lesson, submission: submission);
+            }
+          });
+        }
+        if (lesson != null && _dataLoaded) {
+          final signature = _buildLessonMetaSignature(lesson, submission);
+          if (signature != _lastMetaSignature) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _applyLessonMeta(lesson, submission: submission);
+              }
+            });
+          }
+        }
+        if (submission != null && submission != _submission) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _submission = submission;
+              });
             }
           });
         }
@@ -2559,18 +4298,23 @@ Widget build(BuildContext context) {
                 'url': _effectiveVideoUrl ?? '',
               };
 
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: _handleBackButton,
+        return WillPopScope(
+          onWillPop: () async {
+            await _handleBackButton();
+            return false;
+          },
+          child: Scaffold(
+            extendBodyBehindAppBar: true,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: _handleBackButton,
+              ),
             ),
-          ),
-          backgroundColor: Colors.white,
-          body: NestedScrollView(
+            backgroundColor: Colors.white,
+            body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
                 SliverToBoxAdapter(
@@ -2630,6 +4374,7 @@ Widget build(BuildContext context) {
                 _buildReviewsTab(),
                 _buildAssignmentsTab(currentVideo),
               ],
+            ),
             ),
           ),
         );
@@ -2784,7 +4529,29 @@ Widget _buildVideoPlayer() {
     return AspectRatio(
       aspectRatio: 16 / 9,
       key: ValueKey(_videoController.hashCode),
-      child: Chewie(controller: _chewieController!),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Chewie(controller: _chewieController!),
+          ),
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Material(
+              color: Colors.black54,
+              shape: const CircleBorder(),
+              child: IconButton(
+                onPressed: _toggleFullscreen,
+                icon: const Icon(
+                  Icons.fullscreen,
+                  color: Colors.white,
+                ),
+                tooltip: 'Fullscreen',
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -3123,174 +4890,955 @@ Widget _buildVideoPlayer() {
         const SizedBox(height: 16),
       ],
 
-      // Join/Watch Button with Zoom-style banner - Show if zoom URL or recorded URL exists
-      if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
-          (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty)) ...[
-        Builder(
-          builder: (context) {
-            final zoomStatus = _getZoomStatus();
-            final status = zoomStatus['status'] as String;
-            final message = zoomStatus['message'] as String;
-            final buttonText = zoomStatus['buttonText'] as String;
-            final url = zoomStatus['url'] as String?;
-
-            // Determine button style and behavior based on status
-            Color backgroundColor;
-            Color iconColor;
-            bool isButtonEnabled;
-
-            switch (status) {
-              case 'scheduled':
-                backgroundColor = Colors.grey.shade300;
-                iconColor = Colors.grey.shade600;
-                isButtonEnabled = false;
-                break;
-              case 'ongoing':
-                backgroundColor = const Color(0xFF2D8CFF);
-                iconColor = Colors.white;
-                isButtonEnabled = true;
-                break;
-              case 'recorded':
-                backgroundColor = const Color(0xFF10B981);
-                iconColor = Colors.white;
-                isButtonEnabled = true;
-                break;
-              case 'pending':
-                backgroundColor = Colors.grey;
-                iconColor = Colors.white;
-                isButtonEnabled = false;
-                break;
-              case 'unavailable':
-              default:
-                backgroundColor = Colors.grey.shade300;
-                iconColor = Colors.grey.shade600;
-                isButtonEnabled = false;
-                break;
-            }
-
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+      // Certificate Card - Only show if final lesson and certificate URL exists
+      if (_shouldShowCertificate) ...[
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  // Header with Zoom logo
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: backgroundColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          status == 'recorded'
-                              ? Icons.play_circle_outline
-                              : Icons.video_camera_front,
-                          color: iconColor,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        status == 'recorded' ? 'Recording' : 'class',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: backgroundColor,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Message
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black87,
-                      height: 1.4,
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.workspace_premium,
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
-                  if (buttonText.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    // Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isButtonEnabled && url != null
-                            ? () => _launchUrl(url)
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: backgroundColor,
-                          foregroundColor: iconColor,
-                          disabledBackgroundColor: backgroundColor,
-                          disabledForegroundColor: iconColor,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          buttonText,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Certificate',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFF59E0B),
+                      letterSpacing: -0.5,
                     ),
-                  ],
+                  ),
                 ],
               ),
-            );
-          },
+              const SizedBox(height: 12),
+              const Text(
+                'Download your certificate of completion for this course.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _downloadCertificate(certificateUrl!),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Download Certificate',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
       ],
-    ]);
+
+      // Join/Watch Button with Zoom-style banner - Show if zoom URL or recorded URL exists
+      // Join/Watch Button with class status banner
+  if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
+      (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty) ||
+      (_effectiveSessionStart != null && _effectiveSessionStart!.isNotEmpty)) ...[
+  StreamBuilder<int>(
+    stream: _countdownStream,
+    builder: (context, snapshot) {
+      final zoomStatus = _getZoomStatus();
+      final status = zoomStatus['status'] as String;
+      final message = zoomStatus['message'] as String;
+      final buttonText = zoomStatus['buttonText'] as String;
+      final url = zoomStatus['url'] as String?;
+      final scheduledStart = zoomStatus['classDate'] as DateTime?;
+      final recordedUrl = _effectiveRecordedUrl;
+     final showRecordedButton = (status == 'ongoing' || status == 'scheduled') &&
+    recordedUrl != null &&
+    recordedUrl.isNotEmpty;
+
+      // Determine button style and behavior based on status
+      Color backgroundColor;
+      Color iconColor;
+      IconData iconData;
+      bool isButtonEnabled;
+      String cardTitle;
+
+        switch (status) {
+          case 'scheduled':
+            backgroundColor = const Color(0xFF2D8CFF);
+            iconColor = Colors.white;
+            iconData = Icons.videocam;
+            isButtonEnabled = true;
+            cardTitle = 'Live Class';
+            break;
+        case 'ongoing':
+          backgroundColor = const Color(0xFF2D8CFF);
+          iconColor = Colors.white;
+          iconData = Icons.videocam;
+          isButtonEnabled = true;
+          cardTitle = 'Live Class';
+          break;
+        case 'recorded':
+          backgroundColor = const Color(0xFF10B981);
+          iconColor = Colors.white;
+          iconData = Icons.play_circle_outline;
+          isButtonEnabled = true;
+          cardTitle = 'Recorded Class';
+          break;
+        case 'pending':
+          backgroundColor = Colors.blueGrey;
+          iconColor = Colors.white;
+          iconData = Icons.hourglass_empty;
+
+          isButtonEnabled = false;
+          cardTitle = 'Recorded video';
+          break;
+        case 'available':
+          backgroundColor = const Color(0xFF2D8CFF);
+          iconColor = Colors.white;
+          iconData = Icons.videocam;
+          isButtonEnabled = true;
+          cardTitle = 'Live Class';
+          break;
+        case 'unavailable':
+        default:
+          backgroundColor = Colors.grey.shade300;
+          iconColor = Colors.grey.shade600;
+          iconData = Icons.not_interested;
+          isButtonEnabled = false;
+          cardTitle = 'No Class Available';
+          break;
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with icon
+            Row(
+              children: [
+                // Container(
+                //   width: 40,
+                //   height: 40,
+                //   decoration: BoxDecoration(
+                //     color: backgroundColor,
+                //     borderRadius: BorderRadius.circular(8),
+                //   ),
+                //   child: Icon(
+                //     iconData,
+                //     color: iconColor,
+                //     size: 24,
+                //   ),
+                // ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    cardTitle,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: backgroundColor,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+                // Live indicator for ongoing classes
+                if (status == 'ongoing')
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Message
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+            ),
+            if (status == 'scheduled' && scheduledStart != null) ...[
+              const SizedBox(height: 12),
+              Builder(
+                builder: (context) {
+                  final now = DateTime.now();
+                  final diff = now.isAfter(scheduledStart)
+                      ? Duration.zero
+                      : scheduledStart.difference(now);
+                  final days = diff.inDays;
+                  final hours = diff.inHours % 24;
+                  final minutes = diff.inMinutes % 60;
+                  final seconds = diff.inSeconds % 60;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildCompactCountdownItem('D', days.toString().padLeft(2, '0')),
+                      const SizedBox(width: 8),
+                      _buildCompactCountdownItem('H', hours.toString().padLeft(2, '0')),
+                      const SizedBox(width: 8),
+                      _buildCompactCountdownItem('M', minutes.toString().padLeft(2, '0')),
+                      const SizedBox(width: 8),
+                      _buildCompactCountdownItem('S', seconds.toString().padLeft(2, '0')),
+                    ],
+                  );
+                },
+              ),
+            ],
+            if (buttonText.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              // Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: isButtonEnabled && url != null
+    ? () {
+        if (status == 'ongoing') {
+          unawaited(_logAttendanceIfLive(status));
+        }
+        _launchUrl(url);
+      }
+    : null,
+                  icon: Icon(
+                    iconData,
+                    size: 20,
+                  ),
+                  label: Text(
+                    buttonText,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: backgroundColor,
+                    foregroundColor: iconColor,
+                    disabledBackgroundColor: backgroundColor,
+                    disabledForegroundColor: iconColor,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8), // reduced vertical, add horizontal
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: isButtonEnabled ? 2 : 0,
+                  ),
+                ),
+              ),
+            ],
+            if (showRecordedButton) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: const [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'or',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                onPressed: () {
+        // Only log attendance if session is ongoing, NOT scheduled
+        if (status == 'ongoing') {
+          unawaited(_logAttendanceIfLive(status));
+        }
+        _launchUrl(recordedUrl!);
+      },
+                //  image
+            icon: Image.asset(
+    'assets/images/explore-images/youtube-live.png',
+    width: 20,
+    height: 20,
+  ),
+                  label: const Text(
+                    'Join Youtube Live Stream',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                     backgroundColor: const Color(0xFFEF5350),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ]
+          ],
+        ),
+      );
+    },
+  ),
+  const SizedBox(height: 16),
+],
+if (_hasAttendance == false &&
+    (_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty)) ...[
+  StreamBuilder<int>(
+    stream: _countdownStream,
+    builder: (context, snapshot) {
+      final zoomStatus = _getZoomStatus();
+      final status = zoomStatus['status'] as String;
+      final shouldWarn = status == 'scheduled' || status == 'ongoing';
+      if (!shouldWarn) return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF7ED),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFDBA74)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+  
+              decoration: BoxDecoration(
+                color: const Color(0xFFF97316),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Attendance ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Joining the live stream also counts as attendance.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  ),
+  const SizedBox(height: 16),
+],
+if (_hasAttendance) ...[
+  // Attendance card
+  Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const  Color(0xFF2E7D32),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.check_circle_outline,
+            color: Colors.white,
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Attendance',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Attendance completion',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F5E9),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Text(
+            'Completed',
+            style: TextStyle(
+              color: Color(0xFF2E7D32),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+  const SizedBox(height: 16),
+] else if (_hasAttendance == false ) ...[
+
+    ],
+  ]);
   }
 
   Widget _buildAssignmentsTab(Map<String, dynamic> currentVideo) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text(
-          'Lesson Assignment',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+  final remark = _submission?.remark?.trim();
+  final comment = _submission?.comment?.trim();
+  final hasRemark = remark != null && remark.isNotEmpty;
+  final hasComment = comment != null && comment.isNotEmpty;
+  final hasFeedback = hasRemark || hasComment;
+  final assignedScore = _submission?.assignedScore;
+  final isPastDue = _isAssignmentPastDue();
+  
+  // Check if lesson has assignment
+  final bool hasAssignment = _effectiveAssignmentUrl != null && 
+                             _effectiveAssignmentUrl!.isNotEmpty;
+
+  return ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      if (hasFeedback) ...[
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Download the file below and complete the assignment as instructed.',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade700,
-            height: 1.5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Performance',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (assignedScore != null) ...[
+                Center(
+                  child: SizedBox(
+                    width: 120,
+                    height: 120,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: 1.0,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              const Color(0xFF1D4ED8).withOpacity(0.15),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: assignedScore / 100,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${assignedScore}/100',
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1D4ED8),
+                              ),
+                            ),
+                            const Text(
+                              'Score',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (hasRemark) ...[
+                const Text(
+                  'Remark:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  remark!,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF374151),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (hasComment) ...[
+                const Text(
+                  'Instructor Feedback:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  comment!,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF374151),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         const SizedBox(height: 24),
+      ],
+      
+      if (!hasAssignment) ...[
+        // EMPTY STATE - No assignment available
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Empty state icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.assignment_outlined,
+                  size: 60,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              const Text(
+                'No Assignment Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              
+              // Description
+              Text(
+                'No assignment for this lesson.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 32),
+              Center(
+                child: _CourseBannerAd(
+                  key: const ValueKey('assignment_empty_banner'),
+                  adUnitId: EnvConfig.programBannersAdsKey,
+                  size: AdSize.mediumRectangle,
+                ),
+              ),
+              
+            
+              
+              
+            ],
+          ),
+        ),
+      ] else ...[
+        // HAS ASSIGNMENT - Show all assignment-related content
+        if (!hasFeedback) ...[
+          const Text(
+            'Lesson Assignment',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
 
-        // Current Video/Lesson Info Card
+          // Assignment Guidelines Card (always shown)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  color: Color(0xFFFF9800),
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Assignment Guidelines',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFE65100),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Deadline: ${_formattedAssignmentDeadline()}',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      StreamBuilder<int>(
+                        stream: _countdownStream,
+                        builder: (context, snapshot) {
+                          final deadline = _assignmentDeadlineDate();
+                          if (deadline == null) {
+                            return Text(
+                              'No deadline set',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade900,
+                              ),
+                            );
+                          }
+
+                          final now = DateTime.now();
+                          final isPastDue = now.isAfter(deadline);
+                          final diff = isPastDue
+                              ? Duration.zero
+                              : deadline.difference(now);
+                          final days = diff.inDays;
+                          final hours = diff.inHours % 24;
+                          final minutes = diff.inMinutes % 60;
+                          final seconds = diff.inSeconds % 60;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFDF2E5),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: const Color(0xFFFFD4A1),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _buildCountdownItem(
+                                      'DAYS',
+                                      days.toString().padLeft(2, '0'),
+                                    ),
+                                    _buildCountdownItem(
+                                      'HOURS',
+                                      hours.toString().padLeft(2, '0'),
+                                    ),
+                                    _buildCountdownItem(
+                                      'MINUTES',
+                                      minutes.toString().padLeft(2, '0'),
+                                    ),
+                                    _buildCountdownItem(
+                                      'SECONDS',
+                                      seconds.toString().padLeft(2, '0'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isPastDue) ...[
+                                const SizedBox(height: 6),
+                                Center(
+                                  child: const Text(
+                                    'Deadline passed',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFB91C1C),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         const SizedBox(height: 24),
+
+        // Assignment Instructions (if available)
+        if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1F2937),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.list_alt,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Assignment Instructions',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Html(
+                  data: _effectiveAssignmentDescription,
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(18),
+                      color: Colors.black87,
+                      lineHeight: LineHeight(1.4),
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                    ),
+                    "p": Style(
+                      margin: Margins(bottom: Margin(8)),
+                    ),
+                    "ul": Style(
+                      margin: Margins(bottom: Margin(8)),
+                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                    ),
+                    "ol": Style(
+                      margin: Margins(bottom: Margin(8)),
+                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                    ),
+                    "li": Style(
+                      margin: Margins(bottom: Margin(2)),
+                      padding: HtmlPaddings.zero,
+                    ),
+                  },
+                ),
+              ],
+            ),
+          ),
+
+        if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
+          const SizedBox(height: 10),
 
         // Download Assignment Card
         if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
@@ -3340,44 +5888,36 @@ Widget _buildVideoPlayer() {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Assignment description
-                Html(
-                  data: _effectiveAssignmentDescription ??
-                      'Download the file below and complete the assignment as instructed.',
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(13),
-                      color: Colors.black87,
-                      lineHeight: LineHeight(1.4),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                    ),
-                    "p": Style(
-                      margin: Margins(bottom: Margin(8)),
-                    ),
-                    "ul": Style(
-                      margin: Margins(bottom: Margin(8)),
-                      padding: HtmlPaddings(left: HtmlPadding(20)),
-                    ),
-                    "ol": Style(
-                      margin: Margins(bottom: Margin(8)),
-                      padding: HtmlPaddings(left: HtmlPadding(20)),
-                    ),
-                    "li": Style(
-                      margin: Margins(bottom: Margin(2)),
-                      padding: HtmlPaddings.zero,
-                    ),
-                  },
+                Text(
+                  'Use the buttons below to preview or download the assignment file.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    height: 1.4,
+                  ),
                 ),
+               
                 const SizedBox(height: 16),
+
                 // Buttons Row
                 Row(
                   children: [
                     // Preview Button
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () =>
-                            _previewAssignment(_effectiveAssignmentUrl!),
+                        onPressed: () {
+                          if (_effectiveAssignmentUrl == null || 
+                              _effectiveAssignmentUrl!.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No assignment file available'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          _previewAssignment(_effectiveAssignmentUrl!);
+                        },
                         icon: const Icon(Icons.visibility, size: 18),
                         label: const Text('Preview'),
                         style: OutlinedButton.styleFrom(
@@ -3415,179 +5955,266 @@ Widget _buildVideoPlayer() {
             ),
           ),
 
-        // Submit Assignment Card - Only show if assignmentUrl exists
-        if (_effectiveAssignmentUrl != null &&
-            _effectiveAssignmentUrl!.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with icon
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
+        const SizedBox(height: 16),
+
+        // Submit Assignment Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with icon
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                       ),
-                      child: const Icon(
-                        Icons.upload_file,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Submit',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF6366F1),
-                        letterSpacing: -0.5,
-                      ),
+                    child: const Icon(
+                      Icons.upload_file,
+                      color: Colors.white,
+                      size: 24,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Message
-                const Text(
-                  'Once you\'ve completed the assignment, submit your work here for review.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    height: 1.4,
                   ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _hasSubmittedAssignment ? 'Submitted Assignment' : 'Submit Assignment',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF6366F1),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Message
+              Text(
+                _hasSubmittedAssignment
+                    ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
+                    : 'Once you\'ve completed the assignment, submit your work here for review.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.4,
                 ),
-                const SizedBox(height: 16),
-                // Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isAssignmentSubmitted
-                        ? null
-                        : () {
-                            // Check if quiz has been taken before allowing submission
-                            if (!_quizTaken) {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Quiz Required'),
-                                  content: const Text(
-                                      'You need to take the quiz first before submitting your assignment. Please go to the Quiz tab and complete the quiz.'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        // Switch to Quiz tab (index 2)
-                                        _tabController.animateTo(2);
-                                      },
-                                      child: const Text('Go to Quiz'),
-                                    ),
-                                  ],
-                                ),
-                              );
+              ),
+              const SizedBox(height: 16),
+              // Buttons
+              _hasSubmittedAssignment
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final submittedFileUrl = _submittedAssignmentUrl;
+                            if (submittedFileUrl != null && submittedFileUrl.isNotEmpty) {
+                              _previewAssignment(submittedFileUrl);
                               return;
                             }
-                            _showSubmitAssignmentModal(context);
+                            final linkUrl = _submission?.linkUrl?.trim();
+                            if (linkUrl != null && linkUrl.isNotEmpty) {
+                              _launchUrl(linkUrl);
+                              return;
+                            }
+                            final textContent = _submission?.textContent?.trim();
+                            if (textContent != null && textContent.isNotEmpty) {
+                              _showTextSubmissionDialog(textContent);
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No submitted assignment found'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
                           },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isAssignmentSubmitted
-                          ? Colors.grey.shade400
-                          : const Color(0xFF6366F1),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_isAssignmentSubmitted)
-                          const Icon(Icons.pending, size: 18),
-                        if (_isAssignmentSubmitted) const SizedBox(width: 8),
-                        Text(
-                          _isAssignmentSubmitted
-                              ? 'Submission Pending'
-                              : 'Submit Assignment',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                          icon: const Icon(Icons.visibility, size: 18),
+                          label: const Text('Preview'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            side: const BorderSide(color: Color(0xFF6366F1)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isPastDue
+                              ? null
+                              : () {
+                                  if (!_assignmentResubmitUnlocked) {
+                                    _showUnlockRewardDialog(_RewardAction.assignmentResubmit);
+                                    return;
+                                  }
+                                  _openSubmitAssignmentPage(context);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isPastDue
+                                ? Colors.grey.shade400
+                                : const Color(0xFF6366F1),
+                            disabledBackgroundColor: Colors.grey.shade400,
+                            disabledForegroundColor: Colors.white,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Resubmit',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isPastDue
+                          ? null
+                          : () {
+                              _openSubmitAssignmentPage(context);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isPastDue
+                            ? Colors.grey.shade400
+                            : const Color(0xFF6366F1),
+                        disabledBackgroundColor: Colors.grey.shade400,
+                        disabledForegroundColor: Colors.white,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Submit Assignment',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+            ],
           ),
-        ],
+        ),
 
         const SizedBox(height: 24),
 
         // Additional Info
+      ],
+    ],
+  );
+}
+
+Widget _buildReviewsTab() {
+  print('=== _buildReviewsTab ===');
+  print('_dataLoaded: $_dataLoaded');
+  print('_lessonHasQuiz: $_lessonHasQuiz');
+  print('_quizTaken: $_quizTaken');
+  print('_quizScore: $_quizScore');
+
+  // Show loading while waiting for data
+  if (!_dataLoaded) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: Color(0xFFFFA500)),
+          SizedBox(height: 16),
+          Text('Loading quiz data...'),
+        ],
+      ),
+    );
+  }
+
+  // If we have data but no quiz, show empty state
+  if (!_lessonHasQuiz) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
         Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.info_outline,
-                color: Color(0xFFFF9800),
-                size: 24,
+              // Empty state icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.quiz_outlined,
+                  size: 60,
+                  color: Colors.grey.shade400,
+                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Assignment Guidelines',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFE65100),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade800,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 24),
+              
+              // Title
+              const Text(
+                'No Quiz Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              
+              // Description
+              Text(
+                'There is no quiz available for this lesson.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 32),
+              Builder(
+                builder: (adContext) => Center(
+                  child: _CourseBannerAd(
+                    key: const ValueKey('quiz_empty_banner'),
+                    adUnitId: EnvConfig.programBannersAdsKey,
+                    size: AdSize.mediumRectangle,
+                  ),
                 ),
               ),
             ],
@@ -3597,15 +6224,122 @@ Widget _buildVideoPlayer() {
     );
   }
 
-  Widget _buildReviewsTab() {
-    // Define controllers for use in the quiz submission
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController phoneController = TextEditingController();
+  // If we have a quiz, show the quiz UI
+  final bool isBelowThreshold = _quizTaken && _quizScore < 50;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Take Quiz Card (Zoom style)
+  return ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      // Low Score Warning - Only shown if score is below 50 and quiz taken
+      if (isBelowThreshold) ...[
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFEBEE),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFEF5350).withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF5350),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.warning_outlined,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Score Below Threshold',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFEF5350),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade800,
+                    height: 1.5,
+                  ),
+                  children: [
+                    const TextSpan(text: 'Your current score of '),
+                    TextSpan(
+                      text: '$_quizScore%',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const TextSpan(
+                      text:
+                          ' does not meet the program\'s minimum threshold of ',
+                    ),
+                    const TextSpan(
+                      text: '50%',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const TextSpan(
+                      text:
+                          '. Please retake the quiz to improve your score.',
+                    ),
+                  ],
+                ),
+              ),
+             
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // Check if retake needs to be unlocked
+                    if (_quizTaken && !_quizUnlocked) {
+                      _showUnlockRewardDialog(_RewardAction.quizRetake);
+                      return;
+                    }
+
+                    // Otherwise, navigate to quiz directly
+                    _navigateToQuiz();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF5350),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                  child:  Text( 
+                    _quizRetryMessage != null ? 'Retake Quiz' : 'Retake Quiz',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+
+      // Take Quiz Card (show only if lesson has quiz and not below threshold or not taken)
+      if (!isBelowThreshold)
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -3653,9 +6387,9 @@ Widget _buildVideoPlayer() {
               ),
               const SizedBox(height: 12),
               // Message
-              Text(
+              const Text(
                 'Find out how much you learnt by taking a Test',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   color: Colors.black87,
                   height: 1.4,
@@ -3667,42 +6401,14 @@ Widget _buildVideoPlayer() {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final currentVideo = _courseVideos[_selectedVideoIndex];
-                    final videoTitle = currentVideo['title'] as String;
-
-                    final result = await Navigator.push<int>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => QuizScreen(
-                          courseTitle: widget.courseTitle,
-                          lessonTitle: videoTitle,
-                          lessonId: widget.lessonId!,
-                        ),
-                      ),
-                    );
-
-                    // Reload quiz data when returning from quiz
-                    await _loadQuizData();
-
-                    // If we have pending assignment data and quiz was completed
-                    if (result != null &&
-                        _pendingUsername != null &&
-                        _quizTaken) {
-                      _prepareAndPrintPayload(
-                        emailController: emailController,
-                        phoneController: phoneController,
-                        score: result,
-                        assignmentFileName: _pendingAssignmentFileName,
-                        assignmentBase64: _pendingAssignmentFileBase64,
-                        username: _pendingUsername!,
-                      );
-
-                      // Clear pending data
-                      await _clearPendingAssignmentData();
-
-                      // Open email app
-                      _openEmailApp(_pendingUsername!);
+                    // Check if retake needs to be unlocked
+                    if (_quizTaken && !_quizUnlocked) {
+                      _showUnlockRewardDialog(_RewardAction.quizRetake);
+                      return;
                     }
+
+                    // Otherwise, navigate to quiz directly
+                    _navigateToQuiz();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFA500),
@@ -3726,9 +6432,9 @@ Widget _buildVideoPlayer() {
           ),
         ),
 
+      // Show quiz assessment only if quiz is taken
+      if (_quizTaken) ...[
         const SizedBox(height: 24),
-
-        // Lesson Assessment Progress
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -3769,7 +6475,7 @@ Widget _buildVideoPlayer() {
                           ),
                         ),
                       ),
-                      // Progress circle
+                      // Progress circle with color based on score
                       SizedBox(
                         width: 160,
                         height: 160,
@@ -3777,45 +6483,51 @@ Widget _buildVideoPlayer() {
                           value: _quizScore / 100,
                           strokeWidth: 12,
                           backgroundColor: Colors.transparent,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFFFFA500),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _quizScore >= 50
+                                ? const Color(0xFF4CAF50) // Green for passing
+                                : const Color(0xFFEF5350), // Red for failing
                           ),
                         ),
                       ),
-                      // Score text
+                      // Score text - FIX THIS PART
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '$_quizScore/100',
-                            style: const TextStyle(
+                            '$_quizScore%', // Show actual score
+                            style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFFFFA500),
+                              color: _quizScore >= 50
+                                  ? const Color(0xFF4CAF50)
+                                  : const Color(0xFFEF5350),
                             ),
                           ),
-                          if (_quizTaken)
-                            Text(
-                              '$_quizScore%',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
+                          Text(
+                            'Score',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
                             ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              // Take Quiz button (below progress)
             ],
           ),
         ),
       ],
-    );
-  }
+    ],
+  );
+}
+// preview assignment 
+
+
+
 
   String _calculateTotalDuration() {
     int totalMinutes = 0;
@@ -3827,6 +6539,26 @@ Widget _buildVideoPlayer() {
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
     return '${hours}h ${minutes}m';
+  }
+
+  void _showTextSubmissionDialog(String text) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Submitted Text'),
+          content: SingleChildScrollView(
+            child: Text(text),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -4066,6 +6798,8 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final videoSize = widget.controller.value.size;
+    final isVideoReady = videoSize != Size.zero;
 
     return WillPopScope(
       onWillPop: () async {
@@ -4080,14 +6814,20 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
             children: [
               // Full screen video player
               SizedBox.expand(
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: SizedBox(
-                    width: widget.controller.value.size.width,
-                    height: widget.controller.value.size.height,
-                    child: VideoPlayer(widget.controller),
-                  ),
-                ),
+                child: isVideoReady
+                    ? FittedBox(
+                        fit: BoxFit.contain,
+                        child: SizedBox(
+                          width: videoSize.width,
+                          height: videoSize.height,
+                          child: VideoPlayer(widget.controller),
+                        ),
+                      )
+                    : const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      ),
               ),
               // Controls overlay
               AnimatedOpacity(
@@ -4366,6 +7106,25 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     return null;
   }
 
+  Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
+  if (!Platform.isAndroid) return null;
+  
+  try {
+    const platform = MethodChannel('com.linkskool.app/downloads');
+    final String? result = await platform.invokeMethod(
+      'saveToDownloads',
+      {
+        'fileName': fileName,
+        'bytes': bytes,
+      },
+    );
+    return result;
+  } catch (e) {
+    print('Error saving to Downloads: $e');
+    return null;
+  }
+}
+
   Future<void> _downloadPdf() async {
     try {
       final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
@@ -4399,11 +7158,30 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     }
   }
 
+  String _getFileNameFromUrl(String url) {
+  try {
+    final uri = Uri.parse(url);
+    final pathSegments = uri.pathSegments;
+    
+    if (pathSegments.isNotEmpty) {
+      String filename = pathSegments.last;
+      filename = Uri.decodeComponent(filename);
+      
+      if (!filename.toLowerCase().endsWith('.pdf')) {
+        filename = '$filename.pdf';
+      }
+      
+      return filename;
+    }
+  } catch (e) {
+    print('Error extracting filename: $e');
+  }
+  
+  return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+}
+
 Future<void> _downloadToDevice() async {
   try {
-    // Option 1: No permission needed (recommended for Android 10+)
-    // Just proceed directly to download
-    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -4419,39 +7197,53 @@ Future<void> _downloadToDevice() async {
     );
 
     final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
+    
     if (response.statusCode == 200) {
-      final downloadsDir = await _getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw Exception('Could not access Downloads directory');
-      }
+       final fileName = _getFileNameFromUrl(widget.assignmentUrl);
       
-      if (!await downloadsDir.exists()) {
-        await downloadsDir.create(recursive: true);
-      }
-
-      final fileName =
-          '${widget.assignmentTitle.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${downloadsDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
+      final savedPath = await _saveToPublicDownloads(
+        response.bodyBytes,
+        fileName,
+      );
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Downloaded to Downloads folder'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Color(0xFF4CAF50),
-          ),
-        );
+        
+        if (savedPath != null) {
+          // Open with system chooser immediately
+          await _openFileWithChooser(savedPath);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   } catch (e) {
     if (mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: $e')),
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
+  }
+}
+
+
+Future<void> _openFileWithChooser(String filePath) async {
+  if (!Platform.isAndroid) return;
+  
+  try {
+    const platform = MethodChannel('com.linkskool.app/downloads');
+    await platform.invokeMethod('openFile', {'filePath': filePath});
+  } catch (e) {
+    print('Error opening file: $e');
   }
 }
 
@@ -4585,6 +7377,73 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     return false;
   }
 }
+
+class _CourseBannerAd extends StatefulWidget {
+  final String adUnitId;
+  final AdSize size;
+  final bool isMinor;
+
+  const _CourseBannerAd({
+    super.key,
+    required this.adUnitId,
+    required this.size,
+    this.isMinor = false,
+  });
+
+  @override
+  State<_CourseBannerAd> createState() => _CourseBannerAdState();
+}
+
+class _CourseBannerAdState extends State<_CourseBannerAd> {
+  BannerAd? _ad;
+  bool _isLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+   _ad = BannerAd(
+  adUnitId: widget.adUnitId,
+  size: widget.size,
+  request: AdRequest(nonPersonalizedAds: widget.isMinor),
+  listener: BannerAdListener(
+    onAdLoaded: (_) => mounted ? setState(() => _isLoaded = true) : null,
+    onAdFailedToLoad: (ad, error) {
+      print('Banner Ad failed: ${error.code} - ${error.message}');
+      ad.dispose();
+    },
+  ),
+); Future.delayed(const Duration(seconds: 3), () {
+    if (mounted) _ad?.load();
+  });
+  }
+
+  @override
+  void dispose() {
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ad = _ad;
+    if (!_isLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      color: Colors.white,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
+  }
+}
+
+
+
+
 
 
 

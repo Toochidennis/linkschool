@@ -9,6 +9,8 @@ import 'package:linkschool/modules/explore/e_library/new_cbt.dart';
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class E_CBTDashboard extends StatefulWidget {
   const E_CBTDashboard({super.key});
@@ -19,6 +21,8 @@ class E_CBTDashboard extends StatefulWidget {
 
 class _E_CBTDashboardState extends State<E_CBTDashboard> {
   int selectedCategoryIndex = 0;
+  final _subscriptionService = CbtSubscriptionService();
+  bool _isShowingEntryPrompt = false;
 
   int? selectedexamCategoriesIndex = 0;
   List<String> examCategories = <String>[
@@ -67,7 +71,26 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final settings = await CbtSettingsHelper.getSettings();
+        await _subscriptionService.setMaxFreeTests(settings.freeTrialDays);
+        await _subscriptionService.setTrialStartDate();
+      } catch (e) {
+        print('Error syncing trial settings: $e');
+      }
+    });
+  }
+
+  Future<void> _maybeShowEntryPaymentPrompt() async {
+    // Legacy subscription dialog disabled. Plans screen now handles CBT paywall.
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Legacy subscription dialog disabled. Plans screen now handles CBT paywall.
     // Access CbtUserProvider
     final cbtUserProvider = Provider.of<CbtUserProvider>(context);
     final currentUser = cbtUserProvider.currentUser;

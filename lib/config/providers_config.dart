@@ -35,12 +35,15 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/providers/cbt_plan_provider.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
 import 'package:linkschool/modules/providers/explore/assignment_submission_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/leaderboard_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/lesson_performance_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/lesson_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
@@ -82,6 +85,8 @@ import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
 import 'package:linkschool/modules/services/explore/courses/lessons_service.dart';
+import 'package:linkschool/modules/services/explore/courses/leaderboard_service.dart';
+import 'package:linkschool/modules/services/explore/courses/lesson_performance_service.dart';
 import 'package:linkschool/modules/services/explore/courses/cohort_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
@@ -124,6 +129,7 @@ List<SingleChildWidget> getAppProviders() {
         lazy: true),
     ChangeNotifierProvider(create: (_) => SubjectProvider(), lazy: true),
     ChangeNotifierProvider(create: (_) => CbtUserProvider(), lazy: true),
+    ChangeNotifierProvider(create: (_) => CbtPlanProvider(), lazy: true),
     ChangeNotifierProvider(
         create: (_) => CBTProvider(CBTService()), lazy: true),
     ChangeNotifierProvider(create: (_) => GameProvider(), lazy: true),
@@ -135,13 +141,17 @@ List<SingleChildWidget> getAppProviders() {
         create: (_) => locator<EbookProvider>(), lazy: true),
     ChangeNotifierProvider(
         create: (_) => ChallengeQuestionProvider(), lazy: true),
-    ChangeNotifierProvider(create: (_) => ExploreCourseProvider(), lazy: true),
+    ChangeNotifierProvider(create: (_) => ExploreCourseProvider(), lazy: false),
     ChangeNotifierProvider(
         create: (_) => LessonProvider(LessonService()), lazy: true),
     ChangeNotifierProvider(
+        create: (_) => LessonPerformanceProvider(LessonPerformanceService()),
+        lazy: true),
+    ChangeNotifierProvider(
         create: (_) => CohortProvider(CohortService()), lazy: true),
     ChangeNotifierProvider(
-        create: (_) => LeaderboardProvider(LeaderboardService()), lazy: true),
+        create: (_) => CourseLeaderboardProvider(CourseLeaderboardService()),
+        lazy: true),
     ChangeNotifierProvider(
         create: (_) => QuestionsProvider(QuestionsService()), lazy: true),
     ChangeNotifierProvider(
@@ -175,7 +185,7 @@ List<SingleChildWidget> getAppProviders() {
       lazy: true,
     ),
     ChangeNotifierProvider<ManageStudentProvider>(
-        create: (_) => locator<ManageStudentProvider>(), lazy: true),
+     create: (_) => locator<ManageStudentProvider>(), lazy: true),
     ChangeNotifierProvider<CourseProvider>(
         create: (_) => locator<CourseProvider>(), lazy: true),
     ChangeNotifierProvider<DashboardFeedProvider>(

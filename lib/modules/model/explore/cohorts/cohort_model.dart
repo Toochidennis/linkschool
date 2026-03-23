@@ -19,7 +19,11 @@ class CohortModel {
   final String trialType;
   final int trialValue;
   final String cost;
+  final String learningType;
+  final String? discount;
+  final String? videoUrl;
   final String? instructorName;
+  final String? enrollmentDeadline;
   final String createdAt;
   final String updatedAt;
 
@@ -44,7 +48,11 @@ class CohortModel {
     required this.trialType,
     required this.trialValue,
     required this.cost,
+    required this.learningType,
+    this.discount,
+    this.videoUrl,
     this.instructorName,
+    this.enrollmentDeadline,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -71,7 +79,11 @@ class CohortModel {
       trialType: json['trial_type'] ?? '',
       trialValue: json['trial_value'] ?? 0,
       cost: json['cost']?.toString() ?? '',
+      learningType: json['learning_type']?.toString() ?? '',
+      discount: json['discount']?.toString(),
+      videoUrl: json['video_url']?.toString(),
       instructorName: json['instructor_name']?.toString(),
+      enrollmentDeadline: json['enrollment_deadline']?.toString(),
       createdAt: json['created_at'] ?? '',
       updatedAt: json['updated_at'] ?? '',
     );
@@ -99,7 +111,11 @@ class CohortModel {
       'trial_type': trialType,
       'trial_value': trialValue,
       'cost': cost,
+      'learning_type': learningType,
+      'discount': discount,
+      'video_url': videoUrl,
       'instructor_name': instructorName,
+      'enrollment_deadline': enrollmentDeadline,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };

@@ -162,25 +162,27 @@ class AttendanceHistoryListState extends State<AttendanceHistoryList> {
         final attendanceRecords = attendanceProvider.attendanceRecords;
 
         if (attendanceRecords.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.history,
-                  color: Colors.grey,
-                  size: 48,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'No attendance records found',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 16,
+          return Center(
+            child: Container(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.history,
+                    color: Colors.grey,
+                    size: 48,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'No attendance records found',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }

@@ -100,7 +100,6 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
     }
   }
 
@@ -181,7 +180,6 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
         if (widget.syllabusData != null) {
           // We're editing - call UpdateSyllabus
           final syllabusId = widget.syllabusData!['id'] as int;
-          print('fffffffffffffffffffUpdating syllabus with ID: $syllabusId');
           await syllabusProvider.UpdateSyllabus(
             title: _titleController.text,
             description: _descriptionController.text,
@@ -231,7 +229,6 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
           }
         }
       } catch (e) {
-        print('Error saving syllabus: $e');
         if (mounted) {
           CustomToaster.toastError(
             context,

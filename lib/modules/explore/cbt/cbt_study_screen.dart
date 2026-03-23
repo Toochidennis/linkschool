@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
@@ -6,10 +8,14 @@ import 'package:linkschool/modules/providers/explore/studies_question_provider.d
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/ai_chat_screen.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
 import 'dart:convert';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 
 class CBTStudyScreen extends StatefulWidget {
   final String subject;
@@ -32,11 +38,21 @@ class CBTStudyScreen extends StatefulWidget {
 }
 
 class _CBTStudyScreenState extends State<CBTStudyScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // Cache for AI-generated explanations (keyed by question ID)
   final Map<int, String> _explanationCache = {};
+  final _subscriptionService = CbtSubscriptionService();
+  final Set<int> _answeredQuestionIds = {};
   bool _isStudyComplete = false;
   bool _isInitialCountdownComplete = false;
+  bool _isContinueWithAds = false;
+  bool _isShowingAdsGate = false;
+
+  bool _isNavigatingAway = false;
+  bool _shouldShowAdOnResume = false;
+
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
 
   // Animation controller for bouncing arrow in Read More
   late AnimationController _bounceController;
@@ -45,6 +61,9 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    AdManager.instance.preload();
+    _loadAdMode();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -63,12 +82,81 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInitialLoadingCountdown();
     });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _loadAppOpenAd();
+      }
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
     _bounceController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _shouldShowAdOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.cbtAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (_isAppOpenAdLoaded && _appOpenAd != null) {
+      _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (AppOpenAd ad) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _loadAppOpenAd();
+        },
+        onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _loadAppOpenAd();
+        },
+      );
+
+      _appOpenAd!.show();
+    }
   }
 
   void _showInitialLoadingCountdown() {
@@ -79,8 +167,17 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         onComplete: () {
           if (!mounted) return;
           Navigator.of(context).pop();
-          setState(() {
-            _isInitialCountdownComplete = true;
+          AdManager.instance
+              .showIfEligible(
+            context: context,
+            trigger: AdTrigger.topicStart,
+          )
+              .then((_) {
+            if (mounted) {
+              setState(() {
+                _isInitialCountdownComplete = true;
+              });
+            }
           });
         },
       ),
@@ -112,6 +209,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       questionId: question.questionId,
       isCorrect: isCorrect,
     );
+    final isNewAnswer = _answeredQuestionIds.add(question.questionId);
 
     // Check if we already have explanation for this question (keyed by question ID)
     String? cachedExplanation = _explanationCache[question.questionId];
@@ -129,6 +227,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       cachedExplanation: cachedExplanation,
       apiExplanation: apiExplanation,
       questionId: question.questionId,
+      shouldGate: isNewAnswer && _answeredQuestionIds.length % 10 == 0,
     );
   }
 
@@ -140,6 +239,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     String? cachedExplanation,
     String? apiExplanation,
     required int questionId,
+    required bool shouldGate,
   }) async {
     await showModalBottomSheet(
       context: context,
@@ -158,12 +258,125 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           // Cache the explanation by question ID
           _explanationCache[questionId] = explanation;
         },
-        onContinue: () {
+        onContinue: () async {
           Navigator.pop(context);
+          if (shouldGate) {
+            final canContinue = await _maybeShowAdsGate();
+            if (!canContinue) return;
+          }
           _moveToNextQuestion();
         },
       ),
     );
+  }
+
+  Future<bool> _isContinueWithAdsActive() async {
+    final hasPaid = await _subscriptionService.hasPaid();
+    if (hasPaid) return false;
+    final mode = await _subscriptionService.getAdMode();
+    if (mode == 'continue_with_ads') return true;
+    return await _subscriptionService.shouldContinueWithAds();
+  }
+
+  Future<void> _loadAdMode() async {
+    final isActive = await _isContinueWithAdsActive();
+    if (!mounted) return;
+    setState(() {
+      _isContinueWithAds = isActive;
+    });
+  }
+
+  Future<bool> _maybeShowAdsGate() async {
+    if (_isShowingAdsGate) return true;
+    final isActive = await _isContinueWithAdsActive();
+    if (!isActive) return true;
+    final answeredCount = _answeredQuestionIds.length;
+    if (answeredCount == 0 || answeredCount % 10 != 0) return true;
+
+    _isShowingAdsGate = true;
+    try {
+      print('==== question $answeredCount ====');
+      if (!mounted) return false;
+
+      final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => WillPopScope(
+          onWillPop: () async => false,
+          child: CbtContinueAdsDialog(
+            onWatchAds: () async {
+              await _subscriptionService.setAdMode('continue_with_ads');
+              final rewarded = await AdManager.instance.showRewardedForPaywall();
+              if (!rewarded) return false;
+              if (!mounted) return false;
+              setState(() {
+                _isContinueWithAds = true;
+              });
+              return true;
+            },
+            onSubscribe: () async {
+              final planResult = await Navigator.of(context).push<Object?>(
+                MaterialPageRoute(
+                  builder: (_) => const CbtPlansScreen(
+                    showTrialButton: false,
+                    preferTrialLabel: false,
+                  ),
+                ),
+              );
+
+              if (!mounted) return false;
+
+              if (planResult == 'continue_ads') {
+                await _subscriptionService.setAdMode('continue_with_ads');
+                final rewarded =
+                    await AdManager.instance.showRewardedForPaywall();
+                if (!rewarded) return false;
+                if (!mounted) return false;
+                setState(() {
+                  _isContinueWithAds = true;
+                });
+                return true;
+              }
+
+              if (planResult == true) {
+                if (!mounted) return false;
+                setState(() {
+                  _isContinueWithAds = false;
+                });
+                return true;
+              }
+              return false;
+            },
+            onSubmitTest: () async {
+              Navigator.of(dialogContext).pop();
+              final provider =
+                  Provider.of<QuestionsProvider>(context, listen: false);
+              final sessionStats =
+                  provider.generateSessionStats(widget.subject);
+              await AdManager.instance.showIfEligible(
+                context: context,
+                trigger: AdTrigger.resultNavigation,
+              );
+              if (!mounted) return;
+              _isNavigatingAway = true;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      StudyProgressDashboard(sessionStats: sessionStats),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      if (!mounted) return false;
+
+      return result == 'ads' || result == 'subscribe';
+    } finally {
+      _isShowingAdsGate = false;
+    }
   }
 
   Future<void> _moveToNextQuestion() async {
@@ -175,7 +388,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     final hasMoreTopicsToLoad = provider.hasMoreTopics;
 
     if (isAtEndOfCurrentBatch && hasMoreTopicsToLoad) {
-      // Show countdown while loading next topic's questions
+      // Show ad for topic completion, then countdown for next topic
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.topicCompletion,
+      );
       _showNextTopicCountdown();
       return;
     }
@@ -185,6 +402,10 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
     if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
       // Study session complete
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.topicCompletion,
+      );
       setState(() {
         _isStudyComplete = true;
       });
@@ -204,6 +425,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         onComplete: () async {
           if (!mounted) return;
           Navigator.of(context).pop();
+
+          await AdManager.instance.showIfEligible(
+            context: context,
+            trigger: AdTrigger.topicStart,
+          );
 
           // Now fetch the next topic's questions
           final hasMore = await provider.nextQuestion();
@@ -252,9 +478,15 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         ),
         actions: [
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context); // Close dialog
 
+              await AdManager.instance.showIfEligible(
+                context: context,
+                trigger: AdTrigger.resultNavigation,
+              );
+
+              _isNavigatingAway = true;
               // Navigate to progress dashboard
               Navigator.pushReplacement(
                 context,

@@ -6,10 +6,11 @@ import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+// import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
@@ -133,6 +134,9 @@ class _GameSubjectModalState extends State<GameSubjectModal>
   }
 
   Future<void> _onSubjectSelected(String subjectId) async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(context);
+    if (!canUseNetwork || !mounted) return;
+
     setState(() {
       _selectedSubject = subjectId;
       _isTransitioning = true;
@@ -248,36 +252,37 @@ class _GameSubjectModalState extends State<GameSubjectModal>
       return;
     }
 
-    // If not paid and can't take test (exceeded free limit)
-    if (!canTakeTest) {
-      print('   ❌ Gamify access denied - showing enforcement dialog');
-      if (!mounted) return;
+    // If not paid, show prompt (hard if trial expired)
+    final trialExpired = await _subscriptionService.isTrialExpired();
+    final settings = await CbtSettingsHelper.getSettings();
+    if (!mounted) return;
 
-      final settings = await CbtSettingsHelper.getSettings();
-      if (!mounted) return;
+    // if (!canTakeTest || trialExpired) {
+    //   print('   ❌ Gamify access denied - showing enforcement dialog');
+    //   final allowProceed = await showDialog<bool>(
+    //     context: context,
+    //     barrierDismissible: true,
+    //     builder: (context) => SubscriptionEnforcementDialog(
+    //       isHardBlock: true,
+    //       remainingTests: remainingTests,
+    //       amount: settings.amount,
+    //       discountRate: settings.discountRate,
+    //       onSubscribed: () async {
+    //         print('✅ User subscribed from Gamify module');
+    //         await userProvider.refreshCurrentUser();
+    //         if (mounted) {
+    //           setState(() {});
+    //         }
+    //       },
+    //     ),
+    //   );
+    //   if (allowProceed == true) {
+    //     _proceedWithGame();
+    //   }
+    //   return;
+    // }
 
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: true,
-          remainingTests: remainingTests,
-          amount: settings.amount,
-          discountRate: settings.discountRate,
-          onSubscribed: () async {
-            print('✅ User subscribed from Gamify module');
-            await userProvider.refreshCurrentUser();
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      );
-      return;
-    }
-
-    // User can access game (within free limit)
-    print('   ✅ User can access game (within free limit)');
+    // Legacy subscription dialog disabled. Plans screen now handles CBT paywall.
     _proceedWithGame();
   }
 
@@ -1366,3 +1371,4 @@ class ParticlePainter extends CustomPainter {
   @override
   bool shouldRepaint(ParticlePainter oldDelegate) => true;
 }
+

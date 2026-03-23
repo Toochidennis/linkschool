@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/promo_model.dart' show PromoInterstitialDialog;
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
@@ -43,6 +46,10 @@ class _ExploreHomeState extends State<ExploreHome> with AutomaticKeepAliveClient
   bool _showSearchBar = true;
   bool isLoading = true;
 
+  final Map<int, NativeAd?> _nativeAds = {};
+  final List<int> _adPositions = [];
+  int _lastAdNewsCount = -1;
+
   // Track which button is currently pressed for visual feedback
   int? _pressedButtonIndex;
 
@@ -60,6 +67,7 @@ class _ExploreHomeState extends State<ExploreHome> with AutomaticKeepAliveClient
   );
 
   bool _imagesPrecached = false;
+  String? _lastNetworkMessage;
 
   void _shareNews(String title, String content, String time, String imageUrl) {
     // Format the complete news content for sharing
@@ -80,62 +88,100 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   }
 
   @override
-  void initState() {
-    super.initState();
+ @override
+void initState() {
+  super.initState();
 
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
+  _fadeController = AnimationController(
+    duration: const Duration(milliseconds: 800),
+    vsync: this,
+  );
+  _slideController = AnimationController(
+    duration: const Duration(milliseconds: 600),
+    vsync: this,
+  );
+  _bounceController = AnimationController(
+    duration: const Duration(milliseconds: 1200),
+    vsync: this,
+  );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
+  _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+  );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-    );
+  _slideAnimation = Tween<Offset>(
+    begin: const Offset(0, 0.3),
+    end: Offset.zero,
+  ).animate(
+    CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+  );
 
-    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
-    );
+  _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+  );
 
-    // Add mounted checks
-    _fadeController.forward();
+  _fadeController.forward();
 
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) _slideController.forward();
-    });
+  Future.delayed(const Duration(milliseconds: 200), () {
+    if (mounted) _slideController.forward();
+  });
 
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _bounceController.forward();
-    });
+  Future.delayed(const Duration(milliseconds: 400), () {
+    if (mounted) _bounceController.forward();
+  });
 
-    _controller = ScrollController();
-    _controller.addListener(_onScroll);
+  _controller = ScrollController();
+  _controller.addListener(_onScroll);
 
-    // Fetch news and announcements data when the widget is initialized
-    Future.microtask(() {
-      Provider.of<NewsProvider>(context, listen: false).fetchNews();
-      Provider.of<AnnouncementProvider>(context, listen: false)
-          .fetchAnnouncements();
-    });
+  Future.microtask(() {
+    Provider.of<NewsProvider>(context, listen: false).fetchLatestNews();
+    Provider.of<AnnouncementProvider>(context, listen: false)
+        .fetchAnnouncements();
+  });
 
-    setState(() {
-      isLoading = false;
-    });
-  }
+  setState(() {
+    isLoading = false;
+  });
+
+  // ── Show promo dialog on first open of the day ──────────────
+  // WidgetsBinding.instance.addPostFrameCallback((_) {
+  //   _maybeShowPromo();
+  // });
+}
+
+// Future<void> _maybeShowPromo() async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final lastShown = prefs.getString('promo_last_shown');
+//   final today = DateTime.now().toIso8601String().substring(0, 10);
+
+//   //if (lastShown == today) return;
+
+//   await prefs.setString('promo_last_shown', today);
+
+//   if (!mounted) return;
+//   final random = DateTime.now().millisecond % 10;
+//   final bannerUrls = [
+//     'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1516321318423-f06f70504504?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1515378791036-0648a3ad77c0?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1552821206-e3db9b1ede8e?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=300&fit=crop',
+//     'https://images.unsplash.com/photo-1514306688772-e1b33d271cef?w=600&h=300&fit=crop',
+//   ];
+  
+//   PromoInterstitialDialog.show(
+//     context: context,
+//     imageUrl: bannerUrls[random],
+//     ctaLabel: 'Tap to learn more',
+//     onTap: () {
+//       Navigator.of(context).pop();
+//     },
+//   );
+// }
 
   @override
   void dispose() {
@@ -144,6 +190,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     _bounceController.dispose();
     _controller.removeListener(_onScroll);
     _controller.dispose();
+    _disposeAds();
     super.dispose();
   }
 
@@ -279,6 +326,16 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         widget.onSearchIconVisibilityChanged(_showSearchBar);
       });
     }
+
+    if (!_controller.hasClients) return;
+    final position = _controller.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      final provider = Provider.of<NewsProvider>(context, listen: false);
+      if (provider.hasNextPageLatest && !provider.isLoadingMoreLatest) {
+        provider.loadMoreLatest();
+        _lastAdNewsCount = -1;
+      }
+    }
   }
 
   Future<void> _launchURL(String url) async {
@@ -290,6 +347,20 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         );
       }
     }
+  }
+
+  void _showNetworkMessage(String message) {
+    if (message.isEmpty || message == _lastNetworkMessage) return;
+    _lastNetworkMessage = message;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(message),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
+    });
   }
 
   Future<void> _showLevelSubjectSelector() async {
@@ -322,17 +393,95 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     }
   }
 
+  void _loadNativeAds(int newsCount) {
+    final listItemCount = _getListItemCount(newsCount);
+    final positions = <int>[];
+    for (int position = 5; position < listItemCount; position += 6) {
+      positions.add(position);
+    }
+
+    for (int position in positions) {
+      if (_nativeAds.containsKey(position)) continue;
+      _adPositions.add(position);
+      final nativeAd = NativeAd(
+        adUnitId: EnvConfig.newsNativeAds,
+        listener: NativeAdListener(
+          onAdLoaded: (ad) {
+            if (mounted) {
+              setState(() {
+                _nativeAds[position] = ad as NativeAd;
+              });
+            }
+          },
+          onAdFailedToLoad: (ad, error) {
+            ad.dispose();
+            if (mounted) {
+              setState(() {
+                _nativeAds[position] = null;
+              });
+            }
+          },
+        ),
+        request: const AdRequest(),
+        nativeTemplateStyle:
+            NativeTemplateStyle(templateType: TemplateType.small),
+      );
+
+      nativeAd.load();
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _disposeAds() {
+    for (var ad in _nativeAds.values) {
+      ad?.dispose();
+    }
+    _nativeAds.clear();
+  }
+
+  int _getListItemCount(int newsCount) {
+    if (newsCount == 0) return 0;
+    int adCount = (newsCount / 5).floor();
+    return newsCount + adCount;
+  }
+
+  bool _shouldShowAdAtPosition(int position, int newsCount) {
+    return position >= 5 && (position - 5) % 6 == 0;
+  }
+
+  int _getNewsIndex(int position, int newsCount) {
+    if (_shouldShowAdAtPosition(position, newsCount)) return -1;
+    int adsBeforePosition = ((position + 1) / 6).floor();
+    return position - adsBeforePosition;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final newsProvider = Provider.of<NewsProvider>(context);
     final announcementProvider = Provider.of<AnnouncementProvider>(context);
 
+    _showNetworkMessage(newsProvider.errorMessage);
+    _showNetworkMessage(announcementProvider.errorMessage);
+
     // Precache images once data is available to avoid re-downloading when returning
-    if (!_imagesPrecached && !newsProvider.isLoading && !announcementProvider.isLoading) {
+    if (!_imagesPrecached && !newsProvider.isLoadingLatest && !announcementProvider.isLoading) {
       _imagesPrecached = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _precacheImages(newsProvider, announcementProvider);
+      });
+    }
+
+    if (newsProvider.latestNews.length != _lastAdNewsCount) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _lastAdNewsCount = newsProvider.latestNews.length;
+        if (_lastAdNewsCount > 0) {
+          _loadNativeAds(_lastAdNewsCount);
+        }
       });
     }
     // String formattedDate = DateFormat('MMMM d, y')
@@ -380,7 +529,11 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         onRefresh: () async {
           await Future.delayed(const Duration(milliseconds: 500));
           if (mounted) {
-            Provider.of<NewsProvider>(context, listen: false).fetchNews();
+            setState(() {
+              _lastAdNewsCount = -1;
+              _imagesPrecached = false;
+            });
+            Provider.of<NewsProvider>(context, listen: false).fetchLatestNews();
             Provider.of<AnnouncementProvider>(context, listen: false)
                 .fetchAnnouncements();
           }
@@ -657,10 +810,32 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 ),
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  final news = newsProvider.latestNews[index];
+                    if (_shouldShowAdAtPosition(
+                        index, newsProvider.latestNews.length)) {
+                    final ad = _nativeAds[index];
+                    if (ad != null) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 4.0),
+                        child: SizedBox(
+                          height: 100,
+                          child: AdWidget(ad: ad),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }
+
+                    final newsIndex = _getNewsIndex(
+                        index, newsProvider.latestNews.length);
+                  if (newsIndex >= newsProvider.latestNews.length) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final news = newsProvider.latestNews[newsIndex];
 
                   Duration difference = detemethods(news.date_posted);
                   return _buildAnimatedCard(
@@ -675,7 +850,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                             ),
                         child: _buildNewsItem(
                           title: news.title,
-                          newsContent: news.content,
+                          newsContent: stripHtml(news.content),
                           time: formatDuration(difference),
                           imageUrl: news.imageUrl,
                           authorName: news.author_name,
@@ -683,9 +858,17 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                         )),
                   );
                 },
-                childCount: newsProvider.latestNews.length,
+                childCount: _getListItemCount(newsProvider.latestNews.length),
               ),
             ),
+
+            if (newsProvider.isLoadingMoreLatest)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
 
             const SliverToBoxAdapter(
   child: SizedBox(height: kBottomNavigationBarHeight),
@@ -705,6 +888,19 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     Duration difference = nowDateTime.difference(dop);
     return difference;
   }
+
+
+  String stripHtml(String html) {
+  return html
+    .replaceAll(RegExp(r'<[^>]*>'), '')      // remove tags
+    .replaceAll('&amp;', '&')
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&quot;', '"')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .trim();
+}
 
   //  String timeAgo = formatDuration(difference);
 
@@ -1122,7 +1318,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
                 // Description
                 Text(
-                  newsContent,
+                    stripHtml(newsContent),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal400(

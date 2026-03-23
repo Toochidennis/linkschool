@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/downloads_update_modal.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
@@ -8,20 +11,23 @@ import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+import 'package:linkschool/modules/services/database/download_service.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
-import 'package:linkschool/modules/common/cbt_settings_helper.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 
-// Convert a string to sentence case: all lowercase then first letter uppercase
 String _sentenceCase(String input) {
   if (input.isEmpty) return input;
-
   return input.toLowerCase().split(' ').map((word) {
     if (word.isEmpty) return word;
     return word[0].toUpperCase() + (word.length > 1 ? word.substring(1) : '');
   }).join(' ');
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// SCREEN 1 — SubjectSelectionScreen
+// Download subjects & checkbox-select them, then Continue
+// ═══════════════════════════════════════════════════════════════════
 
 class SubjectSelectionScreen extends StatefulWidget {
   const SubjectSelectionScreen({super.key});
@@ -31,568 +37,711 @@ class SubjectSelectionScreen extends StatefulWidget {
 }
 
 class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
-  final _subscriptionService = CbtSubscriptionService();
-  List<SelectedSubject> selectedSubjects = [];
-  int totalDurationInSeconds = 3600; // Default 1 hour per subject
-  int timeInMinutes = 60; // Default 60 minutes
-  int? questionLimit = 40; // Default 40 questions
+  final _downloadService = CbtDownloadService();
 
-  // Dropdown options
-  final List<int> timeOptions = [
-    60,
-    45,
-    40,
-    35,
-    30,
-    25,
-    20,
-    10
-  ]; // minutes (biggest to lowest)
-  final List<int> questionOptions = [
-    60,
-    55,
-    50,
-    45,
-    40,
-    35,
-    30,
-    25,
-    10
-  ]; // questions (biggest to lowest)
+  // Set of selected subject IDs
+  final Set<String> _selectedSubjectIds = {};
+
+  // Download states keyed by subject.id
+  final Map<String, DownloadState> _downloadStates = {};
+  final Map<String, bool> _isDownloaded = {};
+  bool _checkingDownloads = true;
+
+  List<SubjectModel> get _subjects {
+    final provider = Provider.of<CBTProvider>(context, listen: false);
+    return provider.currentBoardSubjects;
+  }
+
+  String get _boardName {
+    final provider = Provider.of<CBTProvider>(context, listen: false);
+    return provider.selectedBoard?.shortName ?? 'Subjects';
+  }
+
+  String get _examTypeId {
+    final provider = Provider.of<CBTProvider>(context, listen: false);
+    return provider.selectedBoard?.id ?? '0';
+  }
 
   @override
   void initState() {
     super.initState();
-    // Show the modal automatically when the screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showSubjectSelectionModal();
+      _checkDownloadedSubjects();
     });
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  Future<void> _checkDownloadedSubjects() async {
+    for (final subject in _subjects) {
+      final downloaded = await _downloadService.isSubjectDownloaded(
+        examTypeId: _examTypeId,
+        courseId: subject.id,
+      );
+      if (mounted) {
+        setState(() => _isDownloaded[subject.id] = downloaded);
+      }
+    }
+    if (mounted) setState(() => _checkingDownloads = false);
+  }
+
+  Future<void> _downloadSubject(SubjectModel subject) async {
+    final canUseNetwork = await NetworkDialog.ensureOnline(context);
+    if (!canUseNetwork || !mounted) return;
+
+    setState(() {
+      _downloadStates[subject.id] =
+          const DownloadState(isDownloading: true, progress: 0.0);
+    });
+
+    await _downloadService.downloadSubject(
+      examTypeId: _examTypeId,
+      courseId: subject.id,
+      onProgress: (progress) {
+        if (mounted) {
+          setState(() {
+            _downloadStates[subject.id] =
+                DownloadState(isDownloading: true, progress: progress);
+          });
+        }
+      },
+      onComplete: () {
+        if (mounted) {
+          setState(() {
+            _downloadStates[subject.id] = const DownloadState(
+              isDownloading: false,
+              isDownloaded: true,
+              progress: 1.0,
+            );
+            _isDownloaded[subject.id] = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${_sentenceCase(subject.name)} downloaded!'),
+              backgroundColor:  AppColors.eLearningBtnColor1,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          Provider.of<CBTProvider>(context, listen: false).loadBoards();
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() {
+            _downloadStates[subject.id] =
+                const DownloadState(isDownloading: false);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Download failed: $error'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _toggleSelection(SubjectModel subject) {
+    if (!(_isDownloaded[subject.id] ?? false)) return;
+    setState(() {
+      if (_selectedSubjectIds.contains(subject.id)) {
+        _selectedSubjectIds.remove(subject.id);
+      } else {
+        _selectedSubjectIds.add(subject.id);
+      }
+    });
+  }
+
+  void _onContinue(List<SubjectModel> allSubjects) {
+    if (_selectedSubjectIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Select at least one subject to continue'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Build ordered list of selected subjects
+    final selected = allSubjects
+        .where((s) => _selectedSubjectIds.contains(s.id))
+        .toList();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExamConfigScreen(selectedSubjects: selected),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'My CBT Subjects',
-          style: TextStyle(
-            fontFamily: 'Urbanist',
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: AppColors.text2Light,
-        foregroundColor: Colors.white,
-        actions: [
-          if (selectedSubjects.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: () => _startTest(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.eLearningBtnColor1,
-                  elevation: 2,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                icon: const Icon(Icons.play_arrow, size: 20),
-                label: Text(
-                  'Start (${selectedSubjects.length})',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Consumer<CBTProvider>(
+          builder: (context, provider, _) {
+            final subjects = provider.currentBoardSubjects;
+            final boardName =
+                provider.selectedBoard?.shortName ?? 'Subject Selection';
+            final sortedSubjects = List<SubjectModel>.from(subjects)
+              ..sort((a, b) =>
+                  _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
+
+            return Column(
+            children: [
+              // ── Header ──────────────────────────────────────────────
+              _buildHeader(boardName),
+
+              // ── Hint ────────────────────────────────────────────────
+              Container(
+                color: Colors.grey.shade100,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline,
+                          size: 15, color: AppColors.eLearningBtnColor1),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Download a subject first, then tap its checkbox to select it.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.grey.shade600,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-        ],
+
+              // ── Subject list ──────────────────────────────────────────
+              Expanded(
+                child: subjects.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
+                        itemCount: sortedSubjects.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final subject = sortedSubjects[index];
+                          return _SubjectDownloadCard(
+                            subject: subject,
+                            downloadState: _downloadStates[subject.id],
+                            isDownloaded:
+                                _isDownloaded[subject.id] ?? false,
+                            isCheckingDownload: _checkingDownloads,
+                            isSelected:
+                                _selectedSubjectIds.contains(subject.id),
+                            onDownload: () => _downloadSubject(subject),
+                            onToggleSelect: () => _toggleSelection(subject),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+          },
+        ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-        ),
-        child: Column(
-          children: [
-            _buildInputSection(),
-            Expanded(
-              child: selectedSubjects.isEmpty
-                  ? _buildEmptyState()
-                  : _buildSubjectList(),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showSubjectSelectionModal(),
-        backgroundColor: AppColors.eLearningBtnColor1,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Add Subject',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+
+      // ── Continue button ────────────────────────────────────────────
+      bottomNavigationBar: Consumer<CBTProvider>(
+        builder: (context, provider, _) {
+          final subjects = provider.currentBoardSubjects;
+          final count = _selectedSubjectIds.length;
+          return _ContinueBar(
+            count: count,
+            onTap: () => _onContinue(subjects),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildInputSection() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Time Dropdown
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Time (minutes):',
-                  style: AppTextStyles.normal600(
-                    fontSize: 14,
-                    color: AppColors.text3Light,
-                  ),
+ Widget _buildHeader(String boardName) {
+  return Container(
+    color: Colors.white,
+    padding: const EdgeInsets.only(
+      top: 8,
+      left: 8,
+      right: 16,
+      bottom: 14,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButton<int>(
-                    value: timeInMinutes,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    items: timeOptions.map((time) {
-                      return DropdownMenuItem(
-                        value: time,
-                        child: Text('${time}mins'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          timeInMinutes = value;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
+                child: const Icon(Icons.arrow_back_rounded,
+                    color: AppColors.eLearningBtnColor1, size: 20),
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          // Number of Questions Dropdown
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Number of Questions:',
-                  style: AppTextStyles.normal600(
-                    fontSize: 14,
-                    color: AppColors.text3Light,
-                  ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                '${_sentenceCase(boardName.split(' ').first)} Subject Selection',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.eLearningBtnColor1,
+                  fontFamily: 'Urbanist',
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButton<int>(
-                    value: questionLimit ?? 40,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    items: questionOptions.map((questions) {
-                      return DropdownMenuItem(
-                        value: questions,
-                        child: Text('$questions'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          questionLimit = value;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
+            // ── Update button ──────────────────────────────────────
+            GestureDetector(
+              onTap: () => showUpdateSubjectsModal(
+                context,
+                _subjects,
+                _examTypeId,
+              ),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.system_update_alt_rounded,
+                  color: AppColors.eLearningBtnColor1,
+                  size: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 16, top: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'STEP 1 OF 2',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.eLearningBtnColor1,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              SizedBox(height: 2),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.book_outlined,
-            size: 100,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No subjects added yet',
-            style: AppTextStyles.normal600(
-              fontSize: 20,
-              color: Colors.grey[600]!,
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration:  BoxDecoration(
+              color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
+            child: const Icon(Icons.book_outlined,
+                size: 56, color: AppColors.eLearningBtnColor1),
           ),
+          const SizedBox(height: 20),
+          const Text('No subjects available',
+              style:
+                  TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Text(
-            'Tap the button below to add your first subject',
-            style: AppTextStyles.normal400(
-              fontSize: 14,
-              color: Colors.grey[500]!,
-            ),
-          ),
+          Text('Please go back and select a board',
+              style: TextStyle(color: Colors.grey.shade500)),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSubjectList() {
-    return ReorderableListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: selectedSubjects.length,
-      onReorder: (oldIndex, newIndex) {
-        setState(() {
-          if (newIndex > oldIndex) {
-            newIndex -= 1;
-          }
-          final subject = selectedSubjects.removeAt(oldIndex);
-          selectedSubjects.insert(newIndex, subject);
+// ═══════════════════════════════════════════════════════════════════
+// _SubjectDownloadCard — Screen 1 card with download + checkbox
+// ═══════════════════════════════════════════════════════════════════
 
-          // Print reorder info
-          print('\n🔄 Subject Reordered:');
-          print('   Moved: ${subject.subjectName} (${subject.year})');
-          print('   From position ${oldIndex + 1} to ${newIndex + 1}');
-          print('\n📋 New Order:');
-          for (int i = 0; i < selectedSubjects.length; i++) {
-            final s = selectedSubjects[i];
-            print(
-                '   ${i + 1}. ${s.subjectName} (${s.year}) - ID: ${s.examId}');
-          }
-          print('─' * 50);
-        });
-      },
-      itemBuilder: (context, index) {
-        final subject = selectedSubjects[index];
-        return _buildSubjectCard(subject, index);
-      },
-    );
+class _SubjectDownloadCard extends StatelessWidget {
+  final SubjectModel subject;
+  final DownloadState? downloadState;
+  final bool isDownloaded;
+  final bool isCheckingDownload;
+  final bool isSelected;
+  final VoidCallback onDownload;
+  final VoidCallback onToggleSelect;
+
+  const _SubjectDownloadCard({
+    required this.subject,
+    required this.downloadState,
+    required this.isDownloaded,
+    required this.isCheckingDownload,
+    required this.isSelected,
+    required this.onDownload,
+    required this.onToggleSelect,
+  });
+
+  static const List<Color> _accentColors = [
+    Color(0xFF0F766E), // teal
+    Color(0xFF2563EB), // blue
+    Color(0xFFDC2626), // red
+    Color(0xFF16A34A), // green
+    Color(0xFFB45309), // amber
+    Color(0xFF4F46E5), // indigo
+  ];
+
+  int _stableHash(String value) {
+    var hash = 0;
+    for (final unit in value.codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    return hash;
   }
 
-  Widget _buildSubjectCard(SelectedSubject subject, int index) {
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-    ];
+  Color _accentForSubject(SubjectModel subject) {
+    final key = _stableHash(subject.id.isNotEmpty ? subject.id : subject.name);
+    return _accentColors[key % _accentColors.length];
+  }
 
-    return Dismissible(
-      key: Key('${subject.subjectName}_${subject.year}_${subject.examId}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 16.0),
-        padding: const EdgeInsets.only(right: 20),
-        alignment: Alignment.centerRight,
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      onDismissed: (direction) {
-        final removedSubject = selectedSubjects[index];
-        setState(() {
-          selectedSubjects.removeAt(index);
-        });
+  @override
+  Widget build(BuildContext context) {
+    final isDownloading = downloadState?.isDownloading ?? false;
+    final progress = downloadState?.progress ?? 0.0;
+    final accent = _accentForSubject(subject);
 
-        // Print removal info
-        print('\n🗑️ Subject Removed:');
-        print('   Subject Name: ${removedSubject.subjectName}');
-        print('   Subject ID: ${removedSubject.subjectId}');
-        print('   Year: ${removedSubject.year}');
-        print('   Exam ID: ${removedSubject.examId}');
-        print('\n📋 Remaining Subjects: ${selectedSubjects.length}');
-        for (int i = 0; i < selectedSubjects.length; i++) {
-          final s = selectedSubjects[i];
-          print('   ${i + 1}. ${s.subjectName} (${s.year})');
-          print('      Subject ID: ${s.subjectId}');
-          print('      Exam ID: ${s.examId}');
-        }
-        print('─' * 50);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16.0),
-        padding: const EdgeInsets.all(16.0),
+    return GestureDetector(
+      onTap: isDownloading || isCheckingDownload
+          ? null
+          : isDownloaded
+              ? onToggleSelect
+              : onDownload,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: colors[index % colors.length],
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFFFCFCFD),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0F766E)
+                : Colors.grey.shade200,
+            width: isSelected ? 1.4 : 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            // Subject Icon
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 6,
+                child: Container(color: accent),
               ),
-              child: Center(
-                child: Image.asset(
-                  'assets/icons/${subject.icon}.png',
-                  width: 32,
-                  height: 32,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.book, color: Colors.white, size: 32),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Subject Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    // Display subject name in sentence case
-                    _sentenceCase(subject.subjectName),
-                    style: AppTextStyles.normal600(
-                      fontSize: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Year: ${subject.year}',
-                    style: AppTextStyles.normal500(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Timer
-                  Row(
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
                     children: [
-                      const Icon(
-                        Icons.timer,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$timeInMinutes Minutes',
-                        style: AppTextStyles.normal600(
-                          fontSize: 14,
-                          color: Colors.white,
+                      // Subject icon
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: accent.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Image.asset(
+                            'assets/icons/${subject.subjectIcon ?? 'default'}.png',
+                            width: 26,
+                            height: 26,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.menu_book_rounded,
+                              color: accent,
+                              size: 24,
+                            ),
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 14),
+
+                      // Name + status
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _sentenceCase(subject.name),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            if (isCheckingDownload)
+                              Text('Checking...',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade400))
+                            else if (isDownloaded)
+                              Row(
+                                children: [
+                                  Icon(Icons.wifi_off_rounded,
+                                      size: 13, color: Color(0xFF0F766E),),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Available offline',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF0F766E),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else if (isDownloading)
+                              Text('Downloading...',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500))
+                            else
+                              Text('Tap to download',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500)),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      // Right action area
+                      if (isCheckingDownload)
+                        const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else if (isDownloading)
+                        SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                value: progress,
+                                strokeWidth: 3,
+                                color: accent,
+                                backgroundColor: Colors.grey.shade200,
+                              ),
+                              Text(
+                                '${(progress * 100).toInt()}%',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  color: accent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (isDownloaded)
+                        // Checkbox
+                        GestureDetector(
+                          onTap: onToggleSelect,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isSelected
+                                    ? Color(0xFF0F766E)
+                                    : Colors.grey.shade400,
+                                width: 2,
+                              ),
+                              color:
+                                  isSelected ? Color(0xFF0F766E) : Colors.transparent,
+                            ),
+                            child: isSelected
+                                ? const Icon(Icons.check,
+                                    color: Colors.white, size: 18)
+                                : null,
+                          ),
+                        )
+                      else
+                        // Download button
+                        GestureDetector(
+                          onTap: onDownload,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: const Icon(
+                              Icons.download_rounded,
+                              color: Color(0xFF555555),
+                              size: 22,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  void _showSubjectSelectionModal() {
-    final provider = Provider.of<CBTProvider>(context, listen: false);
-    final subjects = provider.currentBoardSubjects;
+// ═══════════════════════════════════════════════════════════════════
+// SCREEN 2 — ExamConfigScreen
+// Shows selected subjects, year picker per subject + time/duration
+// ═══════════════════════════════════════════════════════════════════
 
-    if (subjects.isEmpty) {
+class ExamConfigScreen extends StatefulWidget {
+  final List<SubjectModel> selectedSubjects;
+
+  const ExamConfigScreen({super.key, required this.selectedSubjects});
+
+  @override
+  State<ExamConfigScreen> createState() => _ExamConfigScreenState();
+}
+
+class _ExamConfigScreenState extends State<ExamConfigScreen> {
+  // subjectId → chosen year entry
+  final Map<String, _SelectedEntry> _yearSelections = {};
+
+  int timeInMinutes = 60;
+  int questionLimit = 40;
+
+  final List<int> timeOptions = [60, 45, 40, 35, 30, 25, 20, 10];
+  final List<int> questionOptions = [60, 55, 50, 45, 40, 35, 30, 25, 10];
+
+  @override
+  void initState() {
+    super.initState();
+    // Preselect the first year for each subject
+    for (final subject in widget.selectedSubjects) {
+      final years = subject.years ?? [];
+      if (years.isNotEmpty) {
+        final sorted = List<YearModel>.from(years)
+          ..sort((a, b) => b.year.compareTo(a.year));
+        final firstYear = sorted.first;
+        _yearSelections[subject.id] = _SelectedEntry(
+          subjectName: _sentenceCase(subject.name),
+          subjectId: subject.id,
+          year: firstYear.year,
+          examId: firstYear.id,
+        );
+      }
+    }
+  }
+
+  Future<void> _showYearPicker(SubjectModel subject) async {
+    final years = subject.years ?? [];
+    if (years.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a board first'),
-          backgroundColor: Colors.red,
+          content: Text('No years available for this subject.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    showModalBottomSheet(
+    final sorted = List<YearModel>.from(years)
+      ..sort((a, b) => b.year.compareTo(a.year));
+
+    await showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (_) => _YearPickerSheet(
+        subjectName: _sentenceCase(subject.name),
+        years: sorted,
+        currentSelection: _yearSelections[subject.id],
+        onYearSelected: (entry) {
+          setState(() => _yearSelections[subject.id] = entry);
+          Navigator.pop(context);
+        },
       ),
-      builder: (BuildContext context) {
-        return SubjectYearSelectionModal(
-          subjects: subjects,
-          selectedSubjects: selectedSubjects, // Pass the selected subjects
-          onSubjectYearSelected: (subject, subjectId, year, examId, icon) {
-            final formattedSubject = _sentenceCase(subject);
-
-            // Check if this subject with the same year already exists
-            final isDuplicate = selectedSubjects.any(
-              (s) => s.subjectName == formattedSubject && s.year == year,
-            );
-
-            if (isDuplicate) {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('$formattedSubject ($year) is already added'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-              return;
-            }
-
-            setState(() {
-              selectedSubjects.add(
-                SelectedSubject(
-                  subjectName: formattedSubject,
-                  subjectId: subjectId,
-                  year: year,
-                  examId: examId,
-                  icon: icon,
-                ),
-              );
-            });
-
-            // Print all IDs with subject names
-            print('\n📚 Subject Added:');
-            print('   Subject Name: $subject');
-            print('   Subject ID: $subjectId');
-            print('   Year: $year');
-            print('   Exam ID: $examId');
-            print('\n📋 All Selected Subjects:');
-            for (int i = 0; i < selectedSubjects.length; i++) {
-              final s = selectedSubjects[i];
-              print('   ${i + 1}. ${s.subjectName} (${s.year})');
-              print('      Subject ID: ${s.subjectId}');
-              print('      Exam ID: ${s.examId}');
-            }
-            print('─' * 50);
-
-            Navigator.of(context).pop();
-          },
-        );
-      },
     );
   }
 
-  Future<void> _startTest() async {
-    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+  bool get _allYearsSelected {
+    return widget.selectedSubjects
+        .every((s) => _yearSelections.containsKey(s.id));
+  }
 
-    // ✨ PRIMARY CHECK: Use CbtUserProvider's payment status (from backend)
-    final hasUserPaid = userProvider.hasPaid;
-
-    // ✨ SECONDARY CHECK: Use subscription service (local storage)
-    final canTakeTest = await _subscriptionService.canTakeTest();
-    final remainingTests = await _subscriptionService.getRemainingFreeTests();
-
-    print('\n💳 Payment Check:');
-    print('   - Backend says paid: $hasUserPaid');
-    print('   - Local says can take test: $canTakeTest');
-    print('   - Remaining free tests: $remainingTests');
-
-    // If backend confirms payment, allow test
-    if (hasUserPaid) {
-      print('✅ User has paid (verified from backend) - starting test');
-      _proceedWithTest();
-      return;
-    }
-
-    // If not paid and can't take test (exceeded free limit)
-    if (!canTakeTest) {
-      print('❌ User must pay - showing enforcement dialog');
-      if (!mounted) return;
-
-      final settings = await CbtSettingsHelper.getSettings();
-      if (!mounted) return;
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => SubscriptionEnforcementDialog(
-          isHardBlock: true,
-          remainingTests: remainingTests,
-          amount: settings.amount,
-          discountRate: settings.discountRate,
-          onSubscribed: () async {
-            print('✅ User subscribed from Subject Selection');
-            // Refresh user data from backend
-            await userProvider.refreshCurrentUser();
-            if (mounted) {
-              setState(() {});
-            }
-          },
+  void _startTest() {
+    if (!_allYearsSelected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a year for each subject'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    // User can take test (within free limit)
-    print('✅ User can take test (within free limit) - starting test');
-    _proceedWithTest();
-  }
+    final examIds =
+        widget.selectedSubjects.map((s) => _yearSelections[s.id]!.examId).toList();
+    final subjectNames =
+        widget.selectedSubjects.map((s) => _sentenceCase(s.name)).toList();
+    final years =
+        widget.selectedSubjects.map((s) => _yearSelections[s.id]!.year).toList();
+    final totalSeconds = timeInMinutes * 60 * widget.selectedSubjects.length;
 
-  void _proceedWithTest() {
-    // Calculate total duration: time per subject × number of subjects
-    final totalSeconds = timeInMinutes * 60 * selectedSubjects.length;
-
-    // Extract exam IDs in order
-    final examIds = selectedSubjects.map((s) => s.examId).toList();
-    final subjectNames = selectedSubjects.map((s) => s.subjectName).toList();
-    final years = selectedSubjects.map((s) => s.year).toList();
-
-    print('\n🚀 Starting Test Session:');
-    print('   Total Subjects: ${selectedSubjects.length}');
-    print('   Time per Subject: $timeInMinutes minutes');
-    print('   Total Duration: ${totalSeconds ~/ 60} minutes');
-    print('   Question Limit: ${questionLimit ?? "All"}');
-
-    // Directly navigate to multi-subject test screen (countdown will be shown in TestScreen)
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MultiSubjectTestScreen(
+        builder: (_) => MultiSubjectTestScreen(
           examIds: examIds,
           subjects: subjectNames,
           years: years,
@@ -603,34 +752,873 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     );
   }
 
-  void _showStartTestCountdown(List<String> examIds, List<String> subjectNames,
-      List<String> years, int totalSeconds) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => _StartTestCountdownDialog(
-        totalSubjects: selectedSubjects.length,
-        onComplete: () {
-          Navigator.of(context).pop(); // Close dialog
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // ── Header ──────────────────────────────────────────────
+          _buildHeader(),
 
-          // Navigate to multi-subject test screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MultiSubjectTestScreen(
-                examIds: examIds,
-                subjects: subjectNames,
-                years: years,
-                totalDurationInSeconds: totalSeconds,
-                questionLimit: questionLimit,
+          // ── Settings bar ─────────────────────────────────────────
+          _buildSettingsBar(),
+
+          // ── Hint ────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+            child: Row(
+              children: [
+                const Icon(Icons.touch_app_outlined,
+                    size: 15, color: AppColors.eLearningBtnColor1),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Tap a subject card to choose an exam year.',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Colors.grey.shade600,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Subject cards ─────────────────────────────────────────
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
+              itemCount: widget.selectedSubjects.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final subject = widget.selectedSubjects[index];
+                return _ExamConfigSubjectCard(
+                  subject: subject,
+                  selection: _yearSelections[subject.id],
+                  onPickYear: () => _showYearPicker(subject),
+                  onClearYear: () =>
+                      setState(() => _yearSelections.remove(subject.id)),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+
+      // ── Start button ───────────────────────────────────────────────
+      bottomNavigationBar: _buildStartBar(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 8,
+        right: 16,
+        bottom: 14,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Container(
+                  width: 36,
+                  height: 36,
+                  decoration:  BoxDecoration(
+                    color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_back_rounded,
+                      color: AppColors.eLearningBtnColor1, size: 20),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Expanded(
+                child: Text(
+                  'Exam Settings',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.eLearningBtnColor1,
+                    fontFamily: 'Urbanist',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.only(left: 16, top: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'STEP 2 OF 2',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.eLearningBtnColor1,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                SizedBox(height: 2),
+                // Text(
+                //   'Select exam duration and question limit ',
+                //   style: TextStyle(
+                //     fontSize: 15,
+                //     fontWeight: FontWeight.w600,
+                //     color: AppColors.eLearningBtnColor1,
+                //   ),
+                // ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: SizedBox(
+          width: 250,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SettingDropdown<int>(
+                icon: Icons.timer_outlined,
+                label: 'Time :',
+                value: timeInMinutes,
+                items: timeOptions,
+                itemLabel: (v) => '${v} minutes',
+                onChanged: (v) => setState(() => timeInMinutes = v),
+              ),
+              const SizedBox(height: 12),
+              _SettingDropdown<int>(
+                icon: Icons.quiz_outlined,
+                label: 'Questions :',
+                value: questionLimit,
+                items: questionOptions,
+                itemLabel: (v) => '$v Questions',
+                onChanged: (v) => setState(() => questionLimit = v),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStartBar() {
+    final ready = _allYearsSelected && widget.selectedSubjects.isNotEmpty;
+    final count = widget.selectedSubjects.length;
+    final total = timeInMinutes * count;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          10, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Summary row
+          if (ready)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _SummaryChip(
+                      icon: Icons.book_outlined,
+                      label: '$count subject${count > 1 ? 's' : ''}'),
+                  const SizedBox(width: 10),
+                  _SummaryChip(
+                      icon: Icons.timer_outlined, label: '${total}min total'),
+                  const SizedBox(width: 10),
+                  _SummaryChip(
+                      icon: Icons.quiz_outlined, label: '$questionLimit Qs each'),
+                ],
               ),
             ),
-          );
-        },
+          GestureDetector(
+            onTap: ready ? _startTest : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: 54,
+              decoration: BoxDecoration(
+                color: ready
+                    ?  AppColors.eLearningBtnColor1
+                    :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Center(
+                child: Text(
+                  ready
+                      ? 'START TEST'
+                      : 'Pick a year for each subject',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
+                    fontFamily: 'Urbanist',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// _ExamConfigSubjectCard — Screen 2 card with year selection
+// ═══════════════════════════════════════════════════════════════════
+
+class _ExamConfigSubjectCard extends StatelessWidget {
+  final SubjectModel subject;
+  final _SelectedEntry? selection;
+  final VoidCallback onPickYear;
+  final VoidCallback onClearYear;
+
+  const _ExamConfigSubjectCard({
+    required this.subject,
+    required this.selection,
+    required this.onPickYear,
+    required this.onClearYear,
+  });
+
+  static const List<Color> _accentColors = [
+    Color(0xFF0F766E), // teal
+    Color(0xFF2563EB), // blue
+   // red
+    Color(0xFF16A34A), // green
+ 
+    Color(0xFF4F46E5), // indigo
+  ];
+
+  int _stableHash(String value) {
+    var hash = 0;
+    for (final unit in value.codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    return hash;
+  }
+
+  Color _accentForSubject(SubjectModel subject) {
+    final key = _stableHash(subject.id.isNotEmpty ? subject.id : subject.name);
+    return _accentColors[key % _accentColors.length];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasYear = selection != null;
+    final accent = _accentForSubject(subject);
+
+    return GestureDetector(
+      onTap: onPickYear,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFCFCFD),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: hasYear ? accent : Colors.grey.shade200,
+            width: hasYear ? 1.4 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 6,
+                child: Container(color: accent),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Main row
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        children: [
+                          // Icon
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: accent.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Image.asset(
+                                'assets/icons/${subject.subjectIcon ?? 'default'}.png',
+                                width: 26,
+                                height: 26,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.menu_book_rounded,
+                                  color: accent,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+
+                          // Name + year status
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _sentenceCase(subject.name),
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                    fontFamily: 'Urbanist',
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                hasYear
+                                    ? Row(
+                                        children: [
+                                          Icon(Icons.check_circle,
+                                              size: 14, color: accent),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Year ${selection!.year} selected',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: accent,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        children: [
+                                          Icon(Icons.radio_button_unchecked,
+                                              size: 14,
+                                              color: Colors.grey.shade400),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Tap to select a year',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade500,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ],
+                            ),
+                          ),
+
+                          // Right action: clear or chevron
+                          if (hasYear)
+                            GestureDetector(
+                              onTap: onClearYear,
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close,
+                                    size: 16, color: Colors.grey),
+                              ),
+                            )
+                         
+                            
+                        ],
+                      ),
+                    ),
+
+                    // Year badge row (when selected)
+                    if (hasYear) ...[
+                      Container(height: 1, color: Colors.grey.shade100),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_month_rounded,
+                                      size: 13, color: accent),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    selection!.year ==
+                                            DateTime.now().year.toString()
+                                        ? '${selection!.year} (Simulation)'
+                                        : selection!.year,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: accent,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    size: 16,
+                                    color: accent,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// _YearPickerSheet — bottom sheet for choosing a year (Screen 2)
+// ═══════════════════════════════════════════════════════════════════
+
+class _YearPickerSheet extends StatelessWidget {
+  final String subjectName;
+  final List<YearModel> years;
+  final _SelectedEntry? currentSelection;
+  final void Function(_SelectedEntry) onYearSelected;
+
+  const _YearPickerSheet({
+    required this.subjectName,
+    required this.years,
+    required this.currentSelection,
+    required this.onYearSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Title row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        subjectName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.eLearningBtnColor1,
+                          fontFamily: 'Urbanist',
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Select a year to practice',
+                        style: TextStyle(
+                            fontSize: 13, color: Colors.grey.shade500),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close,
+                        size: 18, color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          Container(height: 1, color: Colors.grey.shade100),
+          const SizedBox(height: 8),
+
+          // Year list
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: years.length,
+              itemBuilder: (context, index) {
+                final year = years[index];
+                final isCurrentYear =
+                    year.year == DateTime.now().year.toString();
+                final isSelected = currentSelection?.examId == year.id;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Material(
+                    color: isSelected
+                        ?  AppColors.eLearningBtnColor1.withOpacity(0.1)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        onYearSelected(_SelectedEntry(
+                          subjectName: subjectName,
+                          subjectId: '',
+                          year: year.year,
+                          examId: year.id,
+                        ));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ?  AppColors.eLearningBtnColor1
+                                : Colors.grey.shade200,
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ?  AppColors.eLearningBtnColor1
+                                        .withOpacity(0.15)
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.calendar_month_rounded,
+                                  size: 18,
+                                  color: isSelected
+                                      ?  AppColors.eLearningBtnColor1
+                                      : Colors.grey.shade500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isCurrentYear
+                                        ? '${year.year}  (Simulation)'
+                                        : year.year,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected
+                                          ?  AppColors.eLearningBtnColor1
+                                          : const Color(0xFF333333),
+                                    ),
+                                  ),
+                                  if (isCurrentYear)
+                                    Text(
+                                      'Practice with current-style questions',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            if (isSelected)
+                              const Icon(Icons.check_circle,
+                                  color: AppColors.eLearningBtnColor1, size: 22)
+                            else
+                              Icon(Icons.radio_button_unchecked,
+                                  color: Colors.grey.shade300, size: 22),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// _SummaryChip — small pill shown in the start bar
+// ═══════════════════════════════════════════════════════════════════
+
+class _SummaryChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _SummaryChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color:  AppColors.eLearningBtnColor1.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color:  AppColors.eLearningBtnColor1),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.eLearningBtnColor1,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// _SettingDropdown
+// ═══════════════════════════════════════════════════════════════════
+
+class _SettingDropdown<T> extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final T value;
+  final List<T> items;
+  final String Function(T) itemLabel;
+  final void Function(T) onChanged;
+
+  const _SettingDropdown({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.itemLabel,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color:  Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color:  AppColors.eLearningBtnColor1.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color:  AppColors.eLearningBtnColor1),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.eLearningBtnColor1,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: DropdownButton<T>(
+              value: value,
+              isExpanded: true,
+              isDense: true,
+              underline: const SizedBox(),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color:Colors.black,
+              ),
+              items: items
+                  .map((item) => DropdownMenuItem<T>(
+                        value: item,
+                        child: Text(itemLabel(item)),
+                      ))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) onChanged(v);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// _SelectedEntry — data model for a subject+year selection
+// ═══════════════════════════════════════════════════════════════════
+
+class _SelectedEntry {
+  final String subjectName;
+  final String subjectId;
+  final String year;
+  final String examId;
+
+  const _SelectedEntry({
+    required this.subjectName,
+    required this.subjectId,
+    required this.year,
+    required this.examId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// _ContinueBar — shared bottom bar used by Screen 1
+// ═══════════════════════════════════════════════════════════════════
+
+class _ContinueBar extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _ContinueBar({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: GestureDetector(
+        onTap: count > 0 ? onTap : null,
+        child: AnimatedContainer(
+          duration:  Duration(milliseconds: 200),
+          height: 54,
+          decoration: BoxDecoration(
+            color: count > 0
+                ?  AppColors.eLearningBtnColor1
+                :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Center(
+            child: Text(
+              count > 0
+                  ? 'CONTINUE ($count subject${count > 1 ? 's' : ''})'
+                  : 'CONTINUE',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MultiSubjectTestScreen — unchanged from Document 2
+// ═══════════════════════════════════════════════════════════════════
 
 class MultiSubjectTestScreen extends StatefulWidget {
   final List<String> examIds;
@@ -649,76 +1637,101 @@ class MultiSubjectTestScreen extends StatefulWidget {
   });
 
   @override
-  State<MultiSubjectTestScreen> createState() => _MultiSubjectTestScreenState();
+  State<MultiSubjectTestScreen> createState() =>
+      _MultiSubjectTestScreenState();
 }
 
-class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
+class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
+    with WidgetsBindingObserver {
   int currentExamIndex = 0;
   late int remainingSeconds;
-  Map<String, Map<int, int>> allAnswers = {}; // examId -> userAnswers
-  Map<String, List<QuestionModel>> allQuestions = {}; // examId -> questions
-  Map<String, String> subjectNames = {}; // examId -> subject name
-  Map<String, String> subjectYears = {}; // examId -> year
+  Map<String, Map<int, int>> allAnswers = {};
+  Map<String, List<QuestionModel>> allQuestions = {};
+  Map<String, String> subjectNames = {};
+  Map<String, String> subjectYears = {};
+  bool _isNavigatingAway = false;
+  bool _shouldShowAdOnResume = false;
+
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     remainingSeconds = widget.totalDurationInSeconds;
-
-    // Initialize subject mappings
     for (int i = 0; i < widget.examIds.length; i++) {
       subjectNames[widget.examIds[i]] = widget.subjects[i];
       subjectYears[widget.examIds[i]] = widget.years[i];
     }
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) _loadAppOpenAd();
+    });
+  }
 
-    print('\n🎯 Multi-Subject Test Session Started:');
-    print('   Total Subjects: ${widget.examIds.length}');
-    print('   Total Duration: ${widget.totalDurationInSeconds ~/ 60} minutes');
-    print('   Question Limit: ${widget.questionLimit ?? "All"}');
-    print('   Subjects: ${widget.subjects.join(", ")}');
-    print('─' * 50);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused && !_isNavigatingAway) {
+      _shouldShowAdOnResume = true;
+    } else if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _showAppOpenAd();
+      _shouldShowAdOnResume = false;
+    }
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.cbtAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _appOpenAd = ad;
+          if (mounted) setState(() => _isAppOpenAdLoaded = true);
+        },
+        onAdFailedToLoad: (_) {
+          if (mounted) setState(() => _isAppOpenAdLoaded = false);
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, _) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
+    super.dispose();
   }
 
   void _loadNextExam() {
     if (currentExamIndex < widget.examIds.length - 1) {
-      setState(() {
-        currentExamIndex++;
-      });
-      print('\n📚 Loading Next Exam:');
-      print('   Subject: ${widget.subjects[currentExamIndex]}');
-      print('   Exam ID: ${widget.examIds[currentExamIndex]}');
-      print('   Progress: ${currentExamIndex + 1}/${widget.examIds.length}');
-      print('   Remaining Time: ${remainingSeconds ~/ 60} minutes');
-      print('─' * 50);
+      setState(() => currentExamIndex++);
     } else {
-      // All exams completed - show comprehensive results
       _showFinalResults();
     }
   }
 
   void _showFinalResults() {
-    print('\n🎉 All Exams Completed!');
-    print('   Total Subjects Completed: ${widget.examIds.length}');
-    print('   Total Answers Recorded: ${allAnswers.length}');
-
-    int totalQuestions = 0;
-    int totalAnswered = 0;
-    for (var entry in allAnswers.entries) {
-      final examId = entry.key;
-      final answers = entry.value;
-      final questions = allQuestions[examId] ?? [];
-      totalQuestions += questions.length;
-      totalAnswered += answers.length;
-      final index = widget.examIds.indexOf(examId);
-      if (index >= 0) {
-        print(
-            '   ${widget.subjects[index]}: ${answers.length}/${questions.length} answered');
-      }
-    }
-    print('   Total: $totalAnswered/$totalQuestions answered');
-    print('─' * 50);
-
-    // Navigate to result screen with all subject data
+    _isNavigatingAway = true;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => CbtResultScreen(
@@ -731,17 +1744,15 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
           examId: widget.examIds[0],
           calledFrom: 'multi-subject',
           isFullyCompleted: true,
-          // Pass all subjects data for swiping
-          allSubjectsData: widget.examIds.map((examId) {
-            return {
-              'questions': allQuestions[examId] ?? [],
-              'userAnswers': allAnswers[examId] ?? {},
-              'subject': subjectNames[examId] ?? '',
-              'year': int.tryParse(subjectYears[examId] ?? '') ??
-                  DateTime.now().year,
-              'examId': examId,
-            };
-          }).toList(),
+          allSubjectsData: widget.examIds.map((examId) => {
+                'questions': allQuestions[examId] ?? [],
+                'userAnswers': allAnswers[examId] ?? {},
+                'subject': subjectNames[examId] ?? '',
+                'year':
+                    int.tryParse(subjectYears[examId] ?? '') ??
+                        DateTime.now().year,
+                'examId': examId,
+              }).toList(),
         ),
       ),
     );
@@ -749,676 +1760,29 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLastSubject = currentExamIndex == widget.examIds.length - 1;
-
     return TestScreen(
-      key: ValueKey(
-          widget.examIds[currentExamIndex]), // Force rebuild on exam change
+      key: ValueKey(widget.examIds[currentExamIndex]),
       examTypeId: widget.examIds[currentExamIndex],
       subject: widget.subjects[currentExamIndex],
       year: int.tryParse(widget.years[currentExamIndex]),
       calledFrom: 'multi-subject',
       totalDurationInSeconds: remainingSeconds,
       questionLimit: widget.questionLimit,
-      isLastInMultiSubject: isLastSubject,
+      isLastInMultiSubject: currentExamIndex == widget.examIds.length - 1,
       currentExamIndex: currentExamIndex,
       totalExams: widget.examIds.length,
       allAnswers: allAnswers,
       allQuestions: allQuestions,
       onExamComplete: (userAnswers, remainingTime) {
-        // Save answers and questions for current exam
         final currentExamId = widget.examIds[currentExamIndex];
         allAnswers[currentExamId] = Map<int, int>.from(userAnswers);
-
-        // Get the current questions from provider before moving to next exam
         final provider = Provider.of<ExamProvider>(context, listen: false);
         allQuestions[currentExamId] =
             List<QuestionModel>.from(provider.questions);
-
         remainingSeconds = remainingTime;
-
-        print('\n✅ Exam Completed:');
-        print('   Subject: ${widget.subjects[currentExamIndex]}');
-        print('   Questions: ${provider.questions.length}');
-        print('   Questions Answered: ${userAnswers.length}');
-        print('   Remaining Time: ${remainingTime ~/ 60} minutes');
-        print(
-            '   Saved Questions: ${allQuestions[currentExamId]?.length ?? 0}');
-        print('   Saved Answers: ${allAnswers[currentExamId]?.length ?? 0}');
-        print('─' * 50);
-
-        // Reset provider for next exam
         provider.reset();
-
-        // Load next exam or show results
         _loadNextExam();
       },
     );
-  }
-}
-
-class SubjectYearSelectionModal extends StatefulWidget {
-  final List<SubjectModel> subjects;
-  final Function(String subject, String subjectId, String year, String examId,
-      String icon) onSubjectYearSelected;
-  final List<SelectedSubject> selectedSubjects; // Add this parameter
-
-  const SubjectYearSelectionModal({
-    super.key,
-    required this.subjects,
-    required this.onSubjectYearSelected,
-    required this.selectedSubjects, // Add this parameter
-  });
-
-  @override
-  State<SubjectYearSelectionModal> createState() =>
-      _SubjectYearSelectionModalState();
-}
-
-class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
-    with SingleTickerProviderStateMixin {
-  SubjectModel? selectedSubject;
-  bool showYears = false;
-  late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-
-  // Search state
-  bool _isSearching = false;
-  String _searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _searchQuery = '';
-        _searchController.clear();
-      }
-    });
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query.toLowerCase();
-    });
-  }
-
-  void _goBackToSubjects() {
-    if (_isSearching) {
-      _toggleSearch();
-      return;
-    }
-    setState(() {
-      showYears = false;
-      selectedSubject = null;
-      _searchQuery = '';
-      _searchController.clear();
-    });
-
-    _animationController.reverse();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  if (showYears)
-                    IconButton(
-                      onPressed: _goBackToSubjects,
-                      icon: const Icon(Icons.arrow_back_ios),
-                    ),
-                  Expanded(
-                    child: _isSearching
-                        ? TextField(
-                            controller: _searchController,
-                            autofocus: true,
-                            onChanged: _onSearchChanged,
-                            decoration: InputDecoration(
-                              hintText: showYears
-                                  ? 'Search years...'
-                                  : 'Search subjects...',
-                              hintStyle: AppTextStyles.normal400(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            style: AppTextStyles.normal600(
-                              fontSize: 18,
-                              color: AppColors.text3Light,
-                            ),
-                          )
-                        : Text(
-                            showYears ? 'Select Year' : 'Select Subject',
-                            style: AppTextStyles.normal600(
-                              fontSize: 22,
-                              color: AppColors.text3Light,
-                            ),
-                          ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      _isSearching ? Icons.close : Icons.search,
-                      color: AppColors.text3Light,
-                    ),
-                    onPressed: _toggleSearch,
-                  ),
-                ],
-              ),
-            ),
-            if (showYears && selectedSubject != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  // Header should show sentence-cased subject name
-                  _sentenceCase(selectedSubject!.name),
-                  style: AppTextStyles.normal500(
-                    fontSize: 16,
-                    color: AppColors.text7Light,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 24),
-            Flexible(
-              child: !showYears
-                  ? _buildSubjectList()
-                  : SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildYearList(),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubjectList() {
-    // Create a sorted copy of the subjects (A -> Z) and display sentence-case names
-    var sortedSubjects = List<SubjectModel>.from(widget.subjects)
-      ..sort((a, b) => _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
-
-    // Filter by search query
-    if (_searchQuery.isNotEmpty) {
-      sortedSubjects = sortedSubjects
-          .where(
-              (s) => _sentenceCase(s.name).toLowerCase().contains(_searchQuery))
-          .toList();
-    }
-
-    if (sortedSubjects.isEmpty && _searchQuery.isNotEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
-              const SizedBox(height: 16),
-              Text(
-                'No subjects found',
-                style: AppTextStyles.normal600(
-                  fontSize: 18,
-                  color: AppColors.text3Light,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Try a different search term',
-                style: AppTextStyles.normal400(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: sortedSubjects.length,
-      itemBuilder: (context, index) {
-        final subject = sortedSubjects[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _selectSubject(subject),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  //  border: Border.all(color: Colors.grey[300]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: subject.cardColor ?? AppColors.cbtCardColor1,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Image.asset(
-                          'assets/icons/${subject.subjectIcon ?? 'default'}.png',
-                          width: 28,
-                          height: 28,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.book, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        // Display subject name in sentence case
-                        _sentenceCase(subject.name),
-                        style: AppTextStyles.normal600(
-                          fontSize: 16,
-                          color: AppColors.text3Light,
-                        ),
-                      ),
-                    ),
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildYearList() {
-    if (selectedSubject == null || selectedSubject!.years == null) {
-      return const Center(child: Text('No years available'));
-    }
-
-    // Sort years in descending order (most recent first)
-    var sortedYears = List.from(selectedSubject!.years!)
-      ..sort((a, b) => b.year.compareTo(a.year));
-
-    // Filter by search query
-    if (_searchQuery.isNotEmpty) {
-      sortedYears = sortedYears
-          .where((y) => y.year.toLowerCase().contains(_searchQuery))
-          .toList();
-    }
-
-    if (sortedYears.isEmpty && _searchQuery.isNotEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
-              const SizedBox(height: 16),
-              Text(
-                'No years found',
-                style: AppTextStyles.normal600(
-                  fontSize: 18,
-                  color: AppColors.text3Light,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Try a different search term',
-                style: AppTextStyles.normal400(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: sortedYears.length,
-      itemBuilder: (context, index) {
-        final year = sortedYears[index];
-        
-        // Check if this year is already selected for the current subject
-        final isSelected = selectedSubject != null && 
-            widget.selectedSubjects.any(
-              (s) => s.subjectName == _sentenceCase(selectedSubject!.name) && 
-                     s.year == year.year,
-            );
-        
-      return Padding(
-  padding: const EdgeInsets.only(bottom: 12.0),
-  child: Material(
-    color: Colors.white, // ✅ background lives here
-    borderRadius: BorderRadius.circular(8),
-    elevation: 2, // ✅ shadow now works correctly
-    shadowColor: Colors.green.withOpacity(0.3),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(8),
-      splashColor: Colors.blue.withOpacity(0.25),
-      highlightColor: Colors.blue.withOpacity(0.12),
-      onTap: () async {
-        // small delay so user sees feedback
-        await Future.delayed(const Duration(milliseconds: 120));
-        if (!context.mounted) return;
-
-        _onYearSelected(year.id, year.year);
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              year.year,
-              style: AppTextStyles.normal600(
-                fontSize: 16,
-                color: AppColors.text3Light,
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                size: 20,
-                color: AppColors.eLearningBtnColor1,
-              ),
-          ],
-        ),
-      ),
-    ),
-  ),
-);
-
-      },
-    );
-  }
-
-  void _selectSubject(SubjectModel subject) {
-    setState(() {
-      selectedSubject = subject;
-      showYears = true;
-      // Clear search when subject is selected
-      _isSearching = false;
-      _searchQuery = '';
-      _searchController.clear();
-    });
-    _animationController.forward(from: 0.0);
-  }
-
-  // When a year is tapped, the modal calls this callback and we should pass a
-  // sentence-cased subject name to the parent callback.
-  void _onYearSelected(String yearId, String yearValue) {
-    if (selectedSubject == null) return;
-    widget.onSubjectYearSelected(
-      _sentenceCase(selectedSubject!.name),
-      selectedSubject!.id,
-      yearValue,
-      yearId,
-      selectedSubject!.subjectIcon ?? 'default',
-    );
-  }
-}
-
-class _StartTestCountdownDialog extends StatefulWidget {
-  final int totalSubjects;
-  final VoidCallback onComplete;
-
-  const _StartTestCountdownDialog({
-    required this.totalSubjects,
-    required this.onComplete,
-  });
-
-  @override
-  State<_StartTestCountdownDialog> createState() =>
-      _StartTestCountdownDialogState();
-}
-
-class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-  int _countdown = 3;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
-
-    _controller.forward();
-    _startCountdown();
-  }
-
-  void _startCountdown() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        if (_countdown > 1) {
-          setState(() {
-            _countdown--;
-          });
-          _controller.reset();
-          _controller.forward();
-          _startCountdown();
-        } else {
-          widget.onComplete();
-        }
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.play_circle_outline,
-                size: 48,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Title
-            const Text(
-              'Starting Test!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                fontFamily: 'Urbanist',
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Message
-            Text(
-              widget.totalSubjects == 1
-                  ? 'Preparing your test...'
-                  : 'Starting ${widget.totalSubjects} subjects test',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
-                fontFamily: 'Urbanist',
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Countdown container
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Text(
-                      '$_countdown',
-                      style: const TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.eLearningBtnColor1,
-                        fontFamily: 'Urbanist',
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Progress indicator
-            Text(
-              'Get ready...',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
-                fontFamily: 'Urbanist',
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SelectedSubject {
-  final String subjectName;
-  final String subjectId;
-  final String year;
-  final String examId;
-  final String icon;
-
-  SelectedSubject({
-    required this.subjectName,
-    required this.subjectId,
-    required this.year,
-    required this.examId,
-    required this.icon,
-  });
-
-  @override
-  String toString() {
-    return 'SelectedSubject{subject: $subjectName, subjectId: $subjectId, year: $year, examId: $examId}';
   }
 }

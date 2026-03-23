@@ -114,9 +114,8 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
 
         print('Loaded settings from storage - Year: $year, Term: $term');
 
-        // Now fetch the course results with the correct parameters
+        // Fetch results once; max scores are already included in the payload.
         await fetchCourseResults();
-        await fetchAssessments();
       } else {
         setState(() {
           error = 'Settings not found in local storage';
@@ -177,13 +176,27 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
         final results = response.rawData!['response']['course_results'] as List;
         final gradesData = response.rawData!['response']['grades'] as List;
         final uniqueAssessments = <String>{};
+        final tempMaxScores = <String, int>{};
 
         for (var result in results) {
           final assessments = result['assessments'] as List;
           print(
               'Result assessments for result_id ${result['result_id']}: $assessments');
           for (var assessment in assessments) {
-            uniqueAssessments.add(assessment['assessment_name'] as String);
+            final assessmentName = assessment['assessment_name']?.toString();
+            if (assessmentName == null || assessmentName.isEmpty) continue;
+
+            uniqueAssessments.add(assessmentName);
+
+            final rawMaxScore =
+                assessment['max_score'] ?? assessment['assessment_score'] ?? 0;
+            final parsedMaxScore = rawMaxScore is int
+                ? rawMaxScore
+                : int.tryParse(rawMaxScore.toString()) ?? 0;
+            final currentMax = tempMaxScores[assessmentName] ?? 0;
+            if (parsedMaxScore > currentMax) {
+              tempMaxScores[assessmentName] = parsedMaxScore;
+            }
           }
         }
 
@@ -191,6 +204,7 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
           courseResults = List<Map<String, dynamic>>.from(results);
           grades = List<Map<String, dynamic>>.from(gradesData);
           assessmentNames = uniqueAssessments.toList();
+          maxScores = tempMaxScores;
           isLoading = false;
           editedScores.clear();
           _editingFields.clear();
@@ -200,6 +214,7 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
 
         print(
             'Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
+        print('Derived max scores from results: $maxScores');
       } else {
         setState(() {
           error = response.message;

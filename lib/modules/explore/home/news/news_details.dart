@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:linkfy_text/linkfy_text.dart';
 // import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
 // import 'package:share_plus/share_plus.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
@@ -25,7 +28,8 @@ class NewsDetails extends StatefulWidget {
   State<NewsDetails> createState() => _NewsDetailsState();
 }
 
-class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin {
+class _NewsDetailsState extends State<NewsDetails>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
 
   late NewsModel currentNews;
   List<NewsModel> allNewsList = [];
@@ -36,9 +40,17 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
 
+  // Interstitial Ad
+  InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdLoaded = false;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     currentNews = widget.news;
 
     _animationController = AnimationController(
@@ -54,10 +66,10 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
     ));
 
     Future.microtask(() {
-      final provider = Provider.of<NewsProvider>(context, listen: false);
-      if (provider.newsmodel.isEmpty) {
-        provider.fetchNews();
-      }
+        final provider = Provider.of<NewsProvider>(context, listen: false);
+        if (provider.newsmodel.isEmpty) {
+          provider.fetchAllNews();
+        }
       setState(() {
         allNewsList = provider.newsmodel;
         currentIndex = allNewsList.indexWhere((news) => news.id == currentNews.id);
@@ -66,10 +78,132 @@ class _NewsDetailsState extends State<NewsDetails> with TickerProviderStateMixin
       });
       _animationController.forward();
     });
+
+    // Initialize interstitial ad
+    _loadInterstitialAd();
+    // Initialize app open ad
+    _loadAppOpenAd();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+    }
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: EnvConfig.NewsInterstitialAdsApiKey,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          _interstitialAd = ad;
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isInterstitialAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.newsAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
+  }
+
+  void _showInterstitialAdAndNavigateBack() {
+    if (_isInterstitialAdLoaded && _interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (InterstitialAd ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back after ad is dismissed
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+        onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          // Navigate back if ad fails to show
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+      );
+      _interstitialAd!.show();
+      // Reload for next back action
+      _loadInterstitialAd();
+    } else {
+      // If ad is not loaded, just navigate back
+      Navigator.pop(context);
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
+    _interstitialAd?.dispose();
+    _appOpenAd?.dispose();
     super.dispose();
   }
 
@@ -152,8 +286,13 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         .where((news) => news.id != currentNews.id)
         .toList();
 
-    return Stack(
-      children: [
+    return WillPopScope(
+      onWillPop: () async {
+        _showInterstitialAdAndNavigateBack();
+        return false;
+      },
+      child: Stack(
+        children: [
         // Optional: Dimmed background for popup effect
         Positioned.fill(
           child: Container(
@@ -192,7 +331,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                               size: 20,
                             ),
                           ),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => _showInterstitialAdAndNavigateBack(),
                         ),
                         actions: [
                           IconButton(
@@ -323,6 +462,18 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                           ),
                         ),
                       ),
+                      // space before ad
+                      SliverToBoxAdapter(
+                        child: SizedBox(height:  16),
+                      ),
+
+                      // Banner Ad - Displays after the image
+                      SliverToBoxAdapter(
+                        child: _NewsBannerAd(
+                          adUnitId: EnvConfig.googleBannerAdsApiKey,
+                          size: AdSize.mediumRectangle,
+                        ),
+                      ),
                       // ...existing code...
                       SliverToBoxAdapter(
                         child: Container(
@@ -332,19 +483,11 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                LinkifyText(
-                                  currentNews.content,
-                                  textStyle: AppTextStyles.normal400(
-                                    fontSize: 16.0,
-                                    color: Colors.black,
-                                  ).copyWith(height: 1.7),
-                                  linkStyle: TextStyle(
-                                    color: AppColors.primaryLight,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                  onTap: (link) {
-                                    launchURL(link.value.toString());
-                                  },
+                         _buildHtmlContent(currentNews.content),
+                                const SizedBox(height: 12),
+                                _NewsBannerAd(
+                                  adUnitId: EnvConfig.googleBannerAdsApiKey,
+                                  size: AdSize.mediumRectangle,
                                 ),
                                 const SizedBox(height: 40),
                                 if (recommendedNews.isNotEmpty) ...[
@@ -417,8 +560,125 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           ),
         ),
       ],
+      ),
     );
   }
+
+
+  Widget _buildHtmlContent(String htmlData, {int depth = 0}) {
+  return Html(
+    data: htmlData,
+    style: {
+      "body": Style(
+        fontSize: FontSize(15.0),
+        lineHeight: LineHeight(1.7),
+        color: Colors.black87,
+        fontFamily: 'Urbanist',
+        margin: Margins.zero,
+        padding: HtmlPaddings.zero,
+      ),
+      "p": Style(
+        margin: Margins.only(bottom: 8, top: 0),
+        padding: HtmlPaddings.zero,
+        fontSize: FontSize(15.0),
+        color: Colors.black87,
+      ),
+      "a": Style(
+        color: AppColors.primaryLight,
+        textDecoration: TextDecoration.underline,
+        fontSize: FontSize(15.0),
+      ),
+      "strong": Style(
+        fontWeight: FontWeight.w700,
+        color: Colors.black,
+      ),
+      "em": Style(
+        fontStyle: FontStyle.italic,
+      ),
+      "ul": Style(
+        margin: Margins.only(left: 0, bottom: 8, top: 4),
+        padding: HtmlPaddings.only(left: 16),
+        listStyleType: ListStyleType.none,
+      ),
+      "ol": Style(
+        margin: Margins.only(left: 0, bottom: 8, top: 4),
+        padding: HtmlPaddings.only(left: 16),
+        listStyleType: ListStyleType.none,
+      ),
+      "li": Style(
+        margin: Margins.only(bottom: 6, top: 0),
+        padding: HtmlPaddings.zero,
+        fontSize: FontSize(15.0),
+        color: Colors.black87,
+      ),
+      "ul ul": Style(
+        margin: Margins.only(left: 0, top: 4, bottom: 4),
+        padding: HtmlPaddings.only(left: 12),
+        listStyleType: ListStyleType.none,
+      ),
+      "ol ol": Style(
+        margin: Margins.only(left: 0, top: 4, bottom: 4),
+        padding: HtmlPaddings.only(left: 12),
+        listStyleType: ListStyleType.none,
+      ),
+      "h1": Style(
+        fontSize: FontSize(22.0),
+        fontWeight: FontWeight.w700,
+        margin: Margins.only(bottom: 8, top: 16),
+        color: AppColors.text2Light,
+      ),
+      "h2": Style(
+        fontSize: FontSize(19.0),
+        fontWeight: FontWeight.w700,
+        margin: Margins.only(bottom: 6, top: 14),
+        color: AppColors.text2Light,
+      ),
+      "h3": Style(
+        fontSize: FontSize(17.0),
+        fontWeight: FontWeight.w600,
+        margin: Margins.only(bottom: 6, top: 12),
+        color: AppColors.text2Light,
+      ),
+    },
+    extensions: [
+      TagExtension(
+        tagsToExtend: {"li"},
+        builder: (extensionContext) {
+          final isNested = depth > 0;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 6.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isNested ? "◦ " : "• ",
+                  style: TextStyle(
+                    fontSize: isNested ? 16 : 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                    height: 1.55,
+                  ),
+                ),
+                Expanded(
+                  child: extensionContext.innerHtml != null
+                      ? _buildHtmlContent(
+                          extensionContext.innerHtml!,
+                          depth: depth + 1, // increment depth for nested
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ],
+    onLinkTap: (url, attributes, element) {
+      if (url != null) launchURL(url);
+    },
+  );
+}
 
 
   Widget relatedCard(NewsModel news, BuildContext context) {
@@ -680,5 +940,74 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     if (days < 7) return '$days days ago';
 
     return '${days ~/ 7} weeks ago';
+  }
+}
+
+class _NewsBannerAd extends StatefulWidget {
+  final String adUnitId;
+  final AdSize size;
+
+  const _NewsBannerAd({
+    super.key,
+    required this.adUnitId,
+    required this.size,
+  });
+
+  @override
+  State<_NewsBannerAd> createState() => _NewsBannerAdState();
+}
+
+class _NewsBannerAdState extends State<_NewsBannerAd> {
+  BannerAd? _ad;
+  bool _isLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ad = BannerAd(
+      adUnitId: widget.adUnitId,
+      size: widget.size,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (Ad ad) {
+          if (mounted) {
+            setState(() {
+              _isLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          ad.dispose();
+          if (mounted) {
+            setState(() {
+              _isLoaded = false;
+            });
+          }
+        },
+      ),
+    )..load();
+  }
+
+  @override
+  void dispose() {
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ad = _ad;
+    if (!_isLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      color: Colors.white,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
   }
 }

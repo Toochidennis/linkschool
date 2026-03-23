@@ -7,12 +7,14 @@ class TimerWidget extends StatefulWidget {
   final int initialSeconds;
   final VoidCallback onTimeUp;
   final Function(int remainingSeconds)? onTick;
+  final TimerController? controller;
 
   const TimerWidget({
     super.key,
     required this.initialSeconds,
     required this.onTimeUp,
     this.onTick,
+    this.controller,
   });
 
   @override
@@ -28,6 +30,7 @@ class _TimerWidgetState extends State<TimerWidget> {
   void initState() {
     super.initState();
     _remainingTimeInSeconds = widget.initialSeconds;
+      widget.controller?._state = this;
     _startTimer();
   }
 
@@ -98,4 +101,10 @@ class _TimerWidgetState extends State<TimerWidget> {
       ],
     );
   }
+}
+class TimerController {
+  _TimerWidgetState? _state;
+
+  void pause() => _state?._isTimerStopped = true;
+  void resume() => _state?._isTimerStopped = false;
 }

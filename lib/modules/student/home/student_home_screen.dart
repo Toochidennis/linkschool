@@ -177,7 +177,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       });
     } catch (e) {
       if (mounted) {
-        CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+     //   CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
     }
   }

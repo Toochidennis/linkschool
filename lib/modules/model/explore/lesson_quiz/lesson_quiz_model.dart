@@ -39,16 +39,40 @@ class LessonQuiz {
   });
 
   factory LessonQuiz.fromJson(Map<String, dynamic> json) {
+    final options = (json['options'] as List? ?? [])
+        .asMap()
+        .entries
+        .map((entry) => LessonQuizOption.fromJson(entry.value, entry.key))
+        .toList();
+    final parsedCorrect = CorrectAnswer.fromJson(json['correct'] ?? {});
+
+    int resolvedOrder = parsedCorrect.order;
+
+    // Prefer matching by text to avoid off-by-one ambiguity.
+    if (parsedCorrect.text.isNotEmpty) {
+      final matchIndex =
+          options.indexWhere((opt) => opt.text == parsedCorrect.text);
+      if (matchIndex != -1) {
+        resolvedOrder = matchIndex;
+      }
+    }
+
+    // If still out of bounds, attempt 1-based to 0-based conversion.
+    if (resolvedOrder < 0 || resolvedOrder >= options.length) {
+      if (resolvedOrder > 0 && resolvedOrder <= options.length) {
+        resolvedOrder = resolvedOrder - 1;
+      }
+    }
+
     return LessonQuiz(
       questionId: json['id'] ?? 0,
       questionText: json['question'] ?? '',
       questionType: json['type'] ?? '',
-      options: (json['options'] as List? ?? [])
-          .asMap()
-          .entries
-          .map((entry) => LessonQuizOption.fromJson(entry.value, entry.key))
-          .toList(),
-      correct: CorrectAnswer.fromJson(json['correct'] ?? {}),
+      options: options,
+      correct: CorrectAnswer(
+        order: resolvedOrder,
+        text: parsedCorrect.text,
+      ),
     );
   }
 }
@@ -96,11 +120,8 @@ class CorrectAnswer {
       parsedOrder = int.tryParse(rawOrder.toString()) ?? 0;
     }
 
-    // API returns 1-based order (e.g., 1,2,3). Convert to 0-based index to match options list.
-    final int zeroBasedOrder = parsedOrder > 0 ? parsedOrder - 1 : 0;
-
     return CorrectAnswer(
-      order: zeroBasedOrder,
+      order: parsedOrder,
       text: json['text']?.toString() ?? '',
     );
   }

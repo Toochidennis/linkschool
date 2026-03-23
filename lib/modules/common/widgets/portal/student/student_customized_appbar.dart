@@ -49,7 +49,8 @@ class CustomStudentAppBar extends StatelessWidget
                   fontSize: 20, color: AppColors.backgroundLight),
               children: [
                 TextSpan(
-                  text: subtitle,
+                  // trim show only first name from subtitle
+                  text: subtitle!.split(' ').first,
                   style: AppTextStyles.normal700(
                       fontSize: 22, color: AppColors.secondaryLight),
                 ),

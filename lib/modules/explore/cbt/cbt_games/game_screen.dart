@@ -1,4 +1,6 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -97,7 +99,7 @@ class _GameTestScreenState extends State<GameTestScreen>
   bool _showAnswerPopup = false;
   bool _showExplanationModal = false;
   bool _isCountdownComplete = false;
-
+Timer? _timer;
   @override
   void initState() {
     super.initState();
@@ -121,11 +123,15 @@ class _GameTestScreenState extends State<GameTestScreen>
       CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
     );
 
-    _initializeAudio();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // let the first frame render, dialog show, etc.
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
     _loadRewardedAd();
     _loadShuffleRewardedAd();
+  });
 
-    // Show countdown immediately and load questions during countdown
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showLoadingCountdown();
     });
@@ -162,6 +168,8 @@ class _GameTestScreenState extends State<GameTestScreen>
     print('📚 Loaded ${provider.allQuestions.length} questions');
   }
 
+  
+
   @override
   void dispose() {
     _pulseController.dispose();
@@ -175,18 +183,22 @@ class _GameTestScreenState extends State<GameTestScreen>
     super.dispose();
   }
 
-  void _startTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted && _remainingTime > 0) {
-        setState(() {
-          _remainingTime--;
-        });
-        _startTimer();
-      } else if (_remainingTime == 0) {
-        _finishQuiz();
-      }
-    });
-  }
+
+
+ void _startTimer() {
+  
+  _timer?.cancel();
+  _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    if (!mounted) return;
+    if (_remainingTime <= 0) {
+      _timer?.cancel();
+      _finishQuiz();
+      return;
+    }
+    setState(() => _remainingTime--);
+  });
+}
+
 
   void _selectAnswer(int optionIndex, Question question) {
     if (_isAnswered) return;
@@ -397,11 +409,22 @@ class _GameTestScreenState extends State<GameTestScreen>
   }
 
   void _loadRewardedAd() {
+    // Dispose old ad before loading new one to prevent memory leaks
+    _rewardedAd?.dispose();
+    _rewardedAd = null;
+    _isAdLoaded = false;
+    
     RewardedAd.load(
       adUnitId: EnvConfig.googleAdsApiKey,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
+          // Check if widget is still mounted before updating state
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          
           _rewardedAd = ad;
           _isAdLoaded = true;
           print('✅ Rewarded ad loaded successfully');
@@ -412,15 +435,15 @@ class _GameTestScreenState extends State<GameTestScreen>
               ad.dispose();
               _rewardedAd = null;
               _isAdLoaded = false;
-              // Load next ad for future use
-              _loadRewardedAd();
+              // Load next ad for future use if mounted
+              if (mounted) _loadRewardedAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               print('❌ Ad failed to show: $error');
               ad.dispose();
               _rewardedAd = null;
               _isAdLoaded = false;
-              _loadRewardedAd();
+              if (mounted) _loadRewardedAd();
             },
           );
         },
@@ -437,11 +460,22 @@ class _GameTestScreenState extends State<GameTestScreen>
   }
 
   void _loadShuffleRewardedAd() {
+    // Dispose old ad before loading new one to prevent memory leaks
+    _shuffleRewardedAd?.dispose();
+    _shuffleRewardedAd = null;
+    _isShuffleAdLoaded = false;
+    
     RewardedAd.load(
       adUnitId: EnvConfig.googleAdsApiKey,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
+          // Check if widget is still mounted before updating state
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          
           _shuffleRewardedAd = ad;
           _isShuffleAdLoaded = true;
           print('✅ Shuffle rewarded ad loaded successfully');
@@ -452,15 +486,15 @@ class _GameTestScreenState extends State<GameTestScreen>
               ad.dispose();
               _shuffleRewardedAd = null;
               _isShuffleAdLoaded = false;
-              // Load next ad for future use
-              _loadShuffleRewardedAd();
+              // Load next ad for future use if mounted
+              if (mounted) _loadShuffleRewardedAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               print('❌ Shuffle ad failed to show: $error');
               ad.dispose();
               _shuffleRewardedAd = null;
               _isShuffleAdLoaded = false;
-              _loadShuffleRewardedAd();
+              if (mounted) _loadShuffleRewardedAd();
             },
           );
         },
@@ -914,14 +948,18 @@ class _GameTestScreenState extends State<GameTestScreen>
   }
 
   // Lifeline: Shuffle - Watch ad then shuffle to next question
-  void _useShuffle(Question question) {
-    _playButtonSound();
-    _vibrateButton();
+ void _useShuffle(Question question) {
+  _playButtonSound();
+  _vibrateButton();
 
-    // User can shuffle anytime - show ad immediately
-    _showShuffleRewardedAd();
+  if (_shuffleRewardedAd == null) {
+    _loadShuffleRewardedAd();
+    _showShuffleAdDialog(); // "Loading..."
+    return;
   }
 
+  _showShuffleRewardedAd();
+}
   void _showShuffleAdDialog() {
     showDialog(
       context: context,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'text_styles.dart';
 
@@ -16,9 +17,13 @@ class AppThemes {
       titleSmall: AppTextStyles.italicLight,
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.primaryLight,
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Colors.white),
+      actionsIconTheme: const IconThemeData(color: Colors.white),
+      systemOverlayStyle: SystemUiOverlayStyle.light,
       titleTextStyle: AppTextStyles.normal600(
-          fontSize: 18.0, color: AppColors.primaryLight),
+          fontSize: 18.0, color: Colors.white),
     ),
     useMaterial3: true,
   );
@@ -36,10 +41,14 @@ class AppThemes {
       bodySmall: AppTextStyles.italicDark,
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.primaryDark,
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Colors.white),
+      actionsIconTheme: const IconThemeData(color: Colors.white),
+      systemOverlayStyle: SystemUiOverlayStyle.light,
       titleTextStyle: AppTextStyles.normal600(
         fontSize: 18.0,
-        color: AppColors.secondaryLight,
+        color: Colors.white,
       ),
     ),
     useMaterial3: true,

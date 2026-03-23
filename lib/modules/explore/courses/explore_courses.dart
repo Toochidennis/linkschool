@@ -1,6 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/courses/course_waiting_screen.dart';
 
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../../common/constants.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
@@ -8,11 +11,12 @@ import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:linkschool/modules/explore/cbt/widgets/cbt_auth_dialog.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/services/explore/courses/course_service.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
+import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'course_description_screen.dart';
 import 'course_content_screen.dart';
 import 'create_user_profile_screen.dart';
@@ -46,8 +50,22 @@ class _ExploreCoursesState extends State<ExploreCourses>
   int? _lastUserId;
   CourseModel? _pendingCourse;
   CategoryModel? _pendingCategory;
-   bool _isShowingAccountSwitcher = false; 
-  
+  bool _isShowingAccountSwitcher = false; 
+  String? _lastNetworkMessage;
+  bool _imagesPrecached = false;
+  String? _lastPrecacheKey;
+  int? _pressedCourseId;
+  int? _loadingCourseId;
+
+  // Persistent image cache for course thumbnails
+  final CacheManager _coursesCacheManager = CacheManager(
+    Config(
+      'coursesCacheKey',
+      stalePeriod: const Duration(days: 30),
+      maxNrOfCacheObjects: 200,
+    ),
+  );
+
 
 
   final ScrollController _scrollController = ScrollController();
@@ -107,6 +125,82 @@ class _ExploreCoursesState extends State<ExploreCourses>
     });
   }
 
+  String _userFirstName(CbtUserModel user) {
+    final first = user.first_name?.trim();
+    if (first != null && first.isNotEmpty) return first;
+    final name = (user.name ?? '').trim();
+    if (name.isEmpty) return 'User';
+    return name.split(' ').first;
+  }
+
+  String _userLastName(CbtUserModel user) {
+    final last = user.last_name?.trim();
+    if (last != null && last.isNotEmpty) return last;
+    final name = (user.name ?? '').trim();
+    final parts = name.split(' ').where((e) => e.isNotEmpty).toList();
+    if (parts.length <= 1) return '';
+    return parts.last;
+  }
+
+  void _showNetworkMessage(String message) {
+    if (message.isEmpty || message == _lastNetworkMessage) return;
+    _lastNetworkMessage = message;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(message),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
+    });
+  }
+
+  void _setPressedCourseId(int courseId) {
+    if (_pressedCourseId == courseId) return;
+    setState(() {
+      _pressedCourseId = courseId;
+    });
+  }
+
+  void _clearPressedCourseId() {
+    if (_pressedCourseId == null) return;
+    setState(() {
+      _pressedCourseId = null;
+    });
+  }
+
+  void _setLoadingCourseId(int? courseId) {
+    if (!mounted || _loadingCourseId == courseId) return;
+    setState(() {
+      _loadingCourseId = courseId;
+    });
+  }
+
+  void _precacheCourseImages(List<CategoryModel> categories) {
+    final urls = <String>{};
+    for (final category in categories) {
+      for (final course in category.courses) {
+        final raw = course.imageUrl.trim();
+        if (raw.isEmpty) continue;
+        final url = raw.startsWith('https')
+            ? raw
+            : "https://linkskool.net/$raw";
+        urls.add(url);
+      }
+    }
+
+    for (final url in urls) {
+      try {
+        precacheImage(
+          CachedNetworkImageProvider(url, cacheManager: _coursesCacheManager),
+          context,
+        );
+      } catch (_) {
+        // ignore errors while precaching
+      }
+    }
+  }
   
   Future<void> _bootstrapScreen() async {
   if (!mounted || _isBootstrapping) return;
@@ -535,105 +629,16 @@ class _ExploreCoursesState extends State<ExploreCourses>
     );
   }
 
-  void _showSignInDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          backgroundColor: Colors.white,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.lock_outline,
-                  size: 48,
-                  color: Color(0xFFFFA500),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Sign In Required',
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Please sign in to access course content and track your progress.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Sign In Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await _handleSignIn();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFA500),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Sign In with Google',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Cancel Button
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Maybe Later',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _handleSignIn() async {
     if (!mounted) return;
-    final authService = FirebaseAuthService();
     try {
-      final userCredential = await authService.signInWithGoogle();
-      final user = userCredential?.user;
-      if (user != null) {
-        final userProvider =
-            Provider.of<CbtUserProvider>(context, listen: false);
-        await userProvider.handleFirebaseSignUp(
-          email: user.email!,
-          name: user.displayName!,
-          profilePicture: user.photoURL ?? '',
-        );
+      final signedIn = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => const CbtAuthDialog(),
+      );
 
+      if (signedIn == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Signed in successfully')),
@@ -662,8 +667,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
                 try {
                   await profileService.updateUserPhone(
                     userId: currentUser.id!,
-                    firstName: currentUser.name!.split(' ').first,
-                    lastName: currentUser.name!.split(' ').last,
+                    firstName: _userFirstName(currentUser),
+                    lastName: _userLastName(currentUser),
                     phone: phone,
                     attempt: currentUser.attempt.toString(),
                     email: currentUser.email,
@@ -694,62 +699,62 @@ class _ExploreCoursesState extends State<ExploreCourses>
             );
           }
 
-         await _bootstrapScreen();
-if (!mounted) return;
+          await _bootstrapScreen();
+          if (!mounted) return;
 
-// Get the active profile that was just set in _bootstrapScreen
+          final profiles = cbtUserProvider.currentUser?.profiles ??
+              <CbtUserProfile>[];
+          final savedId = await _loadActiveProfileId();
+          CbtUserProfile? activeProfile;
 
-final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
-final savedId = await _loadActiveProfileId();
-CbtUserProfile? activeProfile;
-
-if (savedId != null) {
-  try {
-    activeProfile = profiles.firstWhere((p) => p.id == savedId);
-  } catch (_) {
-    activeProfile = null;
-  }
-}
-activeProfile ??= profiles.isNotEmpty ? profiles.first : null;
-
-// Update the widget's _activeProfile
-setState(() {
-  _activeProfile = activeProfile;
-});
-
-debugPrint('After bootstrap - _pendingCourse: ${_pendingCourse?.courseName}');
-debugPrint('After bootstrap - _pendingCategory: ${_pendingCategory?.name}');
-debugPrint('After bootstrap - _activeProfile: ${_activeProfile?.id}');
-
-// Check enrollment status before resuming pending course selection
-if (_pendingCourse != null && _pendingCategory != null) {
-  debugPrint('Entering enrollment check block');
-  final profileId = _activeProfile?.id;
-  debugPrint('Profile ID: $profileId');
-  debugPrint('Cohort ID: ${_pendingCourse!.cohortId}');
-  
-  if (profileId != null && _pendingCourse!.cohortId != null) {
-    debugPrint('About to check enrollment...');
-    try {
-      final isEnrolled = await CourseService().checkIsEnrolled(
-        cohortId: _pendingCourse!.cohortId!,
-        profileId: profileId,
-      );
-      debugPrint('Enrollment check after sign-in: isEnrolled=$isEnrolled for course ${_pendingCourse!.courseName}');
-    } catch (e) {
-      debugPrint('Error checking enrollment after sign-in: $e');
-    }
-  } else {
-    debugPrint('Skipped enrollment check - profileId: $profileId, cohortId: ${_pendingCourse!.cohortId}');
-  }
-} else {
-  debugPrint('Skipped enrollment check - _pendingCourse: $_pendingCourse, _pendingCategory: $_pendingCategory');
-}
-
-await _resumePendingCourseSelection();
+          if (savedId != null) {
+            try {
+              activeProfile = profiles.firstWhere((p) => p.id == savedId);
+            } catch (_) {
+              activeProfile = null;
+            }
           }
-          
-       
+          activeProfile ??= profiles.isNotEmpty ? profiles.first : null;
+
+          setState(() {
+            _activeProfile = activeProfile;
+          });
+
+          debugPrint(
+              'After bootstrap - _pendingCourse: ${_pendingCourse?.courseName}');
+          debugPrint(
+              'After bootstrap - _pendingCategory: ${_pendingCategory?.name}');
+          debugPrint('After bootstrap - _activeProfile: ${_activeProfile?.id}');
+
+          if (_pendingCourse != null && _pendingCategory != null) {
+            debugPrint('Entering enrollment check block');
+            final profileId = _activeProfile?.id;
+            debugPrint('Profile ID: $profileId');
+            debugPrint('Cohort ID: ${_pendingCourse!.cohortId}');
+
+            if (profileId != null && _pendingCourse!.cohortId != null) {
+              debugPrint('About to check enrollment...');
+              try {
+                final isEnrolled = await CourseService().checkIsEnrolled(
+                  cohortId: _pendingCourse!.cohortId!,
+                  profileId: profileId,
+                );
+                debugPrint(
+                    'Enrollment check after sign-in: isEnrolled=$isEnrolled for course ${_pendingCourse!.courseName}');
+              } catch (e) {
+                debugPrint('Error checking enrollment after sign-in: $e');
+              }
+            } else {
+              debugPrint(
+                  'Skipped enrollment check - profileId: $profileId, cohortId: ${_pendingCourse!.cohortId}');
+            }
+          } else {
+            debugPrint(
+                'Skipped enrollment check - _pendingCourse: $_pendingCourse, _pendingCategory: $_pendingCategory');
+          }
+
+          await _resumePendingCourseSelection();
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -776,8 +781,8 @@ await _resumePendingCourseSelection();
     return;
   }
   
-  _isShowingAccountSwitcher = true;
-  debugPrint('Opening account switcher dialog, flag set to: $_isShowingAccountSwitcher');
+ _isShowingAccountSwitcher = true;
+ debugPrint('Opening account switcher dialog, flag set to: $_isShowingAccountSwitcher');
 
   final userId = user?.id;
   if (userId == null) {
@@ -786,6 +791,15 @@ await _resumePendingCourseSelection();
   }
 
   try {
+    final canUseNetwork = await NetworkDialog.ensureOnline(
+      context,
+      message:
+          'This action requires an internet connection. Please connect and try again.',
+    );
+    if (!canUseNetwork || !mounted) {
+      _isShowingAccountSwitcher = false;
+      return;
+    }
     final profileProvider =
         Provider.of<CreateUserProfileProvider>(context, listen: false);
     final profiles =
@@ -950,18 +964,19 @@ await _resumePendingCourseSelection();
   Future<void> _handleCourseTap(CourseModel course, CategoryModel category) async {
       if (_navigating) return;
       _navigating = true;
+      _setLoadingCourseId(course.id);
       try {
-        final authService = FirebaseAuthService();
-        final isSignedIn = await authService.isUserSignedUp();
+        final canUseNetwork = await NetworkDialog.ensureOnline(context);
+        if (!canUseNetwork || !mounted) return;
+        final cbtUserProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
+        final isSignedIn = cbtUserProvider.currentUser != null;
 
         if (!isSignedIn) {
           _setPendingCourseSelection(course, category);
-          _showSignInDialog();
+          await _handleSignIn();
           return;
         }
-
-        final cbtUserProvider =
-            Provider.of<CbtUserProvider>(context, listen: false);
         if (cbtUserProvider.isPhoneMissing) {
           await UserProfileUpdateModal.show(
             context,
@@ -975,8 +990,8 @@ await _resumePendingCourseSelection();
               if (user == null) return;
               await profileService.updateUserPhone(
                 userId: user.id!,
-                firstName: user.name!.split(' ').first,
-                lastName: user.name!.split(' ').last,
+                firstName: _userFirstName(user),
+                lastName: _userLastName(user),
                 phone: phone,
                 attempt: user.attempt.toString(),
                 email: user.email,
@@ -1098,6 +1113,38 @@ await _resumePendingCourseSelection();
           final imageUrl = course.imageUrl.startsWith('https')
               ? course.imageUrl
               : "https://linkskool.net/${course.imageUrl}";
+
+
+                 final cohortStart = course.cohortStartDate != null
+          ? DateTime.tryParse(course.cohortStartDate!)
+          : null;
+
+
+           if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CourseWaitingScreen(
+              slug: course.slug ?? '',
+              providerSubtitle: 'Powered By Digital Dreams',
+              category: category.name.toUpperCase(),
+              categoryColor: _getCategoryColor(category.name),
+              categoryId: course.programId ?? category.id,
+              isFree: course.isFree,
+              trialExpiryDate: course.trialExpiryDate,
+              profileId: _activeProfile?.id,
+              trialType: course.trialType,
+              trialValue: course.trialValue,
+              lessonsTaken: course.lessonsTaken,
+              cohortCost: course.cost.toInt(),
+            ),
+          ),
+        );
+        return;
+      }
+
+
+
           await Navigator.push(
             context,
             MaterialPageRoute(
@@ -1148,6 +1195,8 @@ await _resumePendingCourseSelection();
         );
       } finally {
         _navigating = false;
+        _clearPressedCourseId();
+        _setLoadingCourseId(null);
       }
     }
 
@@ -1348,20 +1397,25 @@ await _resumePendingCourseSelection();
   }
 
   Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (id != null) {
-      await prefs.setInt('active_profile_id', id);
-      if (birthDate != null) {
-        await prefs.setString('active_profile_dob', birthDate);
+      final prefs = await SharedPreferences.getInstance();
+      if (id != null) {
+        await prefs.setInt('active_profile_id', id);
+        final currentProfile = _activeProfile;
+        if (currentProfile != null && currentProfile.id == id) {
+          await prefs.setString('active_profile_name', _profileName(currentProfile));
+        }
+        if (birthDate != null) {
+          await prefs.setString('active_profile_dob', birthDate);
+        } else {
+          await prefs.remove('active_profile_dob');
+        }
       } else {
+        await prefs.remove('active_profile_id');
+        await prefs.remove('active_profile_name');
         await prefs.remove('active_profile_dob');
-      }
-    } else {
-      await prefs.remove('active_profile_id');
-      await prefs.remove('active_profile_dob');
-      // Also clear provider persisted values
-      if (mounted) {
-        Provider.of<ExploreCourseProvider>(context, listen: false)
+        // Also clear provider persisted values
+        if (mounted) {
+          Provider.of<ExploreCourseProvider>(context, listen: false)
             .clearPersistedProfile();
       }
     }
@@ -1594,7 +1648,25 @@ await _resumePendingCourseSelection();
         backgroundColor: Colors.transparent,
         body: Consumer<ExploreCourseProvider>(
           builder: (context, courseProvider, child) {
+            _showNetworkMessage(courseProvider.errorMessage);
             final loading = courseProvider.isLoading;
+
+            final precacheKey =
+                '${_activeProfile?.id ?? 'public'}:${_activeProfile?.birthDate ?? ''}';
+            if (_lastPrecacheKey != precacheKey) {
+              _lastPrecacheKey = precacheKey;
+              _imagesPrecached = false;
+            }
+
+            if (!_imagesPrecached &&
+                !loading &&
+                courseProvider.categories.isNotEmpty) {
+              _imagesPrecached = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                _precacheCourseImages(courseProvider.categories);
+              });
+            }
 
 // If we go back into loading (refresh / retry), allow replay
             if (!_wasLoading && loading) {
@@ -1628,7 +1700,8 @@ await _resumePendingCourseSelection();
             _wasLoading = loading;
             // Helper function to render result content
             Widget buildContent() {
-              if (courseProvider.isLoading) {
+              if ((_isBootstrapping && courseProvider.categories.isEmpty) ||
+                  courseProvider.isLoading) {
                 return const Padding(
                   padding: EdgeInsets.only(top: 50),
                   child: Center(
@@ -1639,8 +1712,9 @@ await _resumePendingCourseSelection();
                 );
               }
 
-              if (courseProvider.errorMessage.isNotEmpty) {
-                // fine error section with retry button
+              if (courseProvider.errorMessage.isNotEmpty &&
+                  courseProvider.categories.isEmpty) {
+                // Show error state only when there's no cached data to display.
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -1980,237 +2054,272 @@ await _resumePendingCourseSelection();
   }
 
   Widget _buildCompactCourseCard(CourseModel course, CategoryModel category) {
-    return GestureDetector(
-      onTap: () => _handleCourseTap(course, category),
-      child: Container(
-          width: 240,
-          margin: const EdgeInsets.only(right: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
+    final isPressed = _pressedCourseId == course.id;
+    final isLoading = _loadingCourseId == course.id;
+
+    return SizedBox(
+      width: 240,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Material(
+          color: Colors.white,
+          elevation: 2,
+          shadowColor: Colors.black.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _handleCourseTap(course, category),
+            onTapDown: (_) => _setPressedCourseId(course.id),
+            onTapCancel: _clearPressedCourseId,
+            onTapUp: (_) => _clearPressedCourseId(),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Course Image
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                child: Stack(
-                  children: [
-                    Image.network(
-                      course.imageUrl.startsWith('https')
-                          ? course.imageUrl
-                          : "https://linkskool.net/${course.imageUrl}",
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 120,
-                          color: Colors.grey.shade200,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              size: 32,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          height: 120,
-                          color: Colors.grey.shade100,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              color: const Color(0xFFFFA500),
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        );
-                      },
+            splashColor: const Color(0xFFFFA500).withOpacity(0.16),
+            highlightColor: const Color(0xFFFFA500).withOpacity(0.08),
+            child: AnimatedScale(
+              scale: isPressed ? 0.985 : 1.0,
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              child: Stack(
+                children: [
+                  Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Course Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
                     ),
-                    // Category badge
-
-                    // Price & Trial badges
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          // Price badge (Free / Paid)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: (course.isFree == true)
-                                  ? Colors.green.shade600
-                                  : Colors.red.shade600,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              (course.isFree == true)
-                                  ? 'Free'
-                                  : course.priceLabel,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
-
-                          // Optional Trial badge
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Course Content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Course Title
-                      Text(
-                        course.courseName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Description
-                      Expanded(
-                        child: Text(
-                          course.description,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                            height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Provider
-                      Row(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFFA500), Color(0xFFFF6B00)],
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'B',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                    child: Stack(
+                      children: [
+                        CachedNetworkImage(
+                          cacheManager: _coursesCacheManager,
+                          imageUrl: course.imageUrl.startsWith('https')
+                              ? course.imageUrl
+                              : "https://linkskool.net/${course.imageUrl}",
+                          height: 120,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) {
+                            return Container(
+                              height: 120,
+                              color: Colors.grey.shade100,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFFFA500),
+                                  strokeWidth: 2,
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  category.name,
+                            );
+                          },
+                          errorWidget: (context, url, error) {
+                            return Container(
+                              height: 120,
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 32,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        // Price & Trial badges
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // Price badge (Free / Paid)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: (course.isFree == true)
+                                      ? Colors.green.shade600
+                                      : Colors.red.shade600,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  (course.isFree == true)
+                                      ? 'Free'
+                                      : course.priceLabel,
                                   style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: 0.3,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                Text(
-                                  'Powered By Digital Dreams',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Course Content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Course Title
+                          Text(
+                            course.courseName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+
+                          // Description
+                          Expanded(
+                            child: Text(
+                              course.description,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(height: 8),
+
+                          // Provider
+                          Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFFFA500),
+                                      Color(0xFFFF6B00)
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'B',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      category.name,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Powered By Digital Dreams',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Take Course Button
+                          // SizedBox(
+                          //   width: double.infinity,
+                          //   height: 32,
+                          //   child: OutlinedButton(
+                          //     onPressed: () {
+                          //       ScaffoldMessenger.of(context).showSnackBar(
+                          //         SnackBar(
+                          //           content: Text('Starting ${course['title']} course...'),
+                          //           duration: const Duration(seconds: 2),
+                          //         ),
+                          //       );
+                          //     },
+                          //     style: OutlinedButton.styleFrom(
+                          //       side: const BorderSide(color: Color(0xFFFFA500), width: 1.5),
+                          //       padding: EdgeInsets.zero,
+                          //       shape: RoundedRectangleBorder(
+                          //         borderRadius: BorderRadius.circular(8),
+                          //       ),
+                          //     ),
+                          //     child: const Text(
+                          //       'Take Course',
+                          //       style: TextStyle(
+                          //         fontSize: 12,
+                          //         fontWeight: FontWeight.w700,
+                          //         color: Color(0xFFFFA500),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-
-                      // Take Course Button
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   height: 32,
-                      //   child: OutlinedButton(
-                      //     onPressed: () {
-                      //       ScaffoldMessenger.of(context).showSnackBar(
-                      //         SnackBar(
-                      //           content: Text('Starting ${course['title']} course...'),
-                      //           duration: const Duration(seconds: 2),
-                      //         ),
-                      //       );
-                      //     },
-                      //     style: OutlinedButton.styleFrom(
-                      //       side: const BorderSide(color: Color(0xFFFFA500), width: 1.5),
-                      //       padding: EdgeInsets.zero,
-                      //       shape: RoundedRectangleBorder(
-                      //         borderRadius: BorderRadius.circular(8),
-                      //       ),
-                      //     ),
-                      //     child: const Text(
-                      //       'Take Course',
-                      //       style: TextStyle(
-                      //         fontSize: 12,
-                      //         fontWeight: FontWeight.w700,
-                      //         color: Color(0xFFFFA500),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+                  if (isLoading)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: AnimatedOpacity(
+                          opacity: 1,
+                          duration: const Duration(milliseconds: 120),
+                          child: Container(
+                            color: Colors.white.withOpacity(0.55),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFFFFA500),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }
 

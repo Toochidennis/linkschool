@@ -93,9 +93,9 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
         isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load user data')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Failed to load user data')),
+        // );
       }
     }
   }
@@ -130,15 +130,15 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppColors.paymentTxtColor1,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.backgroundLight,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
+        // leading: IconButton(
+        //   onPressed: () => Navigator.of(context).pop(),
+        //   icon: Image.asset(
+        //     'assets/icons/arrow_back.png',
+        //     color: AppColors.backgroundLight,
+        //     width: 34.0,
+        //     height: 34.0,
+        //   ),
+        // ),
         title: const Text(
           'Profile',
           style: TextStyle(
@@ -294,12 +294,22 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
   }
 
   String _getInitials() {
-    if (staffName.isEmpty) return 'S';
-    final names = staffName.trim().split(' ');
+    final trimmed = staffName.trim();
+    if (trimmed.isEmpty) return 'S';
+
+    final names = trimmed
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+
+    if (names.isEmpty) return 'S';
     if (names.length == 1) {
-      return names[0][0].toUpperCase();
+      return names.first.substring(0, 1).toUpperCase();
     }
-    return '${names[0][0]}${names[1][0]}'.toUpperCase();
+
+    final first = names[0].substring(0, 1).toUpperCase();
+    final second = names[1].substring(0, 1).toUpperCase();
+    return '$first$second';
   }
 
   Widget _buildFormClassInfo(Map<String, dynamic> level) {

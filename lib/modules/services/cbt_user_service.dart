@@ -94,6 +94,110 @@ class CbtUserService {
     }
   }
 
+  Future<CbtUserModel> signupWithEmailPassword({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+    required String gender,
+    required String birthDate,
+    required String phone,
+  }) async {
+    try {
+      if (apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      final url = '$baseUrl/signup';
+      final body = {
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'password': password,
+        'gender': gender,
+        'birth_date': birthDate,
+        'phone': phone,
+      };
+
+      print("🛠️ [SIGNUP USER] POST $url");
+      print("➡️ Headers: X-API-KEY: $apiKey");
+      print("➡️ Body: ${json.encode(body)}");
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = json.decode(response.body);
+        if (decoded['success'] == true && decoded['data'] != null) {
+          return CbtUserModel.fromJson(decoded['data']);
+        }
+        throw Exception(
+            "Failed to sign up: ${decoded['message'] ?? 'Unknown error'}");
+      }
+
+      print("❌ Failed to sign up: ${response.statusCode}");
+      print("Body: ${response.body}");
+      throw Exception("Failed to sign up: ${response.statusCode}");
+    } catch (e) {
+      print("❌ Error signing up: $e");
+      throw Exception("Error signing up: $e");
+    }
+  }
+
+  Future<CbtUserModel> loginWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      if (apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      final url = '$baseUrl/login';
+      final body = {
+        'email': email,
+        'password': password,
+      };
+
+      print("🛠️ [LOGIN USER] POST $url");
+      print("➡️ Headers: X-API-KEY: $apiKey");
+      print("➡️ Body: ${json.encode(body)}");
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = json.decode(response.body);
+        if (decoded['success'] == true && decoded['data'] != null) {
+          return CbtUserModel.fromJson(decoded['data']);
+        }
+        throw Exception(
+            "Failed to login: ${decoded['message'] ?? 'Unknown error'}");
+      }
+
+      print("❌ Failed to login: ${response.statusCode}");
+      print("Body: ${response.body}");
+      throw Exception("Failed to login: ${response.statusCode}");
+    } catch (e) {
+      print("❌ Error logging in: $e");
+      throw Exception("Error logging in: $e");
+    }
+  }
+
   Future<CbtUserModel> updateUser(CbtUserModel user) async {
     try {
       if (apiKey.isEmpty) {
@@ -158,13 +262,13 @@ class CbtUserService {
         print("👤 Existing user found, not updating (login only)");
         return existingUser;
       } else {
-        print("🆕 New user, creating with subscribed=1...");
+        print("🆕 New user, creating with subscribed=0...");
         final newUser = CbtUserModel(
           name: name,
           email: email,
           profilePicture: profilePicture,
           attempt: attemptCount ?? 0,
-          subscribed: 1,
+          subscribed: 0,
           reference: reference,
         );
         return await createUser(newUser);

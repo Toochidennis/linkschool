@@ -22,6 +22,42 @@ class ManageStudentProvider with ChangeNotifier {
 
   ManageStudentProvider(this._studentService);
 
+  int? _asInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
+  }
+
+  Future<void> _refreshCurrentStudents({
+    Map<String, dynamic>? fallbackData,
+  }) async {
+    if (currentClassId != null) {
+      await fetchStudentsByClass(classId: currentClassId!);
+      return;
+    }
+
+    if (currentLevelId != null) {
+      await fetchStudentsByLevel(levelId: currentLevelId!);
+      return;
+    }
+
+    final fallbackClassId = _asInt(fallbackData?['class_id']);
+    if (fallbackClassId != null) {
+      await fetchStudentsByClass(classId: fallbackClassId);
+      return;
+    }
+
+    final fallbackLevelId = _asInt(fallbackData?['level_id']);
+    if (fallbackLevelId != null) {
+      await fetchStudentsByLevel(levelId: fallbackLevelId);
+      return;
+    }
+  }
+
+  Future<void> refreshCurrentStudents({Map<String, dynamic>? fallbackData}) {
+    return _refreshCurrentStudents(fallbackData: fallbackData);
+  }
+
   Future<bool> createStudent(Map<String, dynamic> newStudent) async {
     isLoading = true;
     notifyListeners();
@@ -30,7 +66,7 @@ class ManageStudentProvider with ChangeNotifier {
     try {
       await _studentService.createStudent(newStudent);
       message = "Student created successfully.";
-      await fetchStudents();
+      await _refreshCurrentStudents(fallbackData: newStudent);
       return true;
     } catch (e) {
       error = "Failed to create student: $e";
@@ -50,7 +86,7 @@ class ManageStudentProvider with ChangeNotifier {
     try {
       await _studentService.updateStudent(studentId, updatedStudent);
       message = "Student updated successfully.";
-      await fetchStudents();
+      await _refreshCurrentStudents(fallbackData: updatedStudent);
       return true;
     } catch (e) {
       error = "Failed to update student: $e";
@@ -69,7 +105,7 @@ class ManageStudentProvider with ChangeNotifier {
     try {
       await _studentService.deleteStudent(studentId);
       message = "Student deleted successfully.";
-      await fetchStudents();
+      await _refreshCurrentStudents();
       return true;
     } catch (e) {
       error = "Failed to delete student: $e";
