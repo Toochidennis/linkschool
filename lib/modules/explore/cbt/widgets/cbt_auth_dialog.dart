@@ -479,13 +479,13 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image.asset(
-                    'assets/icons/google_icon.png',
-                    width: 22,
-                    height: 22,
+                    'assets/images/google-logo.png',
+                    width: 25,
+                    height: 25,
                     errorBuilder: (context, error, stackTrace) =>
                         const Icon(Icons.info, size: 22),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Text(
                     'Continue with Google',
                     style: AppTextStyles.normal600(

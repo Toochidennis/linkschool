@@ -7,7 +7,6 @@ import 'package:linkschool/modules/explore/courses/discussions/discusssion_modal
 import 'package:linkschool/modules/model/explore/cohorts/discussion_model.dart';
 import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
 import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
-
 import 'package:provider/provider.dart';
 
 class DiscussionScreen extends StatelessWidget {
