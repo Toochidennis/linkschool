@@ -65,6 +65,10 @@
                 android:scheme="https"
                 android:host="linkskool.com"
                 android:pathPrefix="/" />
+            <data
+                android:scheme="http"
+                android:host="linkskool.com"
+                android:pathPrefix="/"/>
         </intent-filter>
         </activity>
 

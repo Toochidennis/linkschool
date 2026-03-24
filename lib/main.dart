@@ -12,6 +12,7 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/services/ads_service/facebook_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/database/data_base_service.dart';
 import 'package:linkschool/modules/services/notification_navigation_service.dart';
@@ -27,10 +28,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
-  print('Firebase initialized successfully');
-
+  // await FacebookAnalyticsService.initialize();
+  //  await FacebookAnalyticsService.logAppLaunch();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
   try {
     await Hive.initFlutter();
     await Hive.openBox('userData');
