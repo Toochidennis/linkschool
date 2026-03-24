@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
 
 
-enum BillingVerifyStatus { success, notFoundYet, failed }
+enum BillingVerifyStatus { success, pending, failed }
 
 class BillingVerifyResult {
   final BillingVerifyStatus status;
@@ -34,7 +34,7 @@ class CbtBillingService {
   String get baseUrl => '$apiBaseUrl/public/cbt/billing/verify';
   String get initializeUrl => '$apiBaseUrl/public/cbt/billing/initiate';
   String statusUrl(String reference) =>
-      '$apiBaseUrl/public/cbt/billing/$reference/status';
+      '$apiBaseUrl/public/cbt/billing/${Uri.encodeComponent(reference)}/status';
 
   final apiKey = EnvConfig.apiKey;
 
@@ -83,15 +83,16 @@ class CbtBillingService {
     final status = data?['status']?.toString().toLowerCase();
     final message = data?['message']?.toString() ?? '';
 
-    if (status == 'failed') {
-      final isNotFoundYet = message.toLowerCase().contains('not found');
-      return BillingVerifyResult(
-        status: isNotFoundYet
-            ? BillingVerifyStatus.notFoundYet
-            : BillingVerifyStatus.failed,
-        message: message,
-      );
-    }
+      if (status == 'failed') {
+        final isPending = message.toLowerCase().contains('not found') ||
+            message.toLowerCase().contains('pending');
+        return BillingVerifyResult(
+          status: isPending
+              ? BillingVerifyStatus.pending
+              : BillingVerifyStatus.failed,
+          message: message,
+        );
+      }
 
     return BillingVerifyResult(
       status: BillingVerifyStatus.success,
@@ -220,38 +221,52 @@ Future<BillingVerifyResult> checkPaymentStatus({
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final decoded = json.decode(response.body);
-      if (decoded['success'] == true) {
-        final data = decoded['data'] as Map<String, dynamic>?;
-        final status = data?['status']?.toString().toLowerCase();
-        final message = data?['message']?.toString() ??
-            decoded['message']?.toString() ??
-            'Success';
+      final data = decoded['data'] as Map<String, dynamic>?;
+      final status = data?['status']?.toString().toLowerCase();
 
-        if (status == 'success' || status == 'paid' || status == 'completed') {
-          return BillingVerifyResult(
-            status: BillingVerifyStatus.success,
-            message: message,
-          );
-        }
+      // Use outer message for user-facing text, fall back to data.message
+      final message = decoded['message']?.toString()
+          ?? data?['message']?.toString()
+          ?? 'Unknown status';
 
-        if (status == 'pending') {
-          return BillingVerifyResult(
-            status: BillingVerifyStatus.notFoundYet,
-            message: message,
-          );
-        }
-
+      if (status == 'success' || status == 'paid' || status == 'completed') {
         return BillingVerifyResult(
-          status: BillingVerifyStatus.failed,
+          status: BillingVerifyStatus.success,
+          message: 'Payment successful! Your plan is being activated.',
+        );
+      }
+
+      if (status == 'pending') {
+        return BillingVerifyResult(
+          status: BillingVerifyStatus.pending,
+          message:
+              'Your payment is still being processed. Please check back shortly.',
+        );
+      }
+
+      if (status == 'failed') {
+        final isPending = message.toLowerCase().contains('not found') ||
+            message.toLowerCase().contains('pending');
+        return BillingVerifyResult(
+          status: isPending
+              ? BillingVerifyStatus.pending
+              : BillingVerifyStatus.failed,
           message: message,
+        );
+      }
+
+      if (decoded['success'] == true) {
+        return BillingVerifyResult(
+          status: BillingVerifyStatus.success,
+          message: message.isNotEmpty ? message : 'Success',
         );
       }
     }
 
     return BillingVerifyResult(
       status: BillingVerifyStatus.failed,
-      message: _extractMessage(response.body) ??
-          'Server error: ${response.statusCode}',
+      message: _extractMessage(response.body)
+          ?? 'Server error: ${response.statusCode}',
     );
   } catch (e) {
     return BillingVerifyResult(

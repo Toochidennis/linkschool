@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/cbt_plan_model.dart';
@@ -9,9 +8,10 @@ import 'package:linkschool/modules/services/cbt_billing_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+enum PaymentDialogState { success, pending, failed }
 
 class CbtPlanPaymentDialog extends StatefulWidget {
   final CbtPlanModel plan;
@@ -38,7 +38,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-      Future.microtask(() => _recoverPendingPayment());
   }
 
   @override
@@ -49,38 +48,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   }
 
   // ─── BUILD ───────────────────────────────────────────────────────────────
-  Future<void> _recoverPendingPayment() async {
-  final prefs = await SharedPreferences.getInstance();
-  final ref = prefs.getString('pending_payment_ref');
-  final planId = prefs.getInt('pending_payment_plan_id');
-  final userId = prefs.getInt('pending_payment_user_id');
-
-  // Nothing pending
-  if (ref == null || planId == null || userId == null) return;
-
-  // ✅ Only recover if it matches the current plan
-  if (planId != widget.plan.id) return;
-
-  if (!mounted) return;
-
-  // Show spinner on button immediately
-  setState(() {
-    _isProcessing = true;
-    _statusMessage = 'Checking previous payment...';
-  });
-final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-final user = userProvider.currentUser;
-  // Run full verify from attempt 1
-  await _verifyWithRetry(
-    reference: ref,
-    userId: userId,
-    planId: planId,
-   firstName: _firstName(user),
-    lastName: _lastName(user),
-  );
-}
-
-
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
@@ -265,13 +232,7 @@ final user = userProvider.currentUser;
           const SizedBox(height: 8),
           Column(
             children: [
-              Text(
-                ' Contact support.',
-                style: AppTextStyles.normal400(
-                  fontSize: 13,
-                  color: AppColors.text7Light,
-                ),
-              ),
+            
               _buildFootnote(),
             ],
           ),
@@ -461,18 +422,20 @@ final user = userProvider.currentUser;
             width: 20,
             height: 20,
           
-            color: Colors.white,
+          
           ),
           label: const Text('Chat us on WhatsApp'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF25D366),
-            foregroundColor: Colors.white,
+             backgroundColor: Colors.white,
+            
             elevation: 0,
+            
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: RoundedRectangleBorder(
+              side: const BorderSide(color:  Color(0xFF25D366), width: 1.5),
               borderRadius: BorderRadius.circular(999),
             ),
-            textStyle: AppTextStyles.normal600(fontSize: 13),
+            textStyle: AppTextStyles.normal600(fontSize: 13, color: Colors.black),
           ),
         ),
       ],
@@ -481,10 +444,37 @@ final user = userProvider.currentUser;
   // ─── RESULT DIALOG ───────────────────────────────────────────────────────
 
   Future<void> _showResultDialog({
-    required bool success,
+    required PaymentDialogState state,
     required String message,
-    String? reference,
   }) async {
+    final isSuccess = state == PaymentDialogState.success;
+    final isPending = state == PaymentDialogState.pending;
+    final displayMessage = _resultMessageForState(
+      state: state,
+      backendMessage: message,
+    );
+    final title = switch (state) {
+      PaymentDialogState.success => 'Payment Successful!',
+      PaymentDialogState.pending => 'Payment Pending',
+      PaymentDialogState.failed => 'Payment Failed',
+    };
+    final buttonLabel = isSuccess ? 'OK' : 'Close';
+    final backgroundColor = isSuccess
+        ? const Color(0xFFE6F4EA)
+        : isPending
+            ? const Color(0xFFFFF8E6)
+            : const Color(0xFFFFF2F2);
+    final iconColor = isSuccess
+        ? const Color(0xFF2E7D32)
+        : isPending
+            ? const Color(0xFFB26A00)
+            : const Color(0xFFE02424);
+    final buttonColor = isSuccess
+        ? const Color(0xFF2E7D32)
+        : isPending
+            ? const Color(0xFFF4A000)
+            : AppColors.eLearningBtnColor1;
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -500,23 +490,16 @@ final user = userProvider.currentUser;
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(
-                  color: success
-                      ? const Color(0xFFE6F4EA)
-                      : const Color(0xFFFFF2F2),
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
                 child: Icon(
-                  success ? Icons.check_circle : Icons.error_outline,
-                  color: success
-                      ? const Color(0xFF2E7D32)
-                      : const Color(0xFFE02424),
+                  isSuccess ? Icons.check_circle : (isPending ? Icons.hourglass_bottom : Icons.error_outline),
+                  color: iconColor,
                   size: 36,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                success ? 'Payment Successful!' : 'Payment Failed',
+                title,
                 style: AppTextStyles.normal700(
                   fontSize: 18,
                   color: AppColors.text4Light,
@@ -524,51 +507,13 @@ final user = userProvider.currentUser;
               ),
               const SizedBox(height: 8),
               Text(
-                message,
+                displayMessage,
                 style: AppTextStyles.normal400(
                   fontSize: 13,
                   color: AppColors.text7Light,
                 ),
                 textAlign: TextAlign.center,
               ),
-              if (!success && reference != null) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F4F7),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Ref: $reference',
-                          style: AppTextStyles.normal500(
-                            fontSize: 12,
-                            color: AppColors.text7Light,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          // Clipboard.setData(ClipboardData(text: reference));
-                        },
-                        child: const Icon(
-                          Icons.copy,
-                          size: 14,
-                          color: AppColors.eLearningBtnColor1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -578,16 +523,14 @@ final user = userProvider.currentUser;
                     Navigator.of(ctx).pop(); // close result dialog
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: success
-                        ? const Color(0xFF2E7D32)
-                        : AppColors.eLearningBtnColor1,
+                    backgroundColor: buttonColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
                   child: Text(
-                    success ? 'OK' : 'Try Again',
+                    buttonLabel,
                     style: AppTextStyles.normal600(
                       fontSize: 15,
                       color: Colors.white,
@@ -625,19 +568,18 @@ final user = userProvider.currentUser;
     });
 
     try {
-      await _clearPendingPaymentState();
 
-      final amount = (widget.plan.finalPrice is num)
-          ? (widget.plan.finalPrice).toInt()
-          : int.tryParse(widget.plan.finalPrice.toString()) ?? 0;
       final email = user?.email;
+      if (email == null || email.trim().isEmpty) {
+        throw Exception('User email is required to initialize payment.');
+      }
 
       final init = await CbtBillingService().initializePayment(
         userId: user!.id!,
         planId: widget.plan.id,
         method: 'online',
         platform: 'mobile',
-        email: email!,
+        email: email.trim(),
         firstName: _firstName(user),
         lastName: _lastName(user),
         voucherCode: '',
@@ -665,33 +607,27 @@ final user = userProvider.currentUser;
 
       if (!mounted) return;
 
-      // Save the latest initialized payment only after the webview closes.
-      await _savePendingPaymentState(
+      print('[DEBUG] Checking payment status for reference=$reference');
+      final statusResult = await _verifyPaymentStatus(
         reference: reference,
-        userId: user.id!,
-        planId: widget.plan.id,
       );
 
-      print('[DEBUG] Checking payment status for reference=$reference');
-      // final statusResult = await _verifyPaymentStatusWithRetry(
-      //   reference: reference,
-      // );
-
-      // if (statusResult.status == BillingVerifyStatus.success) {
-      //   await _activateAndFinish(userId: user.id!);
-      // } else {
-      //   if (mounted) {
-      //     setState(() {
-      //       _isProcessing = false;
-      //       _statusMessage = null;
-      //     });
-      //     _showResultDialog(
-      //       success: false,
-      //       message: statusResult.message,
-      //       reference: reference,
-      //     );
-      //   }
-      // }
+      if (statusResult.status == BillingVerifyStatus.success) {
+        await _activateAndFinish(userId: user.id!);
+      } else {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _statusMessage = null;
+          });
+          _showResultDialog(
+            state: statusResult.status == BillingVerifyStatus.pending
+                ? PaymentDialogState.pending
+                : PaymentDialogState.failed,
+            message: statusResult.message,
+          );
+        }
+      }
     } catch (e) {
       print('[DEBUG] _handlePayOnline error: $e');
       if (mounted) {
@@ -755,7 +691,9 @@ final user = userProvider.currentUser;
             _statusMessage = null;
           });
           _showResultDialog(
-            success: false,
+            state: result.status == BillingVerifyStatus.pending
+                ? PaymentDialogState.pending
+                : PaymentDialogState.failed,
             message: result.message,
           );
         }
@@ -768,7 +706,7 @@ final user = userProvider.currentUser;
           _statusMessage = null;
         });
         _showResultDialog(
-          success: false,
+          state: PaymentDialogState.failed,
           message: _cleanError(e.toString()),
         );
       }
@@ -776,110 +714,35 @@ final user = userProvider.currentUser;
   }
 
   // ─── VERIFY WITH RETRY ───────────────────────────────────────────────────
-Future<void> _verifyWithRetry({
-  required String reference,
-  required int userId,
-  required int planId,
-  required String firstName,
-  required String lastName,
-}) async {
-  const maxRetries = 5;
-  const retryDelay = Duration(seconds: 5);
-
-  print('[DEBUG] _verifyWithRetry starting reference=$reference');
-
-  for (int attempt = 1; attempt <= maxRetries; attempt++) {
-    print('[DEBUG] Attempt $attempt/$maxRetries');
-
-    if (mounted) {
-      setState(() =>
-          _statusMessage = 'Verifying payment..');
-    }
-
-    try {
-      final result = await CbtBillingService().verifyPayment(
-        userId: userId,
-        planId: planId,
-        method: 'online',
-        platform: 'mobile',
-        firstName: firstName,
-        lastName: lastName,
-        voucherCode: '',
-        reference: reference,
-      );
-
-      print('[DEBUG] Attempt $attempt → status=${result.status} message=${result.message}');
-
-      if (result.status == BillingVerifyStatus.success) {
-        await _activateAndFinish(userId: userId);
-        return;
-      }
-
-      if (result.status == BillingVerifyStatus.failed) {
-  final isAbandoned = result.message.toLowerCase().contains('abandoned');
-  
-  if (isAbandoned && attempt < maxRetries) {
-    // Don't stop — keep retrying, payment might still process
-    await Future.delayed(retryDelay);
-    continue;
+  Future<void> _openPaymentWebView({
+    required String paymentUrl,
+    required String reference,
+    required String callbackUrl,
+  }) async {
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _CbtPaymentWebViewScreen(
+          paymentUrl: paymentUrl,
+          reference: reference,
+          callbackUrl: callbackUrl,
+        ),
+      ),
+    );
   }
 
-  // Genuine failure or last attempt — show dialog
-  if (mounted) {
-    setState(() {
-      _isProcessing = false;
-      _statusMessage = null;
-    });
-    _showResultDialog(
-      success: false,
-      message: result.message,
+  Future<BillingVerifyResult> _verifyPaymentStatus({
+    required String reference,
+  }) async {
+    if (mounted) {
+      setState(() => _statusMessage = 'Checking payment status...');
+    }
+
+    return CbtBillingService().checkPaymentStatus(
       reference: reference,
     );
   }
-  return;
-}
 
-      // notFoundYet — wait and retry
-      if (attempt < maxRetries) {
-        await Future.delayed(retryDelay);
-      }
-
-    } catch (e) {
-      print('[DEBUG] Exception on attempt $attempt: $e');
-      if (attempt == maxRetries) {
-        if (mounted) {
-          setState(() {
-            _isProcessing = false;
-            _statusMessage = null;
-          });
-          // Only show dialog on exception if it looks like a real error
-          _showResultDialog(
-            success: false,
-            message: _cleanError(e.toString()),
-            reference: reference,
-          );
-        }
-        return;
-      }
-      if (attempt < maxRetries) {
-        await Future.delayed(retryDelay);
-      }
-    }
-  }
-
-  // All retries exhausted — backend never found a transaction
-  // This means user closed webview without actually paying — silent dismiss
-  print('[DEBUG] All $maxRetries retries exhausted — no transaction found, dismissing silently');
-  if (mounted) {
-    setState(() {
-      _isProcessing = false;
-      _statusMessage = null;
-    });
-    // ✅ No dialog shown — nothing was charged
-  }
-}
-
-  // ─── ACTIVATE AND FINISH ─────────────────────────────────────────────────
+  // ACTIVATE AND FINISH ─────────────────────────────────────────────────
 
 Future<void> _activateAndFinish({required int userId}) async {
   print('[DEBUG] _activateAndFinish userId=$userId');
@@ -912,7 +775,7 @@ Future<void> _activateAndFinish({required int userId}) async {
 
   if (!isActive) {
     _showResultDialog(
-      success: false,
+      state: PaymentDialogState.failed,
       message:
           'Payment received but license activation failed. Please contact support.',
     );
@@ -922,13 +785,11 @@ Future<void> _activateAndFinish({required int userId}) async {
   final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
   await userProvider.refreshCurrentUser();
 
-  await _clearPendingPaymentState();
-
   if (!mounted) return;
 
   final message = 'Your ${widget.plan.name} plan is now active. Enjoy full access!';
   await _showResultDialog(
-    success: true,
+    state: PaymentDialogState.success,
     message: message,
   );
 
@@ -939,26 +800,6 @@ Future<void> _activateAndFinish({required int userId}) async {
     'message': message,
   });
 }
-
-  // ─── HELPERS ─────────────────────────────────────────────────────────────
-
-  Future<void> _savePendingPaymentState({
-    required String reference,
-    required int userId,
-    required int planId,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('pending_payment_ref', reference);
-    await prefs.setInt('pending_payment_plan_id', planId);
-    await prefs.setInt('pending_payment_user_id', userId);
-  }
-
-  Future<void> _clearPendingPaymentState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('pending_payment_ref');
-    await prefs.remove('pending_payment_plan_id');
-    await prefs.remove('pending_payment_user_id');
-  }
 
   String _formatPrice(CbtPlanModel plan) {
     final currency = plan.currency.toUpperCase();
@@ -996,4 +837,134 @@ Future<void> _activateAndFinish({required int userId}) async {
     if (!await canLaunchUrl(uri)) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
+
+  String _resultMessageForState({
+    required PaymentDialogState state,
+    required String backendMessage,
+  }) {
+    final message = backendMessage.trim();
+
+    switch (state) {
+      case PaymentDialogState.success:
+        return message.isNotEmpty
+            ? message
+            : 'Your ${widget.plan.name} plan is now active. Enjoy full access!';
+      case PaymentDialogState.pending:
+        return 'Your payment is still being processed. Please check back shortly.';
+      case PaymentDialogState.failed:
+        return 'Payment could not be confirmed. Please contact support.';
+    }
+  }
 }
+
+class _CbtPaymentWebViewScreen extends StatefulWidget {
+  final String paymentUrl;
+  final String reference;
+  final String callbackUrl;
+
+  const _CbtPaymentWebViewScreen({
+    required this.paymentUrl,
+    required this.reference,
+    required this.callbackUrl,
+  });
+
+  @override
+  State<_CbtPaymentWebViewScreen> createState() =>
+      _CbtPaymentWebViewScreenState();
+}
+
+class _CbtPaymentWebViewScreenState extends State<_CbtPaymentWebViewScreen> {
+  late final WebViewController _controller;
+  bool _hasClosed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onUrlChange: (change) {
+            final url = change.url;
+            if (url != null && _shouldCloseForUrl(url)) {
+              _close();
+            }
+          },
+          onNavigationRequest: (request) {
+            if (_shouldCloseForUrl(request.url)) {
+              _close();
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.paymentUrl));
+  }
+
+  bool _shouldCloseForUrl(String url) {
+    final current = url.toLowerCase();
+    final callback = widget.callbackUrl.toLowerCase();
+    final reference = widget.reference.toLowerCase();
+
+    if (callback.isNotEmpty && current.startsWith(callback)) {
+      return true;
+    }
+
+    if (current.startsWith('https://standard.paystack.co/close')) {
+      return true;
+    }
+
+    return current.contains('success') ||
+        current.contains('completed') ||
+        current.contains('cancel') ||
+        current.contains('cancelled') ||
+        current.contains('canceled') ||
+        current.contains('abandoned') ||
+        current.contains('abandon') ||
+        current.contains('close') ||
+        current.contains('closed') ||
+        current.contains('exit') ||
+        current.contains('failed') ||
+        current.contains('failure') ||
+        current.contains('error') ||
+        current.contains('paid=true') ||
+        current.contains(reference);
+  }
+
+  void _close() {
+    if (_hasClosed || !mounted) return;
+    _hasClosed = true;
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        _close();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: AppColors.eLearningBtnColor1,
+          title: const Text(
+            'Complete Payment',
+            style: TextStyle(color: Colors.white),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: _close,
+          ),
+        ),
+        body: WebViewWidget(controller: _controller),
+      ),
+    );
+  }
+}
+
+
+
+
+
+

@@ -44,6 +44,7 @@ class _ExploreHomeState extends State<ExploreHome>
 
   late ScrollController _controller;
   bool _showSearchBar = true;
+  bool _isInitialContentLoading = true;
 
   final Map<int, NativeAd?> _nativeAds = {};
   final List<int> _adPositions = [];
@@ -133,9 +134,19 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     _controller.addListener(_onScroll);
 
     Future.microtask(() {
-      Provider.of<NewsProvider>(context, listen: false).fetchLatestNews();
-      Provider.of<AnnouncementProvider>(context, listen: false)
-          .fetchAnnouncements();
+      final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+      final announcementProvider =
+          Provider.of<AnnouncementProvider>(context, listen: false);
+
+      Future.wait([
+        newsProvider.fetchLatestNews(),
+        Future.sync(() => announcementProvider.fetchAnnouncements()),
+      ]).whenComplete(() {
+        if (!mounted) return;
+        setState(() {
+          _isInitialContentLoading = false;
+        });
+      });
     });
 
     // ── Show promo dialog on first open of the day ──────────────
@@ -458,8 +469,10 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     super.build(context);
     final newsProvider = Provider.of<NewsProvider>(context);
     final announcementProvider = Provider.of<AnnouncementProvider>(context);
-    final bool showHomeSkeleton = (announcementProvider.isLoading &&
-            announcementProvider.publishedAnnouncements.isEmpty) ||
+    final bool showAnnouncementSkeleton = _isInitialContentLoading ||
+        (announcementProvider.isLoading &&
+            announcementProvider.publishedAnnouncements.isEmpty);
+    final bool showNewsSkeleton = _isInitialContentLoading ||
         (newsProvider.isLoadingLatest && newsProvider.latestNews.isEmpty);
 
     _showNetworkMessage(newsProvider.errorMessage);
@@ -541,629 +554,420 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           controller: _controller,
-          slivers: showHomeSkeleton
-              ? _buildHomeLoadingSlivers()
-              : [
-                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                  SliverToBoxAdapter(
-                    child: _buildAnimatedCard(
-                      index: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.text2Light.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.explore_rounded,
-                                color: AppColors.text2Light,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Explore',
-                              style: AppTextStyles.normal600(
-                                fontSize: 20,
-                                color: AppColors.text2Light,
-                              ),
-                            ),
-                          ],
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+            SliverToBoxAdapter(
+              child: _buildAnimatedCard(
+                index: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.text2Light.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.explore_rounded,
+                          color: AppColors.text2Light,
+                          size: 20,
                         ),
                       ),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.all(16.0),
-                    sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        mainAxisSpacing: 14.0,
-                        crossAxisCount: 2,
-                        childAspectRatio: 2.2,
-                        crossAxisSpacing: 14.0,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final item = exploreItemsList[index];
-                          return _buildAnimatedCard(
-                            index: index + 1,
-                            child: exploreButtonItem(
-                              backgroundColor: item.backgroundColor,
-                              borderColor: item.backgroundColor,
-                              label: item.label,
-                              iconPath: item.iconPath,
-                              subtitle: item.subtitle,
-                              destination: item.destination,
-                              onTap: item.label == 'Videos'
-                                  ? _showLevelSubjectSelector
-                                  : null,
-                              index: index,
-                            ),
-                          );
-                        },
-                        childCount: exploreItemsList.length,
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: _buildAnimatedCard(
-                      index: 3,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.text2Light.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.gamepad_rounded,
-                                color: AppColors.text2Light,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Recommendations',
-                              style: AppTextStyles.normal600(
-                                fontSize: 20,
-                                color: AppColors.text2Light,
-                              ),
-                            ),
-                          ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'Explore',
+                        style: AppTextStyles.normal600(
+                          fontSize: 20,
+                          color: AppColors.text2Light,
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  SliverToBoxAdapter(child: const SizedBox(height: 10.0)),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(16.0),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  mainAxisSpacing: 14.0,
+                  crossAxisCount: 2,
+                  childAspectRatio: 2.2,
+                  crossAxisSpacing: 14.0,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final item = exploreItemsList[index];
+                    return _buildAnimatedCard(
+                      index: index + 1,
+                      child: exploreButtonItem(
+                        backgroundColor: item.backgroundColor,
+                        borderColor: item.backgroundColor,
+                        label: item.label,
+                        iconPath: item.iconPath,
+                        subtitle: item.subtitle,
+                        destination: item.destination,
+                        onTap: item.label == 'Videos'
+                            ? _showLevelSubjectSelector
+                            : null,
+                        index: index,
+                      ),
+                    );
+                  },
+                  childCount: exploreItemsList.length,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _buildAnimatedCard(
+                index: 3,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.text2Light.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.gamepad_rounded,
+                          color: AppColors.text2Light,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Recommendations',
+                        style: AppTextStyles.normal600(
+                          fontSize: 20,
+                          color: AppColors.text2Light,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: const SizedBox(height: 10.0)),
 
-                  // Announcements carousel
-                  if (announcementProvider.isLoading)
-                    SliverToBoxAdapter(
-                      child: _buildAnimatedCard(
-                        index: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: Skeletonizer(
-                            enabled: true,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  child: Container(
-                                    height: 180,
-                                    width: double.infinity,
-                                    color: Colors.grey[300],
-                                  ),
-                                ),
-                                const SizedBox(height: 12.0),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            8, 0, 8.0, 0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              height: 16,
-                                              width: 200,
-                                              color: Colors.grey[300],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Container(
-                                              height: 12,
-                                              color: Colors.grey[300],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 80,
-                                      height: 35,
-                                      decoration: BoxDecoration(
+            // Announcements carousel
+            if (showAnnouncementSkeleton)
+              SliverToBoxAdapter(
+                child: _buildAnimatedCard(
+                  index: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Skeletonizer(
+                      enabled: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12.0),
+                            child: Container(
+                              height: 180,
+                              width: double.infinity,
+                              color: Colors.grey[300],
+                            ),
+                          ),
+                          const SizedBox(height: 12.0),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8, 0, 8.0, 0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        height: 16,
+                                        width: 200,
                                         color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                  else if (announcementProvider.publishedAnnouncements.isEmpty)
-                    SliverToBoxAdapter(
-                      child: _buildAnimatedCard(
-                        index: 4,
-                        child: Container(
-                          height: 265.0,
-                          margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.campaign_outlined,
-                                    size: 48, color: Colors.grey.shade400),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'No announcements available',
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 14.0,
-                                    color: Colors.grey.shade600,
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        height: 12,
+                                        color: Colors.grey[300],
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    SliverToBoxAdapter(
-                      child: _buildAnimatedCard(
-                        index: 4,
-                        child: CarouselSlider(
-                          items: announcementProvider.publishedAnnouncements
-                              .map((announcement) {
-                            return _buildAnnouncementCard(
-                              announcement: announcement,
-                            );
-                          }).toList(),
-                          options: CarouselOptions(
-                            height: 265.0,
-                            padEnds: false,
-                            viewportFraction: 0.95,
-                            autoPlay: true,
-                            enableInfiniteScroll: announcementProvider
-                                    .publishedAnnouncements.length >
-                                1,
-                            scrollDirection: Axis.horizontal,
-                          ),
-                        ),
-                      ),
-                    ),
-                  SliverToBoxAdapter(
-                    child: _buildAnimatedCard(
-                      index: 5,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 8.0,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        AppColors.text2Light.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    Icons.article_rounded,
-                                    color: AppColors.text2Light,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'News',
-                                  style: AppTextStyles.normal600(
-                                    fontSize: 20,
-                                    color: AppColors.text2Light,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextButton(
-                              onPressed: _navigatorAllNews,
-                              child: const Text(
-                                'See all',
-                                style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                  color: AppColors.text2Light,
-                                  fontFamily: 'Urbanist',
-                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                              Container(
+                                width: 80,
+                                height: 35,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (_shouldShowAdAtPosition(
-                            index, newsProvider.latestNews.length)) {
-                          final ad = _nativeAds[index];
-                          if (ad != null) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 4.0),
-                              child: SizedBox(
-                                height: 100,
-                                child: AdWidget(ad: ad),
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        }
-
-                        final newsIndex = _getNewsIndex(
-                            index, newsProvider.latestNews.length);
-                        if (newsIndex >= newsProvider.latestNews.length) {
-                          return const SizedBox.shrink();
-                        }
-
-                        final news = newsProvider.latestNews[newsIndex];
-
-                        Duration difference = detemethods(news.date_posted);
-                        return _buildAnimatedCard(
-                          index: index + 6,
-                          child: GestureDetector(
-                              onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => NewsDetails(
-                                          news: news,
-                                          time: formatDuration(difference)),
-                                    ),
-                                  ),
-                              child: _buildNewsItem(
-                                title: news.title,
-                                newsContent: stripHtml(news.content),
-                                time: formatDuration(difference),
-                                imageUrl: news.imageUrl,
-                                authorName: news.author_name,
-                                isRecommended: news.recommended == 1,
-                              )),
+                ),
+              )
+            else if (announcementProvider.publishedAnnouncements.isEmpty)
+              SliverToBoxAdapter(
+                child: _buildAnimatedCard(
+                  index: 4,
+                  child: Container(
+                    height: 265.0,
+                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.campaign_outlined,
+                              size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No announcements available',
+                            style: AppTextStyles.normal500(
+                              fontSize: 14.0,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: _buildAnimatedCard(
+                  index: 4,
+                  child: CarouselSlider(
+                    items: announcementProvider.publishedAnnouncements
+                        .map((announcement) {
+                      return _buildAnnouncementCard(
+                        announcement: announcement,
+                      );
+                    }).toList(),
+                    options: CarouselOptions(
+                      height: 265.0,
+                      padEnds: false,
+                      viewportFraction: 0.95,
+                      autoPlay: true,
+                      enableInfiniteScroll:
+                          announcementProvider.publishedAnnouncements.length >
+                              1,
+                      scrollDirection: Axis.horizontal,
+                    ),
+                  ),
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: _buildAnimatedCard(
+                index: 5,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.text2Light.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.article_rounded,
+                              color: AppColors.text2Light,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'News',
+                            style: AppTextStyles.normal600(
+                              fontSize: 20,
+                              color: AppColors.text2Light,
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: _navigatorAllNews,
+                        child: const Text(
+                          'See all',
+                          style: TextStyle(
+                            decoration: TextDecoration.underline,
+                            color: AppColors.text2Light,
+                            fontFamily: 'Urbanist',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (showNewsSkeleton)
+              _buildNewsLoadingSliver()
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (_shouldShowAdAtPosition(
+                        index, newsProvider.latestNews.length)) {
+                      final ad = _nativeAds[index];
+                      if (ad != null) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 4.0),
+                          child: SizedBox(
+                            height: 100,
+                            child: AdWidget(ad: ad),
+                          ),
                         );
-                      },
-                      childCount:
-                          _getListItemCount(newsProvider.latestNews.length),
-                    ),
-                  ),
+                      }
+                      return const SizedBox.shrink();
+                    }
 
-                  if (newsProvider.isLoadingMoreLatest)
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    ),
+                    final newsIndex =
+                        _getNewsIndex(index, newsProvider.latestNews.length);
+                    if (newsIndex >= newsProvider.latestNews.length) {
+                      return const SizedBox.shrink();
+                    }
 
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: kBottomNavigationBarHeight),
-                  ),
-                ],
+                    final news = newsProvider.latestNews[newsIndex];
+
+                    Duration difference = detemethods(news.date_posted);
+                    return _buildAnimatedCard(
+                      index: index + 6,
+                      child: GestureDetector(
+                          onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NewsDetails(
+                                      news: news,
+                                      time: formatDuration(difference)),
+                                ),
+                              ),
+                          child: _buildNewsItem(
+                            title: news.title,
+                            newsContent: stripHtml(news.content),
+                            time: formatDuration(difference),
+                            imageUrl: news.imageUrl,
+                            authorName: news.author_name,
+                            isRecommended: news.recommended == 1,
+                          )),
+                    );
+                  },
+                  childCount: _getListItemCount(newsProvider.latestNews.length),
+                ),
+              ),
+
+            if (newsProvider.isLoadingMoreLatest)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+
+            const SliverToBoxAdapter(
+              child: SizedBox(height: kBottomNavigationBarHeight),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  List<Widget> _buildHomeLoadingSlivers() {
-    return [
-      const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-      SliverToBoxAdapter(
-        child: Skeletonizer(
-          enabled: true,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 110,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      SliverPadding(
-        padding: const EdgeInsets.all(16.0),
-        sliver: SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            mainAxisSpacing: 14.0,
-            crossAxisCount: 2,
-            childAspectRatio: 2.2,
-            crossAxisSpacing: 14.0,
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => Skeletonizer(
-              enabled: true,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 90,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: 120,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            childCount: 4,
-          ),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: Skeletonizer(
-          enabled: true,
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 170,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+  SliverList _buildNewsLoadingSliver() {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Skeletonizer(
             enabled: true,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Container(
-                    height: 180,
-                    width: double.infinity,
-                    color: Colors.grey.shade300,
+            child: Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                const SizedBox(height: 12.0),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 16,
-                            width: 200,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            height: 12,
-                            color: Colors.grey.shade300,
-                          ),
-                        ],
-                      ),
+                ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 80,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: Skeletonizer(
-          enabled: true,
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 90,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  width: 56,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Skeletonizer(
-              enabled: true,
-              child: Container(
-                padding: const EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 16,
+                          width: double.infinity,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 16,
+                          width: 180,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          height: 12,
+                          width: double.infinity,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          height: 12,
+                          width: 140,
+                          color: Colors.grey.shade300,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 16,
-                            width: double.infinity,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            height: 16,
-                            width: 180,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            height: 12,
-                            width: double.infinity,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            height: 12,
-                            width: 140,
-                            color: Colors.grey.shade300,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-          childCount: 4,
         ),
+        childCount: 4,
       ),
-      const SliverToBoxAdapter(
-        child: SizedBox(height: kBottomNavigationBarHeight),
-      ),
-    ];
+    );
   }
 
   Duration detemethods(String dopString) {
