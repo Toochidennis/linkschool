@@ -657,11 +657,11 @@ final user = userProvider.currentUser;
         throw Exception('Payment URL missing from initialization response.');
       }
 
-      await _openPaymentWebView(
-        paymentUrl: paymentUrl,
-        reference: reference,
-        callbackUrl: callbackUrl,
-      );
+      // await _openPaymentWebView(
+      //   paymentUrl: paymentUrl,
+      //   reference: reference,
+      //   callbackUrl: callbackUrl,
+      // );
 
       if (!mounted) return;
 
@@ -673,25 +673,25 @@ final user = userProvider.currentUser;
       );
 
       print('[DEBUG] Checking payment status for reference=$reference');
-      final statusResult = await _verifyPaymentStatusWithRetry(
-        reference: reference,
-      );
+      // final statusResult = await _verifyPaymentStatusWithRetry(
+      //   reference: reference,
+      // );
 
-      if (statusResult.status == BillingVerifyStatus.success) {
-        await _activateAndFinish(userId: user.id!);
-      } else {
-        if (mounted) {
-          setState(() {
-            _isProcessing = false;
-            _statusMessage = null;
-          });
-          _showResultDialog(
-            success: false,
-            message: statusResult.message,
-            reference: reference,
-          );
-        }
-      }
+      // if (statusResult.status == BillingVerifyStatus.success) {
+      //   await _activateAndFinish(userId: user.id!);
+      // } else {
+      //   if (mounted) {
+      //     setState(() {
+      //       _isProcessing = false;
+      //       _statusMessage = null;
+      //     });
+      //     _showResultDialog(
+      //       success: false,
+      //       message: statusResult.message,
+      //       reference: reference,
+      //     );
+      //   }
+      // }
     } catch (e) {
       print('[DEBUG] _handlePayOnline error: $e');
       if (mounted) {

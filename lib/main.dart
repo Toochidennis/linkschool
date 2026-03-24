@@ -12,7 +12,6 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-import 'package:linkschool/modules/services/ads_service/facebook_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/database/data_base_service.dart';
 import 'package:linkschool/modules/services/notification_navigation_service.dart';
@@ -21,8 +20,9 @@ import 'package:provider/provider.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
-final GlobalKey<NavigatorState> appNavigatorKey =
-    GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+final AppLinks _appLinks = AppLinks();
+Uri? _initialDeepLink;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,11 +56,9 @@ Future<void> main() async {
   await MobileAds.instance.initialize();
 
   // Handle cold start via link (app was closed)
-  final appLinks = AppLinks();
-  final initialLink = await appLinks.getInitialLink();
-  if (initialLink != null) {
-    debugPrint('Cold start via link: $initialLink');
-    // path is "/" — just let the app open normally, no routing needed
+  _initialDeepLink = await _appLinks.getInitialLink();
+  if (_initialDeepLink != null) {
+    debugPrint('Cold start via link: $_initialDeepLink');
   }
 
   runApp(
@@ -114,15 +112,26 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   void initState() {
     super.initState();
-    NotificationNavigationService().initialize(appNavigatorKey);
+    unawaited(_initializeServices());
     _initializeApp();
     _initLinkListener();
   }
 
+  Future<void> _initializeServices() async {
+    await NotificationNavigationService().initialize(appNavigatorKey);
+    final initialLink = _initialDeepLink;
+    if (initialLink != null) {
+      await NotificationNavigationService().handleDeepLink(initialLink);
+      _initialDeepLink = null;
+    }
+  }
+
   void _initLinkListener() {
-    _linkSub = AppLinks().uriLinkStream.listen((uri) {
+    _linkSub = _appLinks.uriLinkStream.listen((uri) {
       debugPrint('Link while app open: $uri');
-      // path is "/" — app is already visible, nothing to do
+      unawaited(NotificationNavigationService().handleDeepLink(uri));
+    }, onError: (Object error) {
+      debugPrint('Deep link stream error: $error');
     });
   }
 
