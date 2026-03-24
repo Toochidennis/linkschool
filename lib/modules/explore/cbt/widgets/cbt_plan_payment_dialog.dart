@@ -599,11 +599,11 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
         throw Exception('Payment URL missing from initialization response.');
       }
 
-      // await _openPaymentWebView(
-      //   paymentUrl: paymentUrl,
-      //   reference: reference,
-      //   callbackUrl: callbackUrl,
-      // );
+      await _openPaymentWebView(
+        paymentUrl: paymentUrl,
+        reference: reference,
+        callbackUrl: callbackUrl,
+      );
 
       if (!mounted) return;
 
