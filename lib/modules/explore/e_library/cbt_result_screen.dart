@@ -453,7 +453,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
               child: _buildQuestionCard(
                   index, widget.questions, widget.userAnswers),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

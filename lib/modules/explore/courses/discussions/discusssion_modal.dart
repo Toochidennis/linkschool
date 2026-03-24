@@ -865,7 +865,7 @@ class _LockToggle extends StatelessWidget {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFFF97316),
+              activeThumbColor: const Color(0xFFF97316),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ],
@@ -948,7 +948,7 @@ class _PinToggle extends StatelessWidget {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFF2563EB),
+              activeThumbColor: const Color(0xFF2563EB),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ],

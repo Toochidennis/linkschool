@@ -21,7 +21,7 @@ class CbtUserProvider with ChangeNotifier {
   final CbtUserService _userService = CbtUserService();
   final CbtFcmTokenService _fcmTokenService = CbtFcmTokenService();
   final CbtLicenseService _licenseService = CbtLicenseService();
-  bool _isShowingProfileUpdate = false;
+  final bool _isShowingProfileUpdate = false;
   StreamSubscription<String>? _tokenRefreshSub;
 
   // User state

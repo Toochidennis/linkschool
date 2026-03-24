@@ -661,12 +661,10 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                   ),
                 ),
                 Expanded(
-                  child: extensionContext.innerHtml != null
-                      ? _buildHtmlContent(
+                  child: _buildHtmlContent(
                           extensionContext.innerHtml!,
                           depth: depth + 1, // increment depth for nested
-                        )
-                      : const SizedBox.shrink(),
+                        ),
                 ),
               ],
             ),
@@ -948,7 +946,6 @@ class _NewsBannerAd extends StatefulWidget {
   final AdSize size;
 
   const _NewsBannerAd({
-    super.key,
     required this.adUnitId,
     required this.size,
   });

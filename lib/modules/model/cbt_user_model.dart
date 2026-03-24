@@ -1,4 +1,5 @@
 /// Model class for CBT user data
+library;
 
 class CbtUserProfile {
   final int? id;

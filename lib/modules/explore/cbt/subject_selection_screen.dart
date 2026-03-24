@@ -901,7 +901,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
                 label: 'Time :',
                 value: timeInMinutes,
                 items: timeOptions,
-                itemLabel: (v) => '${v} minutes',
+                itemLabel: (v) => '$v minutes',
                 onChanged: (v) => setState(() => timeInMinutes = v),
               ),
               const SizedBox(height: 12),

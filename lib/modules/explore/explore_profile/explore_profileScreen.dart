@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/config/env_config.dart' show EnvConfig;
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 // import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';

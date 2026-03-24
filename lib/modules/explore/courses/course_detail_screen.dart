@@ -1106,7 +1106,7 @@ Future<void> _navigateToQuiz() async {
     final AdRequest request;
      if (_isMinor == true) {
     request = AdRequest(nonPersonalizedAds: true);
-     print('AdRequest created with nonPersonalizedAds: ${_isMinor}');
+     print('AdRequest created with nonPersonalizedAds: $_isMinor');
 
   } else {
 
@@ -2681,7 +2681,7 @@ Future<void> _handleBackButton() async {
   String? selectedFilePath;
   String? selectedFileBase64;
   String? linkError;
-  bool _isPickingFile = false;
+  bool isPickingFile = false;
   final FocusNode linkFocusNode = FocusNode();
   
   // Get the submission type
@@ -2826,9 +2826,9 @@ Future<void> _handleBackButton() async {
                                           Builder(
                                             builder: (context) {
                                               Future<void> pickFile() async {
-                                                if (_isPickingFile) return;
+                                                if (isPickingFile) return;
                                                 setModalState(() {
-                                                  _isPickingFile = true;
+                                                  isPickingFile = true;
                                                 });
                                                 if (mounted) {
                                                   setState(() {
@@ -2894,7 +2894,7 @@ Future<void> _handleBackButton() async {
                                                   );
                                                 } finally {
                                                   setModalState(() {
-                                                    _isPickingFile = false;
+                                                    isPickingFile = false;
                                                   });
                                                   if (mounted) {
                                                     setState(() {
@@ -2961,7 +2961,7 @@ Future<void> _handleBackButton() async {
                                                           SizedBox(
                                                             width: double.infinity,
                                                             child: ElevatedButton.icon(
-                                                              onPressed: _isPickingFile ? null : pickFile,
+                                                              onPressed: isPickingFile ? null : pickFile,
                                                               icon: const Icon(Icons.folder_open, size: 20),
                                                               label: const Text('Browse File'),
                                                               style: ElevatedButton.styleFrom(
@@ -5231,7 +5231,7 @@ Widget _buildVideoPlayer() {
         if (status == 'ongoing') {
           unawaited(_logAttendanceIfLive(status));
         }
-        _launchUrl(recordedUrl!);
+        _launchUrl(recordedUrl);
       },
                 //  image
             icon: Image.asset(
@@ -5485,7 +5485,7 @@ if (_hasAttendance) ...[
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              '${assignedScore}/100',
+                              '$assignedScore/100',
                               style: const TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,
@@ -5518,7 +5518,7 @@ if (_hasAttendance) ...[
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  remark!,
+                  remark,
                   style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF374151),
@@ -5538,7 +5538,7 @@ if (_hasAttendance) ...[
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  comment!,
+                  comment,
                   style: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF374151),

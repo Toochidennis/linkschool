@@ -331,7 +331,7 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
 
               // Gender Dropdown
               DropdownButtonFormField<String>(
-                value: _selectedGender,
+                initialValue: _selectedGender,
                 decoration: InputDecoration(
                   labelText: 'Gender *',
                   prefixIcon: const Icon(Icons.wc_outlined),

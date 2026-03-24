@@ -647,7 +647,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                   _buildFieldLabel('Gender'),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    initialValue: _selectedGender,
                     items: const [
                       DropdownMenuItem(value: 'male', child: Text('Male')),
                       DropdownMenuItem(value: 'female', child: Text('Female')),

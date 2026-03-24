@@ -60,7 +60,7 @@ class CbtUserService {
       final body = user.toJson();
       print("🛰️ [CREATE USER] POST $baseUrl");
       print("➡️ Headers: X-API-KEY: $apiKey");
-      print("➡️ Body: "+json.encode(body));
+      print("➡️ Body: ${json.encode(body)}");
 
       final response = await http.post(
         Uri.parse(baseUrl),
@@ -211,7 +211,7 @@ class CbtUserService {
       final body = user.toJson();
       print("🛰️ [UPDATE USER] PUT $updateUrl");
       print("➡️ Headers: X-API-KEY: $apiKey");
-      print("➡️ Body: "+json.encode(body));
+      print("➡️ Body: ${json.encode(body)}");
 
       final response = await http.put(
         Uri.parse(updateUrl),

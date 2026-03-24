@@ -26,7 +26,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.86);
   int _currentIndex = 0;
   bool _didLoad = false;
-  int _remainingDays = 0;
+  final int _remainingDays = 0;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
   bool _forceContinueWithAds = false;

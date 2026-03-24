@@ -88,7 +88,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     final cost = widget.cohortCost ?? 0;
     return cost;
   }
-  NextCourseModel? nextCourse = null;
+  NextCourseModel? nextCourse;
 
   bool _isTrialDaysExpired() {
     final expiry = widget.trialExpiryDate;
@@ -191,14 +191,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             cohortId: widget.cohortId,
             profileId: profileId,
           );
-      if (profileId != null) {
-        await context.read<LessonPerformanceProvider>().loadLessonPerformance(
-              cohortId: widget.cohortId,
-              profileId: profileId,
-              silent: true,
-            );
-      }
-      _refreshPaymentStatus();
+      await context.read<LessonPerformanceProvider>().loadLessonPerformance(
+            cohortId: widget.cohortId,
+            profileId: profileId,
+            silent: true,
+          );
+          _refreshPaymentStatus();
     });
   }
 

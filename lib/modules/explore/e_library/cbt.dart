@@ -22,7 +22,7 @@ class E_CBTDashboard extends StatefulWidget {
 class _E_CBTDashboardState extends State<E_CBTDashboard> {
   int selectedCategoryIndex = 0;
   final _subscriptionService = CbtSubscriptionService();
-  bool _isShowingEntryPrompt = false;
+  final bool _isShowingEntryPrompt = false;
 
   int? selectedexamCategoriesIndex = 0;
   List<String> examCategories = <String>[

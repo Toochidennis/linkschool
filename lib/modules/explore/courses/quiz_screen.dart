@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'quiz_summary_screen.dart';
 import '../../providers/explore/lesson_quiz_provider.dart';
-import '../../model/explore/lesson_quiz/lesson_quiz_model.dart';
 import '../../providers/explore/assignment_submission_provider.dart';
 import 'package:linkschool/config/env_config.dart';
 

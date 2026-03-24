@@ -1529,7 +1529,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
       };
     } else if (isEditing) {
       // Editing without new image - match backend contract exactly
-      studentData['photo'] = "${widget.student?.photoPath ?? ''}";
+      studentData['photo'] = widget.student?.photoPath ?? '';
     }
 
     bool success;
