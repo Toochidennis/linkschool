@@ -13,6 +13,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 enum PaymentDialogState { success, pending, failed }
 
+enum PaymentWebViewResult { completed, dismissed }
+
 class CbtPlanPaymentDialog extends StatefulWidget {
   final CbtPlanModel plan;
 
@@ -165,9 +167,8 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.eLearningBtnColor1
-                : Colors.transparent,
+            color:
+                isSelected ? AppColors.eLearningBtnColor1 : Colors.transparent,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Text(
@@ -247,7 +248,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
           const SizedBox(height: 24),
           Column(
             children: [
-            
               _buildFootnote(),
             ],
           ),
@@ -436,21 +436,18 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             'assets/images/whatsapp-logo.png',
             width: 20,
             height: 20,
-          
-          
           ),
           label: const Text('Chat us on WhatsApp'),
           style: ElevatedButton.styleFrom(
-             backgroundColor: Colors.white,
-            
+            backgroundColor: Colors.white,
             elevation: 0,
-            
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: RoundedRectangleBorder(
-              side: const BorderSide(color:  Color(0xFF25D366), width: 1.5),
+              side: const BorderSide(color: Color(0xFF25D366), width: 1.5),
               borderRadius: BorderRadius.circular(999),
             ),
-            textStyle: AppTextStyles.normal600(fontSize: 13, color: Colors.black),
+            textStyle:
+                AppTextStyles.normal600(fontSize: 13, color: Colors.black),
           ),
         ),
       ],
@@ -495,8 +492,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
       barrierDismissible: false,
       builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -505,9 +501,14 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                    color: backgroundColor, shape: BoxShape.circle),
                 child: Icon(
-                  isSuccess ? Icons.check_circle : (isPending ? Icons.hourglass_bottom : Icons.error_outline),
+                  isSuccess
+                      ? Icons.check_circle
+                      : (isPending
+                          ? Icons.hourglass_bottom
+                          : Icons.error_outline),
                   color: iconColor,
                   size: 36,
                 ),
@@ -583,7 +584,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     });
 
     try {
-
       final email = user?.email;
       if (email == null || email.trim().isEmpty) {
         throw Exception('User email is required to initialize payment.');
@@ -606,23 +606,28 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
 
       final reference = init.reference;
       final paymentUrl = init.paymentUrl;
-      final callbackUrl =
-          init.callbackUrl.isNotEmpty ? init.callbackUrl : 'https://callback.com';
-      print('[DEBUG] Initialized reference=$reference callbackUrl=$callbackUrl paymentUrl=$paymentUrl');
+      final callbackUrl = init.callbackUrl;
 
       if (paymentUrl.isEmpty) {
         throw Exception('Payment URL missing from initialization response.');
       }
 
-      // await _openPaymentWebView(
-      //   paymentUrl: paymentUrl,
-      //   reference: reference,
-      //   callbackUrl: callbackUrl,
-      // );
+      final webViewResult = await _openPaymentWebView(
+        paymentUrl: paymentUrl,
+        reference: reference,
+        callbackUrl: callbackUrl,
+      );
 
       if (!mounted) return;
 
-      print('[DEBUG] Checking payment status for reference=$reference');
+      if (webViewResult != PaymentWebViewResult.completed) {
+        setState(() {
+          _isProcessing = false;
+          _statusMessage = null;
+        });
+        return;
+      }
+
       final statusResult = await _verifyPaymentStatus(
         reference: reference,
       );
@@ -644,7 +649,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
         }
       }
     } catch (e) {
-      print('[DEBUG] _handlePayOnline error: $e');
       if (mounted) {
         setState(() {
           _errorMessage = _cleanError(e.toString());
@@ -682,8 +686,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     });
 
     try {
-      print('[CBT_FLOW] Voucher verify userId=${user?.id} planId=${widget.plan.id}');
-
       final result = await CbtBillingService().verifyPayment(
         userId: user?.id ?? 0,
         planId: widget.plan.id,
@@ -694,8 +696,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
         voucherCode: code,
         reference: '',
       );
-
-      print('[DEBUG] Voucher result=${result.status} message=${result.message}');
 
       if (result.status == BillingVerifyStatus.success) {
         await _activateAndFinish(userId: user?.id ?? 0);
@@ -714,7 +714,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
         }
       }
     } catch (e) {
-      print('[DEBUG] _handleVoucherVerify error: $e');
       if (mounted) {
         setState(() {
           _isProcessing = false;
@@ -729,13 +728,14 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   }
 
   // ─── VERIFY WITH RETRY ───────────────────────────────────────────────────
-  Future<void> _openPaymentWebView({
+  Future<PaymentWebViewResult?> _openPaymentWebView({
     required String paymentUrl,
     required String reference,
     required String callbackUrl,
   }) async {
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
+    return Navigator.of(context, rootNavigator: true)
+        .push<PaymentWebViewResult>(
+      MaterialPageRoute<PaymentWebViewResult>(
         builder: (_) => _CbtPaymentWebViewScreen(
           paymentUrl: paymentUrl,
           reference: reference,
@@ -759,62 +759,56 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
 
   // ACTIVATE AND FINISH ─────────────────────────────────────────────────
 
-Future<void> _activateAndFinish({required int userId}) async {
-  print('[DEBUG] _activateAndFinish userId=$userId');
+  Future<void> _activateAndFinish({required int userId}) async {
+    if (mounted) setState(() => _statusMessage = 'Activating license...');
 
-  if (mounted) setState(() => _statusMessage = 'Activating license...');
+    final activation =
+        await CbtLicenseService().activateLicense(userId: userId);
 
-  final activation =
-      await CbtLicenseService().activateLicense(userId: userId);
-  print('[DEBUG] Activation status=${activation.status} license=${activation.license.status}');
+    var isActive = activation.status.toLowerCase() == 'activated' ||
+        activation.license.status.toLowerCase() == 'active';
 
-  var isActive = activation.status.toLowerCase() == 'activated' ||
-      activation.license.status.toLowerCase() == 'active';
-
-  if (!isActive) {
-    for (var i = 0; i < 3; i++) {
-      await Future.delayed(const Duration(milliseconds: 700));
-      isActive = await CbtLicenseService()
-          .isLicenseActive(userId: userId, forceRefresh: true);
-      print('[DEBUG] License poll ${i + 1} isActive=$isActive');
-      if (isActive) break;
+    if (!isActive) {
+      for (var i = 0; i < 3; i++) {
+        await Future.delayed(const Duration(milliseconds: 700));
+        isActive = await CbtLicenseService()
+            .isLicenseActive(userId: userId, forceRefresh: true);
+        if (isActive) break;
+      }
     }
-  }
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  setState(() {
-    _isProcessing = false;
-    _statusMessage = null;
-  });
+    setState(() {
+      _isProcessing = false;
+      _statusMessage = null;
+    });
 
-  if (!isActive) {
-    _showResultDialog(
-      state: PaymentDialogState.failed,
-      message:
-          'Payment received but license activation failed. Please contact support.',
+    if (!isActive) {
+      _showResultDialog(
+        state: PaymentDialogState.failed,
+        message:
+            'Payment received but license activation failed. Please contact support.',
+      );
+      return;
+    }
+
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    await userProvider.refreshCurrentUser();
+
+    if (!mounted) return;
+
+    final message =
+        'Your ${widget.plan.name} plan is now active. Enjoy full access!';
+    await _showResultDialog(
+      state: PaymentDialogState.success,
+      message: message,
     );
-    return;
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop(true);
   }
-
-  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-  await userProvider.refreshCurrentUser();
-
-  if (!mounted) return;
-
-  final message = 'Your ${widget.plan.name} plan is now active. Enjoy full access!';
-  await _showResultDialog(
-    state: PaymentDialogState.success,
-    message: message,
-  );
-
-  if (!mounted) return;
-
-  Navigator.of(context).pop({
-    'success': true,
-    'message': message,
-  });
-}
 
   String _formatPrice(CbtPlanModel plan) {
     final currency = plan.currency.toUpperCase();
@@ -835,8 +829,7 @@ Future<void> _activateAndFinish({required int userId}) async {
     final last = user.last_name?.toString().trim();
     if (last != null && last.isNotEmpty) return last;
     final name = (user.name ?? '').toString().trim();
-    final parts =
-        name.split(' ').where((String e) => e.isNotEmpty).toList();
+    final parts = name.split(' ').where((String e) => e.isNotEmpty).toList();
     return parts.length > 1 ? parts.last : '';
   }
 
@@ -901,13 +894,17 @@ class _CbtPaymentWebViewScreenState extends State<_CbtPaymentWebViewScreen> {
         NavigationDelegate(
           onUrlChange: (change) {
             final url = change.url;
-            if (url != null && _shouldCloseForUrl(url)) {
-              _close();
+            if (url != null) {
+              final result = _resultForUrl(url);
+              if (result != null) {
+                _close(result);
+              }
             }
           },
           onNavigationRequest: (request) {
-            if (_shouldCloseForUrl(request.url)) {
-              _close();
+            final result = _resultForUrl(request.url);
+            if (result != null) {
+              _close(result);
               return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
@@ -917,22 +914,26 @@ class _CbtPaymentWebViewScreenState extends State<_CbtPaymentWebViewScreen> {
       ..loadRequest(Uri.parse(widget.paymentUrl));
   }
 
-  bool _shouldCloseForUrl(String url) {
+  PaymentWebViewResult? _resultForUrl(String url) {
     final current = url.toLowerCase();
     final callback = widget.callbackUrl.toLowerCase();
-    final reference = widget.reference.toLowerCase();
 
     if (callback.isNotEmpty && current.startsWith(callback)) {
-      return true;
+      return PaymentWebViewResult.completed;
     }
 
     if (current.startsWith('https://standard.paystack.co/close')) {
-      return true;
+      return PaymentWebViewResult.dismissed;
     }
 
-    return current.contains('success') ||
-        current.contains('completed') ||
-        current.contains('cancel') ||
+    if (current.startsWith('https://linkskool.com') ||
+        current.startsWith('http://linkskool.com') ||
+        current.startsWith('https://www.linkskool.com') ||
+        current.startsWith('http://www.linkskool.com')) {
+      return PaymentWebViewResult.completed;
+    }
+
+    if (current.contains('cancel') ||
         current.contains('cancelled') ||
         current.contains('canceled') ||
         current.contains('abandoned') ||
@@ -942,15 +943,17 @@ class _CbtPaymentWebViewScreenState extends State<_CbtPaymentWebViewScreen> {
         current.contains('exit') ||
         current.contains('failed') ||
         current.contains('failure') ||
-        current.contains('error') ||
-        current.contains('paid=true') ||
-        current.contains(reference);
+        current.contains('error')) {
+      return PaymentWebViewResult.dismissed;
+    }
+
+    return null;
   }
 
-  void _close() {
+  void _close([PaymentWebViewResult result = PaymentWebViewResult.dismissed]) {
     if (_hasClosed || !mounted) return;
     _hasClosed = true;
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(result);
   }
 
   @override
@@ -977,4 +980,3 @@ class _CbtPaymentWebViewScreenState extends State<_CbtPaymentWebViewScreen> {
     );
   }
 }
-
