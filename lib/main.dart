@@ -12,6 +12,7 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/services/ads_service/facebook_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/database/data_base_service.dart';
 import 'package:linkschool/modules/services/notification_navigation_service.dart';
@@ -28,8 +29,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
-  // await FacebookAnalyticsService.initialize();
-  //  await FacebookAnalyticsService.logAppLaunch();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   try {
     await Hive.initFlutter();
@@ -67,6 +66,20 @@ Future<void> main() async {
       child: const MyApp(),
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(_logFacebookAppLaunchSafely());
+  });
+}
+
+Future<void> _logFacebookAppLaunchSafely() async {
+  try {
+    await FacebookAnalyticsService.initialize();
+    await FacebookAnalyticsService.logAppLaunch();
+  } catch (e, stackTrace) {
+    debugPrint('Facebook app launch logging failed: $e');
+    debugPrintStack(stackTrace: stackTrace);
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -179,15 +192,6 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
     // if (_showOnboarding) {
     //   return const Onboardingscreen();
     // }

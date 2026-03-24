@@ -624,32 +624,35 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             SliverToBoxAdapter(
               child: _buildAnimatedCard(
                 index: 3,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.text2Light.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                child: Skeletonizer(
+                  enabled: showAnnouncementSkeleton,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.text2Light.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.gamepad_rounded,
+                            color: AppColors.text2Light,
+                            size: 20,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.gamepad_rounded,
-                          color: AppColors.text2Light,
-                          size: 20,
+                        const SizedBox(width: 8),
+                        Text(
+                          'Recommendations',
+                          style: AppTextStyles.normal600(
+                            fontSize: 20,
+                            color: AppColors.text2Light,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Recommendations',
-                        style: AppTextStyles.normal600(
-                          fontSize: 20,
-                          color: AppColors.text2Light,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -776,51 +779,55 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             SliverToBoxAdapter(
               child: _buildAnimatedCard(
                 index: 5,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.text2Light.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
+                child: Skeletonizer(
+                  enabled: showNewsSkeleton,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.text2Light.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.article_rounded,
+                                color: AppColors.text2Light,
+                                size: 20,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.article_rounded,
+                            const SizedBox(width: 8),
+                            Text(
+                              'News',
+                              style: AppTextStyles.normal600(
+                                fontSize: 20,
+                                color: AppColors.text2Light,
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          onPressed:
+                              showNewsSkeleton ? null : _navigatorAllNews,
+                          child: const Text(
+                            'See all',
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
                               color: AppColors.text2Light,
-                              size: 20,
+                              fontFamily: 'Urbanist',
+                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'News',
-                            style: AppTextStyles.normal600(
-                              fontSize: 20,
-                              color: AppColors.text2Light,
-                            ),
-                          ),
-                        ],
-                      ),
-                      TextButton(
-                        onPressed: _navigatorAllNews,
-                        child: const Text(
-                          'See all',
-                          style: TextStyle(
-                            decoration: TextDecoration.underline,
-                            color: AppColors.text2Light,
-                            fontFamily: 'Urbanist',
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
