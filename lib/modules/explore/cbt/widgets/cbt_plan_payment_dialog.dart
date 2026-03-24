@@ -191,7 +191,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             label: 'Pay Now',
             onPressed: _isProcessing ? null : _handlePayOnline,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -229,7 +229,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             label: 'Verify Voucher',
             onPressed: _isProcessing ? null : _handleVoucherVerify,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Column(
             children: [
             
