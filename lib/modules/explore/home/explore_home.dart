@@ -494,7 +494,7 @@ void initState() {
         textColor: AppColors.backgroundLight,
         iconPath: 'assets/icons/cbt.svg',
         destination: const CBTDashboard(),
-        subtitle: 'Practice tests',
+        subtitle: 'Practice Tests',
       ),
       // ExploreItem(
       //   backgroundColor: AppColors.exploreButton3Light,
@@ -510,7 +510,7 @@ void initState() {
         label: 'Videos',
         iconPath: 'assets/icons/video.svg',
         destination: null,
-        subtitle: 'Watch tutorials',
+        subtitle: 'Watch Tutorials',
       ),
       // ExploreItem(
       //   backgroundColor: AppColors.exploreButton4Light,
@@ -1202,7 +1202,7 @@ void initState() {
                               label,
                               style: TextStyle(
                                 color: textColor ?? Colors.white,
-                                fontSize: 18,
+                                fontSize: 21,
                                 fontWeight: FontWeight.w600,
                                 fontFamily: 'Urbanist',
                               ),
@@ -1225,7 +1225,7 @@ void initState() {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Urbanist',

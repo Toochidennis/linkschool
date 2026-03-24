@@ -225,7 +225,13 @@ final user = userProvider.currentUser;
             onPressed: _isProcessing ? null : _handlePayOnline,
           ),
           const SizedBox(height: 8),
-          _buildFootnote(),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+             
+              _buildFootnote(),
+            ],
+          ),
         ],
       ),
     );
@@ -257,7 +263,18 @@ final user = userProvider.currentUser;
             onPressed: _isProcessing ? null : _handleVoucherVerify,
           ),
           const SizedBox(height: 8),
-          _buildFootnote(),
+          Column(
+            children: [
+              Text(
+                ' Contact support.',
+                style: AppTextStyles.normal400(
+                  fontSize: 13,
+                  color: AppColors.text7Light,
+                ),
+              ),
+              _buildFootnote(),
+            ],
+          ),
         ],
       ),
     );
@@ -426,25 +443,36 @@ final user = userProvider.currentUser;
 
   Widget _buildFootnote() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          'Your payment helps keep the CBT content updated and accessible.',
+          'Need help?',
           style: AppTextStyles.normal400(
-            fontSize: 12,
-            color: AppColors.text8Light,
+            fontSize: 13,
+            color: AppColors.text4Light,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: _openWhatsAppHelp,
-          child: Text(
-           "Need help? Chat with us on WhatsApp: +234 904 769 7293",
-            style: AppTextStyles.normal600(
-              fontSize: 12,
-              color: AppColors.eLearningBtnColor1,
-            ).copyWith(decoration: TextDecoration.underline),
-            textAlign: TextAlign.center,
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: _openWhatsAppHelp,
+          icon: Image.asset(
+            'assets/images/whatsapp-logo.png',
+            width: 20,
+            height: 20,
+          
+            color: Colors.white,
+          ),
+          label: const Text('Chat us on WhatsApp'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF25D366),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
+            ),
+            textStyle: AppTextStyles.normal600(fontSize: 13),
           ),
         ),
       ],
