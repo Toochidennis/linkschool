@@ -180,9 +180,9 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    if (_showOnboarding) {
-      return const Onboardingscreen();
-    }
+    // if (_showOnboarding) {
+    //   return const Onboardingscreen();
+    // }
 
     return const AppNavigationFlow();
   }
