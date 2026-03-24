@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/courses/forum/forum_provider.dart';
-import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
 import 'package:provider/provider.dart';
 
 class ForumScreen extends StatelessWidget {

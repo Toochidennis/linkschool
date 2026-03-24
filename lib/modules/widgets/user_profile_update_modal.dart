@@ -11,8 +11,7 @@ class UserProfileUpdateModal extends StatefulWidget {
   }) onSave;
   final CbtUserModel? user;
 
-   const UserProfileUpdateModal({Key? key, required this.onSave, this.user})
-      : super(key: key);
+   const UserProfileUpdateModal({super.key, required this.onSave, this.user});
 
   /// Call this instead of showDialog + AlertDialog
   static Future<void> show(
@@ -82,7 +81,6 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            useMaterial3: true,
             dialogTheme:  DialogThemeData(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -305,7 +303,7 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
                               )
                             ),
                             DropdownButtonFormField<String>(
-                              value: _selectedGender,
+                              initialValue: _selectedGender,
                               items: _genderOptions
                                   .map((g) => DropdownMenuItem(
                                         value: g,

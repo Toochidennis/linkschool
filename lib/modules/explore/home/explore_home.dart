@@ -7,7 +7,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
-import 'package:linkschool/modules/explore/cbt/widgets/promo_model.dart' show PromoInterstitialDialog;
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';

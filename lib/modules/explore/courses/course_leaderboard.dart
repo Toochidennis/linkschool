@@ -206,7 +206,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 final visibleRest = rest.toList(); // keep natural sort always
 
 if (showCurrentUserAtBottom && !userIsInList) {
-  visibleRest.add(currentUserEntry!); // only pin to bottom if NOT already in the list
+  visibleRest.add(currentUserEntry); // only pin to bottom if NOT already in the list
 }
 
     // ── Error / empty / loading states ───────────────────────────────────
@@ -326,7 +326,6 @@ if (showCurrentUserAtBottom && !userIsInList) {
   isCurrentPositionRow: !userIsInList &&        // ← add this condition
       showCurrentUserAtBottom &&
       i == visibleRest.length - 1 &&
-      currentUserEntry != null &&
       visibleRest[i].position == currentUserEntry.position,
 ),
                 if (i != visibleRest.length - 1)

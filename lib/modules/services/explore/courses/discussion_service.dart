@@ -14,14 +14,14 @@ class DiscussionService {
   }) async {
     try {
       final apiKey = EnvConfig.apiKey;
-        final String _baseUrl =
+        final String baseUrl =
       "${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions";
 
       if (apiKey.isEmpty) {
         throw Exception("API KEY not found");
       }
 
-      final uri = Uri.parse(_baseUrl).replace(queryParameters: {
+      final uri = Uri.parse(baseUrl).replace(queryParameters: {
        // 'cohort_id': cohortId,
         'page': page.toString(),
         'per_page': perPage.toString(),

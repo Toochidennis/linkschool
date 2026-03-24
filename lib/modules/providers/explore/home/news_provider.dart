@@ -5,9 +5,9 @@ import 'package:linkschool/modules/services/network/connectivity_service.dart';
 
 class NewsProvider with ChangeNotifier {
   // All news state (used by All News screen)
-  List<NewsModel> _newsmodel = [];
-  Map<String, List<int>> _groups = {};
-  Map<String, List<int>> _categories = {};
+  final List<NewsModel> _newsmodel = [];
+  final Map<String, List<int>> _groups = {};
+  final Map<String, List<int>> _categories = {};
   NewsMetaData? _meta;
   bool _isLoading = false;
   bool _isLoadingMore = false;

@@ -598,7 +598,7 @@ final user = userProvider.currentUser;
 
     try {
       final amount = (widget.plan.finalPrice is num)
-          ? (widget.plan.finalPrice as num).toInt()
+          ? (widget.plan.finalPrice).toInt()
           : int.tryParse(widget.plan.finalPrice.toString()) ?? 0;
       final amountInKobo = amount * 100;
       final email = user?.email;

@@ -582,7 +582,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    'Enrollment closed on ${_formatDateTime(enrollmentDeadline!)}.',
+                                    'Enrollment closed on ${_formatDateTime(enrollmentDeadline)}.',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,

@@ -217,7 +217,6 @@ Future<void> _navigateToNewsDetails(Map<String, dynamic> data) async {
   ));
 
   final targetNews = target;
-  if (targetNews == null) return;
 
   navigator.push(
     MaterialPageRoute(
