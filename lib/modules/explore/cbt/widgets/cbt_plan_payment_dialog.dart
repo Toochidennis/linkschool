@@ -55,26 +55,29 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       insetPadding: EdgeInsets.symmetric(
-        horizontal: 8,
+        horizontal: 24,
         vertical: keyboardHeight > 0 ? 8 : 24,
       ),
       child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 14),
-              _buildTabSwitcher(),
-              const SizedBox(height: 16),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: _tabController.index == 0
-                    ? _buildPayOnlineTab()
-                    : _buildVoucherTab(),
-              ),
-            ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 14),
+                _buildTabSwitcher(),
+                const SizedBox(height: 16),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: _tabController.index == 0
+                      ? _buildPayOnlineTab()
+                      : _buildVoucherTab(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -86,34 +89,47 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   Widget _buildHeader() {
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF2F4F7),
-            shape: BoxShape.circle,
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF2F4F7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.credit_card, color: Color(0xFF0D1426)),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Payment Method',
+                    style: AppTextStyles.normal500(
+                      fontSize: 12,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                  Text(
+                    _tabController.index == 0 ? 'Pay Online' : 'Voucher',
+                    style: AppTextStyles.normal700(
+                      fontSize: 20,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          child: const Icon(Icons.credit_card, color: Color(0xFF0D1426)),
         ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Payment Method',
-              style: AppTextStyles.normal500(
-                fontSize: 12,
-                color: AppColors.text7Light,
-              ),
-            ),
-            Text(
-              _tabController.index == 0 ? 'Pay Online' : 'Voucher',
-              style: AppTextStyles.normal700(
-                fontSize: 20,
-                color: AppColors.text4Light,
-              ),
-            ),
-          ],
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close),
+          color: AppColors.text7Light,
+          splashRadius: 20,
+          tooltip: 'Close',
         ),
       ],
     );
@@ -191,11 +207,10 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             label: 'Pay Now',
             onPressed: _isProcessing ? null : _handlePayOnline,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 38),
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-             
               _buildFootnote(),
             ],
           ),
@@ -229,7 +244,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             label: 'Verify Voucher',
             onPressed: _isProcessing ? null : _handleVoucherVerify,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
           Column(
             children: [
             
@@ -414,7 +429,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 14),
         ElevatedButton.icon(
           onPressed: _openWhatsAppHelp,
           icon: Image.asset(
@@ -962,9 +977,4 @@ class _CbtPaymentWebViewScreenState extends State<_CbtPaymentWebViewScreen> {
     );
   }
 }
-
-
-
-
-
 
