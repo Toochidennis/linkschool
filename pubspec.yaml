@@ -1,7 +1,7 @@
 name: linkschool
 description: "School Management System"
 publish_to: 'none' 
-version: 1.5.8+51
+version: 1.6.0+53
 environment:
   sdk: '>=3.3.0 <4.0.0'
 dependencies: 

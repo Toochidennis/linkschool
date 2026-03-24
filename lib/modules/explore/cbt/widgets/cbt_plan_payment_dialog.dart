@@ -612,7 +612,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
         throw Exception('Payment URL missing from initialization response.');
       }
 
-      final webViewResult = await _openPaymentWebView(
+      await _openPaymentWebView(
         paymentUrl: paymentUrl,
         reference: reference,
         callbackUrl: callbackUrl,
@@ -620,15 +620,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
 
       if (!mounted) return;
 
-      if (webViewResult != PaymentWebViewResult.completed) {
-        setState(() {
-          _isProcessing = false;
-          _statusMessage = null;
-        });
-        return;
-      }
-
-      final statusResult = await _verifyPaymentStatus(
+      final statusResult = await _pollPaymentStatus(
         reference: reference,
       );
 
@@ -755,6 +747,42 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     return CbtBillingService().checkPaymentStatus(
       reference: reference,
     );
+  }
+
+  Future<BillingVerifyResult> _pollPaymentStatus({
+    required String reference,
+  }) async {
+    BillingVerifyResult? lastResult;
+    const delays = <Duration>[
+      Duration.zero,
+      Duration(seconds: 2),
+      Duration(seconds: 3),
+      Duration(seconds: 4),
+      Duration(seconds: 5),
+    ];
+
+    for (var i = 0; i < delays.length; i++) {
+      final delay = delays[i];
+      if (delay > Duration.zero) {
+        if (mounted) {
+          setState(() {
+            _statusMessage = 'Confirming payment${"." * ((i % 3) + 1)}';
+          });
+        }
+        await Future.delayed(delay);
+      }
+
+      lastResult = await _verifyPaymentStatus(reference: reference);
+      if (lastResult.status == BillingVerifyStatus.success) {
+        return lastResult;
+      }
+    }
+
+    return lastResult ??
+        BillingVerifyResult(
+          status: BillingVerifyStatus.failed,
+          message: 'Payment could not be confirmed. Please try again.',
+        );
   }
 
   // ACTIVATE AND FINISH ─────────────────────────────────────────────────
