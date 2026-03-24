@@ -224,11 +224,13 @@ class FormClassDetail {
 }
 
 class StaffCourse {
+  final int levelId;
   final int classId;
   final String className;
   final List<CourseDetail> courses;
 
   StaffCourse({
+    required this.levelId,
     required this.classId,
     required this.className,
     required this.courses,
@@ -236,6 +238,7 @@ class StaffCourse {
 
   factory StaffCourse.fromJson(Map<String, dynamic> json) {
     return StaffCourse(
+      levelId: json['level_id'] ?? 0,
       classId: json['class_id'] ?? 0,
       className: json['class_name'] ?? '',
       courses: (json['courses'] as List?)
@@ -247,6 +250,7 @@ class StaffCourse {
 
   Map<String, dynamic> toJson() {
     return {
+      'level_id': levelId,
       'class_id': classId,
       'class_name': className,
       'courses': courses.map((c) => c.toJson()).toList(),

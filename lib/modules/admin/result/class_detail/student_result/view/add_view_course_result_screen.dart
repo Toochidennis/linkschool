@@ -451,7 +451,8 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
             ),
             child: Center(
               child: Text(
-                '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
+                '${int.parse(widget.year) - 1}/${widget.year} ${widget.termName}',
+               // '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,

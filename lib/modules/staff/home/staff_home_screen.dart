@@ -55,6 +55,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
   String? creatorName;
   int? academicTerm;
   String? userRole;
+  int? numOfFormClasses;
 
   final List<Map<String, String>> notifications = [
     {
@@ -159,6 +160,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
         final data = dataMap['response']?['data'] ?? dataMap['data'] ?? {};
         final profile = data['profile'] ?? {};
         final settings = data['settings'] ?? {};
+        final formClasses = data['form_classes'];
+        final formClassesCount = data['num_of_form_classes'];
         setState(() {
           creatorId = profile['staff_id'] is int
               ? profile['staff_id']
@@ -168,6 +171,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
           academicTerm = settings['term'] is int
               ? settings['term']
               : int.tryParse(settings['term'].toString());
+          numOfFormClasses = formClassesCount is int
+              ? formClassesCount
+              : int.tryParse(formClassesCount?.toString() ?? '') ??
+                  (formClasses is List ? formClasses.length : 0);
         });
         debugPrint(
             '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
@@ -794,7 +801,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                               borderColor: AppColors.portalButton1BorderLight,
                               textColor: AppColors.staffTxtColor1,
                               label: 'Form Classes',
-                              number: 5,
+                              number: numOfFormClasses ?? 0,
                               iconPath:
                                   'assets/icons/student/knowledge_icon.svg',
                               iconHeight: 40.0,

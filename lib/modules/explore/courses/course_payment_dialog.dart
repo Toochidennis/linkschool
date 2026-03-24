@@ -5,6 +5,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Dialog to handle course payment
 class CoursePaymentDialog extends StatefulWidget {
@@ -25,6 +26,10 @@ class CoursePaymentDialog extends StatefulWidget {
 
 class _CoursePaymentDialogState extends State<CoursePaymentDialog>
     with SingleTickerProviderStateMixin {
+  static final Uri _whatsappHelpUri = Uri.parse(
+    'https://wa.me/2349047697293',
+  );
+
   final _authService = FirebaseAuthService();
   final TextEditingController _voucherController = TextEditingController();
   late AnimationController _controller;
@@ -491,6 +496,26 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                               ),
                             ),
                           ),
+
+                          const SizedBox(height: 4),
+
+                          TextButton(
+                            onPressed: _isProcessing ? null : _openWhatsAppHelp,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 16,
+                              ),
+                            ),
+                            child: Text(
+                              'Need help? Chat with us on WhatsApp: +234 904 769 7293',
+                              style: AppTextStyles.normal600(
+                                fontSize: 13,
+                                color: AppColors.eLearningBtnColor1,
+                              ).copyWith(decoration: TextDecoration.underline),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -605,5 +630,11 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
+  }
+
+  Future<void> _openWhatsAppHelp() async {
+    final uri = _whatsappHelpUri;
+    if (!await canLaunchUrl(uri)) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

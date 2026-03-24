@@ -601,7 +601,7 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
             child: Center(
               child: Text(
                 year.isNotEmpty && term > 0
-                    ? '$year/${int.parse(year) + 1} $termName'
+                    ?" ${int.parse(year) - 1}/$year $termName"
                     : 'Loading session...',
                 style: const TextStyle(
                   fontSize: 16,

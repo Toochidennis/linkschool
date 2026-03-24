@@ -39,13 +39,14 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
   List<Map<String, dynamic>> _transformStaffCoursesToUIByLevel(
       List<Map<String, dynamic>> staffCourses,
       List<Map<String, dynamic>> formClasses) {
-    Map<int, Map<String, dynamic>> classToLevelMap = {};
+    final Map<int, Map<String, dynamic>> classToLevelMap = {};
     for (var levelData in formClasses) {
       String levelName = levelData['level_name'] ?? '';
       int levelId = levelData['level_id'] ?? 0;
       List<dynamic> classes = levelData['classes'] ?? [];
       for (var classData in classes) {
         int classId = classData['class_id'] ?? 0;
+        print('Mapping class_id $classId to level $levelName and level_id $levelId');
         classToLevelMap[classId] = {
           'level_id': levelId,
           'level_name': levelName,
@@ -53,18 +54,23 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
       }
     }
 
-    Map<String, Map<String, List<Map<String, dynamic>>>> levelStructure = {};
+    final Map<int, Map<String, dynamic>> levelStructure = {};
     for (var classData in staffCourses) {
       int classId = classData['class_id'] ?? 0;
       String className = classData['class_name'] ?? '';
+      int levelId = classData['level_id'] ?? 0;
       List<dynamic> courses = classData['courses'] ?? [];
       String levelName = classToLevelMap.containsKey(classId)
           ? classToLevelMap[classId]!['level_name']
-          : _extractLevelFromClassName(className);
+          : _fallbackLevelName(levelId, className);
 
-      if (!levelStructure.containsKey(levelName)) {
-        levelStructure[levelName] = {};
-      }
+      levelStructure.putIfAbsent(levelId, () {
+        return {
+          'level_id': levelId,
+          'level': levelName,
+          'classes': <Map<String, dynamic>>[],
+        };
+      });
 
       List<Map<String, dynamic>> subjects = [];
       for (var course in courses) {
@@ -76,51 +82,50 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
           "course_id": course['course_id'] ?? 0,
           "class_id": classId,
           "class_name": className,
+          "level_id": levelId,
         });
       }
 
       if (subjects.isNotEmpty) {
-        levelStructure[levelName]![className] = subjects;
+        levelStructure[levelId]!['classes'].add({
+          "class_name": className,
+          "class_id": classId,
+          "level_id": levelId,
+          "subjects": subjects,
+        });
       }
     }
 
     List<Map<String, dynamic>> transformedData = [];
-    levelStructure.forEach((levelName, classesData) {
-      List<Map<String, dynamic>> classesForLevel = [];
-      classesData.forEach((className, subjects) {
-        classesForLevel.add({
-          "class_name": className,
-          "class_id": _getClassIdFromName(className, staffCourses),
-          "subjects": subjects,
-        });
-      });
+    levelStructure.forEach((_, data) {
+      final classesForLevel = List<Map<String, dynamic>>.from(data['classes']);
       if (classesForLevel.isNotEmpty) {
         transformedData.add({
-          "level": levelName,
+          "level_id": data['level_id'],
+          "level": data['level'],
           "classes": classesForLevel,
         });
       }
     });
 
-    transformedData.sort((a, b) => a["level"].compareTo(b["level"]));
+    transformedData.sort((a, b) {
+      final aLevel = a["level_id"] as int? ?? 0;
+      final bLevel = b["level_id"] as int? ?? 0;
+      if (aLevel != bLevel) return aLevel.compareTo(bLevel);
+      return (a["level"] ?? '').toString().compareTo((b["level"] ?? '').toString());
+    });
     return transformedData;
   }
 
-  String _extractLevelFromClassName(String className) {
-    if (className.length >= 4) {
-      return className.substring(0, 4);
+  String _fallbackLevelName(int levelId, String className) {
+    if (levelId > 0) {
+      return 'Level $levelId';
     }
-    return className;
-  }
-
-  int _getClassIdFromName(
-      String className, List<Map<String, dynamic>> staffCourses) {
-    for (var classData in staffCourses) {
-      if (classData['class_name'] == className) {
-        return classData['class_id'] ?? 0;
-      }
+    final trimmed = className.trim();
+    if (trimmed.isNotEmpty) {
+      return trimmed;
     }
-    return 0;
+    return 'Classes';
   }
 
   IconData _getIconForSubject(String subjectName) {

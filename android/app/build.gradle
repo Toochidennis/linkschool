@@ -84,6 +84,9 @@ android {
 
         debug {
             signingConfig signingConfigs.debug
+             // Use release signing for debug builds to ensure consistent behavior
+             minifyEnabled false
+             shrinkResources false
         }
     }
 }
