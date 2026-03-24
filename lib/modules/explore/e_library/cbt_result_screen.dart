@@ -110,12 +110,15 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   /// Check if user is already signed in
   Future<void> _checkUserSigninStatus() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.isLoggedIn) {
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+
+    if (cbtUserProvider.currentUser != null) {
       await _subscriptionService.setAdMode('continue_with_ads');
       if (mounted) {
         setState(() {
           _userSignedIn = true;
-           _showUnansweredQuestions = false;
+          _showUnansweredQuestions = false;
         });
       }
       _saveTestResult();
@@ -123,12 +126,39 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
       return;
     }
 
+    if (authProvider.isLoggedIn) {
+      final portalEmail = authProvider.user?.email.trim() ?? '';
+      if (portalEmail.isNotEmpty) {
+        await cbtUserProvider.tryLinkPortalUser(email: portalEmail);
+      }
+
+      if (cbtUserProvider.currentUser != null) {
+        await _subscriptionService.setAdMode('continue_with_ads');
+        if (mounted) {
+          setState(() {
+            _userSignedIn = true;
+            _showUnansweredQuestions = false;
+          });
+        }
+        _saveTestResult();
+        _showScorePopup();
+        return;
+      }
+    }
+
     final isSignedIn = await _authService.isUserSignedUp();
+
+    if (isSignedIn) {
+      final firebaseEmail = _authService.getCurrentUserEmail()?.trim() ?? '';
+      if (firebaseEmail.isNotEmpty) {
+        await cbtUserProvider.fetchUserByEmail(firebaseEmail);
+      }
+    }
 
     if (!isSignedIn && mounted) {
       // Show persistent Google sign-in dialog
       _showGoogleSigninDialog();
-    } else if (isSignedIn && mounted) {
+    } else if (cbtUserProvider.currentUser != null && mounted) {
       setState(() {
         _userSignedIn = true;
       });
@@ -136,6 +166,8 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
       _saveTestResult();
       // Check subscription status before showing score popup
       await _checkSubscriptionStatus();
+    } else if (mounted) {
+      _showGoogleSigninDialog();
     }
   }
 
@@ -723,387 +755,413 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     );
   }
 
-Widget _buildQuestionCard(
-    int index, List<QuestionModel> questions, Map<int, int> userAnswers) {
-  final question = questions[index];
-  final userAnswerIndex = userAnswers[index];
-  final correctAnswerIndex = question.getCorrectAnswerIndex();
-  final options = question.getOptions();
+  Widget _buildQuestionCard(
+      int index, List<QuestionModel> questions, Map<int, int> userAnswers) {
+    final question = questions[index];
+    final userAnswerIndex = userAnswers[index];
+    final correctAnswerIndex = question.getCorrectAnswerIndex();
+    final options = question.getOptions();
 
-  String status;
-  Color statusColor;
+    String status;
+    Color statusColor;
 
-  if (userAnswerIndex == null) {
-    status = 'Unanswered';
-    statusColor = AppColors.text5Light;
-  } else if (userAnswerIndex == correctAnswerIndex) {
-    status = 'Correct';
-    statusColor = AppColors.attCheckColor2;
-  } else {
-    status = 'Wrong';
-    statusColor = AppColors.eLearningRedBtnColor;
-  }
+    if (userAnswerIndex == null) {
+      status = 'Unanswered';
+      statusColor = AppColors.text5Light;
+    } else if (userAnswerIndex == correctAnswerIndex) {
+      status = 'Correct';
+      statusColor = AppColors.attCheckColor2;
+    } else {
+      status = 'Wrong';
+      statusColor = AppColors.eLearningRedBtnColor;
+    }
 
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: statusColor.withOpacity(0.3),
-        width: 2,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 5,
-          offset: const Offset(0, 2),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: statusColor.withOpacity(0.3),
+          width: 2,
         ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Question header with status and view details button
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (question.instruction.isNotEmpty ||
-                question.passage.isNotEmpty) ...[
-              InkWell(
-                onTap: () => _showInstructionOrPassageModal(question),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.eLearningBtnColor1.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Question header with status and view details button
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (question.instruction.isNotEmpty ||
+                  question.passage.isNotEmpty) ...[
+                InkWell(
+                  onTap: () => _showInstructionOrPassageModal(question),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          question.instruction.isNotEmpty &&
+                                  question.passage.isNotEmpty
+                              ? Icons.menu_book_rounded
+                              : (question.instruction.isNotEmpty
+                                  ? Icons.info_outline
+                                  : Icons.article_outlined),
+                          color: AppColors.eLearningBtnColor1,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'View Details',
+                          style: AppTextStyles.normal600(
+                            fontSize: 13,
+                            color: AppColors.eLearningBtnColor1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        question.instruction.isNotEmpty &&
-                                question.passage.isNotEmpty
-                            ? Icons.menu_book_rounded
-                            : (question.instruction.isNotEmpty
-                                ? Icons.info_outline
-                                : Icons.article_outlined),
-                        color: AppColors.eLearningBtnColor1,
-                        size: 16,
+                ),
+              ],
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      status == 'Correct'
+                          ? Icons.check_circle
+                          : status == 'Wrong'
+                              ? Icons.cancel
+                              : Icons.help_outline,
+                      color: statusColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      status,
+                      style: AppTextStyles.normal600(
+                        fontSize: 14,
+                        color: statusColor,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'View Details',
-                        style: AppTextStyles.normal600(
-                          fontSize: 13,
-                          color: AppColors.eLearningBtnColor1,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
-            const Spacer(),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: statusColor, width: 1),
+          ),
+          const SizedBox(height: 12),
+
+          // Question number badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.eLearningBtnColor1,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Q${index + 1}',
+              style: AppTextStyles.normal600(
+                fontSize: 14,
+                color: Colors.white,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    status == 'Correct'
-                        ? Icons.check_circle
-                        : status == 'Wrong'
-                            ? Icons.cancel
-                            : Icons.help_outline,
-                    color: statusColor,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    status,
-                    style: AppTextStyles.normal600(
-                      fontSize: 14,
-                      color: statusColor,
-                    ),
-                  ),
-                ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Question text
+          Html(
+            data: question.content,
+            style: {
+              "body": Style(
+                fontSize: FontSize(16),
+                color: AppColors.text3Light,
+                margin: Margins.zero,
+                padding: HtmlPaddings.zero,
+                fontFamily: 'Urbanist',
+                fontWeight: FontWeight.w500,
+              ),
+              "p": Style(
+                margin: Margins.zero,
+              ),
+              "span": Style(
+                fontWeight: FontWeight.w600,
+                color: Colors.blue.shade700,
+              ),
+            },
+          ),
+
+          // Question image if exists
+          if (question.questionImage.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => _showFullScreenImage(question.questionImage),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: _getImageWidget(
+                  question.questionImage,
+                  width: double.infinity,
+                  height: 200,
+                ),
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        
-        // Question number badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.eLearningBtnColor1,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            'Q${index + 1}',
-            style: AppTextStyles.normal600(
-              fontSize: 14,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        
-        // Question text
-        Html(
-          data: question.content,
-          style: {
-            "body": Style(
-              fontSize: FontSize(16),
-              color: AppColors.text3Light,
-              margin: Margins.zero,
-              padding: HtmlPaddings.zero,
-              fontFamily: 'Urbanist',
-              fontWeight: FontWeight.w500,
-            ),
-            "p": Style(
-              margin: Margins.zero,
-            ),
-            "span": Style(
-              fontWeight: FontWeight.w600,
-              color: Colors.blue.shade700,
-            ),
-          },
-        ),
-        
-        // Question image if exists
-        if (question.questionImage.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => _showFullScreenImage(question.questionImage),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: _getImageWidget(
-                question.questionImage,
-                width: double.infinity,
-                height: 200,
+
+          const SizedBox(height: 16),
+
+          // Options
+          if (options.isNotEmpty)
+            ...List.generate(options.length, (optionIndex) {
+              final isUserAnswer = userAnswerIndex == optionIndex;
+              final isCorrectAnswer = correctAnswerIndex == optionIndex;
+
+              // Get option with image if available
+              final optionWithImage = question.getOptionWithImage(optionIndex);
+              final optionImageUrl = optionWithImage?['imageUrl'];
+              final optionText = options[optionIndex];
+
+              Color? optionColor;
+              IconData? optionIcon;
+
+              if (isCorrectAnswer) {
+                optionColor = AppColors.attCheckColor2;
+                optionIcon = Icons.check_circle;
+              } else if (isUserAnswer && !isCorrectAnswer) {
+                optionColor = AppColors.eLearningRedBtnColor;
+                optionIcon = Icons.cancel;
+              }
+
+              // Build option content based on whether it has an image
+              Widget optionContent;
+
+              if (optionImageUrl != null && optionImageUrl.isNotEmpty) {
+                // Option has an image (with or without text)
+                optionContent = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (optionText.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Html(
+                          data: optionText,
+                          style: {
+                            "body": Style(
+                              fontSize: FontSize(14),
+                              color: AppColors.text3Light,
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                              fontFamily: 'Urbanist',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          },
+                        ),
+                      ),
+                    GestureDetector(
+                      onTap: () => _showFullScreenImage(optionImageUrl),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: _getImageWidget(
+                          optionImageUrl,
+                          width: double.infinity,
+                          height: 50,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Text-only option
+                optionContent = Html(
+                  data: optionText,
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(14),
+                      color: AppColors.text3Light,
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                      fontFamily: 'Urbanist',
+                      fontWeight: FontWeight.w500,
+                    ),
+                    "p": Style(
+                      margin: Margins.zero,
+                    ),
+                    "img": Style(
+                      width: Width.auto(),
+                      padding: HtmlPaddings.only(left: 4, right: 4),
+                    ),
+                  },
+                );
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: optionColor?.withOpacity(0.1) ?? Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: optionColor ?? Colors.grey.shade300,
+                    width: isUserAnswer || isCorrectAnswer ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Option letter/indicator
+                    Container(
+                      width: 24,
+                      height: 24,
+                      margin: const EdgeInsets.only(top: 2),
+                      decoration: BoxDecoration(
+                        color: optionColor ?? Colors.grey.shade300,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: optionIcon != null
+                            ? Icon(optionIcon, color: Colors.white, size: 16)
+                            : Text(
+                                String.fromCharCode(
+                                    65 + optionIndex), // A, B, C, D
+                                style: AppTextStyles.normal600(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Option content (text and/or image)
+                    Expanded(child: optionContent),
+                    // Status labels
+                    if (isUserAnswer && !isCorrectAnswer)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          'Your answer',
+                          style: AppTextStyles.normal500(
+                            fontSize: 12,
+                            color: AppColors.eLearningRedBtnColor,
+                          ),
+                        ),
+                      ),
+                    if (isCorrectAnswer)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          'Correct answer',
+                          style: AppTextStyles.normal500(
+                            fontSize: 12,
+                            color: AppColors.attCheckColor2,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+
+          const SizedBox(height: 16),
+
+          // View Explanation button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _showExplanationModal(
+                question: question,
+                userAnswerIndex: userAnswerIndex,
+                correctAnswerIndex: correctAnswerIndex,
+                options: options,
+                questionIndex: index,
+              ),
+              icon: const Icon(
+                Icons.lightbulb_outline,
+                size: 18,
+              ),
+              label: const Text('View Explanation'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.eLearningBtnColor1,
+                side: BorderSide(
+                  color: AppColors.eLearningBtnColor1.withOpacity(0.5),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
         ],
-        
-        const SizedBox(height: 16),
-        
-        // Options
-        if (options.isNotEmpty)
-          ...List.generate(options.length, (optionIndex) {
-            final isUserAnswer = userAnswerIndex == optionIndex;
-            final isCorrectAnswer = correctAnswerIndex == optionIndex;
-            
-            // Get option with image if available
-            final optionWithImage = question.getOptionWithImage(optionIndex);
-            final optionImageUrl = optionWithImage?['imageUrl'];
-            final optionText = options[optionIndex];
-
-            Color? optionColor;
-            IconData? optionIcon;
-
-            if (isCorrectAnswer) {
-              optionColor = AppColors.attCheckColor2;
-              optionIcon = Icons.check_circle;
-            } else if (isUserAnswer && !isCorrectAnswer) {
-              optionColor = AppColors.eLearningRedBtnColor;
-              optionIcon = Icons.cancel;
-            }
-
-            // Build option content based on whether it has an image
-            Widget optionContent;
-            
-            if (optionImageUrl != null && optionImageUrl.isNotEmpty) {
-              // Option has an image (with or without text)
-              optionContent = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (optionText.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Html(
-                        data: optionText,
-                        style: {
-                          "body": Style(
-                            fontSize: FontSize(14),
-                            color: AppColors.text3Light,
-                            margin: Margins.zero,
-                            padding: HtmlPaddings.zero,
-                            fontFamily: 'Urbanist',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        },
-                      ),
-                    ),
-                  GestureDetector(
-                    onTap: () => _showFullScreenImage(optionImageUrl),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: _getImageWidget(
-                        optionImageUrl,
-                        width: double.infinity,
-                        height: 50,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            } else {
-              // Text-only option
-              optionContent = Html(
-                data: optionText,
-                style: {
-                  "body": Style(
-                    fontSize: FontSize(14),
-                    color: AppColors.text3Light,
-                    margin: Margins.zero,
-                    padding: HtmlPaddings.zero,
-                    fontFamily: 'Urbanist',
-                    fontWeight: FontWeight.w500,
-                  ),
-                  "p": Style(
-                    margin: Margins.zero,
-                  ),
-                  "img": Style(
-                    width: Width.auto(),
-                    padding: HtmlPaddings.only(left: 4, right: 4),
-                  ),
-                },
-              );
-            }
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: optionColor?.withOpacity(0.1) ?? Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: optionColor ?? Colors.grey.shade300,
-                  width: isUserAnswer || isCorrectAnswer ? 2 : 1,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Option letter/indicator
-                  Container(
-                    width: 24,
-                    height: 24,
-                    margin: const EdgeInsets.only(top: 2),
-                    decoration: BoxDecoration(
-                      color: optionColor ?? Colors.grey.shade300,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: optionIcon != null
-                          ? Icon(optionIcon, color: Colors.white, size: 16)
-                          : Text(
-                              String.fromCharCode(65 + optionIndex), // A, B, C, D
-                              style: AppTextStyles.normal600(
-                                fontSize: 12,
-                                color: Colors.white,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Option content (text and/or image)
-                  Expanded(child: optionContent),
-                  // Status labels
-                  if (isUserAnswer && !isCorrectAnswer)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        'Your answer',
-                        style: AppTextStyles.normal500(
-                          fontSize: 12,
-                          color: AppColors.eLearningRedBtnColor,
-                        ),
-                      ),
-                    ),
-                  if (isCorrectAnswer)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        'Correct answer',
-                        style: AppTextStyles.normal500(
-                          fontSize: 12,
-                          color: AppColors.attCheckColor2,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }),
-        
-        const SizedBox(height: 16),
-        
-        // View Explanation button
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () => _showExplanationModal(
-              question: question,
-              userAnswerIndex: userAnswerIndex,
-              correctAnswerIndex: correctAnswerIndex,
-              options: options,
-              questionIndex: index,
-            ),
-            icon: const Icon(
-              Icons.lightbulb_outline,
-              size: 18,
-            ),
-            label: const Text('View Explanation'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.eLearningBtnColor1,
-              side: BorderSide(
-                color: AppColors.eLearningBtnColor1.withOpacity(0.5),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-
-Widget _getImageWidget(String url, {double? width, double? height}) {
-  if (url.isEmpty) {
-    return Container(
-      width: width,
-      height: height,
-      color: Colors.grey.shade200,
-      child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+      ),
     );
   }
 
-  // Handle base64 images
-  if (_isBase64(url)) {
-    try {
-      final bytes = base64.decode(url.split(',').last);
-      return Image.memory(
-        bytes,
+  Widget _getImageWidget(String url, {double? width, double? height}) {
+    if (url.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: Colors.grey.shade200,
+        child:
+            const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+      );
+    }
+
+    // Handle base64 images
+    if (_isBase64(url)) {
+      try {
+        final bytes = base64.decode(url.split(',').last);
+        return Image.memory(
+          bytes,
+          width: width,
+          height: height,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Container(
+            width: width,
+            height: height,
+            color: Colors.grey.shade200,
+            child: const Center(child: Icon(Icons.error)),
+          ),
+        );
+      } catch (e) {
+        return Container(
+          width: width,
+          height: height,
+          color: Colors.grey.shade200,
+          child: const Center(child: Icon(Icons.broken_image)),
+        );
+      }
+    }
+
+    // Handle local files
+    if (url.startsWith('/') || url.startsWith('file://')) {
+      final file = File(url.replaceFirst('file://', ''));
+      return Image.file(
+        file,
         width: width,
         height: height,
         fit: BoxFit.contain,
@@ -1111,24 +1169,19 @@ Widget _getImageWidget(String url, {double? width, double? height}) {
           width: width,
           height: height,
           color: Colors.grey.shade200,
-          child: const Center(child: Icon(Icons.error)),
+          child: const Center(child: Icon(Icons.broken_image)),
         ),
       );
-    } catch (e) {
-      return Container(
-        width: width,
-        height: height,
-        color: Colors.grey.shade200,
-        child: const Center(child: Icon(Icons.broken_image)),
-      );
     }
-  }
 
-  // Handle local files
-  if (url.startsWith('/') || url.startsWith('file://')) {
-    final file = File(url.replaceFirst('file://', ''));
-    return Image.file(
-      file,
+    // Handle network images
+    String imageUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('data:')) {
+      imageUrl = 'https://linkskool.net/$url';
+    }
+
+    return Image.network(
+      imageUrl,
       width: width,
       height: height,
       fit: BoxFit.contain,
@@ -1138,70 +1191,50 @@ Widget _getImageWidget(String url, {double? width, double? height}) {
         color: Colors.grey.shade200,
         child: const Center(child: Icon(Icons.broken_image)),
       ),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return SizedBox(
+          width: width,
+          height: height,
+          child: const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      },
     );
   }
 
-  // Handle network images
-  String imageUrl = url;
-  if (!url.startsWith('http') && !url.startsWith('data:')) {
-    imageUrl = 'https://linkskool.net/$url';
+  bool _isBase64(String s) {
+    return s.startsWith('data:image') ||
+        (s.length > 100 && s.contains('base64')) ||
+        (RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(s) && s.length % 4 == 0);
   }
 
-  return Image.network(
-    imageUrl,
-    width: width,
-    height: height,
-    fit: BoxFit.contain,
-    errorBuilder: (_, __, ___) => Container(
-      width: width,
-      height: height,
-      color: Colors.grey.shade200,
-      child: const Center(child: Icon(Icons.broken_image)),
-    ),
-    loadingBuilder: (context, child, progress) {
-      if (progress == null) return child;
-      return SizedBox(
-        width: width,
-        height: height,
-        child: const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
-    },
-  );
-}
-
-bool _isBase64(String s) {
-  return s.startsWith('data:image') || 
-         (s.length > 100 && s.contains('base64')) ||
-         (RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(s) && s.length % 4 == 0);
-}
-
-void _showFullScreenImage(String imageUrl) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.black87,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+  void _showFullScreenImage(String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black87,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
-        ),
-        body: Center(
-          child: InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: _getImageWidget(imageUrl),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: _getImageWidget(imageUrl),
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _showInstructionOrPassageModal(QuestionModel question) {
     final hasInstruction = question.instruction.isNotEmpty;
@@ -2144,9 +2177,3 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
     );
   }
 }
-
-
-
-
-
-
