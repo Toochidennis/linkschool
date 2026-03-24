@@ -16,7 +16,6 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/database/data_base_service.dart';
 import 'package:linkschool/modules/services/notification_navigation_service.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
-import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
