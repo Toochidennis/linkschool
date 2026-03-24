@@ -8,9 +8,9 @@ import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_billing_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
-import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CbtPlanPaymentDialog extends StatefulWidget {
@@ -625,81 +625,73 @@ final user = userProvider.currentUser;
     });
 
     try {
+      await _clearPendingPaymentState();
+
       final amount = (widget.plan.finalPrice is num)
           ? (widget.plan.finalPrice as num).toInt()
           : int.tryParse(widget.plan.finalPrice.toString()) ?? 0;
-      final amountInKobo = amount * 100;
       final email = user?.email;
-      final paystackSecretKey = EnvConfig.paystackSecretKey;
 
-      // Generate reference BEFORE opening Paystack
-      final reference =
-          'CBT_${user!.id}_${DateTime.now().millisecondsSinceEpoch}';
-      print('[DEBUG] Generated reference=$reference');
-
-      // Save BEFORE opening webview — recovery if app dies
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('pending_payment_ref', reference);
-      await prefs.setInt('pending_payment_plan_id', widget.plan.id);
-      await prefs.setInt('pending_payment_user_id', user.id!);
-
-      final completer = Completer<void>();
-
-      await PaystackFlutter().pay(
-        context: context,
-        secretKey: paystackSecretKey,
-        amount: amountInKobo.toDouble(),
+      final init = await CbtBillingService().initializePayment(
+        userId: user!.id!,
+        planId: widget.plan.id,
+        method: 'online',
+        platform: 'mobile',
         email: email!,
-        reference: reference,
-        callbackUrl: 'https://callback.com',
-        showProgressBar: true,
-        paymentOptions: [
-          PaymentOption.card,
-          PaymentOption.bankTransfer,
-          PaymentOption.mobileMoney,
-          PaymentOption.ussd,
-        ],
-        currency: Currency.NGN,
-        metaData: {
-          'plan_id': widget.plan.id,
-          'plan_name': widget.plan.name,
-          'final_price': amount,
-        },
-        onSuccess: (callback) {
-          print('[DEBUG] onSuccess fired reference=${callback.reference}');
-          if (!completer.isCompleted) completer.complete();
-        },
-        onCancelled: (callback) {
-          print('[DEBUG] onCancelled fired');
-          if (!completer.isCompleted) completer.complete();
-        },
+        firstName: _firstName(user),
+        lastName: _lastName(user),
+        voucherCode: '',
       );
 
-      // Webview closed — wait for callback to settle
-      print('[DEBUG] Webview closed, waiting for callback...');
-      await completer.future.timeout(
-        const Duration(seconds: 3),
-        onTimeout: () {
-          print('[DEBUG] Timeout — proceeding to verify anyway');
-        },
+      if (!init.success || init.reference.isEmpty) {
+        throw Exception(init.message);
+      }
+
+      final reference = init.reference;
+      final paymentUrl = init.paymentUrl;
+      final callbackUrl =
+          init.callbackUrl.isNotEmpty ? init.callbackUrl : 'https://callback.com';
+      print('[DEBUG] Initialized reference=$reference callbackUrl=$callbackUrl paymentUrl=$paymentUrl');
+
+      if (paymentUrl.isEmpty) {
+        throw Exception('Payment URL missing from initialization response.');
+      }
+
+      await _openPaymentWebView(
+        paymentUrl: paymentUrl,
+        reference: reference,
+        callbackUrl: callbackUrl,
       );
 
       if (!mounted) return;
 
-      // Always verify — backend + Paystack decide what happened
-      print('[DEBUG] Verifying reference=$reference');
-      await _verifyWithRetry(
+      // Save the latest initialized payment only after the webview closes.
+      await _savePendingPaymentState(
         reference: reference,
-        userId: user.id ?? 0,
+        userId: user.id!,
         planId: widget.plan.id,
-        firstName: _firstName(user),
-        lastName: _lastName(user),
       );
 
-      // Clear only after successful activation
-      await prefs.remove('pending_payment_ref');
-      await prefs.remove('pending_payment_plan_id');
-      await prefs.remove('pending_payment_user_id');
+      print('[DEBUG] Checking payment status for reference=$reference');
+      final statusResult = await _verifyPaymentStatusWithRetry(
+        reference: reference,
+      );
+
+      if (statusResult.status == BillingVerifyStatus.success) {
+        await _activateAndFinish(userId: user.id!);
+      } else {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _statusMessage = null;
+          });
+          _showResultDialog(
+            success: false,
+            message: statusResult.message,
+            reference: reference,
+          );
+        }
+      }
     } catch (e) {
       print('[DEBUG] _handlePayOnline error: $e');
       if (mounted) {
@@ -930,10 +922,7 @@ Future<void> _activateAndFinish({required int userId}) async {
   final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
   await userProvider.refreshCurrentUser();
 
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.remove('pending_payment_ref');
-  await prefs.remove('pending_payment_plan_id');
-  await prefs.remove('pending_payment_user_id');
+  await _clearPendingPaymentState();
 
   if (!mounted) return;
 
@@ -952,6 +941,24 @@ Future<void> _activateAndFinish({required int userId}) async {
 }
 
   // ─── HELPERS ─────────────────────────────────────────────────────────────
+
+  Future<void> _savePendingPaymentState({
+    required String reference,
+    required int userId,
+    required int planId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pending_payment_ref', reference);
+    await prefs.setInt('pending_payment_plan_id', planId);
+    await prefs.setInt('pending_payment_user_id', userId);
+  }
+
+  Future<void> _clearPendingPaymentState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('pending_payment_ref');
+    await prefs.remove('pending_payment_plan_id');
+    await prefs.remove('pending_payment_user_id');
+  }
 
   String _formatPrice(CbtPlanModel plan) {
     final currency = plan.currency.toUpperCase();
