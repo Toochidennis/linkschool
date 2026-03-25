@@ -1,4 +1,6 @@
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/material.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/explore/components/year_picker_dialog.dart';
@@ -8,8 +10,127 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:provider/provider.dart';
 
-class AllSubjectsScreen extends StatelessWidget {
+class AllSubjectsScreen extends StatefulWidget {
   const AllSubjectsScreen({super.key});
+
+  @override
+  State<AllSubjectsScreen> createState() => _AllSubjectsScreenState();
+}
+
+class _AllSubjectsScreenState extends State<AllSubjectsScreen>
+    with WidgetsBindingObserver {
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
+  bool _pendingShowAppOpenAd = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadAppOpenAd();
+  }
+
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: EnvConfig.cbtAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          } else {
+            _isAppOpenAdLoaded = true;
+          }
+
+          if (_pendingShowAppOpenAd) {
+            _pendingShowAppOpenAd = false;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _showAppOpenAd();
+              }
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          debugPrint('AllSubjectsScreen CBT app open ad failed to load: $error');
+          _appOpenAd = null;
+          _pendingShowAppOpenAd = false;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          } else {
+            _isAppOpenAdLoaded = false;
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        } else {
+          _isAppOpenAdLoaded = false;
+        }
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        debugPrint('AllSubjectsScreen CBT app open ad failed to show: $error');
+        ad.dispose();
+        _appOpenAd = null;
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        } else {
+          _isAppOpenAdLoaded = false;
+        }
+        _loadAppOpenAd();
+      },
+    );
+
+    _appOpenAd!.show();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _shouldShowAdOnResume = false;
+      if (_isAppOpenAdLoaded && _appOpenAd != null) {
+        _showAppOpenAd();
+      } else {
+        _pendingShowAppOpenAd = true;
+        _loadAppOpenAd();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

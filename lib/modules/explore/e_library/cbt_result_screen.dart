@@ -9,15 +9,13 @@ import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
-import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/google_signup_dialog.dart';
+
 // import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
@@ -54,10 +52,8 @@ class CbtResultScreen extends StatefulWidget {
 class _CbtResultScreenState extends State<CbtResultScreen> {
   late double opacity;
   final CbtHistoryService _historyService = CbtHistoryService();
-  final _authService = FirebaseAuthService();
   final _subscriptionService = CbtSubscriptionService();
   bool _isSaved = false;
-  bool _userSignedIn = false;
   bool _showUnansweredQuestions = true;
   late PageController _pageController;
   int _currentSubjectIndex = 0;
@@ -71,9 +67,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     _pageController = PageController();
     _loadQuestionListVisibility();
 
-    // Check if user is signed in on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkUserSigninStatus();
+      _saveTestResult();
+      _checkSubscriptionStatus();
     });
   }
 
@@ -105,38 +101,6 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     setState(() {
       _showUnansweredQuestions = showUnanswered;
     });
-  }
-
-  /// Check if user is already signed in
-  Future<void> _checkUserSigninStatus() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.isLoggedIn) {
-      await _subscriptionService.setAdMode('continue_with_ads');
-      if (mounted) {
-        setState(() {
-          _userSignedIn = true;
-           _showUnansweredQuestions = false;
-        });
-      }
-      _saveTestResult();
-      _showScorePopup();
-      return;
-    }
-
-    final isSignedIn = await _authService.isUserSignedUp();
-
-    if (!isSignedIn && mounted) {
-      // Show persistent Google sign-in dialog
-      _showGoogleSigninDialog();
-    } else if (isSignedIn && mounted) {
-      setState(() {
-        _userSignedIn = true;
-      });
-      // Save test result only after user is signed in
-      _saveTestResult();
-      // Check subscription status before showing score popup
-      await _checkSubscriptionStatus();
-    }
   }
 
   /// Check subscription status and show appropriate dialog
@@ -192,34 +156,34 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   }
 
   /// Show persistent Google Sign-in dialog
-  void _showGoogleSigninDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevent dismissing by tapping outside
-      barrierColor: Colors.black54,
-      builder: (context) => GoogleSignupDialog(
-        onSignupSuccess: () {
-          print('✅ User signed in successfully');
-          setState(() {
-            _userSignedIn = true;
-          });
-          // Save test result after successful signup
-          _saveTestResult();
-          // Check subscription status
-          _checkSubscriptionStatus();
-        },
-        onSkip: () {
-          print('🔙 User skipped signin - going back to dashboard');
-          _navigateBackFromResults();
-        },
-      ),
-    );
-  }
+  // void _showGoogleSigninDialog() {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false, // Prevent dismissing by tapping outside
+  //     barrierColor: Colors.black54,
+  //     builder: (context) => GoogleSignupDialog(
+  //       onSignupSuccess: () {
+  //         print('✅ User signed in successfully');
+  //         setState(() {
+  //           _userSignedIn = true;
+  //         });
+  //         // Save test result after successful signup
+  //         _saveTestResult();
+  //         // Check subscription status
+  //         _checkSubscriptionStatus();
+  //       },
+  //       onSkip: () {
+  //         print('🔙 User skipped signin - going back to dashboard');
+  //         _navigateBackFromResults();
+  //       },
+  //     ),
+  //   );
+  // }
 
   // Save test result to shared preferences
   Future<void> _saveTestResult() async {
-    if (_isSaved || !_userSignedIn) {
-      return; // Prevent duplicate saves and ensure user is signed in
+    if (_isSaved) {
+      return; // Prevent duplicate saves.
     }
 
     try {
@@ -344,36 +308,23 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
         widget.allSubjectsData != null && widget.allSubjectsData!.isNotEmpty;
 
     return WillPopScope(
-      // Prevent back navigation if user hasn't signed in
       onWillPop: () async {
-        if (!_userSignedIn) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please sign in first to save your scores'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return false;
-        }
-
         _navigateBackFromResults();
         return false;
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: _userSignedIn
-              ? IconButton(
-                  onPressed: () {
-                    _navigateBackFromResults();
-                  },
-                  icon: Image.asset(
-                    'assets/icons/arrow_back.png',
-                    color: AppColors.primaryLight,
-                    width: 34.0,
-                    height: 34.0,
-                  ),
-                )
-              : null, // Hide back button until signed in
+          leading: IconButton(
+            onPressed: () {
+              _navigateBackFromResults();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
+          ),
           title:
               Text(isMultiSubject ? 'Multi-Subject Results' : 'Test Summary'),
           centerTitle: true,
@@ -394,16 +345,11 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             ),
           ),
         ),
-        body: !_userSignedIn
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : Container(
-                decoration: Constants.customBoxDecoration(context),
-                child: isMultiSubject
-                    ? _buildMultiSubjectView()
-                    : _buildSingleSubjectView(),
-              ),
+        body: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child:
+              isMultiSubject ? _buildMultiSubjectView() : _buildSingleSubjectView(),
+        ),
       ),
     );
   }
