@@ -163,17 +163,67 @@ class QuestionModel {
   }
   
   int? getCorrectAnswerIndex() {
+  try {
+    int? orderValue;
+    
+    // Get the order value from correctAnswer or correct field
     if (correctAnswer != null) {
-      final orderVal = correctAnswer!['order'];
-      if (orderVal is int) return orderVal;
-      if (orderVal is String) return int.tryParse(orderVal);
-      if (orderVal is num) return orderVal.toInt();
-      return null;
+      orderValue = _parseOrderValue(correctAnswer!['order']);
+    } else {
+      orderValue = int.tryParse(correct);
     }
-
-    // Try to parse from correct field for old format (string stored)
-    return int.tryParse(correct);
+    
+    // If we got a valid order value
+    if (orderValue != null) {
+      // API sends 1-based (1,2,3,4), convert to 0-based (0,1,2,3)
+      final zeroBasedIndex = orderValue - 1;
+      
+      // Validate that the index is within the options range
+      final optionCount = getOptions().length;
+      if (zeroBasedIndex >= 0 && zeroBasedIndex < optionCount) {
+        return zeroBasedIndex;
+      } else {
+        print('⚠️ Warning: Correct answer index $zeroBasedIndex out of range (0-${optionCount-1})');
+        print('   Original API order value: $orderValue (1-based)');
+        
+        // Fallback: try to find by text matching
+        final correctText = correctAnswer?['text']?.toString();
+        if (correctText != null && correctText.isNotEmpty) {
+          final options = getOptions();
+          for (int i = 0; i < options.length; i++) {
+            if (options[i].contains(correctText) || correctText.contains(options[i])) {
+              print('   ✅ Found match by text at index $i');
+              return i;
+            }
+          }
+        }
+      }
+    }
+    
+    return null;
+  } catch (e) {
+    print('❌ Error in getCorrectAnswerIndex: $e');
+    return null;
   }
+}
+
+// Also update _parseOrderValue to handle potential string values better
+static int? _parseOrderValue(dynamic value) {
+  if (value == null) return null;
+  
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) {
+    // Handle strings like "1", "2", etc.
+    final trimmed = value.trim();
+    // Also handle if the string has special characters
+    final match = RegExp(r'\d+').firstMatch(trimmed);
+    if (match != null) {
+      return int.parse(match.group(0)!);
+    }
+  }
+  return null;
+}
 
   // Helper method to process question images (matching assessment_screen pattern)
   static String _processQuestionImage(dynamic questionFiles) {

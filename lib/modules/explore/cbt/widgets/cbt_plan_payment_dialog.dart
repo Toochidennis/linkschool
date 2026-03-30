@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/cbt_plan_model.dart';
@@ -7,8 +7,13 @@ import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_billing_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
-import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+enum PaymentDialogState { success, pending, failed }
+
+enum PaymentWebViewResult { completed, dismissed }
 
 class CbtPlanPaymentDialog extends StatefulWidget {
   final CbtPlanModel plan;
@@ -21,9 +26,14 @@ class CbtPlanPaymentDialog extends StatefulWidget {
 
 class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     with SingleTickerProviderStateMixin {
+  static final Uri _whatsappHelpUri = Uri.parse(
+    'https://wa.me/2349047697293',
+  );
+
   late TabController _tabController;
   final TextEditingController _voucherController = TextEditingController();
   bool _isProcessing = false;
+  String? _statusMessage;
   String? _errorMessage;
 
   @override
@@ -39,75 +49,95 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     super.dispose();
   }
 
- @override
-Widget build(BuildContext context) {
-  final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-  
-  return Dialog(
-    backgroundColor: Colors.white,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-    insetPadding: EdgeInsets.symmetric(
-      horizontal: 8, 
-      vertical: keyboardHeight > 0 ? 8 : 24,  // Reduce padding when keyboard is open
-    ),
-    child: SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 14),
-            _buildTabSwitcher(),
-            const SizedBox(height: 16),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: _tabController.index == 0
-                  ? _buildPayOnlineTab()
-                  : _buildVoucherTab(),
+  // ─── BUILD ───────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: keyboardHeight > 0 ? 8 : 24,
+      ),
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 14),
+                _buildTabSwitcher(),
+                const SizedBox(height: 16),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: _tabController.index == 0
+                      ? _buildPayOnlineTab()
+                      : _buildVoucherTab(),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  // ─── HEADER ──────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F4F7),
-            shape: BoxShape.circle,
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF2F4F7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.credit_card, color: Color(0xFF0D1426)),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Payment Method',
+                    style: AppTextStyles.normal500(
+                      fontSize: 12,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                  Text(
+                    _tabController.index == 0 ? 'Pay Online' : 'Voucher',
+                    style: AppTextStyles.normal700(
+                      fontSize: 20,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          child: const Icon(Icons.credit_card, color: Color(0xFF0D1426)),
         ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Payment Method',
-              style: AppTextStyles.normal500(
-                fontSize: 12,
-                color: AppColors.text7Light,
-              ),
-            ),
-            Text(
-              _tabController.index == 0 ? 'Pay Online' : 'Voucher',
-              style: AppTextStyles.normal700(
-                fontSize: 20,
-                color: AppColors.text4Light,
-              ),
-            ),
-          ],
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close),
+          color: AppColors.text7Light,
+          splashRadius: 20,
+          tooltip: 'Close',
         ),
       ],
     );
   }
+
+  // ─── TAB SWITCHER ────────────────────────────────────────────────────────
 
   Widget _buildTabSwitcher() {
     return Container(
@@ -118,64 +148,42 @@ Widget build(BuildContext context) {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                _tabController.animateTo(0);
-                setState(() {});
-              },
-              child: Container(
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _tabController.index == 0
-                      ? AppColors.eLearningBtnColor1
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Text(
-                  'Pay Online',
-                  style: AppTextStyles.normal600(
-                    fontSize: 14,
-                    color: _tabController.index == 0
-                        ? Colors.white
-                        : AppColors.text7Light,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                _tabController.animateTo(1);
-                setState(() {});
-              },
-              child: Container(
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _tabController.index == 1
-                      ? AppColors.eLearningBtnColor1
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Text(
-                  'Voucher',
-                  style: AppTextStyles.normal600(
-                    fontSize: 14,
-                    color: _tabController.index == 1
-                        ? Colors.white
-                        : AppColors.text7Light,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildTab(label: 'Pay Online', index: 0),
+          _buildTab(label: 'Voucher', index: 1),
         ],
       ),
     );
   }
+
+  Widget _buildTab({required String label, required int index}) {
+    final isSelected = _tabController.index == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          _tabController.animateTo(index);
+          setState(() {});
+        },
+        child: Container(
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color:
+                isSelected ? AppColors.eLearningBtnColor1 : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Text(
+            label,
+            style: AppTextStyles.normal600(
+              fontSize: 14,
+              color: isSelected ? Colors.white : AppColors.text7Light,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── TABS ────────────────────────────────────────────────────────────────
 
   Widget _buildPayOnlineTab() {
     return _buildContent(
@@ -200,14 +208,12 @@ Widget build(BuildContext context) {
             label: 'Pay Now',
             onPressed: _isProcessing ? null : _handlePayOnline,
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Your payment helps keep the CBT content updated and accessible.',
-            style: AppTextStyles.normal400(
-              fontSize: 12,
-              color: AppColors.text8Light,
-            ),
-            textAlign: TextAlign.center,
+          const SizedBox(height: 38),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              _buildFootnote(),
+            ],
           ),
         ],
       ),
@@ -239,19 +245,18 @@ Widget build(BuildContext context) {
             label: 'Verify Voucher',
             onPressed: _isProcessing ? null : _handleVoucherVerify,
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Your payment helps keep the CBT content updated and accessible.',
-            style: AppTextStyles.normal400(
-              fontSize: 12,
-              color: AppColors.text8Light,
-            ),
-            textAlign: TextAlign.center,
+          const SizedBox(height: 24),
+          Column(
+            children: [
+              _buildFootnote(),
+            ],
           ),
         ],
       ),
     );
   }
+
+  // ─── WIDGETS ─────────────────────────────────────────────────────────────
 
   Widget _buildContent({required Widget body}) {
     return Container(
@@ -311,7 +316,8 @@ Widget build(BuildContext context) {
           fontSize: 13,
           color: AppColors.text8Light,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -349,13 +355,30 @@ Widget build(BuildContext context) {
           elevation: 4,
         ),
         child: _isProcessing
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _statusMessage ?? label,
+                      style: AppTextStyles.normal600(
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               )
             : Text(
                 label,
@@ -394,11 +417,151 @@ Widget build(BuildContext context) {
     );
   }
 
-  String _formatPrice(CbtPlanModel plan) {
-    final currency = plan.currency.toUpperCase();
-    final prefix = currency == 'NGN' ? '₦' : '$currency ';
-    return '$prefix${plan.finalPrice}';
+  Widget _buildFootnote() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          'Need help?',
+          style: AppTextStyles.normal400(
+            fontSize: 13,
+            color: AppColors.text4Light,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 14),
+        ElevatedButton.icon(
+          onPressed: _openWhatsAppHelp,
+          icon: Image.asset(
+            'assets/images/whatsapp-logo.png',
+            width: 20,
+            height: 20,
+          ),
+          label: const Text('Chat us on WhatsApp'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: Color(0xFF25D366), width: 1.5),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            textStyle:
+                AppTextStyles.normal600(fontSize: 13, color: Colors.black),
+          ),
+        ),
+      ],
+    );
   }
+  // ─── RESULT DIALOG ───────────────────────────────────────────────────────
+
+  Future<void> _showResultDialog({
+    required PaymentDialogState state,
+    required String message,
+  }) async {
+    final isSuccess = state == PaymentDialogState.success;
+    final isPending = state == PaymentDialogState.pending;
+    final displayMessage = _resultMessageForState(
+      state: state,
+      backendMessage: message,
+    );
+    final title = switch (state) {
+      PaymentDialogState.success => 'Payment Successful!',
+      PaymentDialogState.pending => 'Payment Pending',
+      PaymentDialogState.failed => 'Payment Failed',
+    };
+    final buttonLabel = isSuccess ? 'OK' : 'Close';
+    final backgroundColor = isSuccess
+        ? const Color(0xFFE6F4EA)
+        : isPending
+            ? const Color(0xFFFFF8E6)
+            : const Color(0xFFFFF2F2);
+    final iconColor = isSuccess
+        ? const Color(0xFF2E7D32)
+        : isPending
+            ? const Color(0xFFB26A00)
+            : const Color(0xFFE02424);
+    final buttonColor = isSuccess
+        ? const Color(0xFF2E7D32)
+        : isPending
+            ? const Color(0xFFF4A000)
+            : AppColors.eLearningBtnColor1;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                    color: backgroundColor, shape: BoxShape.circle),
+                child: Icon(
+                  isSuccess
+                      ? Icons.check_circle
+                      : (isPending
+                          ? Icons.hourglass_bottom
+                          : Icons.error_outline),
+                  color: iconColor,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: AppTextStyles.normal700(
+                  fontSize: 18,
+                  color: AppColors.text4Light,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                displayMessage,
+                style: AppTextStyles.normal400(
+                  fontSize: 13,
+                  color: AppColors.text7Light,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop(); // close result dialog
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: Text(
+                    buttonLabel,
+                    style: AppTextStyles.normal600(
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── HANDLERS ────────────────────────────────────────────────────────────
 
   Future<void> _handlePayOnline() async {
     final canUseNetwork = await NetworkDialog.ensureOnline(
@@ -417,72 +580,73 @@ Widget build(BuildContext context) {
     setState(() {
       _isProcessing = true;
       _errorMessage = null;
+      _statusMessage = null;
     });
+
     try {
-      final amount = (widget.plan.finalPrice is num)
-          ? (widget.plan.finalPrice as num).toInt()
-          : int.tryParse(widget.plan.finalPrice.toString()) ?? 0;
-      final amountInKobo = amount * 100;
-     // final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
       final email = user?.email;
-      final paystackSecretKey = EnvConfig.paystackSecretKey;
+      if (email == null || email.trim().isEmpty) {
+        throw Exception('User email is required to initialize payment.');
+      }
 
-      PaystackFlutter().pay(
-        context: context,
-        secretKey: paystackSecretKey,
-        amount: amountInKobo.toDouble(),
-        email: email!,
-        callbackUrl: 'https://callback.com',
-        showProgressBar: true,
-        paymentOptions: [
-          PaymentOption.card,
-          PaymentOption.bankTransfer,
-          PaymentOption.mobileMoney,
-          PaymentOption.ussd,
-         
-        ],
-        currency: Currency.NGN,
-        metaData: {
-          'plan_id': widget.plan.id,
-          'plan_name': widget.plan.name,
-          'final_price': amount,
-        },
-        onSuccess: (callback) async {
-          print('Payment successful: ${callback.reference}');
-          print(
-              '[CBT_FLOW] Verifying billing (online) userId=${user?.id} planId=${widget.plan.id}');
-
-          await _verifyBilling(
-            userId: user?.id ?? 0,
-            planId: widget.plan.id,
-            method: 'online',
-            platform: 'mobile',
-            firstName: _firstName(user),
-            lastName: _lastName(user),
-            voucherCode: '',
-            reference: callback.reference,
-          );
-
-         
-        },
-        onCancelled: (callback) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Payment cancelled'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
+      final init = await CbtBillingService().initializePayment(
+        userId: user!.id!,
+        planId: widget.plan.id,
+        method: 'online',
+        platform: 'mobile',
+        email: email.trim(),
+        firstName: _firstName(user),
+        lastName: _lastName(user),
+        voucherCode: '',
       );
+
+      if (!init.success || init.reference.isEmpty) {
+        throw Exception(init.message);
+      }
+
+      final reference = init.reference;
+      final paymentUrl = init.paymentUrl;
+      final callbackUrl = init.callbackUrl;
+
+      if (paymentUrl.isEmpty) {
+        throw Exception('Payment URL missing from initialization response.');
+      }
+
+      await _openPaymentWebView(
+        paymentUrl: paymentUrl,
+        reference: reference,
+        callbackUrl: callbackUrl,
+      );
+
+      if (!mounted) return;
+
+      final statusResult = await _pollPaymentStatus(
+        reference: reference,
+      );
+
+      if (statusResult.status == BillingVerifyStatus.success) {
+        await _activateAndFinish(userId: user.id!);
+      } else {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _statusMessage = null;
+          });
+          _showResultDialog(
+            state: statusResult.status == BillingVerifyStatus.pending
+                ? PaymentDialogState.pending
+                : PaymentDialogState.failed,
+            message: statusResult.message,
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = _cleanError(e.toString()));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isProcessing = false);
+        setState(() {
+          _errorMessage = _cleanError(e.toString());
+          _isProcessing = false;
+          _statusMessage = null;
+        });
       }
     }
   }
@@ -510,11 +674,11 @@ Widget build(BuildContext context) {
     setState(() {
       _isProcessing = true;
       _errorMessage = null;
+      _statusMessage = null;
     });
+
     try {
-      print(
-          '[CBT_FLOW] Verifying billing (voucher) userId=${user?.id} planId=${widget.plan.id}');
-      await _verifyBilling(
+      final result = await CbtBillingService().verifyPayment(
         userId: user?.id ?? 0,
         planId: widget.plan.id,
         method: 'voucher',
@@ -524,72 +688,160 @@ Widget build(BuildContext context) {
         voucherCode: code,
         reference: '',
       );
-    } finally {
+
+      if (result.status == BillingVerifyStatus.success) {
+        await _activateAndFinish(userId: user?.id ?? 0);
+      } else {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _statusMessage = null;
+          });
+          _showResultDialog(
+            state: result.status == BillingVerifyStatus.pending
+                ? PaymentDialogState.pending
+                : PaymentDialogState.failed,
+            message: result.message,
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
-        setState(() => _isProcessing = false);
+        setState(() {
+          _isProcessing = false;
+          _statusMessage = null;
+        });
+        _showResultDialog(
+          state: PaymentDialogState.failed,
+          message: _cleanError(e.toString()),
+        );
       }
     }
   }
 
-  Future<void> _verifyBilling({
-    required int userId,
-    required int planId,
-    required String method,
-    required String platform,
-    required String firstName,
-    required String lastName,
-    required String voucherCode,
+  // ─── VERIFY WITH RETRY ───────────────────────────────────────────────────
+  Future<PaymentWebViewResult?> _openPaymentWebView({
+    required String paymentUrl,
+    required String reference,
+    required String callbackUrl,
+  }) async {
+    return Navigator.of(context, rootNavigator: true)
+        .push<PaymentWebViewResult>(
+      MaterialPageRoute<PaymentWebViewResult>(
+        builder: (_) => _CbtPaymentWebViewScreen(
+          paymentUrl: paymentUrl,
+          reference: reference,
+          callbackUrl: callbackUrl,
+        ),
+      ),
+    );
+  }
+
+  Future<BillingVerifyResult> _verifyPaymentStatus({
     required String reference,
   }) async {
-    try {
-      print(
-          '[CBT_FLOW] Billing verify payload: userId=$userId planId=$planId method=$method platform=$platform voucher=${voucherCode.isNotEmpty} reference=${reference.isNotEmpty}');
-      await CbtBillingService().verifyPayment(
-        userId: userId,
-        planId: planId,
-        method: method,
-        platform: platform,
-        firstName: firstName,
-        lastName: lastName,
-        voucherCode: voucherCode,
-        reference: reference,
-      );
+    if (mounted) {
+      setState(() => _statusMessage = 'Checking payment status...');
+    }
 
-      final activation =
-          await CbtLicenseService().activateLicense(userId: userId);
-      print(
-          '[CBT_FLOW] Activation status=${activation.status} licenseStatus=${activation.license.status}');
-      final activatedNow =
-          activation.status.toLowerCase() == 'activated' ||
-              activation.license.status.toLowerCase() == 'active';
+    return CbtBillingService().checkPaymentStatus(
+      reference: reference,
+    );
+  }
 
-      var isActive = activatedNow;
-      if (!isActive) {
-        // Give backend a moment to propagate status.
-        for (var i = 0; i < 3; i++) {
-          await Future.delayed(const Duration(milliseconds: 700));
-          isActive = await CbtLicenseService()
-              .isLicenseActive(userId: userId, forceRefresh: true);
-          print('[CBT_FLOW] License check retry ${i + 1} active=$isActive');
-          if (isActive) break;
+  Future<BillingVerifyResult> _pollPaymentStatus({
+    required String reference,
+  }) async {
+    BillingVerifyResult? lastResult;
+    const delays = <Duration>[
+      Duration.zero,
+      Duration(seconds: 2),
+      Duration(seconds: 3),
+      Duration(seconds: 4),
+      Duration(seconds: 5),
+    ];
+
+    for (var i = 0; i < delays.length; i++) {
+      final delay = delays[i];
+      if (delay > Duration.zero) {
+        if (mounted) {
+          setState(() {
+            _statusMessage = 'Confirming payment${"." * ((i % 3) + 1)}';
+          });
         }
-      }
-      if (!isActive) {
-        throw Exception('License not active yet. Please try again.');
+        await Future.delayed(delay);
       }
 
-      if (!mounted) return;
-      final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-      await userProvider.refreshCurrentUser();
-
-      if (mounted) {
-        Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = _cleanError(e.toString()));
+      lastResult = await _verifyPaymentStatus(reference: reference);
+      if (lastResult.status == BillingVerifyStatus.success) {
+        return lastResult;
       }
     }
+
+    return lastResult ??
+        BillingVerifyResult(
+          status: BillingVerifyStatus.failed,
+          message: 'Payment could not be confirmed. Please try again.',
+        );
+  }
+
+  // ACTIVATE AND FINISH ─────────────────────────────────────────────────
+
+  Future<void> _activateAndFinish({required int userId}) async {
+    if (mounted) setState(() => _statusMessage = 'Activating license...');
+
+    final activation =
+        await CbtLicenseService().activateLicense(userId: userId);
+
+    var isActive = activation.status.toLowerCase() == 'activated' ||
+        activation.license.status.toLowerCase() == 'active';
+
+    if (!isActive) {
+      for (var i = 0; i < 3; i++) {
+        await Future.delayed(const Duration(milliseconds: 700));
+        isActive = await CbtLicenseService()
+            .isLicenseActive(userId: userId, forceRefresh: true);
+        if (isActive) break;
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isProcessing = false;
+      _statusMessage = null;
+    });
+
+    if (!isActive) {
+      _showResultDialog(
+        state: PaymentDialogState.failed,
+        message:
+            'Payment received but license activation failed. Please contact support.',
+      );
+      return;
+    }
+
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    await userProvider.refreshCurrentUser();
+
+    if (!mounted) return;
+
+    final message =
+        'Your ${widget.plan.name} plan is now active. Enjoy full access!';
+    await _showResultDialog(
+      state: PaymentDialogState.success,
+      message: message,
+    );
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop(true);
+  }
+
+  String _formatPrice(CbtPlanModel plan) {
+    final currency = plan.currency.toUpperCase();
+    final prefix = currency == 'NGN' ? '₦' : '$currency ';
+    return '$prefix${plan.finalPrice}';
   }
 
   String _firstName(dynamic user) {
@@ -612,9 +864,147 @@ Widget build(BuildContext context) {
   String _cleanError(String error) {
     final trimmed = error.replaceFirst('Exception: ', '').trim();
     final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(trimmed);
-    if (match != null) {
-      return match.group(1) ?? trimmed;
-    }
+    if (match != null) return match.group(1) ?? trimmed;
     return trimmed;
+  }
+
+  Future<void> _openWhatsAppHelp() async {
+    final uri = _whatsappHelpUri;
+    if (!await canLaunchUrl(uri)) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  String _resultMessageForState({
+    required PaymentDialogState state,
+    required String backendMessage,
+  }) {
+    final message = backendMessage.trim();
+
+    switch (state) {
+      case PaymentDialogState.success:
+        return message.isNotEmpty
+            ? message
+            : 'Your ${widget.plan.name} plan is now active. Enjoy full access!';
+      case PaymentDialogState.pending:
+        return 'Your payment is still being processed. Please check back shortly.';
+      case PaymentDialogState.failed:
+        return 'Payment could not be confirmed. Please contact support.';
+    }
+  }
+}
+
+class _CbtPaymentWebViewScreen extends StatefulWidget {
+  final String paymentUrl;
+  final String reference;
+  final String callbackUrl;
+
+  const _CbtPaymentWebViewScreen({
+    required this.paymentUrl,
+    required this.reference,
+    required this.callbackUrl,
+  });
+
+  @override
+  State<_CbtPaymentWebViewScreen> createState() =>
+      _CbtPaymentWebViewScreenState();
+}
+
+class _CbtPaymentWebViewScreenState extends State<_CbtPaymentWebViewScreen> {
+  late final WebViewController _controller;
+  bool _hasClosed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onUrlChange: (change) {
+            final url = change.url;
+            if (url != null) {
+              final result = _resultForUrl(url);
+              if (result != null) {
+                _close(result);
+              }
+            }
+          },
+          onNavigationRequest: (request) {
+            final result = _resultForUrl(request.url);
+            if (result != null) {
+              _close(result);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.paymentUrl));
+  }
+
+  PaymentWebViewResult? _resultForUrl(String url) {
+    final current = url.toLowerCase();
+    final callback = widget.callbackUrl.toLowerCase();
+
+    if (callback.isNotEmpty && current.startsWith(callback)) {
+      return PaymentWebViewResult.completed;
+    }
+
+    if (current.startsWith('https://standard.paystack.co/close')) {
+      return PaymentWebViewResult.dismissed;
+    }
+
+    if (current.startsWith('https://linkskool.com') ||
+        current.startsWith('http://linkskool.com') ||
+        current.startsWith('https://www.linkskool.com') ||
+        current.startsWith('http://www.linkskool.com')) {
+      return PaymentWebViewResult.completed;
+    }
+
+    if (current.contains('cancel') ||
+        current.contains('cancelled') ||
+        current.contains('canceled') ||
+        current.contains('abandoned') ||
+        current.contains('abandon') ||
+        current.contains('close') ||
+        current.contains('closed') ||
+        current.contains('exit') ||
+        current.contains('failed') ||
+        current.contains('failure') ||
+        current.contains('error')) {
+      return PaymentWebViewResult.dismissed;
+    }
+
+    return null;
+  }
+
+  void _close([PaymentWebViewResult result = PaymentWebViewResult.dismissed]) {
+    if (_hasClosed || !mounted) return;
+    _hasClosed = true;
+    Navigator.of(context).pop(result);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        _close();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: AppColors.eLearningBtnColor1,
+          title: const Text(
+            'Complete Payment',
+            style: TextStyle(color: Colors.white),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: _close,
+          ),
+        ),
+        body: WebViewWidget(controller: _controller),
+      ),
+    );
   }
 }

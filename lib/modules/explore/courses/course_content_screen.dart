@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
+import 'package:linkschool/modules/explore/courses/course_leaderboard.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:provider/provider.dart';
 import 'course_detail_screen.dart';
@@ -20,6 +21,9 @@ import 'course_payment_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/providers/explore/courses/cohort_provider.dart';
 import 'package:linkschool/modules/services/explore/courses/cohort_service.dart';
+import 'package:linkschool/modules/explore/courses/discussions/discussion_screen.dart';
+import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
+import 'package:linkschool/modules/services/explore/courses/discussion_service.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final String courseTitle;
@@ -70,6 +74,7 @@ class CourseContentScreen extends StatefulWidget {
 class _CourseContentScreenState extends State<CourseContentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final DiscussionProvider _discussionProvider;
   late final Stream<int> _countdownStream;
   late final CohortProvider _cohortProvider;
   DateTime? _courseStartDate;
@@ -83,7 +88,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     final cost = widget.cohortCost ?? 0;
     return cost;
   }
-  NextCourseModel? nextCourse = null;
+  NextCourseModel? nextCourse;
 
   bool _isTrialDaysExpired() {
     final expiry = widget.trialExpiryDate;
@@ -186,14 +191,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             cohortId: widget.cohortId,
             profileId: profileId,
           );
-      if (profileId != null) {
-        await context.read<LessonPerformanceProvider>().loadLessonPerformance(
-              cohortId: widget.cohortId,
-              profileId: profileId,
-              silent: true,
-            );
-      }
-      _refreshPaymentStatus();
+      await context.read<LessonPerformanceProvider>().loadLessonPerformance(
+            cohortId: widget.cohortId,
+            profileId: profileId,
+            silent: true,
+          );
+          _refreshPaymentStatus();
     });
   }
 
@@ -473,7 +476,9 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    _discussionProvider = DiscussionProvider(DiscussionService());
+    _discussionProvider.loadDiscussions(cohortId: widget.cohortId);
     _tabController.addListener(_handleTabChange);
     _loadCompletionStatus();
     _localLessonsTaken = 0;
@@ -495,6 +500,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   void dispose() {
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
+    _discussionProvider.dispose();
     _startTimer?.cancel();
     super.dispose();
   }
@@ -586,81 +592,76 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final lessonProvider = context.watch<LessonProvider>();
-    final lessons = lessonProvider.lessons;
-    nextCourse = lessonProvider.nextCourse;
+@override
+Widget build(BuildContext context) {
+  final lessonProvider = context.watch<LessonProvider>();
+  final lessons = lessonProvider.lessons;
+  nextCourse = lessonProvider.nextCourse;
 
-    const imageHeight = 240.0;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: RefreshIndicator(
-    onRefresh: () async {
-          await _loadCohortAndMaybeLock();
-          if (!_lessonsLocked) {
-            final profileId = widget.profileId;
-            await context.read<LessonProvider>().loadLessons(
-                  cohortId: widget.cohortId,
-                  profileId: profileId ?? 0,
-                );
-            if (profileId != null) {
-              await context.read<LessonPerformanceProvider>()
-                  .loadLessonPerformance(
-                cohortId: widget.cohortId,
-                profileId: profileId,
-                silent: false,
-              );
-            }
-          }
-        },
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                SizedBox(
-                  height: imageHeight,
-                  width: double.infinity,
-                  child: widget.lessonImage.isNotEmpty
-    ? Image.network(
-        widget.lessonImage.startsWith('http')
-            ? widget.lessonImage
-            : "https://linkskool.net/${widget.lessonImage}",
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          color: Colors.grey.shade200,
-          child: const Center(
-            child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
-          ),
-        ),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            color: Colors.grey.shade100,
-            child: const Center(
-              child: CircularProgressIndicator(),
+  return Scaffold(
+    backgroundColor: Colors.white,
+    body: NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverAppBar(
+            expandedHeight: 240.0,
+            floating: false,
+            pinned: true,
+            snap: false,
+            backgroundColor: Colors.white,
+            elevation: innerBoxIsScrolled ? 2 : 0,
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: innerBoxIsScrolled ? Colors.black87 : Colors.white,
+              ),
+              onPressed: () => Navigator.pop(context),
             ),
-          );
-        },
-      )
-    : Container(
-        color: Colors.grey.shade200,
-        child: const Center(
-          child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
-        ),
+
+            title: AnimatedOpacity(
+    opacity: innerBoxIsScrolled ? 1.0 : 0.0,
+    duration: const Duration(milliseconds: 200),
+    child: Text(
+      widget.courseName,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
+      style: const TextStyle(
+        color: Colors.black87,
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
       ),
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
+    ),
+  ),
+  centerTitle: true,
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  widget.lessonImage.isNotEmpty
+                      ? Image.network(
+                          widget.lessonImage.startsWith('http')
+                              ? widget.lessonImage
+                              : "https://linkskool.net/${widget.lessonImage}",
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            color: Colors.grey.shade200,
+                            child: const Center(
+                              child: Icon(Icons.broken_image,
+                                  size: 48, color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: Icon(Icons.broken_image,
+                                size: 48, color: Colors.grey),
+                          ),
+                        ),
+                  // gradient overlay
+                  DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
@@ -672,85 +673,105 @@ class _CourseContentScreenState extends State<CourseContentScreen>
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                  child: Text(
-                    widget.courseName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Course Content',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade200),
+                  // course name at bottom
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 52, // leave space above the TabBar
+                    child: Text(
+                      widget.courseName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
                       ),
                     ),
-                    child: TabBar(
+                  ),
+                ],
+              ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(48),
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TabBar(
                       controller: _tabController,
                       onTap: (index) {
-                        if (index == 1) {
-                          _refreshPerformanceSilent();
-                        }
+                        if (index == 1) _refreshPerformanceSilent();
                       },
+                      labelPadding:
+                          const EdgeInsets.symmetric(horizontal: 3),
                       labelColor: const Color(0xFFFFA500),
                       unselectedLabelColor: Colors.grey.shade600,
                       indicatorColor: const Color(0xFFFFA500),
                       indicatorWeight: 3,
                       labelStyle: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                       unselectedLabelStyle: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                       tabs: const [
                         Tab(text: 'Lessons'),
                         Tab(text: 'Performance'),
+                        Tab(text: 'Discussion'),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildLessonsTab(),
-                  _buildPerformanceTab(),
-                ],
+          ),
+        ];
+      },
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _loadCohortAndMaybeLock();
+          if (!_lessonsLocked) {
+            final profileId = widget.profileId;
+            await context.read<LessonProvider>().loadLessons(
+                  cohortId: widget.cohortId,
+                  profileId: profileId ?? 0,
+                );
+            if (profileId != null) {
+              await context
+                  .read<LessonPerformanceProvider>()
+                  .loadLessonPerformance(
+                    cohortId: widget.cohortId,
+                    profileId: profileId,
+                    silent: false,
+                  );
+            }
+          }
+          await _discussionProvider.refresh();
+        },
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildLessonsTab(),
+            _buildPerformanceTab(),
+            ChangeNotifierProvider.value(
+              value: _discussionProvider,
+              child: DiscussionScreen(
+                cohortId: widget.cohortId,
+                authorId: widget.profileId,
+                programId: widget.categoryId,
+                courseId: widget.courseId,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLessonsTab() {
     if (_isStartDateLoading) {
@@ -1228,10 +1249,110 @@ class _CourseContentScreenState extends State<CourseContentScreen>
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
             // -- Overview Summary Cards --
             _buildPerformanceOverviewCards(performance),
             const SizedBox(height: 28),
+
+            // show leaderboard section
+            GestureDetector(
+              onTap: () {
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LeaderboardScreen(
+                
+                    cohortId: widget.cohortId,
+                    profileId: widget.profileId,
+                  ),
+                ),
+              );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFFFCA28).withOpacity(0.4),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFCA28).withOpacity(0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFA500), Color(0xFFFFB84D)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.leaderboard_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Leaderboard',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'See how you rank among your peers and climb the leaderboard!',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey.shade700,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFA500),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
             // -- Performance Breakdown header --
             Row(

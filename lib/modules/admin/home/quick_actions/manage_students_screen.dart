@@ -30,28 +30,114 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
 
+  int? _resolveLevelIdForClass(LevelClassProvider provider, int classId) {
+    for (final levelWithClasses in provider.levelsWithClasses) {
+      for (final cls in levelWithClasses.classes) {
+        if (cls.id == classId) {
+          return levelWithClasses.level.id;
+        }
+      }
+    }
+    return null;
+  }
+
+  LevelWithClasses? _resolveFallbackLevel(LevelClassProvider provider) {
+    for (final levelWithClasses in provider.levelsWithClasses) {
+      if (levelWithClasses.classes.isNotEmpty) {
+        return levelWithClasses;
+      }
+    }
+    if (provider.levelsWithClasses.isNotEmpty) {
+      return provider.levelsWithClasses.first;
+    }
+    return null;
+  }
+
+  Future<void> _refreshStudents() async {
+    final studentProvider =
+        Provider.of<ManageStudentProvider>(context, listen: false);
+    final levelClassProvider =
+        Provider.of<LevelClassProvider>(context, listen: false);
+
+    await levelClassProvider.fetchLevels();
+    if (!mounted) return;
+
+    if (selectedClassId != null) {
+      await studentProvider.fetchStudentsByClass(classId: selectedClassId!);
+      return;
+    }
+
+    if (selectedLevelId != null) {
+      await studentProvider.fetchStudentsByLevel(levelId: selectedLevelId!);
+      return;
+    }
+
+    final fallbackLevel = _resolveFallbackLevel(levelClassProvider);
+    if (fallbackLevel == null) return;
+
+    final fallbackClass = fallbackLevel.classes.isNotEmpty
+        ? fallbackLevel.classes.first
+        : null;
+
+    setState(() {
+      selectedLevelId = fallbackLevel.level.id;
+      selectedClassId = fallbackClass?.id;
+    });
+
+    if (fallbackClass != null) {
+      await studentProvider.fetchStudentsByClass(classId: fallbackClass.id);
+    } else {
+      await studentProvider.fetchStudentsByLevel(levelId: fallbackLevel.level.id);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final studentProvider = Provider.of<ManageStudentProvider>(context, listen: false);
-      
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final studentProvider =
+          Provider.of<ManageStudentProvider>(context, listen: false);
+      final levelClassProvider =
+          Provider.of<LevelClassProvider>(context, listen: false);
+
+      await levelClassProvider.fetchLevels();
+      if (!mounted) return;
+
       if (widget.classId != null) {
-        // Fetch students by class with pagination
-        studentProvider.fetchStudentsByClass(classId: widget.classId!);
-        selectedClassId = widget.classId;
+        final levelId = _resolveLevelIdForClass(levelClassProvider, widget.classId!);
+        setState(() {
+          selectedClassId = widget.classId;
+          selectedLevelId = levelId;
+        });
+        await studentProvider.fetchStudentsByClass(classId: widget.classId!);
       } else if (widget.levelId != null) {
-        // Fetch students by level with pagination
-        studentProvider.fetchStudentsByLevel(levelId: widget.levelId!);
-        selectedLevelId = widget.levelId;
+        setState(() {
+          selectedLevelId = widget.levelId;
+        });
+        await studentProvider.fetchStudentsByLevel(levelId: widget.levelId!);
       } else {
-        // Fetch all students (old behavior)
-        studentProvider.fetchStudents();
+        final fallbackLevel = _resolveFallbackLevel(levelClassProvider);
+        if (fallbackLevel == null) {
+          return;
+        }
+
+        final fallbackClass = fallbackLevel.classes.isNotEmpty
+            ? fallbackLevel.classes.first
+            : null;
+
+        setState(() {
+          selectedLevelId = fallbackLevel.level.id;
+          selectedClassId = fallbackClass?.id;
+        });
+
+        if (fallbackClass != null) {
+          await studentProvider.fetchStudentsByClass(classId: fallbackClass.id);
+        } else {
+          await studentProvider.fetchStudentsByLevel(levelId: fallbackLevel.level.id);
+        }
       }
-      
-      Provider.of<LevelClassProvider>(context, listen: false).fetchLevels();
     });
     print("Init ManageStudentsScreen with levelId: ${widget.levelId}, classId: ${widget.classId}");
   }
@@ -160,18 +246,33 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                 ),
                 child: ListView(
                   shrinkWrap: true,
-                  children: [
+                    children: [
                     _buildModalFilterItem(
-                      label: '',
+                      label: 'Auto Select',
                       isSelected: selectedLevelId == null,
                       onTap: () {
+                        final fallbackLevel = _resolveFallbackLevel(levelClassProvider);
+                        if (fallbackLevel == null) {
+                          Navigator.pop(context);
+                          return;
+                        }
+
+                        final fallbackClass = fallbackLevel.classes.isNotEmpty
+                            ? fallbackLevel.classes.first
+                            : null;
+
                         setState(() {
-                          selectedLevelId = null;
-                          selectedClassId = null;
+                          selectedLevelId = fallbackLevel.level.id;
+                          selectedClassId = fallbackClass?.id;
                         });
-                        // Fetch all students when "All Levels" is selected
-                        Provider.of<ManageStudentProvider>(context, listen: false)
-                            .fetchStudents();
+
+                        final studentProvider =
+                            Provider.of<ManageStudentProvider>(context, listen: false);
+                        if (fallbackClass != null) {
+                          studentProvider.fetchStudentsByClass(classId: fallbackClass.id);
+                        } else {
+                          studentProvider.fetchStudentsByLevel(levelId: fallbackLevel.level.id);
+                        }
                         Navigator.pop(context);
                       },
                     ),
@@ -340,13 +441,17 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       ),
       body: Stack(
         children: [
-          studentProvider.isLoading || levelClassProvider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Container(
+           if (!_showAddForm && (studentProvider.isLoading || levelClassProvider.isLoading))
+      const Center(child: CircularProgressIndicator())
+      
+      else Container(
                  // decoration: Constants.customBoxDecoration(context),
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: Column(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshStudents,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
                       children: [
                         if (_showAddForm)
                           StudentFormWidget(
@@ -790,9 +895,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                   ),
                                 ),
                               ),
-                            ),
+                          ),
                         ],
                       ],
+                      ),
                     ),
                   ),
                 ),
@@ -1179,6 +1285,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
   int? dialogClassId;
   File? tempImage;
   String oldFileName = '';
+  bool _isSaving = false;
 
   bool get isEditing => widget.student != null;
 
@@ -1291,6 +1398,8 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
   }
 
   Future<void> _saveStudent() async {
+    if (_isSaving) return;
+
        final firstName = _firstNameController.text.trim();
     final surname = _surnameController.text.trim();
     // Validate full name first
@@ -1369,6 +1478,10 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
     final studentProvider =
         Provider.of<ManageStudentProvider>(context, listen: false);
 
+    setState(() {
+      _isSaving = true;
+    });
+
     // Handle photo upload
     String? base64Image;
     String? newFileName;
@@ -1407,7 +1520,6 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
       'registration_no': registrationNoController.text.trim(),
     };
 
-    // CRITICAL FIX: Always send photo as an object/map structure
     if (tempImage != null && base64Image != null) {
       // New image selected - send with base64
       studentData['photo'] = {
@@ -1416,19 +1528,8 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
         "old_file_name": oldFileName.isNotEmpty ? widget.student?.photoPath : "",
       };
     } else if (isEditing) {
-      // Editing without new image - send existing path in proper structure
-      studentData['photo'] = {
-        "file": widget.student?.photoPath ?? "",
-        "file_name": oldFileName.isNotEmpty ? widget.student?.photoPath : "",
-        "old_file_name": "",
-      };
-    } else {
-      // Creating new student without photo - send empty structure
-      studentData['photo'] = {
-        "file": "",
-        "file_name": "",
-        "old_file_name": "",
-      };
+      // Editing without new image - match backend contract exactly
+      studentData['photo'] = widget.student?.photoPath ?? '';
     }
 
     bool success;
@@ -1442,24 +1543,31 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
     // Check if widget is still mounted before showing snackbar
     if (!mounted) return;
 
-    if (success) {
-      widget.onSaved();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing
-              ? 'Student updated successfully'
-              : 'Student added successfully'),
-          backgroundColor: AppColors.attCheckColor2,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(studentProvider.error ?? 'Failed to save student'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+ if (success) {
+  final messenger = ScaffoldMessenger.of(context);
+  final message = isEditing 
+      ? 'Student updated successfully' 
+      : 'Student added successfully';
+  
+  setState(() => _isSaving = false);
+  widget.onSaved(); // ← call this FIRST to hide form
+  
+  messenger.showSnackBar(SnackBar(
+    content: Text(message),
+    backgroundColor: AppColors.attCheckColor2,
+  ));
+  
+} else {
+  setState(() => _isSaving = false);
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(studentProvider.error ?? 'Failed to save student'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
   }
 
   @override
@@ -1669,14 +1777,14 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: studentProvider.isLoading ? null : _saveStudent,
+              onPressed: (studentProvider.isLoading || _isSaving) ? null : _saveStudent,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.text2Light,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
               ),
-              child: studentProvider.isLoading
+              child: (studentProvider.isLoading || _isSaving)
                   ? const CircularProgressIndicator(color: Colors.white)
                   : Text(
                       isEditing ? 'Update Student' : 'Add Student',

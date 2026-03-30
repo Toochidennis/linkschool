@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/courses/course_waiting_screen.dart';
 
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -53,6 +54,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
   String? _lastNetworkMessage;
   bool _imagesPrecached = false;
   String? _lastPrecacheKey;
+  int? _pressedCourseId;
+  int? _loadingCourseId;
 
   // Persistent image cache for course thumbnails
   final CacheManager _coursesCacheManager = CacheManager(
@@ -150,6 +153,27 @@ class _ExploreCoursesState extends State<ExploreCourses>
       //     backgroundColor: Colors.orange,
       //   ),
       // );
+    });
+  }
+
+  void _setPressedCourseId(int courseId) {
+    if (_pressedCourseId == courseId) return;
+    setState(() {
+      _pressedCourseId = courseId;
+    });
+  }
+
+  void _clearPressedCourseId() {
+    if (_pressedCourseId == null) return;
+    setState(() {
+      _pressedCourseId = null;
+    });
+  }
+
+  void _setLoadingCourseId(int? courseId) {
+    if (!mounted || _loadingCourseId == courseId) return;
+    setState(() {
+      _loadingCourseId = courseId;
     });
   }
 
@@ -940,6 +964,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
   Future<void> _handleCourseTap(CourseModel course, CategoryModel category) async {
       if (_navigating) return;
       _navigating = true;
+      _setLoadingCourseId(course.id);
       try {
         final canUseNetwork = await NetworkDialog.ensureOnline(context);
         if (!canUseNetwork || !mounted) return;
@@ -1088,6 +1113,38 @@ class _ExploreCoursesState extends State<ExploreCourses>
           final imageUrl = course.imageUrl.startsWith('https')
               ? course.imageUrl
               : "https://linkskool.net/${course.imageUrl}";
+
+
+                 final cohortStart = course.cohortStartDate != null
+          ? DateTime.tryParse(course.cohortStartDate!)
+          : null;
+
+
+           if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CourseWaitingScreen(
+              slug: course.slug ?? '',
+              providerSubtitle: 'Powered By Digital Dreams',
+              category: category.name.toUpperCase(),
+              categoryColor: _getCategoryColor(category.name),
+              categoryId: course.programId ?? category.id,
+              isFree: course.isFree,
+              trialExpiryDate: course.trialExpiryDate,
+              profileId: _activeProfile?.id,
+              trialType: course.trialType,
+              trialValue: course.trialValue,
+              lessonsTaken: course.lessonsTaken,
+              cohortCost: course.cost.toInt(),
+            ),
+          ),
+        );
+        return;
+      }
+
+
+
           await Navigator.push(
             context,
             MaterialPageRoute(
@@ -1138,6 +1195,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
         );
       } finally {
         _navigating = false;
+        _clearPressedCourseId();
+        _setLoadingCourseId(null);
       }
     }
 
@@ -1338,20 +1397,25 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (id != null) {
-      await prefs.setInt('active_profile_id', id);
-      if (birthDate != null) {
-        await prefs.setString('active_profile_dob', birthDate);
+      final prefs = await SharedPreferences.getInstance();
+      if (id != null) {
+        await prefs.setInt('active_profile_id', id);
+        final currentProfile = _activeProfile;
+        if (currentProfile != null && currentProfile.id == id) {
+          await prefs.setString('active_profile_name', _profileName(currentProfile));
+        }
+        if (birthDate != null) {
+          await prefs.setString('active_profile_dob', birthDate);
+        } else {
+          await prefs.remove('active_profile_dob');
+        }
       } else {
+        await prefs.remove('active_profile_id');
+        await prefs.remove('active_profile_name');
         await prefs.remove('active_profile_dob');
-      }
-    } else {
-      await prefs.remove('active_profile_id');
-      await prefs.remove('active_profile_dob');
-      // Also clear provider persisted values
-      if (mounted) {
-        Provider.of<ExploreCourseProvider>(context, listen: false)
+        // Also clear provider persisted values
+        if (mounted) {
+          Provider.of<ExploreCourseProvider>(context, listen: false)
             .clearPersistedProfile();
       }
     }
@@ -1990,233 +2054,272 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Widget _buildCompactCourseCard(CourseModel course, CategoryModel category) {
-    return GestureDetector(
-      onTap: () => _handleCourseTap(course, category),
-      child: Container(
-          width: 240,
-          margin: const EdgeInsets.only(right: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
+    final isPressed = _pressedCourseId == course.id;
+    final isLoading = _loadingCourseId == course.id;
+
+    return SizedBox(
+      width: 240,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Material(
+          color: Colors.white,
+          elevation: 2,
+          shadowColor: Colors.black.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _handleCourseTap(course, category),
+            onTapDown: (_) => _setPressedCourseId(course.id),
+            onTapCancel: _clearPressedCourseId,
+            onTapUp: (_) => _clearPressedCourseId(),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Course Image
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                child: Stack(
-                  children: [
-                    CachedNetworkImage(
-                      cacheManager: _coursesCacheManager,
-                      imageUrl: course.imageUrl.startsWith('https')
-                          ? course.imageUrl
-                          : "https://linkskool.net/${course.imageUrl}",
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) {
-                        return Container(
-                          height: 120,
-                          color: Colors.grey.shade100,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFFFA500),
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        );
-                      },
-                      errorWidget: (context, url, error) {
-                        return Container(
-                          height: 120,
-                          color: Colors.grey.shade200,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              size: 32,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        );
-                      },
+            splashColor: const Color(0xFFFFA500).withOpacity(0.16),
+            highlightColor: const Color(0xFFFFA500).withOpacity(0.08),
+            child: AnimatedScale(
+              scale: isPressed ? 0.985 : 1.0,
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              child: Stack(
+                children: [
+                  Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Course Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
                     ),
-                    // Category badge
-
-                    // Price & Trial badges
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          // Price badge (Free / Paid)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: (course.isFree == true)
-                                  ? Colors.green.shade600
-                                  : Colors.red.shade600,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              (course.isFree == true)
-                                  ? 'Free'
-                                  : course.priceLabel,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
-
-                          // Optional Trial badge
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Course Content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Course Title
-                      Text(
-                        course.courseName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Description
-                      Expanded(
-                        child: Text(
-                          course.description,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                            height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Provider
-                      Row(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFFA500), Color(0xFFFF6B00)],
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'B',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                    child: Stack(
+                      children: [
+                        CachedNetworkImage(
+                          cacheManager: _coursesCacheManager,
+                          imageUrl: course.imageUrl.startsWith('https')
+                              ? course.imageUrl
+                              : "https://linkskool.net/${course.imageUrl}",
+                          height: 120,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) {
+                            return Container(
+                              height: 120,
+                              color: Colors.grey.shade100,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFFFA500),
+                                  strokeWidth: 2,
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  category.name,
+                            );
+                          },
+                          errorWidget: (context, url, error) {
+                            return Container(
+                              height: 120,
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 32,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        // Price & Trial badges
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // Price badge (Free / Paid)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: (course.isFree == true)
+                                      ? Colors.green.shade600
+                                      : Colors.red.shade600,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  (course.isFree == true)
+                                      ? 'Free'
+                                      : course.priceLabel,
                                   style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: 0.3,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                Text(
-                                  'Powered By Digital Dreams',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Course Content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Course Title
+                          Text(
+                            course.courseName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+
+                          // Description
+                          Expanded(
+                            child: Text(
+                              course.description,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(height: 8),
+
+                          // Provider
+                          Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFFFA500),
+                                      Color(0xFFFF6B00)
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'B',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      category.name,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Powered By Digital Dreams',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Take Course Button
+                          // SizedBox(
+                          //   width: double.infinity,
+                          //   height: 32,
+                          //   child: OutlinedButton(
+                          //     onPressed: () {
+                          //       ScaffoldMessenger.of(context).showSnackBar(
+                          //         SnackBar(
+                          //           content: Text('Starting ${course['title']} course...'),
+                          //           duration: const Duration(seconds: 2),
+                          //         ),
+                          //       );
+                          //     },
+                          //     style: OutlinedButton.styleFrom(
+                          //       side: const BorderSide(color: Color(0xFFFFA500), width: 1.5),
+                          //       padding: EdgeInsets.zero,
+                          //       shape: RoundedRectangleBorder(
+                          //         borderRadius: BorderRadius.circular(8),
+                          //       ),
+                          //     ),
+                          //     child: const Text(
+                          //       'Take Course',
+                          //       style: TextStyle(
+                          //         fontSize: 12,
+                          //         fontWeight: FontWeight.w700,
+                          //         color: Color(0xFFFFA500),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-
-                      // Take Course Button
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   height: 32,
-                      //   child: OutlinedButton(
-                      //     onPressed: () {
-                      //       ScaffoldMessenger.of(context).showSnackBar(
-                      //         SnackBar(
-                      //           content: Text('Starting ${course['title']} course...'),
-                      //           duration: const Duration(seconds: 2),
-                      //         ),
-                      //       );
-                      //     },
-                      //     style: OutlinedButton.styleFrom(
-                      //       side: const BorderSide(color: Color(0xFFFFA500), width: 1.5),
-                      //       padding: EdgeInsets.zero,
-                      //       shape: RoundedRectangleBorder(
-                      //         borderRadius: BorderRadius.circular(8),
-                      //       ),
-                      //     ),
-                      //     child: const Text(
-                      //       'Take Course',
-                      //       style: TextStyle(
-                      //         fontSize: 12,
-                      //         fontWeight: FontWeight.w700,
-                      //         color: Color(0xFFFFA500),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+                  if (isLoading)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: AnimatedOpacity(
+                          opacity: 1,
+                          duration: const Duration(milliseconds: 120),
+                          child: Container(
+                            color: Colors.white.withOpacity(0.55),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFFFFA500),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }
 

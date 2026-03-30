@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/config/env_config.dart' show EnvConfig;
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 // import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
@@ -126,6 +125,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       if (signedIn == true) {
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
+        if (cbtUserProvider.currentUser == null) {
+          await cbtUserProvider.initialize();
+        }
+        await cbtUserProvider.refreshCurrentUser();
         final updatedUser = cbtUserProvider.currentUser;
 
         if (updatedUser != null) {

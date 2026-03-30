@@ -31,6 +31,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
   SingleElearningContentData? elearningContentData;
 
   bool isLoading = true;
+  String? loadError;
 
   int currentAssessmentIndex = 0;
   int currentActivityIndex = 0;
@@ -69,31 +70,40 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final dashboardProvider =
-          Provider.of<DashboardProvider>(context, listen: false);
-      dashboardProvider.fetchDashboardData(
-        class_id: getuserdata()['profile']['class_id'].toString(),
-        level_id: getuserdata()['profile']['level_id'],
-        term: getuserdata()['settings']['term'],
-      );
-    });
-
+  print("Loading dashboard data...");
     fetchDashboard();
   }
 
   Future<void> fetchDashboard() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        loadError = null;
+      });
+    }
+
     final provider = Provider.of<DashboardProvider>(context, listen: false);
-    final data = await provider.fetchDashboardData(
-      class_id: getuserdata()['profile']['class_id'].toString(),
-      level_id: getuserdata()['profile']['level_id'].toString(),
-      term: getuserdata()['settings']['term'].toString(),
-    );
-    setState(() {
-      dashboardData = data;
-      isLoading = false;
-    });
+    try {
+      final data = await provider.fetchDashboardData(
+        class_id: getuserdata()['profile']['class_id'].toString(),
+        level_id: getuserdata()['profile']['level_id'].toString(),
+        term: getuserdata()['settings']['term'].toString(),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        dashboardData = data;
+        loadError = provider.errorMessage;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        dashboardData = null;
+        loadError = 'Failed to load dashboard: $e';
+        isLoading = false;
+      });
+    }
   }
 
   // FIXED: Use Consumer pattern to safely access provider
@@ -257,10 +267,49 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || dashboardData == null) {
+    if (isLoading) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (loadError != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline,
+                    size: 56, color: Colors.redAccent),
+                const SizedBox(height: 12),
+                const Text(
+                  'Opps Something went wrong',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+              
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: fetchDashboard,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (dashboardData == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('No dashboard data available.'),
         ),
       );
     }
@@ -293,63 +342,71 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Assessments Carousel
-             SizedBox(
-  height: 205,
-  child: PageView.builder(
-    controller: assessmentController,
-    itemCount: recentQuizzes.length,
-    onPageChanged: (index) {
-      setState(() => currentAssessmentIndex = index);
-    },
-    itemBuilder: (context, index) {
-      final assessment = recentQuizzes[index];
+              if (recentQuizzes.isEmpty)
+                _buildEmptySection(
+                  title: 'No quizzes yet',
+                  message: 'When quizzes are posted, they will appear here.',
+                  height: 205,
+                )
+              else
+                SizedBox(
+                  height: 205,
+                  child: PageView.builder(
+                    controller: assessmentController,
+                    itemCount: recentQuizzes.length,
+                    onPageChanged: (index) {
+                      setState(() => currentAssessmentIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      final assessment = recentQuizzes[index];
 
-      final subject = assessment.courseName; // top small text
-      final title = assessment.title;        // big bold title
-      final date = assessment.datePosted;    // shown in pill
+                      final subject = assessment.courseName;
+                      final title = assessment.title;
+                      final date = assessment.datePosted;
 
-      final classesText = getuserdata()['profile']['class_name'] ?? "All Classes";
+                      final classesText =
+                          getuserdata()['profile']['class_name'] ??
+                              "All Classes";
 
-      // Use safe time extraction (your current extractTime may crash if not ISO)
-      final timeText = _safeTimeFromDatePosted(assessment.datePosted);
+                      final timeText =
+                          _safeTimeFromDatePosted(assessment.datePosted);
+                      final durationText = "20 Minutes";
 
-      // keep your duration
-      final durationText = "20 Minutes";
-
-      return _buildStudentQuizCard(
-        index: index,
-        subject: subject,
-        title: title,
-        date: date,
-        classesText: classesText,
-        timeText: timeText,
-        durationText: durationText,
-        onTap: () => _handleAssessmentTap(assessment.id, context),
-      );
-    },
-  ),
-),
-
+                      return _buildStudentQuizCard(
+                        index: index,
+                        subject: subject,
+                        title: title,
+                        date: date,
+                        classesText: classesText,
+                        timeText: timeText,
+                        durationText: durationText,
+                        onTap: () => _handleAssessmentTap(assessment.id, context),
+                      );
+                    },
+                  ),
+                ),
 
               // Carousel Dots
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  recentQuizzes.length,
-                  (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: currentAssessmentIndex == index
-                          ? Colors.blue
-                          : Colors.grey,
+              if (recentQuizzes.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    recentQuizzes.length,
+                    (index) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: currentAssessmentIndex == index
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
 
               const SizedBox(height: 24),
               // Recent Activity Carousel
@@ -361,77 +418,85 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 110,
-                child: PageView.builder(
-                  controller: activityController,
-                  itemCount: activities.length,
-                  itemBuilder: (context, index) {
-                    final activity = activities[index];
-                    return GestureDetector(
-                      onTap: () => _handleActivityTap(
-                          activity, context), // FIXED: Use the new method
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              children: [
-                                // FIXED: Replace invalid asset with placeholder
-                                CircleAvatar(
-                                  backgroundColor: Colors.grey[300],
-                                  child: Icon(Icons.person,
-                                      color: Colors.grey[600]),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      RichText(
-                                        text: TextSpan(
-                                          style: const TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 14),
-                                          children: [
-                                            TextSpan(
-                                                text: '${activity.createdBy} '),
-                                            TextSpan(
-                                                text: '${activity.type} ',
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.normal)),
-                                            TextSpan(
-                                                text: activity.courseName,
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        activity.datePosted,
-                                        style: const TextStyle(
-                                            color: Colors.grey, fontSize: 12),
-                                      ),
-                                    ],
+              if (activities.isEmpty)
+                _buildEmptySection(
+                  title: 'No recent activity',
+                  message: 'Activity will show up here once students interact.',
+                  height: 110,
+                )
+              else
+                SizedBox(
+                  height: 110,
+                  child: PageView.builder(
+                    controller: activityController,
+                    itemCount: activities.length,
+                    itemBuilder: (context, index) {
+                      final activity = activities[index];
+                      return GestureDetector(
+                        onTap: () => _handleActivityTap(activity, context),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Card(
+                            elevation: 4,
+                            margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: Colors.grey[300],
+                                    child: Icon(Icons.person,
+                                        color: Colors.grey[600]),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        RichText(
+                                          text: TextSpan(
+                                            style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 14),
+                                            children: [
+                                              TextSpan(
+                                                  text:
+                                                      '${activity.createdBy} '),
+                                              TextSpan(
+                                                  text: '${activity.type} ',
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.normal)),
+                                              TextSpan(
+                                                  text: activity.courseName,
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          activity.datePosted,
+                                          style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 24),
               // Courses Grid
@@ -443,65 +508,105 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 3,
-                ),
-                itemCount: courses.length,
-                itemBuilder: (context, index) {
-                  final course = courses[index];
-                  final svgBackground =
-                      courseBackgrounds[index % courseBackgrounds.length];
-                  return GestureDetector(
-                    onTap: () => _navigateToCourseDetail(
-                        course.courseName, dashboardData!, course.syllabusId),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12.0),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            svgBackground,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                courseIcon,
-                                width: 24,
-                                height: 24,
-                                colorFilter: const ColorFilter.mode(
-                                  Colors.white,
-                                  BlendMode.srcIn,
+              if (courses.isEmpty)
+                _buildEmptySection(
+                  title: 'No courses available',
+                  message: 'Courses will appear here when they are assigned.',
+                  height: 90,
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 3,
+                  ),
+                  itemCount: courses.length,
+                  itemBuilder: (context, index) {
+                    final course = courses[index];
+                    final svgBackground =
+                        courseBackgrounds[index % courseBackgrounds.length];
+                    return GestureDetector(
+                      onTap: () => _navigateToCourseDetail(
+                          course.courseName, dashboardData!, course.syllabusId),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              svgBackground,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SvgPicture.asset(
+                                  courseIcon,
+                                  width: 24,
+                                  height: 24,
+                                  colorFilter: const ColorFilter.mode(
+                                    Colors.white,
+                                    BlendMode.srcIn,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                course.courseName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                                const SizedBox(width: 8),
+                                Text(
+                                  course.courseName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptySection({
+    required String title,
+    required String message,
+    required double height,
+  }) {
+    return Container(
+      height: height,
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.grey),
+          ),
+        ],
       ),
     );
   }

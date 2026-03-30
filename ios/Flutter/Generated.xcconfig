@@ -1,11 +1,11 @@
 // This is a generated file; do not edit or check into version control.
-FLUTTER_ROOT=C:\Users\ewoch\Dev\flutter
-FLUTTER_APPLICATION_PATH=C:\Users\ewoch\linkschool
+FLUTTER_ROOT=/usr/local/share/flutter
+FLUTTER_APPLICATION_PATH=/Users/toochidennis/Projects/linkschool
 COCOAPODS_PARALLEL_CODE_SIGN=true
-FLUTTER_TARGET=lib\main.dart
+FLUTTER_TARGET=lib/main.dart
 FLUTTER_BUILD_DIR=build
-FLUTTER_BUILD_NAME=1.4.4
-FLUTTER_BUILD_NUMBER=37
+FLUTTER_BUILD_NAME=1.6.0
+FLUTTER_BUILD_NUMBER=53
 EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386
 EXCLUDED_ARCHS[sdk=iphoneos*]=armv7
 DART_OBFUSCATION=false

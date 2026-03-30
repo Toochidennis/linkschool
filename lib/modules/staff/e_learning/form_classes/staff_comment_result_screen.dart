@@ -743,32 +743,41 @@ class _StaffCommentCourseResultScreenState
                       Icons.arrow_back_ios,
                       color: _currentStudentIndex > 0
                           ? AppColors.eLearningBtnColor1
-                          : Colors.grey,
+                        : Colors.grey,
                     ),
                   ),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.primaries[
-                            _currentStudentIndex % Colors.primaries.length],
-                        child: Text(
-                          student['student_name']?.isNotEmpty == true
-                              ? student['student_name'][0].toUpperCase()
-                              : 'S',
-                          style: const TextStyle(color: Colors.white),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.primaries[
+                              _currentStudentIndex % Colors.primaries.length],
+                          child: Text(
+                            student['student_name']?.isNotEmpty == true
+                                ? student['student_name'][0].toUpperCase()
+                                : 'S',
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        student['student_name'] ?? 'N/A',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            student['student_name'] ?? 'N/A',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   IconButton(
                     onPressed: _currentStudentIndex < studentResults.length - 1
@@ -795,7 +804,8 @@ class _StaffCommentCourseResultScreenState
                 ),
                 child: Center(
                   child: Text(
-                    '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
+                    '${int.parse(widget.year) - 1}/${widget.year} ${widget.termName}',
+                    // '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,

@@ -15,7 +15,7 @@ class CohortService {
       }
       final cohortIdInt = int.tryParse(cohortId);
 
-      final url = '$_baseUrl/${cohortId}';
+      final url = '$_baseUrl/$cohortId';
       final uri = Uri.parse(url);
 
       final response = await http.get(

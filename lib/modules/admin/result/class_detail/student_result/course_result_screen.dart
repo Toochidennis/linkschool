@@ -46,8 +46,8 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
   @override
   Widget build(BuildContext context) {
     final courseResultProvider = Provider.of<CourseResultProvider>(context);
-    final nextYear = (int.parse(widget.year) + 1).toString();
-    final sessionTitle = '${widget.year}/$nextYear ${widget.termName}';
+ final prevYear = (int.parse(widget.year) - 1).toString();
+final sessionTitle = '$prevYear/${widget.year} ${widget.termName}';
 
     return Scaffold(
       appBar: AppBar(

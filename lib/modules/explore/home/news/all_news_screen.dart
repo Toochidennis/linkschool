@@ -528,6 +528,18 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     );
   }
 
+  String stripHtml(String html) {
+  return html
+    .replaceAll(RegExp(r'<[^>]*>'), '')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&quot;', '"')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .trim();
+}
+
   // Calculate total item count including ads
   int _getListItemCount(int newsCount) {
     if (newsCount == 0) return 0;
@@ -722,7 +734,8 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                     
                     // Description
                     Text(
-                      news.content,
+                      stripHtml(news.content),
+                     // news.content,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -796,7 +809,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
               children: [
                 // Title
                 Text(
-                  news.title,
+                 stripHtml(news.title),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal600(
@@ -808,7 +821,8 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                 
                 // Description
                 Text(
-                  news.content,
+                  stripHtml(news.content),
+                //  news.content,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal400(

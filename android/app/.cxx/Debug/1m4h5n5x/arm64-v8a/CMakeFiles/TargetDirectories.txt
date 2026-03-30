@@ -1,0 +1,2 @@
+/Users/toochidennis/Projects/linkschool/android/app/.cxx/debug/1m4h5n5x/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/toochidennis/Projects/linkschool/android/app/.cxx/debug/1m4h5n5x/arm64-v8a/CMakeFiles/rebuild_cache.dir

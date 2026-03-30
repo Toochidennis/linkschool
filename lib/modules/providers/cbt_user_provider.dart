@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/services/cbt_user_service.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/firebase_messaging_service.dart';
@@ -19,12 +20,15 @@ class CbtUserProvider with ChangeNotifier {
   final UserProfileUpdateService _profileUpdateService = UserProfileUpdateService();
   final CbtUserService _userService = CbtUserService();
   final CbtFcmTokenService _fcmTokenService = CbtFcmTokenService();
-  bool _isShowingProfileUpdate = false;
+  final CbtLicenseService _licenseService = CbtLicenseService();
+  final bool _isShowingProfileUpdate = false;
   StreamSubscription<String>? _tokenRefreshSub;
 
   // User state
   CbtUserModel? _currentUser;
   CbtUserModel? get currentUser => _currentUser;
+  bool _hasValidLicense = false;
+  bool get hasValidLicense => _hasValidLicense;
 
   // Payment reference notifier
   final ValueNotifier<String?> paymentReferenceNotifier =
@@ -64,6 +68,7 @@ _currentUser = CbtUserModel.fromJson(userData);
 
         // ? SYNC SUBSCRIPTION SERVICE WITH USER PAYMENT STATUS
         await syncSubscriptionService();
+        await syncLicenseStatus(forceRefresh: true);
         await _syncDeviceTokenIfNeeded();
         _startTokenRefreshListener();
 
@@ -134,12 +139,34 @@ _currentUser = CbtUserModel.fromJson(userData);
     final subscriptionService = CbtSubscriptionService();
     await subscriptionService.syncPaymentStatus(
       userEmail: _currentUser!.email,
-      hasReference: _currentUser!.reference != null &&
-          _currentUser!.reference!.isNotEmpty,
-      subscribed: _currentUser!.subscribed,
+      hasReference: _hasValidLicense,
+      subscribed: _hasValidLicense ? 1 : 0,
     );
 
     print('? Subscription service synced with user payment status');
+  }
+
+  Future<void> syncLicenseStatus({bool forceRefresh = false}) async {
+    if (_currentUser == null || _currentUser!.id == null) {
+      _hasValidLicense = false;
+      return;
+    }
+
+    try {
+      _hasValidLicense = await _licenseService.isLicenseActive(
+        userId: _currentUser!.id!,
+        forceRefresh: forceRefresh,
+      );
+      final subscriptionService = CbtSubscriptionService();
+      await subscriptionService.syncPaymentStatus(
+        userEmail: _currentUser!.email,
+        hasReference: _hasValidLicense,
+        subscribed: _hasValidLicense ? 1 : 0,
+      );
+    } catch (e) {
+      print('❌ Error syncing license status: $e');
+      _hasValidLicense = false;
+    }
   }
 
   // =========================================================================
@@ -270,6 +297,7 @@ if ((user.profiles).isEmpty && cachedProfiles.isNotEmpty) {
   _currentUser = user;
 }
 await _saveUserToPreferences(_currentUser!);
+        await syncLicenseStatus(forceRefresh: true);
 
         // Update payment reference if user has paid
         if (user.reference != null && user.reference!.isNotEmpty) {
@@ -279,6 +307,7 @@ await _saveUserToPreferences(_currentUser!);
         print('? [FETCH USER] User saved to SharedPreferences');
       } else {
         print('?? [FETCH USER] User not found in database');
+        _hasValidLicense = false;
       }
 
       _isLoading = false;
@@ -338,6 +367,7 @@ await _saveUserToPreferences(_currentUser!);
         await _savePaymentReference(createdUser.reference!);
       }
       await syncSubscriptionService();
+      await syncLicenseStatus(forceRefresh: true);
       await _syncDeviceTokenIfNeeded();
       _startTokenRefreshListener();
       print('? Sign-up flow completed successfully');
@@ -374,6 +404,7 @@ await _saveUserToPreferences(_currentUser!);
           await _savePaymentReference(existingUser.reference!);
         }
         await syncSubscriptionService();
+        await syncLicenseStatus(forceRefresh: true);
         await _syncDeviceTokenIfNeeded();
         _startTokenRefreshListener();
         _isLoading = false;
@@ -408,6 +439,7 @@ await _saveUserToPreferences(_currentUser!);
         await _savePaymentReference(createdUser.reference!);
       }
       await syncSubscriptionService();
+      await syncLicenseStatus(forceRefresh: true);
       await _syncDeviceTokenIfNeeded();
       _startTokenRefreshListener();
       _isLoading = false;
@@ -456,6 +488,7 @@ await _saveUserToPreferences(_currentUser!);
         await _savePaymentReference(existingUser.reference!);
       }
       await syncSubscriptionService();
+      await syncLicenseStatus(forceRefresh: true);
       await _syncDeviceTokenIfNeeded();
       _startTokenRefreshListener();
       _isLoading = false;
@@ -592,6 +625,7 @@ await _saveUserToPreferences(_currentUser!);
 
       // ? Step 6: Sync subscription service
       await syncSubscriptionService();
+      await syncLicenseStatus(forceRefresh: true);
       await _syncDeviceTokenIfNeeded();
       _startTokenRefreshListener();
 
@@ -661,6 +695,7 @@ await _saveUserToPreferences(_currentUser!);
 
     // Clear state
     _currentUser = null;
+    _hasValidLicense = false;
     paymentReferenceNotifier.value = null;
     await _tokenRefreshSub?.cancel();
     _tokenRefreshSub = null;
@@ -700,10 +735,7 @@ await _saveUserToPreferences(_currentUser!);
   // ? CHECK IF USER HAS PAID
   // =========================================================================
   bool get hasPaid {
-    if (_currentUser == null) return false;
-    final hasReference =
-        _currentUser!.reference != null && _currentUser!.reference!.isNotEmpty;
-    return hasReference;
+    return _hasValidLicense;
   }
 
   // =========================================================================

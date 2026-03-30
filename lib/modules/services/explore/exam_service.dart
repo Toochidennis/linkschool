@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/database/cbt_db-helper.dart';
@@ -10,10 +11,15 @@ class ExamService {
   Future<Map<String, dynamic>> fetchExamData({
     required String examType,
     int? limit,
+    bool randomizeQuestions = false,
   }) async {
     // ── 1. Try SQLite first ────────────────────────────────────────
     try {
-      final localData = await _fetchFromDb(examType: examType, limit: limit);
+      final localData = await _fetchFromDb(
+        examType: examType,
+        limit: limit,
+        randomizeQuestions: randomizeQuestions,
+      );
       if (localData != null) {
         print('✅ Loaded exam from local DB (examId: $examType)');
         return localData;
@@ -34,6 +40,7 @@ class ExamService {
   Future<Map<String, dynamic>?> _fetchFromDb({
     required String examType,
     int? limit,
+    bool randomizeQuestions = false,
   }) async {
     final db = await _db.database;
 
@@ -61,7 +68,7 @@ class ExamService {
       'questions',
       where: 'exam_id = ?',
       whereArgs: [examId],
-      orderBy: 'id ASC',
+      orderBy: randomizeQuestions ? 'RANDOM()' : 'id ASC',
       limit: limit,
     );
 
@@ -174,6 +181,10 @@ class ExamService {
           'text': correctText ?? '',
         },
       });
+    }
+
+    if (randomizeQuestions && builtQuestions.length > 1) {
+      builtQuestions.shuffle(Random());
     }
 
     // ── Shape into the same envelope ExamProvider expects ──────────

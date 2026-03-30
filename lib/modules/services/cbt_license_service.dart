@@ -166,14 +166,11 @@ class CbtLicenseService {
     return cached;
   }
 
-  /// Returns cached license status without any network call.
-  /// true = active and not expired, false = inactive, null = no cache.
   Future<bool?> getCachedLicenseStatus(int userId) async {
     return _getCachedLicenseStatus(userId);
   }
 
-  /// Returns cached license expiry date without any network call.
-  /// null = no cached expiry.
+
   Future<DateTime?> getCachedLicenseExpiresAt() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_licenseExpiresAtKey);
@@ -181,8 +178,7 @@ class CbtLicenseService {
     return _parseDateTime(raw);
   }
 
-  /// Cached-only check for expired/inactive license.
-  /// Returns true if cached says inactive OR cached expiry date has passed.
+ 
   Future<bool> isCachedLicenseInactiveOrExpired(int userId) async {
     final cached = await _getCachedLicenseStatus(userId);
     if (cached == false) return true;

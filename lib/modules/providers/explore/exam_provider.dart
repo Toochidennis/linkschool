@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/services/explore/exam_service.dart';
@@ -18,7 +20,11 @@ class ExamProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> fetchExamData(String examType, {int? limit}) async {
+  Future<void> fetchExamData(
+    String examType, {
+    int? limit,
+    bool randomizeQuestions = false,
+  }) async {
     try {
       _isLoading = true;
       _error = null;
@@ -30,6 +36,7 @@ class ExamProvider extends ChangeNotifier {
       final data = await _examService.fetchExamData(
         examType: examType,
         limit: limit,
+        randomizeQuestions: randomizeQuestions,
       );
 
       // Debug: Print the response structure
@@ -93,6 +100,10 @@ class ExamProvider extends ChangeNotifier {
               })
               .whereType<QuestionModel>()
               .toList();
+
+          if (randomizeQuestions && questions.length > 1) {
+            questions.shuffle(Random());
+          }
 
           print('✅ Successfully loaded ${questions.length} questions');
 

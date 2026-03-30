@@ -33,7 +33,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace "com.linkskool.app"
     compileSdkVersion flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    ndkVersion "28.2.13676358"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
@@ -83,7 +83,8 @@ android {
         }
 
         debug {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
+             // Use release signing for debug builds to ensure consistent behavior
         }
     }
 }
@@ -91,89 +92,3 @@ android {
 flutter {
     source '../..'
 }
-
-// dependencies {
-//     implementation 'androidx.multidx:multidx:2.0.1'
-// }
-
-        // release {
-        //     // CRITICAL: Add signing for release builds
-        //     signingConfig signingConfigs.debug
-        //     minifyEnabled false
-        //     shrinkResources false
-        //     proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        // }
-
-
-
-// plugins {
-//     id "com.android.application"
-//     id "kotlin-android"
-//     id "dev.flutter.flutter-gradle-plugin"
-// }
-
-// def localProperties = new Properties()
-// def localPropertiesFile = rootProject.file('local.properties')
-// if (localPropertiesFile.exists()) {
-//     localPropertiesFile.withReader('UTF-8') { reader ->
-//         localProperties.load(reader)
-//     }
-// }
-
-// def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-// if (flutterVersionCode == null) {
-//     flutterVersionCode = '1'
-// }
-
-// def flutterVersionName = localProperties.getProperty('flutter.versionName')
-// if (flutterVersionName == null) {
-//     flutterVersionName = '1.0'
-// }
-
-// android {
-//     namespace "com.linkskool.app"
-//     compileSdkVersion 35
-//     ndkVersion flutter.ndkVersion
-
-//     compileOptions {
-//         sourceCompatibility JavaVersion.VERSION_1_8
-//         targetCompatibility JavaVersion.VERSION_1_8
-//     }
-
-//     kotlinOptions {
-//         jvmTarget = '1.8'
-//     }
-
-//     sourceSets {
-//         main.java.srcDirs += 'src/main/kotlin'
-//     }
-
-//     defaultConfig {
-//         applicationId "com.linkskool.app"
-//         minSdkVersion 23 
-//         targetSdkVersion 35
-//         versionCode flutterVersionCode.toInteger()
-//         versionName flutterVersionName
-//         multiDexEnabled true
-//     }
-
-//     buildTypes {
-//         release {
-//             // Use debug signing for testing (temporary fix)
-//             signingConfig signingConfigs.debug
-//             minifyEnabled false
-//             shrinkResources false
-//         }
-//         debug {
-//             signingConfig signingConfigs.debug
-//         }
-//     }
-// }
-
-// flutter {
-//     source '../..'
-// }
-
-// dependencies {
-//     implementation 'androidx.multidex:multidex:2.0.1'
-// }

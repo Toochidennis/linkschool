@@ -1,11 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/config/notification_service.dart';
+import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
-import 'package:linkschool/modules/explore/courses/course_content_screen.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
+import 'package:linkschool/modules/services/explore/courses/discussion_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
@@ -39,7 +41,6 @@ class NotificationNavigationService {
       badge: true,
       sound: true,
       provisional: false,
-
     );
 
     FirebaseMessaging.onMessage.listen((message) {
@@ -47,7 +48,6 @@ class NotificationNavigationService {
         title: message.notification?.title ?? '',
         body: message.notification?.body ?? '',
         payload: _stringPayload(message.data),
-
       );
     });
 
@@ -59,27 +59,83 @@ class NotificationNavigationService {
     }
   }
 
-Future<void> _handleMessage(RemoteMessage message) async {
-  final data = message.data;
-  if (data.isEmpty) return;
+  Future<void> handleDeepLink(Uri uri) async {
+    if (!_isSupportedDeepLink(uri)) {
+      print('Ignoring unsupported deep link: $uri');
+      return;
+    }
 
-  final type = _stringFrom(data, ['type']);
+    final data = _payloadFromUri(uri);
+    if (data.isEmpty) {
+      print('Deep link did not contain a routable payload: $uri');
+      return;
+    }
 
-  switch (type) {
-    case 'lesson_published':
-    case 'submission_graded':
-    case 'class_reminder':
-    case 'live_class_reminder':
-    case 'assignment_due_reminder':
-      await _navigateToCourseContent(data); // ✅ all go to CourseDetailScreen
-    case "news_posted":
+    await _waitForNavigatorReady();
+
+    final type = _stringFrom(data, ['type']);
+    switch (type) {
+      case 'news_posted':
         await _navigateToNewsDetails(data);
-      break;
-  
-    default:
-      print('Unknown notification type: $type');
+        break;
+      case 'discussion_started':
+      case 'discussion_comment_added':
+      case 'discussion_post_replied':
+      case 'discussion_reply_replied':
+        await _navigateToDiscussionDetail(data);
+        break;
+      case 'lesson_published':
+      case 'submission_graded':
+      case 'class_reminder':
+      case 'live_class_reminder':
+      case 'assignment_due_reminder':
+      case 'course_content':
+        await _navigateToCourseContent(data);
+        break;
+      case 'course_detail':
+        _navigateToCourseDetail(data);
+        break;
+      default:
+        if (_looksLikeCourseContentPayload(data)) {
+          await _navigateToCourseContent(data);
+        } else if (_looksLikeCoursePayload(data)) {
+          _navigateToCourseDetail(data);
+        } else if (_intFrom(data, ['news_id', 'newsId', 'id']) != null) {
+          await _navigateToNewsDetails(data);
+        } else {
+          print('Unsupported deep link payload: $data');
+        }
+    }
   }
-}
+
+  Future<void> _handleMessage(RemoteMessage message) async {
+    final data = message.data;
+    if (data.isEmpty) return;
+
+    final type = _stringFrom(data, ['type']);
+
+    switch (type) {
+      case 'discussion_started':
+      case 'discussion_comment_added':
+      case 'discussion_post_replied':
+      case 'discussion_reply_replied':
+        await _navigateToDiscussionDetail(data);
+        break;
+      case 'lesson_published':
+      case 'submission_graded':
+      case 'class_reminder':
+      case 'live_class_reminder':
+      case 'assignment_due_reminder':
+        await _navigateToCourseContent(data);
+        break;
+      case "news_posted":
+        await _navigateToNewsDetails(data);
+        break;
+
+      default:
+        print('Unknown notification type: $type');
+    }
+  }
 
   Map<String, String> _stringPayload(Map<String, dynamic> data) {
     return data.map((key, value) => MapEntry(key, value?.toString() ?? ''));
@@ -88,6 +144,11 @@ Future<void> _handleMessage(RemoteMessage message) async {
   bool _looksLikeCoursePayload(Map<String, dynamic> data) {
     return _intFrom(data, ['course_id', 'courseId']) != null &&
         _stringFrom(data, ['cohort_id', 'cohortId']).isNotEmpty;
+  }
+
+  bool _looksLikeCourseContentPayload(Map<String, dynamic> data) {
+    return _looksLikeCoursePayload(data) &&
+        _intFrom(data, ['lesson_id', 'lessonId']) != null;
   }
 
   void _navigateToCourseDetail(Map<String, dynamic> data) {
@@ -100,8 +161,7 @@ Future<void> _handleMessage(RemoteMessage message) async {
 
     final courseTitle =
         _stringFrom(data, ['course_title', 'courseTitle', 'title']);
-    final courseName =
-        _stringFrom(data, ['course_name', 'courseName', 'name']);
+    final courseName = _stringFrom(data, ['course_name', 'courseName', 'name']);
     final courseDescription =
         _stringFrom(data, ['course_description', 'courseDescription']);
     final provider =
@@ -131,93 +191,181 @@ Future<void> _handleMessage(RemoteMessage message) async {
     );
   }
 
-Future<void> _navigateToNewsDetails(Map<String, dynamic> data) async {
-  final newsId = _intFrom(data, ['news_id', 'newsId', 'id']);
-  if (newsId == null) {
-    print('Notification missing news_id, cannot navigate');
-    return;
-  }
+  Future<void> _navigateToDiscussionDetail(Map<String, dynamic> data) async {
+    final discussionId = _stringFrom(data, ['discussion_id', 'discussionId']);
+    final cohortId = _stringFrom(data, ['cohort_id', 'cohortId', 'cohortid']);
+    final courseId = _intFrom(data, ['course_id', 'courseId', 'courseid']);
+    final programId = _intFrom(data, ['program_id', 'programId', 'programid']);
+    final authorId = _intFrom(data, ['author_id', 'authorId']);
 
-  final navigator = _navigatorKey?.currentState;
-  final context = _navigatorKey?.currentContext;
-  if (navigator == null || context == null) {
-    print('Navigator not ready, cannot open NewsDetails');
-    return;
-  }
-
-  final provider = Provider.of<NewsProvider>(context, listen: false);
-  if (provider.newsmodel.isEmpty) {
-    await provider.fetchAllNews(refresh: true);
-  }
-
-  NewsModel? target = _findNewsById(provider.newsmodel, newsId);
-
-  if (target == null) {
-    // Try loading more pages (up to 5) to find the news
-    int attempts = 0;
-    while (provider.hasNextPage && attempts < 5 && target == null) {
-      attempts++;
-      await provider.loadMoreAll();
-      target = _findNewsById(provider.newsmodel, newsId);
+    if (discussionId.isEmpty || cohortId.isEmpty) {
+      print('Notification missing discussionId/cohortId, cannot navigate');
+      return;
     }
-  }
 
-  if (target == null) {
-    print('News with id $newsId not found after fetch');
-    return;
-  }
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      print('Navigator not ready, cannot open TopicDetailScreen');
+      return;
+    }
 
-  final timeAgo = _formatDuration(DateTime.now().difference(
-    DateTime.tryParse(target.date_posted) ?? DateTime.now(),
-  ));
-
-  final targetNews = target;
-  if (targetNews == null) return;
-
-  navigator.push(
-    MaterialPageRoute(
-      builder: (context) => NewsDetails(
-        news: targetNews,
-        time: timeAgo,
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider(
+          create: (_) => DiscussionProvider(DiscussionService()),
+          child: TopicDetailScreen(
+            topicId: discussionId,
+            cohortId: cohortId,
+            authorId: authorId,
+            programId: programId,
+            courseId: courseId,
+          ),
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Future<void> _navigateToNewsDetails(Map<String, dynamic> data) async {
+    final newsId = _intFrom(data, ['news_id', 'newsId', 'id']);
+    if (newsId == null) {
+      print('Notification missing news_id, cannot navigate');
+      return;
+    }
+
+    final navigator = _navigatorKey?.currentState;
+    final context = _navigatorKey?.currentContext;
+    if (navigator == null || context == null) {
+      print('Navigator not ready, cannot open NewsDetails');
+      return;
+    }
+
+    final provider = Provider.of<NewsProvider>(context, listen: false);
+    if (provider.newsmodel.isEmpty) {
+      await provider.fetchAllNews(refresh: true);
+    }
+
+    NewsModel? target = _findNewsById(provider.newsmodel, newsId);
+
+    if (target == null) {
+      // Try loading more pages (up to 5) to find the news
+      int attempts = 0;
+      while (provider.hasNextPage && attempts < 5 && target == null) {
+        attempts++;
+        await provider.loadMoreAll();
+        target = _findNewsById(provider.newsmodel, newsId);
+      }
+    }
+
+    if (target == null) {
+      print('News with id $newsId not found after fetch');
+      return;
+    }
+
+    final timeAgo = _formatDuration(DateTime.now().difference(
+      DateTime.tryParse(target.date_posted) ?? DateTime.now(),
+    ));
+
+    final targetNews = target;
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => NewsDetails(
+          news: targetNews,
+          time: timeAgo,
+        ),
+      ),
+    );
+  }
 
   Future<void> _navigateToCourseContent(Map<String, dynamic> data) async {
-  final cohortId = _stringFrom(data, ['cohort_id', 'cohortId']);
-  final lessonId = _intFrom(data, ['lesson_id', 'lessonId']);
-  int? profileId = _intFrom(data, ['profile_id', 'profileId']);
+    final cohortId = _stringFrom(data, ['cohort_id', 'cohortId']);
+    final lessonId = _intFrom(data, ['lesson_id', 'lessonId']);
+    int? profileId = _intFrom(data, ['profile_id', 'profileId']);
 
-  // ✅ fallback to saved profile
-  if (profileId == null || profileId <= 0) {
-    final prefs = await SharedPreferences.getInstance();
-    profileId = prefs.getInt('active_profile_id');
-  }
+    // ✅ fallback to saved profile
+    if (profileId == null || profileId <= 0) {
+      final prefs = await SharedPreferences.getInstance();
+      profileId = prefs.getInt('active_profile_id');
+    }
 
-  if (cohortId.isEmpty || lessonId == null || profileId == null) {
-    print('Missing required fields, cannot navigate');
-    return;
-  }
+    if (cohortId.isEmpty || lessonId == null || profileId == null) {
+      print('Missing required fields, cannot navigate');
+      return;
+    }
 
-  final navigator = _navigatorKey?.currentState;
-  if (navigator == null) return;
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) return;
 
-  navigator.push(
-    MaterialPageRoute(
-      builder: (context) => CourseDetailScreen(
-        courseTitle: '',        // loaded by LessonDetailProvider
-        courseName: '',         // loaded by LessonDetailProvider
-        courseId: _intFrom(data, ['course_id', 'courseId']) ?? 0,
-        courseDescription: '', // loaded by LessonDetailProvider
-        provider: '',          // loaded by LessonDetailProvider
-        cohortId: cohortId,    // ✅ key field
-        profileId: profileId,  // ✅ key field
-        lessonId: lessonId,    // ✅ key field
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => CourseDetailScreen(
+          courseTitle: '', // loaded by LessonDetailProvider
+          courseName: '', // loaded by LessonDetailProvider
+          courseId: _intFrom(data, ['course_id', 'courseId']) ?? 0,
+          courseDescription: '', // loaded by LessonDetailProvider
+          provider: '', // loaded by LessonDetailProvider
+          cohortId: cohortId, // ✅ key field
+          profileId: profileId, // ✅ key field
+          lessonId: lessonId, // ✅ key field
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  bool _isSupportedDeepLink(Uri uri) {
+    final scheme = uri.scheme.toLowerCase();
+    final host = uri.host.toLowerCase();
+    return (scheme == 'https' || scheme == 'http') &&
+        (host == 'linkskool.com' || host == 'www.linkskool.com');
+  }
+
+  Map<String, dynamic> _payloadFromUri(Uri uri) {
+    final data = <String, dynamic>{...uri.queryParameters};
+    final segments =
+        uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
+
+    if (segments.isEmpty) {
+      return data;
+    }
+
+    final first = segments.first.toLowerCase();
+
+    if ((first == 'news' || first == 'article') && segments.length >= 2) {
+      data.putIfAbsent('type', () => 'news_posted');
+      data.putIfAbsent('news_id', () => segments[1]);
+      return data;
+    }
+
+    if ((first == 'discussion' || first == 'forum' || first == 'topic') &&
+        segments.length >= 2) {
+      data.putIfAbsent('type', () => 'discussion_started');
+      data.putIfAbsent('discussion_id', () => segments[1]);
+      return data;
+    }
+
+    if ((first == 'course' || first == 'courses' || first == 'lesson') &&
+        segments.length >= 2) {
+      data.putIfAbsent('course_id', () => segments[1]);
+      if (data.containsKey('lesson_id')) {
+        data.putIfAbsent('type', () => 'course_content');
+      } else {
+        data.putIfAbsent('type', () => 'course_detail');
+      }
+      return data;
+    }
+
+    return data;
+  }
+
+  Future<void> _waitForNavigatorReady() async {
+    for (var attempt = 0; attempt < 20; attempt++) {
+      if (_navigatorKey?.currentState != null &&
+          _navigatorKey?.currentContext != null) {
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+  }
 
   String _stringFrom(Map<String, dynamic> data, List<String> keys) {
     for (final key in keys) {

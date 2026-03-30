@@ -26,7 +26,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.86);
   int _currentIndex = 0;
   bool _didLoad = false;
-  int _remainingDays = 0;
+  final int _remainingDays = 0;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
   bool _forceContinueWithAds = false;
@@ -86,21 +86,20 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                       Positioned(
                         left: -80,
                         bottom: 40,
-                        child:
-                            _buildGlowCircle(160, Colors.white.withOpacity(0.08)),
+                        child: _buildGlowCircle(
+                            160, Colors.white.withOpacity(0.08)),
                       ),
                       Positioned(
                         right: -40,
                         top: 120,
-                        child:
-                            _buildGlowCircle(120, Colors.white.withOpacity(0.12)),
+                        child: _buildGlowCircle(
+                            120, Colors.white.withOpacity(0.12)),
                       ),
                       if (provider.isLoading)
                         const Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         )
-                      else if (provider.errorMessage != null &&
-                          plans.isEmpty)
+                      else if (provider.errorMessage != null && plans.isEmpty)
                         _buildErrorState(provider.errorMessage!)
                       else if (plans.isEmpty)
                         _buildEmptyState()
@@ -123,8 +122,9 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                       if (_pageController
                                           .position.haveDimensions) {
                                         final page = _pageController.page ?? 0;
-                                        scale = (1 - (page - index).abs() * 0.08)
-                                            .clamp(0.92, 1.0);
+                                        scale =
+                                            (1 - (page - index).abs() * 0.08)
+                                                .clamp(0.92, 1.0);
                                       }
                                       return Transform.scale(
                                         scale: scale,
@@ -149,76 +149,80 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                               child: Row(
                                 children: [
                                   if (widget.showTrialButton)
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 54,
-                                      child: ElevatedButton(
-                                        onPressed: _isLoadingTrial ||
-                                                _isStartingTrial
-                                            ? null
-                                            : _startTrial,
-                                        style: ElevatedButton.styleFrom(
-                                           backgroundColor:
-                                              Colors.white,
-                                        
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 54,
+                                        child: ElevatedButton(
+                                          onPressed: _isLoadingTrial ||
+                                                  _isStartingTrial
+                                              ? null
+                                              : _startTrial,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            elevation: 6,
+                                            shadowColor:
+                                                Colors.black.withOpacity(0.2),
                                           ),
-                                          elevation: 6,
-                                          shadowColor:
-                                              Colors.black.withOpacity(0.2),
+                                          child: _isStartingTrial
+                                              ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : Center(
+                                                  child: Text(
+                                                    _trialLabel(),
+                                                    style:
+                                                        AppTextStyles.normal600(
+                                                      fontSize: 14,
+                                                      color: Colors.black,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
                                         ),
-                                        child: _isStartingTrial
-                                            ? const SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white,
-                                                ),
-                                              )
-                                            : Text(
-                                                _trialLabel(),
-                                                style:
-                                                    AppTextStyles.normal600(
-                                                  fontSize: 14,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
                                       ),
                                     ),
-                                  ),
-                                  if (widget.showTrialButton) const SizedBox(width: 12), 
+                                  if (widget.showTrialButton)
+                                    const SizedBox(width: 12),
                                   Expanded(
                                     child: SizedBox(
                                       height: 54,
                                       child: ElevatedButton(
-                                        onPressed: () {
+                                        onPressed: () async {
                                           final selectedPlan = plans.isNotEmpty
                                               ? plans[_currentIndex.clamp(
                                                   0, plans.length - 1)]
                                               : null;
-                                          if (selectedPlan == null) {
-                                            return;
-                                          }
-                                          showDialog<bool>(
+
+                                          if (selectedPlan == null) return;
+
+                                          final result = await showDialog<bool>(
                                             context: context,
-                                            barrierDismissible: true,
-                                            builder: (context) =>
+                                            barrierDismissible: false,
+                                            builder: (dialogContext) =>
                                                 CbtPlanPaymentDialog(
                                               plan: selectedPlan,
                                             ),
-                                          ).then((didProceed) {
-                                            if (didProceed == true && mounted) {
-                                              Navigator.of(context).pop(true);
-                                            }
-                                          });
+                                          );
+
+                                          if (!mounted || result != true)
+                                            return;
+
+                                          if (result == true) {
+                                            Navigator.of(context).pop(true);
+                                          }
                                         },
                                         style: ElevatedButton.styleFrom(
-                                           backgroundColor:
-                                              AppColors.barColor3,
+                                          backgroundColor: AppColors.barColor3,
                                           shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(8),
@@ -231,7 +235,6 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                           'Pay Now',
                                           style: AppTextStyles.normal700(
                                             fontSize: 16,
-                                            
                                             color: Colors.black,
                                           ),
                                         ),
@@ -277,9 +280,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
           width: isActive ? 18 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive
-                ? Colors.white
-                : Colors.white.withOpacity(0.4),
+            color: isActive ? Colors.white : Colors.white.withOpacity(0.4),
             borderRadius: BorderRadius.circular(12),
           ),
         );
@@ -287,118 +288,118 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     );
   }
 
- Future<void> _loadTrialState() async {
-  try {
-    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    final user = userProvider.currentUser;
+  Future<void> _loadTrialState() async {
+    try {
+      final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      final user = userProvider.currentUser;
 
-    bool trialStarted = false;
-    bool forceContinue = false;
+      bool trialStarted = false;
+      bool forceContinue = false;
 
-    if (user?.id != null) {
-      // Check expiry date from license cache
-      final expiresAt = await CbtLicenseService().getCachedLicenseExpiresAt();
-      if (expiresAt != null) {
-        trialStarted = true;
-        // If expired, force "Continue with Ads"
-        forceContinue = DateTime.now().isAfter(expiresAt);
+      if (user?.id != null) {
+        // Check expiry date from license cache
+        final expiresAt = await CbtLicenseService().getCachedLicenseExpiresAt();
+        if (expiresAt != null) {
+          trialStarted = true;
+          // If expired, force "Continue with Ads"
+          forceContinue = DateTime.now().isAfter(expiresAt);
+        }
       }
-    }
 
-    if (mounted) {
-      setState(() {
-        _isLoadingTrial = false;
-        _trialStarted = trialStarted;
-        _forceContinueWithAds = forceContinue;
-      });
-    }
-  } catch (_) {
-    if (mounted) {
-      setState(() => _isLoadingTrial = false);
-    }
-  }
-}
-
- String _trialLabel() {
-  if (_trialStarted || _forceContinueWithAds) {
-    return 'Continue with Ads';
-  }
-  // Use selected plan's freeTrialDays, not global remaining
-  final plans = context.read<CbtPlanProvider>().plans;
-  final selectedPlan = plans.isNotEmpty
-      ? plans[_currentIndex.clamp(0, plans.length - 1)]
-      : null;
-  final days = selectedPlan?.freeTrialDays ?? 3;
-  return 'Start $days days Trial';
-}
-
-  Future<void> _startTrial() async {
-  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-  final user = userProvider.currentUser;
-  if (user?.id == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please sign in to continue.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  // ✅ Use _trialStarted or _forceContinueWithAds, NOT _remainingDays
-  final isContinueWithAds = _trialStarted || _forceContinueWithAds;
-
-  setState(() => _isStartingTrial = true);
-  try {
-    if (isContinueWithAds) {
-      await CbtSubscriptionService().setAdMode('continue_with_ads');
       if (mounted) {
-        Navigator.of(context).pop('continue_ads');
+        setState(() {
+          _isLoadingTrial = false;
+          _trialStarted = trialStarted;
+          _forceContinueWithAds = forceContinue;
+        });
       }
-      return;
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingTrial = false);
+      }
     }
+  }
 
-    // Get the selected plan's trial duration
+  String _trialLabel() {
+    if (_trialStarted || _forceContinueWithAds) {
+      return 'Continue with Ads';
+    }
+    // Use selected plan's freeTrialDays, not global remaining
     final plans = context.read<CbtPlanProvider>().plans;
     final selectedPlan = plans.isNotEmpty
         ? plans[_currentIndex.clamp(0, plans.length - 1)]
         : null;
-    final planTrialDays = selectedPlan?.freeTrialDays ?? 3;
+    final days = selectedPlan?.freeTrialDays ?? 3;
+    return 'Start $days days Trial';
+  }
 
-    await CbtSubscriptionService().setAdMode('free_trial');
-    await CbtLicenseService().startFreeTrial(userId: user!.id!);
-    await CbtSubscriptionService().setTrialStartDate(originalDuration: planTrialDays);
-    if (!mounted) return;
-
-    final isActive = await CbtLicenseService()
-        .isLicenseActive(userId: user.id!, forceRefresh: true);
-    if (!mounted) return;
-
-    if (!isActive) {
+  Future<void> _startTrial() async {
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final user = userProvider.currentUser;
+    if (user?.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Trial not active yet. Please try again.'),
+          content: Text('Please sign in to continue.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    if (mounted) Navigator.of(context).pop(true);
+    // ✅ Use _trialStarted or _forceContinueWithAds, NOT _remainingDays
+    final isContinueWithAds = _trialStarted || _forceContinueWithAds;
 
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_cleanError(e.toString())),
-          backgroundColor: Colors.red,
-        ),
-      );
+    setState(() => _isStartingTrial = true);
+    try {
+      if (isContinueWithAds) {
+        await CbtSubscriptionService().setAdMode('continue_with_ads');
+        if (mounted) {
+          Navigator.of(context).pop('continue_ads');
+        }
+        return;
+      }
+
+      // Get the selected plan's trial duration
+      final plans = context.read<CbtPlanProvider>().plans;
+      final selectedPlan = plans.isNotEmpty
+          ? plans[_currentIndex.clamp(0, plans.length - 1)]
+          : null;
+      final planTrialDays = selectedPlan?.freeTrialDays ?? 3;
+
+      await CbtSubscriptionService().setAdMode('free_trial');
+      await CbtLicenseService().startFreeTrial(userId: user!.id!);
+      await CbtSubscriptionService()
+          .setTrialStartDate(originalDuration: planTrialDays);
+      if (!mounted) return;
+
+      final isActive = await CbtLicenseService()
+          .isLicenseActive(userId: user.id!, forceRefresh: true);
+      if (!mounted) return;
+
+      if (!isActive) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Trial not active yet. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_cleanError(e.toString())),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isStartingTrial = false);
     }
-  } finally {
-    if (mounted) setState(() => _isStartingTrial = false);
   }
-}
 
   String _cleanError(String error) {
     final trimmed = error.replaceFirst('Exception: ', '').trim();
@@ -558,8 +559,6 @@ class _PlanCard extends StatelessWidget {
     }).toList();
     return formatted.join(' ');
   }
-
-  
 }
 
 extension on _CbtPlansScreenState {

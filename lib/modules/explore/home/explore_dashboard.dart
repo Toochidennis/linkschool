@@ -129,22 +129,43 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
-        actions: [
-          // AI Chat Icon
-          IconButton(
-            icon: const Icon(Icons.smart_toy, color: Colors.white),
-            tooltip: 'LinkSkool AI Chat',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LinkSkoolAIChatPage(),
+        
+       actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
-              );
-            },
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+              label: const Text(
+                'AI Tutor',
+                style: TextStyle(color: Colors.white),
+              ),
+              icon: Image.asset(
+                'assets/images/ai_logo.png',
+                width: 20,
+                height: 20,
+                color: Colors.white,
+                fit: BoxFit.contain,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LinkSkoolAIChatPage(),
+                  ),
+                );
+              },
+            ),
           ),
-          
-           
         ],
         elevation: 0,
       ),

@@ -87,15 +87,15 @@ class RecentQuiz {
 
   factory RecentQuiz.fromJson(Map<String, dynamic> json) {
     return RecentQuiz(
-      id: json['id'],
-      syllabusId: json['syllabus_id'],
-      courseId: json['course_id'],
-      levelId: json['level_id'],
-      title: json['title'] ?? '',
-      type: json['type'] ?? '',
-      courseName: json['course_name'] ?? '',
-      createdBy: json['created_by'] ?? '',
-      datePosted: json['date_posted'] ?? '',
+      id: _asInt(json['id']),
+      syllabusId: _asNullableInt(json['syllabus_id']),
+      courseId: _asInt(json['course_id']),
+      levelId: _asString(json['level_id']),
+      title: _asString(json['title']),
+      type: _asString(json['type']),
+      courseName: _asString(json['course_name']),
+      createdBy: _asString(json['created_by']),
+      datePosted: _asString(json['date_posted']),
     );
   }
 
@@ -129,30 +129,30 @@ class RecentActivity {
 
   factory RecentActivity.fromJson(Map<String, dynamic> json) {
     return RecentActivity(
-      id: json['id'],
-      syllabusId: json['syllabus_id'],
-      courseId: json['course_id'],
-      levelId: json['level_id'],
-      title: json['title'] ?? '',
-      type: json['type'] ?? '',
-      courseName: json['course_name'] ?? '',
-      createdBy: json['created_by'] ?? '',
-      datePosted: json['date_posted'] ?? '',
+      id: _asInt(json['id']),
+      syllabusId: _asNullableInt(json['syllabus_id']),
+      courseId: _asInt(json['course_id']),
+      levelId: _asString(json['level_id']),
+      title: _asString(json['title']),
+      type: _asString(json['type']),
+      courseName: _asString(json['course_name']),
+      createdBy: _asString(json['created_by']),
+      datePosted: _asString(json['date_posted']),
     );
   }
 
   // Factory for parsing feed data (news and questions)
   factory RecentActivity.fromFeedJson(Map<String, dynamic> json) {
     return RecentActivity(
-      id: json['id'],
+      id: _asInt(json['id']),
       syllabusId: null, // Feeds don't have syllabus_id
       courseId: 0, // Feeds don't have course_id
       levelId: '', // Feeds don't have level_id
-      title: json['title'] ?? '',
-      type: json['type'] ?? 'feed',
+      title: _asString(json['title']),
+      type: _asString(json['type'], 'feed'),
       courseName: '', // Feeds don't have course_name
-      createdBy: json['author_name'] ?? '',
-      datePosted: json['created_at'] ?? '',
+      createdBy: _asString(json['author_name']),
+      datePosted: _asString(json['created_at']),
     );
   }
 
@@ -186,10 +186,10 @@ class AvailableCourse {
 
   factory AvailableCourse.fromJson(Map<String, dynamic> json) {
     return AvailableCourse(
-      syllabusId: json['syllabus_id'],
-      courseId: json['course_id'],
-      levelId: json['level_id'],
-      courseName: json['course_name'] ?? '',
+      syllabusId: _asInt(json['syllabus_id']),
+      courseId: _asInt(json['course_id']),
+      levelId: _asString(json['level_id']),
+      courseName: _asString(json['course_name']),
     );
   }
 
@@ -201,4 +201,22 @@ class AvailableCourse {
       'course_name': courseName,
     };
   }
+}
+
+int _asInt(dynamic value, [int fallback = 0]) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+int? _asNullableInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
+String _asString(dynamic value, [String fallback = '']) {
+  if (value == null) return fallback;
+  return value.toString();
 }

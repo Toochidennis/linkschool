@@ -901,7 +901,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
                 label: 'Time :',
                 value: timeInMinutes,
                 items: timeOptions,
-                itemLabel: (v) => '${v} minutes',
+                itemLabel: (v) => '$v minutes',
                 onChanged: (v) => setState(() => timeInMinutes = v),
               ),
               const SizedBox(height: 12),
@@ -1013,9 +1013,9 @@ class _ExamConfigSubjectCard extends StatelessWidget {
   static const List<Color> _accentColors = [
     Color(0xFF0F766E), // teal
     Color(0xFF2563EB), // blue
-    Color(0xFFDC2626), // red
+   // red
     Color(0xFF16A34A), // green
-    Color(0xFFB45309), // amber
+ 
     Color(0xFF4F46E5), // indigo
   ];
 
@@ -1124,7 +1124,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                                           Text(
                                             'Year ${selection!.year} selected',
                                             style: TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 14,
                                               color: accent,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -1166,9 +1166,8 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                                     size: 16, color: Colors.grey),
                               ),
                             )
-                          else
-                            const Icon(Icons.chevron_right,
-                                color: Colors.grey, size: 22),
+                         
+                            
                         ],
                       ),
                     ),
@@ -1199,41 +1198,21 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                                         ? '${selection!.year} (Simulation)'
                                         : selection!.year,
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 14,
                                       color: accent,
                                       fontWeight: FontWeight.w600,
                                     ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    size: 16,
+                                    color: accent,
                                   ),
                                 ],
                               ),
                             ),
                             const Spacer(),
-               GestureDetector(
-  onTap: onPickYear,
-  child: Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: accent.withOpacity(0.12), // ← move color into decoration
-      border: Border.all(
-        color: accent.withOpacity(0.4),
-        width: 1,
-      ),
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-       
-        const SizedBox(width: 4),
-        Icon(
-          Icons.keyboard_arrow_down_rounded,
-          size: 14,
-          color: accent,
-        ),
-      ],
-    ),
-  ),
-),
                           ],
                         ),
                       ),

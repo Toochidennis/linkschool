@@ -246,7 +246,8 @@ class _StudentResultScreenState extends State<StudentResultScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$year/${int.parse(year) + 1} Session',
+            //'$year/${int.parse(year) + 1} Session',
+            "${int.parse(year) - 1}/$year Session",
             style: AppTextStyles.normal700(
                 fontSize: 18, color: AppColors.paymentTxtColor1),
           ),

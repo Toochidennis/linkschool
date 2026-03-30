@@ -38,7 +38,7 @@ class SingleElearningcontentservice {
           //add student id and syllabus id
         },
       );
-
+print("API Response: ${response.rawData}");
       final data = response;
       print("Dataaaa ${data.rawData?['response']}");
 
