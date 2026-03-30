@@ -137,14 +137,10 @@ class NewsProvider with ChangeNotifier {
         _errorMessage = 'You are offline. Showing saved news.';
       }
 
-      print('✅ Fetched ${response.news.length} news items (page ${response.meta.currentPage})');
-      print('📊 Groups: ${_groups.keys.join(", ")}');
-      print('🏷️ Categories: ${_categories.keys.join(", ")}');
     } catch (e) {
       _errorMessage = isOnline
           ? 'Network error. Please try again.'
           : 'No internet connection. Connect and try again.';
-      print('❌ Error in NewsProvider: $_errorMessage');
     } finally {
       _isLoading = false;
       _isLoadingMore = false;
@@ -197,12 +193,10 @@ class NewsProvider with ChangeNotifier {
         _errorMessage = 'You are offline. Showing saved news.';
       }
 
-      print('✅ Fetched ${latestIds.length} latest ids (page ${response.meta.currentPage})');
     } catch (e) {
       _errorMessage = isOnline
           ? 'Network error. Please try again.'
           : 'No internet connection. Connect and try again.';
-      print('❌ Error in NewsProvider (latest): $_errorMessage');
     } finally {
       _isLoadingLatest = false;
       _isLoadingMoreLatest = false;
@@ -229,3 +223,4 @@ class NewsProvider with ChangeNotifier {
     await loadMoreAll();
   }
 }
+

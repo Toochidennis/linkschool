@@ -123,20 +123,18 @@ class NewsService {
         // Extract the nested data structure
         final dataWrapper = jsonData['data'] ?? {};
 
-        print("✅ News fetched successfully: ${jsonData['message']}");
         await ExploreDashboardCache.save('explore_home:news', dataWrapper);
         return _parseResponse(Map<String, dynamic>.from(dataWrapper));
       } else {
-        print("❌ Failed to load news: ${response.statusCode} ${response.body}");
         throw Exception("Failed to load news: ${response.statusCode}");
       }
     } catch (e) {
       try {
         return await _loadCachedOrThrow();
       } catch (_) {
-        print("❌ Error fetching news: $e");
         throw Exception("Failed to load news: $e");
       }
     }
   }
 }
+

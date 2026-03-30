@@ -46,6 +46,7 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
       term: widget.term,
       year: widget.year,
       db: widget.db,
+      type: 0,
     );
   }
 
@@ -243,6 +244,7 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
           term: widget.term,
           year: widget.year,
           db: widget.db,
+          type: 0,
         );
       } else {
         success = await provider.createSkillsAndBehaviours(
@@ -252,6 +254,7 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
           term: widget.term,
           year: widget.year,
           db: widget.db,
+          type: 0,
         );
       }
 

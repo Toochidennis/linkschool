@@ -14,6 +14,12 @@ enum SilentLoginResult {
   unknownError,
 }
 
+enum LoginSource {
+  none,
+  manual,
+  silent,
+}
+
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = locator<AuthService>();
   final _secureStorage = const FlutterSecureStorage();
@@ -21,6 +27,8 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   String? _token;
   bool _isLoggedIn = false;
+  bool _isDemoLogin = false;
+  LoginSource _loginSource = LoginSource.none;
   Map<String, dynamic>? _settings;
 
   bool _isSilentLoginInProgress = false;
@@ -28,20 +36,32 @@ class AuthProvider with ChangeNotifier {
   User? get user => _user;
   String? get token => _token;
   bool get isLoggedIn => _isLoggedIn;
+  bool get isDemoLogin => _isDemoLogin;
+  LoginSource get loginSource => _loginSource;
   Map<String, dynamic>? get settings => _settings;
   bool get isSilentLoginInProgress => _isSilentLoginInProgress;
 
   /// Main login method - saves credentials for future silent login
   Future<void> login(
-      String username, String password, String schoolCode) async {
+      String username, String password, String schoolCode,
+      {bool isDemoLogin = false}) async {
     try {
       final response = await _authService.login(username, password, schoolCode);
       if (response.success && response.rawData != null) {
         // Save login credentials securely for silent re-login
-        await _saveLoginCredentials(username, password, schoolCode);
+        await _saveLoginCredentials(
+          username,
+          password,
+          schoolCode,
+          isDemoLogin: isDemoLogin,
+        );
 
         // Process and save login data
-        await _processLoginResponse(response.rawData!);
+        await _processLoginResponse(
+          response.rawData!,
+          isDemoLogin: isDemoLogin,
+          loginSource: LoginSource.manual,
+        );
 
         print('✅ Login successful - User role: ${_user!.role}');
         notifyListeners();
@@ -55,7 +75,8 @@ class AuthProvider with ChangeNotifier {
 
   /// Save login credentials securely
   Future<void> _saveLoginCredentials(
-      String username, String password, String schoolCode) async {
+      String username, String password, String schoolCode,
+      {required bool isDemoLogin}) async {
     try {
       // Use flutter_secure_storage for sensitive data
 
@@ -68,6 +89,10 @@ class AuthProvider with ChangeNotifier {
       await userBox.put('has_saved_credentials', true);
       await userBox.put('saved_username', username); // For display purposes
       await userBox.put('saved_school_code', schoolCode);
+      await userBox.put('isDemoLogin', isDemoLogin);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isDemoLogin', isDemoLogin);
 
       print('🔐 Login credentials saved securely');
     } catch (e) {
@@ -76,7 +101,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Process login response and save all data
-  Future<void> _processLoginResponse(Map<String, dynamic> responseData) async {
+  Future<void> _processLoginResponse(
+    Map<String, dynamic> responseData, {
+    required bool isDemoLogin,
+    required LoginSource loginSource,
+  }) async {
     final userBox = Hive.box('userData');
 
     // Convert response to proper Map<String, dynamic>
@@ -91,6 +120,8 @@ class AuthProvider with ChangeNotifier {
     _user = User.fromJson(userData);
     _token = convertedData['token'];
     _isLoggedIn = true;
+    _isDemoLogin = isDemoLogin;
+    _loginSource = loginSource;
 
     // Save database identifier
     final db = convertedData['_db'];
@@ -110,6 +141,7 @@ class AuthProvider with ChangeNotifier {
     await userBox.put('token', _token);
     await userBox.put('sessionValid', true);
     await userBox.put('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
+    await userBox.put('isDemoLogin', _isDemoLogin);
 
     // Set the token on ApiService for future requests
     final apiService = locator<ApiService>();
@@ -124,6 +156,7 @@ class AuthProvider with ChangeNotifier {
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('token', _token!);
     await prefs.setBool('sessionValid', true);
+    await prefs.setBool('isDemoLogin', _isDemoLogin);
   }
 
   /// Save role-specific data based on user type
@@ -209,6 +242,8 @@ class AuthProvider with ChangeNotifier {
       _isLoggedIn = false;
       _user = null;
       _token = null;
+      _isDemoLogin = false;
+      _loginSource = LoginSource.none;
       _settings = null;
       notifyListeners();
     } catch (e, stackTrace) {
@@ -237,10 +272,15 @@ class AuthProvider with ChangeNotifier {
       _isSilentLoginInProgress = true;
       notifyListeners();
 
+      final prefs = await SharedPreferences.getInstance();
+
       // Retrieve saved credentials
       final username = await _secureStorage.read(key: 'saved_username');
       final password = await _secureStorage.read(key: 'saved_password');
       final schoolCode = await _secureStorage.read(key: 'saved_school_code');
+      final demoLoginHive =
+          Hive.box('userData').get('isDemoLogin', defaultValue: false);
+      final demoLoginPrefs = prefs.getBool('isDemoLogin') ?? false;
 
       if (username == null || password == null || schoolCode == null) {
         print('❌ Missing credentials for silent login');
@@ -254,7 +294,11 @@ class AuthProvider with ChangeNotifier {
 
       if (response.success && response.rawData != null) {
         // Process the fresh login data
-        await _processLoginResponse(response.rawData!);
+        await _processLoginResponse(
+          response.rawData!,
+          isDemoLogin: demoLoginHive == true || demoLoginPrefs == true,
+          loginSource: LoginSource.silent,
+        );
 
         _isSilentLoginInProgress = false;
         notifyListeners();
@@ -295,6 +339,8 @@ class AuthProvider with ChangeNotifier {
     final sessionValid = userBox.get('sessionValid', defaultValue: false);
     final userData = userBox.get('userData');
     final token = userBox.get('token');
+    final demoLoginHive = userBox.get('isDemoLogin', defaultValue: false);
+    final demoLoginPrefs = prefs.getBool('isDemoLogin') ?? false;
 
     print('📊 Session Status:');
     print('  - Hive isLoggedIn: $isLoggedInHive');
@@ -325,6 +371,8 @@ class AuthProvider with ChangeNotifier {
         _user = User.fromJson(userDataContent);
         _token = token.toString();
         _isLoggedIn = true;
+        _isDemoLogin = demoLoginHive == true || demoLoginPrefs == true;
+        _loginSource = LoginSource.silent;
 
         final apiService = locator<ApiService>();
         apiService.setAuthToken(_token!);
@@ -352,6 +400,8 @@ class AuthProvider with ChangeNotifier {
       _isLoggedIn = false;
       _user = null;
       _token = null;
+      _isDemoLogin = false;
+      _loginSource = LoginSource.none;
       _settings = null;
       notifyListeners();
     }
@@ -368,6 +418,10 @@ class AuthProvider with ChangeNotifier {
       await userBox.delete('has_saved_credentials');
       await userBox.delete('saved_username');
       await userBox.delete('saved_school_code');
+      await userBox.delete('isDemoLogin');
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('isDemoLogin');
 
       print('🔐 Saved credentials cleared');
     } catch (e) {
@@ -399,6 +453,8 @@ class AuthProvider with ChangeNotifier {
       _user = null;
       _token = null;
       _isLoggedIn = false;
+      _isDemoLogin = false;
+      _loginSource = LoginSource.none;
       _settings = null;
 
       print('✅ Logout successful - all user data cleared');
@@ -408,6 +464,8 @@ class AuthProvider with ChangeNotifier {
       _user = null;
       _token = null;
       _isLoggedIn = false;
+      _isDemoLogin = false;
+      _loginSource = LoginSource.none;
       _settings = null;
       notifyListeners();
     }
@@ -454,6 +512,8 @@ class AuthProvider with ChangeNotifier {
       _user = null;
       _token = null;
       _isLoggedIn = false;
+      _isDemoLogin = false;
+      _loginSource = LoginSource.none;
       _settings = null;
 
       print('🧹 Corrupted session cleared');

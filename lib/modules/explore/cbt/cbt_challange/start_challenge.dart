@@ -154,18 +154,19 @@ class _StartChallengeState extends State<StartChallenge>
 
     final currentExamId = widget.examIds![currentExamIndex];
 
-    try {
-      if (widget.isPreview) {
-        // PREVIEW MODE → Use ChallengeProvider + ExamProvider (random questions)
-        final challengeProvider = context.read<ChallengeProvider>();
+      try {
+        if (widget.isPreview) {
+          // PREVIEW MODE → Use ChallengeProvider + ExamProvider (random questions)
+          final challengeProvider = context.read<ChallengeProvider>();
 
-        // Use examType from first subject or fallback
-        final examType = widget.subjectNames?[currentExamIndex] ?? 'default';
+          // Use the selected exam ID for the preview request.
+          // Subject names are only for display, not for the endpoint path.
+          final examType = currentExamId;
 
-        await challengeProvider.previewChallengeExam(
-          examType,
-          limit: widget.questionLimit,
-        );
+          await challengeProvider.previewChallengeExam(
+            examType,
+            limit: widget.questionLimit,
+          );
 
         // Manually set questions into ChallengeQuestionProvider (to reuse UI)
         // final questionProvider = context.read<ChallengeQuestionProvider>();
@@ -256,34 +257,26 @@ class _StartChallengeState extends State<StartChallenge>
     provider.selectAnswer(currentIdx, optionIndex);
     _scaleController.forward(from: 0);
 
-    // Check if answer is correct - FIX: Parse the order as int
-    final correctAnswerOrderStr =
-        provider.questions[currentIdx].correctAnswer?['order'];
-    int? correctAnswerOrder;
+    final question = provider.questions[currentIdx];
+    final options = question.getOptions();
+    final correctOptionIndex = question.getCorrectAnswerIndex();
+    final selectedOptionText =
+        optionIndex >= 0 && optionIndex < options.length ? options[optionIndex] : '';
 
-    // Handle both String and int types
-    if (correctAnswerOrderStr is String) {
-      correctAnswerOrder = int.tryParse(correctAnswerOrderStr);
-    } else if (correctAnswerOrderStr is int) {
-      correctAnswerOrder = correctAnswerOrderStr;
-    }
+    final isCorrect = correctOptionIndex != null && optionIndex == correctOptionIndex;
 
-    // Compare with +1 offset since optionIndex is 0-based but order is 1-based
-    final isCorrect =
-        correctAnswerOrder != null && (optionIndex + 1) == correctAnswerOrder;
-
-    // Get correct answer text for display
+    // Prefer the resolved option text, but fall back to the API-provided text.
     String correctAnswerText = '';
-    if (correctAnswerOrder != null) {
-      final correctOptionIndex = correctAnswerOrder - 1; // Convert to 0-based
-      final options = provider.questions[currentIdx].getOptions();
-      if (correctOptionIndex >= 0 && correctOptionIndex < options.length) {
-        correctAnswerText = options[correctOptionIndex];
-      }
+    if (correctOptionIndex != null &&
+        correctOptionIndex >= 0 &&
+        correctOptionIndex < options.length) {
+      correctAnswerText = options[correctOptionIndex];
+    } else {
+      correctAnswerText = question.correctAnswer?['text']?.toString() ?? '';
     }
 
     print(
-        'Answer Selected: ${isCorrect ? "Correct" : "Wrong"} (Selected index: $optionIndex, Order: ${optionIndex + 1}, Correct Order: $correctAnswerOrder)');
+        'Answer Selected: ${isCorrect ? "Correct" : "Wrong"} (Selected index: $optionIndex, Selected text: $selectedOptionText, Correct index: $correctOptionIndex)');
 
     setState(() {
       _isCurrentAnswerCorrect = isCorrect;
@@ -381,10 +374,9 @@ class _StartChallengeState extends State<StartChallenge>
 
       for (int i = 0; i < questions.length; i++) {
         if (answers.containsKey(i)) {
-          // Extract the order from the correctAnswer object
-          final correctAnswerOrder = questions[i].correctAnswer?['order'];
+          final correctAnswerOrder = questions[i].getCorrectAnswerIndex();
 
-          if (answers[i] == correctAnswerOrder) {
+          if (correctAnswerOrder != null && answers[i] == correctAnswerOrder) {
             totalScore += 10;
             totalCorrect++;
           }
@@ -438,7 +430,8 @@ class _StartChallengeState extends State<StartChallenge>
   int _calculateScore(ChallengeQuestionProvider p) {
     int score = 0;
     for (int i = 0; i < p.questions.length; i++) {
-      if (p.userAnswers[i] == p.questions[i].correctAnswer) score += 10;
+      final correctIndex = p.questions[i].getCorrectAnswerIndex();
+      if (correctIndex != null && p.userAnswers[i] == correctIndex) score += 10;
     }
     return score;
   }
@@ -446,7 +439,8 @@ class _StartChallengeState extends State<StartChallenge>
   int _calculateCorrectAnswers(ChallengeQuestionProvider p) {
     int correct = 0;
     for (int i = 0; i < p.questions.length; i++) {
-      if (p.userAnswers[i] == p.questions[i].correctAnswer) correct++;
+      final correctIndex = p.questions[i].getCorrectAnswerIndex();
+      if (correctIndex != null && p.userAnswers[i] == correctIndex) correct++;
     }
     return correct;
   }
@@ -1917,7 +1911,7 @@ class _ResultDialogState extends State<_ResultDialog>
                             await leaderboardProvider.submitChallengeResult(
                           challengeId: widget.challengeId!,
                           userId: user.id ?? 0,
-                          username: user.name ??"",
+                          username: user.displayName,
                           score: widget.score,
                           correctAnswers: widget.correctAnswers,
                           totalQuestions: widget.totalQuestions,

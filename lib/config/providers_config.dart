@@ -39,7 +39,9 @@ import 'package:linkschool/modules/providers/cbt_plan_provider.dart';
 import 'package:linkschool/modules/providers/create_user_profile_provider.dart';
 import 'package:linkschool/modules/providers/explore/assignment_submission_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/providers/explore/challenge/challenge_leader_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
+import 'package:linkschool/modules/providers/explore/challenge/challenge_subject_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_questions.dart';
 import 'package:linkschool/modules/providers/explore/courses/enrollment_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/leaderboard_provider.dart';
@@ -54,6 +56,7 @@ import 'package:linkschool/modules/providers/explore/home/announcement_provider.
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/course_provider.dart';
+import 'package:linkschool/modules/providers/explore/courses/program_courses_provider.dart';
 import 'package:linkschool/modules/providers/explore/lesson_detail_provider.dart';
 import 'package:linkschool/modules/providers/explore/lesson_quiz_provider.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
@@ -81,11 +84,14 @@ import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/admin/registered_terms_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
+import 'package:linkschool/modules/services/explore/challange/challange_leader_service.dart';
 import 'package:linkschool/modules/services/explore/challange/challenge_service.dart';
+import 'package:linkschool/modules/services/explore/challange/challenge_subject_service.dart';
 import 'package:linkschool/modules/services/explore/courses/lessons_service.dart';
 import 'package:linkschool/modules/services/explore/courses/leaderboard_service.dart';
 import 'package:linkschool/modules/services/explore/courses/lesson_performance_service.dart';
 import 'package:linkschool/modules/services/explore/courses/cohort_service.dart';
+import 'package:linkschool/modules/services/explore/courses/program_courses_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/services/explore/subject_topic_sevice.dart';
 import 'package:linkschool/modules/services/explore/video/video_service.dart';
@@ -123,6 +129,12 @@ List<SingleChildWidget> getAppProviders() {
     ChangeNotifierProvider(
         create: (_) => ChallengeProvider(ChallengeService()), lazy: true),
     ChangeNotifierProvider(
+        create: (_) => ChallengeSubjectProvider(ChallengeSubjectService()),
+        lazy: true),
+
+        ChangeNotifierProvider(
+        create: (_) =>LeaderboardProvider( LeaderboardService()), lazy: true),
+    ChangeNotifierProvider(
         create: (_) => SubjectTopicsProvider(SubjectTopicsService()),
         lazy: true),
     ChangeNotifierProvider(create: (_) => SubjectProvider(), lazy: true),
@@ -158,12 +170,15 @@ List<SingleChildWidget> getAppProviders() {
           create: (_) => AssignmentSubmissionProvider(), lazy: true),
       ChangeNotifierProvider(
           create: (_) => CreateUserProfileProvider(), lazy: true),
-      ChangeNotifierProvider(
-          create: (_) => LessonDetailProvider(), lazy: true),
-      ChangeNotifierProvider(
-          create: (_) => LessonQuizProvider(), lazy: true),
-      ChangeNotifierProvider(
-          create: (_) => EnrollmentProvider(), lazy: true),
+    ChangeNotifierProvider(
+        create: (_) => LessonDetailProvider(), lazy: true),
+    ChangeNotifierProvider(
+        create: (_) => LessonQuizProvider(), lazy: true),
+    ChangeNotifierProvider(
+        create: (_) => ProgramCoursesProvider(ProgramCoursesService()),
+        lazy: true),
+    ChangeNotifierProvider(
+        create: (_) => EnrollmentProvider(), lazy: true),
 
      
 

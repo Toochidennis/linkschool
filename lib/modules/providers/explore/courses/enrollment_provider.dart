@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:linkschool/modules/services/explore/courses/enrollment_service.dart';
 
 class EnrollmentProvider  extends ChangeNotifier {
@@ -71,7 +71,6 @@ class EnrollmentProvider  extends ChangeNotifier {
       return true;
     } catch (e) {
       // Don't throw to keep caller in control; log and return false
-      print("Error in provider while updating trial views: $e");
       return false;
     } finally {
       _isLoading = false;
@@ -79,6 +78,7 @@ class EnrollmentProvider  extends ChangeNotifier {
     }
   }
 }
+
 
 
 

@@ -14,7 +14,6 @@ import 'package:linkschool/modules/explore/cbt/widgets/cbt_auth_dialog.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../common/text_styles.dart';
@@ -75,6 +74,10 @@ class _CBTDashboardState extends State<CBTDashboard>
   final authProvider = Provider.of<AuthProvider>(context, listen: false);
   if (!authProvider.isLoggedIn) return false;
 
+  if (authProvider.isDemoLogin) {
+    return false;
+  }
+
   // Portal is logged in — ensure they also have a CBT account
   final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
   if (cbtUserProvider.currentUser == null) {
@@ -99,7 +102,6 @@ class _CBTDashboardState extends State<CBTDashboard>
 
 Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
   var allowAdsOverride = allowAds;
-
   // ✅ Portal login takes priority — skips license check entirely
   final portalLoggedIn = await _handlePortalLogin();
   if (portalLoggedIn) return true;
@@ -372,38 +374,38 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
     }
   }
 
-  Future<void> _maybeShowEntryPaymentPrompt() async {
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
-    if (cbtUserProvider.hasPaid == true) return;
+  // Future<void> _maybeShowEntryPaymentPrompt() async {
+  //   final cbtUserProvider =
+  //       Provider.of<CbtUserProvider>(context, listen: false);
+  //   if (cbtUserProvider.hasPaid == true) return;
 
-    if (_isShowingEntryPrompt) return;
-    _isShowingEntryPrompt = true;
+  //   if (_isShowingEntryPrompt) return;
+  //   _isShowingEntryPrompt = true;
 
-    final settings = await CbtSettingsHelper.getSettings();
-    final remainingDays = await _subscriptionService.getRemainingFreeTests();
-    final trialExpired = await _subscriptionService.isTrialExpired();
-    if (!mounted) return;
+  //   final settings = await CbtSettingsHelper.getSettings();
+  //   final remainingDays = await _subscriptionService.getRemainingFreeTests();
+  //   final trialExpired = await _subscriptionService.isTrialExpired();
+  //   if (!mounted) return;
 
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => SubscriptionEnforcementDialog(
-        isHardBlock: trialExpired,
-        remainingTests: remainingDays,
-        amount: settings.amount,
-        discountRate: settings.discountRate,
-        onSubscribed: () {
-          if (mounted) {
-            setState(() {
-              _cachedCanTakeTest = true;
-            });
-          }
-        },
-      ),
-    );
-    _isShowingEntryPrompt = false;
-  }
+  //   await showDialog(
+  //     context: context,
+  //     barrierDismissible: true,
+  //     builder: (context) => SubscriptionEnforcementDialog(
+  //       isHardBlock: trialExpired,
+  //       remainingTests: remainingDays,
+  //       amount: settings.amount,
+  //       discountRate: settings.discountRate,
+  //       onSubscribed: () {
+  //         if (mounted) {
+  //           setState(() {
+  //             _cachedCanTakeTest = true;
+  //           });
+  //         }
+  //       },
+  //     ),
+  //   );
+  //   _isShowingEntryPrompt = false;
+  // }
 
   Future<void> _maybeShowEntryPlans() async {
     final cbtUserProvider =
@@ -959,45 +961,13 @@ _wasLoading = loading;
           onChallenge: () async {
             Navigator.pop(context);
 
-            // ⚡ Challenge Module: Check if user is signed in and has paid
-            // Does NOT check free trial limits - only checks active subscription
+            // Challenge now uses the same CBT subscription/plans flow as the
+            // rest of the dashboard instead of the custom challenge dialog.
+            final canProceed = await _checkSubscriptionBeforeTest();
+            if (!canProceed || !mounted) return;
+
             final cbtuserProvider =
                 Provider.of<CbtUserProvider>(context, listen: false);
-            final portalLoggedIn = await _handlePortalLogin();
-            final isSignedIn =
-                await _authService.isUserSignedUp() || portalLoggedIn;
-            final hasPaid = cbtuserProvider.hasPaid;
-
-            print('\n🎯 Challenge Module Access Check:');
-            print('   - User signed in: $isSignedIn');
-            print('   - Has paid: $hasPaid');
-
-            // If not signed in or not paid, show enforcement dialog
-            if (!isSignedIn || (!hasPaid && !portalLoggedIn)) {
-              print('   ❌ Challenge access denied - showing enforcement dialog');
-
-              final settings = await CbtSettingsHelper.getSettings();
-              if (!mounted) return;
-
-              await showDialog(
-                context: context,
-                barrierDismissible: true,
-                builder: (context) => ChallengeAccessDialog(
-                  amount: settings.amount,
-                  discountRate: settings.discountRate,
-                  onSubscribed: () {
-                    print('✅ User subscribed for Challenge module');
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  },
-                ),
-              );
-              return;
-            }
-
-            // User is signed in and has paid, proceed to challenge
-            print('   ✅ Challenge access granted - proceeding');
             if (cbtuserProvider.currentUser == null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -1014,7 +984,7 @@ _wasLoading = loading;
                 Provider.of<CBTProvider>(context, listen: false);
             final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
 
-            String userName = cbtuserProvider.currentUser?.name ?? 'User';
+            final userName = cbtuserProvider.currentUser?.displayName ?? 'User';
             int userId = cbtuserProvider.currentUser?.id ?? 0;
             print(
                 'userName: $userName, userId: $userId , examTypeId: $CurrentexamTypeId');

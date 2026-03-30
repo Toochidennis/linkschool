@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
-import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_provider.dart';
+import 'package:linkschool/modules/providers/explore/challenge/challenge_subject_provider.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/start_challenge.dart';
 import 'package:provider/provider.dart';
@@ -38,6 +38,8 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
   DateTime? _startDate;
   DateTime? _endDate;
   List<SelectedSubject> _selectedSubjects = [];
+  List<SubjectModel> _challengeSubjects = [];
+  bool _isLoadingChallengeSubjects = true;
   
   // Challenge settings
   int timeInMinutes = 60; // Default 60 minutes
@@ -71,6 +73,8 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
     );
     _pageController = PageController();
     _animationController.forward();
+
+    Future.microtask(_loadChallengeSubjects);
 
    if (widget.isEditing && widget.challengeToEdit != null) {
     Future.microtask(() => _initializeWithExistingChallenge());
@@ -178,9 +182,55 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
     }
   }
 
-  void _showSubjectSelectionModal() {
-    final provider = Provider.of<CBTProvider>(context, listen: false);
-    final subjects = provider.currentBoardSubjects;
+  Future<void> _loadChallengeSubjects() async {
+    final provider =
+        Provider.of<ChallengeSubjectProvider>(context, listen: false);
+    final examTypeId = int.tryParse(widget.examTypeId) ?? 0;
+
+    if (examTypeId <= 0) {
+      if (!mounted) return;
+      setState(() {
+        _challengeSubjects = [];
+        _isLoadingChallengeSubjects = false;
+      });
+      return;
+    }
+
+    await provider.loadChallengeSubjects(examTypeId);
+
+    final resolvedSubjects = provider.subjects.map((course) {
+      return SubjectModel(
+        id: course.courseId.toString(),
+        name: course.courseName,
+        subjectIcon: course.iconName,
+        cardColor: course.cardColor,
+        years: course.years
+            .map(
+              (year) => YearModel(
+                id: year.examId.toString(),
+                year: year.year,
+              ),
+            )
+            .toList(),
+      );
+    }).toList();
+
+    if (!mounted) return;
+    setState(() {
+      _challengeSubjects = resolvedSubjects;
+      _isLoadingChallengeSubjects = false;
+    });
+  }
+
+  Future<void> _showSubjectSelectionModal() async {
+    if (_isLoadingChallengeSubjects && _challengeSubjects.isEmpty) {
+      await _loadChallengeSubjects();
+      if (!mounted) return;
+    }
+
+    final subjects = _challengeSubjects.isNotEmpty
+        ? _challengeSubjects
+        : <SubjectModel>[];
 
     // Use dynamic subjects from provider if available, otherwise use static subjects
     if (subjects.isNotEmpty) {
@@ -2158,7 +2208,72 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
 
   Widget _buildYearList() {
     if (selectedSubject == null || selectedSubject!.years == null) {
-      return const Center(child: Text('No years available'));
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.event_busy_outlined,
+                  color: Color(0xFF6366F1),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No years available',
+                style: AppTextStyles.normal700(
+                  fontSize: 18,
+                  color: AppColors.text3Light,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This subject does not have any downloaded exam years yet. Download the subject first, then come back here.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: AppColors.text7Light,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    showYears = false;
+                    selectedSubject = null;
+                  });
+                  _animationController.reset();
+                },
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Back to subjects'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     // Sort years in descending order (most recent first)

@@ -132,7 +132,6 @@ class CbtDownloadService {
       final url =
           '$_baseUrl/public/cbt/exams/$examTypeId/download?course_id=$courseId';
 
-      print('⬇️ Downloading exam: $url');
       onProgress(0.05);
 
       // ── 1. Stream download with progress ──────────────────────────
@@ -165,7 +164,6 @@ class CbtDownloadService {
       }
 
       onProgress(0.75);
-      print('✅ Downloaded ${bytes.length} bytes');
 
       // ── 2. Save zip to temp file ───────────────────────────────────
       final tempDir = await getTemporaryDirectory();
@@ -229,10 +227,8 @@ class CbtDownloadService {
       await zipFile.delete();
       await extractDir.delete(recursive: true);
 
-      print('✅ Exam saved to local DB successfully');
       onComplete();
     } catch (e) {
-      print('❌ Download error: $e');
       onError(e.toString());
     }
   }
@@ -277,7 +273,6 @@ class CbtDownloadService {
       }
     }
 
-    print('📁 Copied ${result.length} images to app storage');
     return result;
   }
 
@@ -303,7 +298,6 @@ class CbtDownloadService {
 
       return _ImageMeta(localPath: destPath, mimeType: mimeType);
     } catch (e) {
-      print('⚠️ Could not copy image $imageId: $e');
       return null;
     }
   }
@@ -488,3 +482,4 @@ class _ImageMeta {
   final String mimeType;
   const _ImageMeta({required this.localPath, required this.mimeType});
 }
+

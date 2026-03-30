@@ -1,6 +1,7 @@
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/explore/components/year_picker_dialog.dart';
@@ -23,15 +24,28 @@ class _AllSubjectsScreenState extends State<AllSubjectsScreen>
   bool _isAppOpenAdLoaded = false;
   bool _shouldShowAdOnResume = false;
   bool _pendingShowAppOpenAd = false;
+  bool _allowAppOpenAds = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadAppOpenAd();
+    _initAppOpenAdEligibility();
+  }
+
+  Future<void> _initAppOpenAdEligibility() async {
+    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
+    if (!mounted) return;
+    setState(() {
+      _allowAppOpenAds = allowed;
+    });
+    if (allowed) {
+      _loadAppOpenAd();
+    }
   }
 
   void _loadAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     AppOpenAd.load(
       adUnitId: EnvConfig.cbtAdsOpenApiKey,
       request: const AdRequest(),
@@ -72,6 +86,7 @@ class _AllSubjectsScreenState extends State<AllSubjectsScreen>
   }
 
   void _showAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
 
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
@@ -116,6 +131,7 @@ class _AllSubjectsScreenState extends State<AllSubjectsScreen>
 
     if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
       _shouldShowAdOnResume = false;
+      if (!_allowAppOpenAds) return;
       if (_isAppOpenAdLoaded && _appOpenAd != null) {
         _showAppOpenAd();
       } else {

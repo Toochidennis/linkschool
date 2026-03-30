@@ -85,6 +85,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     required String term,
     required String year,
     required String db,
+    required int type,
   }) async {
     _isLoading = true;
     _errorMessage = '';
@@ -92,7 +93,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
 
     try {
       debugPrint(
-          'Fetching skills and behaviors for class: $classId, level: $levelId');
+          'Fetching skills and behaviors for class: $classId, level: $levelId, type: $type');
 
       final response = await _apiService.get(
         endpoint: 'portal/classes/$classId/skill-behavior',
@@ -101,6 +102,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
           'term': term,
           'year': year,
           '_db': db,
+          'type': type,
         },
       );
 
@@ -166,6 +168,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     required String term,
     required String year,
     required String db,
+    required int type,
   }) async {
     _isLoading = true;
     _errorMessage = '';
@@ -174,7 +177,10 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     try {
       final response = await _apiService.post(
         endpoint: 'portal/students/skill-behavior',
-        body: skillsPayload,
+        body: {
+          ...skillsPayload,
+          'type': type,
+        },
         fromJson: (json) => json,
       );
 
@@ -186,6 +192,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
               term: term,
               year: year,
               db: db,
+              type: type,
             ));
         return true;
       } else {
@@ -208,6 +215,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     required String term,
     required String year,
     required String db,
+    required int type,
   }) async {
     _isLoading = true;
     _errorMessage = '';
@@ -216,7 +224,10 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     try {
       final response = await _apiService.post(
         endpoint: 'portal/students/skill-behavior',
-        body: skillsPayload,
+        body: {
+          ...skillsPayload,
+          'type': type,
+        },
         fromJson: (json) => json,
       );
 
@@ -228,6 +239,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
               term: term,
               year: year,
               db: db,
+              type: type,
             ));
         return true;
       } else {

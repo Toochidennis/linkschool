@@ -19,17 +19,11 @@ class TermProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      print('Fetching terms for classId: $classId');
       final terms = await _termService.fetchTerms(classId);
-      print('Fetched Terms: ${terms.map((t) => {
-            ...t,
-            'averageScore': t['averageScore']
-          }).toList()}');
 
       _terms = terms;
       _error = null;
     } catch (e) {
-      print('Error fetching terms: $e');
       _error = 'Failed to load terms. Please try again.';
       _terms = [];
     } finally {
@@ -38,3 +32,4 @@ class TermProvider with ChangeNotifier {
     }
   }
 }
+

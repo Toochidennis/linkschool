@@ -159,8 +159,40 @@ Future<void> preload() async {
     await _showInterstitialOrContinue();
   }
 
+Future<bool> shouldShowCbtOpenAds(BuildContext context) async {
+  final tier = await _getTier(context);
+  final should = tier != AdTier.paid;
+  debugPrint('shouldShowCbtOpenAds → tier: $tier, allowed: $should, '
+      'adUnitId: ${EnvConfig.cbtAdsOpenApiKey}');
+  return should;
+}
+
+  Future<AdTier> getCbtAdTier(BuildContext context) async {
+    return _getTier(context);
+  }
+
   Future<AdTier> _getTier(BuildContext context) async {
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    if (userProvider.hasPaid) {
+      return AdTier.paid;
+    }
+
+    final localPaid = await CbtSubscriptionService().hasPaid();
+    if (localPaid) {
+      return AdTier.paid;
+    }
+
+    final userId = userProvider.currentUser?.id;
+    if (userId != null) {
+      try {
+        final isActive =
+            await CbtLicenseService().isLicenseActive(userId: userId);
+        if (isActive) return AdTier.paid;
+      } catch (_) {
+        // Fall through to ad-mode / trial logic if license check fails.
+      }
+    }
+
     final adMode = await CbtSubscriptionService().getAdMode();
     if (adMode == 'continue_with_ads') {
       print('Ad mode is continue_with_ads, treating as freeAds tier');
@@ -168,24 +200,6 @@ Future<void> preload() async {
     }
     if (adMode == 'free_trial') {
       return AdTier.freeTrial;
-    }
-
-    final userId = userProvider.currentUser?.id;
-    if (userId != null) {
-      try {
-        final cached = await CbtLicenseService().getCachedLicenseStatus(userId);
-        if (cached == true) return AdTier.paid;
-        if (cached == false) {
-          final trialExpired = await CbtSubscriptionService().isTrialExpired();
-          return trialExpired ? AdTier.freeAds : AdTier.freeTrial;
-        }
-
-        final isActive =
-            await CbtLicenseService().isLicenseActive(userId: userId);
-        if (isActive) return AdTier.paid;
-      } catch (_) {
-        // Fall through to trial logic if license check fails.
-      }
     }
 
     final trialExpired = await CbtSubscriptionService().isTrialExpired();

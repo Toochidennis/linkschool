@@ -35,7 +35,6 @@ class ElearningContentProvider with ChangeNotifier {
       final response =
           await _elearningContentService.getElearningContentData(syllabusid);
       _elearningContentData = response;
-      print("This is the response $_elearningContentData");
 
       return response; // Return DashboardData directly
     } catch (e) {
@@ -46,3 +45,4 @@ class ElearningContentProvider with ChangeNotifier {
     }
   }
 }
+

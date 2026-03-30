@@ -35,10 +35,9 @@ class UserProfileUpdateService {
       },
       body: json.encode(body),
     );
-    print("Updateeeee $body");
     if (response.statusCode != 200 && response.statusCode != 201) {
-      print("Updateeeee Error: ${response.body}");
       throw Exception('Failed to update user phone: ${response.body}');
     }
   }
 }
+

@@ -10,6 +10,45 @@ import 'package:linkschool/modules/providers/explore/challenge/challenge_provide
 import 'package:linkschool/modules/services/explore/manage_storage.dart';
 import 'package:provider/provider.dart';
 
+class _ChallengePill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+
+  const _ChallengePill({
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      width: 120,
+      alignment: Alignment.center ,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF6366F1)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ModernChallengeScreen extends StatefulWidget {
   final String userName;
   final int userId;
@@ -248,6 +287,148 @@ class _ModernChallengeScreenState extends State<ModernChallengeScreen>
     print('📥 Loaded ${_savedChallenges.length} saved challenges');
   }
 
+  Future<void> _openCreateChallenge() async {
+    print('Navigating to: ${widget.userName}, userId: ${widget.userId}');
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateChallengeScreen(
+          userName: widget.userName,
+          userId: widget.userId,
+          examTypeId: widget.examTypeId,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    final provider = Provider.of<ChallengeProvider>(context, listen: false);
+    provider.loadChallenges(widget.userId, int.tryParse(widget.examTypeId) ?? 0);
+  }
+
+  Widget _buildEmptyChallengeState() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 24,
+                  color: Colors.black87,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Challenges',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.grey[900],
+                      ),
+                    ),
+                  
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 420),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF6366F1).withOpacity(0.08),
+                      const Color(0xFF8B5CF6).withOpacity(0.04),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: const Color(0xFF6366F1).withOpacity(0.12),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.08),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 74,
+                      height: 74,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Icon(
+                        Icons.emoji_events_outlined,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'No challenges yet',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.grey[900],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create the first challenge for your class or join one when it becomes available. Keep it simple and let the challenge be built around the subjects you pick.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: const [
+                        _ChallengePill(label: 'Create', icon: Icons.add),
+                        _ChallengePill(label: 'Join', icon: Icons.login),
+                        _ChallengePill(
+                            label: 'Leaderboard', icon: Icons.leaderboard),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final allChallenges = [..._savedChallenges];
@@ -307,188 +488,62 @@ class _ModernChallengeScreenState extends State<ModernChallengeScreen>
           ];
 
           if (allChallenges.isEmpty) {
-            return Center(
-              child: Text(
-                'No challenges available at the moment.\nPlease check back later!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
-            );
+            return _buildEmptyChallengeState();
           }
 
           return CustomScrollView(slivers: [
-            // Modern App Bar
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        // morden back button
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new,
-                              size: 30, color: Colors.black87),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
+         SliverToBoxAdapter(
+  child: Container(
+    padding: const EdgeInsets.fromLTRB(8, 10, 16, 10),
+    color: Colors.grey[50], // matches scaffold background — no visual separation
+    child: Row(
+      children: [
+        // Back button
+        IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: Colors.black87,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
 
-                        SizedBox.fromSize(size: Size(10, 0)),
+        const SizedBox(width: 4),
 
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0xFF6366F1).withOpacity(0.3),
-                                blurRadius: 12,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.emoji_events,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Center(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Challenges',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                Text(
-                                  'Level up your skills',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.star,
-                                  color: Colors.amber[700], size: 20),
-                              SizedBox(width: 4),
-                              Text(
-                                '1,250',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.amber[900],
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    // SizedBox(height: 20),
-                    // Modern Filter Chips
-                    // SingleChildScrollView(
-                    //   scrollDirection: Axis.horizontal,
-                    //   child: Row(
-                    //     children: List.generate(_filters.length, (index) {
-                    //       final isSelected = _selectedFilter == index;
-                    //       return Padding(
-                    //         padding: const EdgeInsets.only(right: 12),
-                    //         child: GestureDetector(
-                    //           onTap: () {
-                    //             setState(() {
-                    //               _selectedFilter = index;
-                    //             });
-                    //           },
-                    //           child: AnimatedContainer(
-                    //             duration: Duration(milliseconds: 300),
-                    //             padding: EdgeInsets.symmetric(
-                    //               horizontal: 20,
-                    //               vertical: 5,
-                    //             ),
-                    //             decoration: BoxDecoration(
-                    //               gradient: isSelected
-                    //                   ? LinearGradient(
-                    //                       colors: [
-                    //                         Color(0xFF6366F1),
-                    //                         Color(0xFF8B5CF6),
-                    //                       ],
-                    //                     )
-                    //                   : null,
-                    //               color: isSelected ? null : Colors.white,
-                    //               borderRadius: BorderRadius.circular(25),
-                    //               border: Border.all(
-                    //                 color: isSelected
-                    //                     ? Colors.transparent
-                    //                     : Colors.grey[300]!,
-                    //                 width: 1.5,
-                    //               ),
-                    //               boxShadow: isSelected
-                    //                   ? [
-                    //                       BoxShadow(
-                    //                         color: Color(0xFF6366F1).withOpacity(0.3),
-                    //                         blurRadius: 8,
-                    //                         offset: Offset(0, 4),
-                    //                       ),
-                    //                     ]
-                    //                   : [
-                    //                       BoxShadow(
-                    //                         color: Colors.black.withOpacity(0.05),
-                    //                         blurRadius: 4,
-                    //                         offset: Offset(0, 2),
-                    //                       ),
-                    //                     ],
-                    //             ),
-                    //             child: Text(
-                    //               _filters[index],
-                    //               style: TextStyle(
-                    //                 color: isSelected ? Colors.white : Colors.grey[700],
-                    //                 fontWeight: FontWeight.w600,
-                    //                 fontSize: 14,
-                    //               ),
-                    //             ),
-                    //           ),
-                    //         ),
-                    //       );
-                    //     }),
-                    //   ),
-                    // ),
-                  ],
+        // Title & subtitle
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Challenges',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black87,
+                  letterSpacing: -0.3,
                 ),
               ),
-            ),
-
+              Text(
+                'Level up your skills',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+        
             // For You Section
             if (activeRecommended.isNotEmpty)
+            SliverToBoxAdapter(child: SizedBox(height: 12)),
               SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -734,26 +789,7 @@ class _ModernChallengeScreenState extends State<ModernChallengeScreen>
         },
       )),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Create challenge action
-          print('Navigating to: ${widget.userName}, userId: ${widget.userId}');
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CreateChallengeScreen(
-                userName: widget.userName,
-                userId: widget.userId,
-                examTypeId: widget.examTypeId,
-              ),
-            ),
-          ).then((_) {
-            // Refresh challenges after editing
-            final provider =
-                Provider.of<ChallengeProvider>(context, listen: false);
-            provider.loadChallenges(
-                widget.userId, int.tryParse(widget.examTypeId) ?? 0);
-          });
-        },
+        onPressed: _openCreateChallenge,
         backgroundColor: Color(0xFF6366F1),
         icon: Icon(Icons.add, color: Colors.white),
         label: Text(
@@ -1058,333 +1094,286 @@ class _ModernChallengeScreenState extends State<ModernChallengeScreen>
     return 'Start';
   }
 
-  Widget _buildChallengeCard(ChallengeModel challenge, {bool isEnded = false}) {
-    // Use gray colors for ended challenges content only, keep card white
-    final gradientColors =
-        isEnded ? [Colors.grey[400]!, Colors.grey[500]!] : challenge.gradient;
+ Widget _buildChallengeCard(ChallengeModel challenge, {bool isEnded = false}) {
+  final gradientColors =
+      isEnded ? [Colors.grey[400]!, Colors.grey[500]!] : challenge.gradient;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+  return Container(
+    margin: EdgeInsets.only(bottom: 16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: Offset(0, 4),
+        ),
+      ],
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: (isEnded || !_canStartChallenge(challenge))
+                  ? null
+                  : () => _joinChallenge(challenge),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title row
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: gradientColors),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(challenge.icon, color: Colors.white, size: 24),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                challenge.title,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: isEnded ? Colors.grey[600] : Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                challenge.description,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isEnded ? Colors.grey[500] : Colors.grey[600],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                isEnded ? 'Ended' : (challenge.status ?? ''),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: isEnded ? Colors.grey[600] : challenge.gradient[0],
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            if (challenge.authorId == widget.userId)
+                              PopupMenuButton<String>(
+                                position: PopupMenuPosition.under,
+                                icon: Icon(Icons.more_horiz),
+                                onSelected: (value) => _handleMenuSelection(value, challenge),
+                                itemBuilder: (context) => [
+                                  PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Edit')]),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(children: [Icon(Icons.delete, size: 20), SizedBox(width: 8), Text('Delete')]),
+                                  ),
+                                  if (challenge.status != null)
+                                    PopupMenuItem<String>(
+                                      value: (challenge.status?.toLowerCase() == 'draft' ||
+                                              challenge.status?.toLowerCase() == 'archived')
+                                          ? 'publish'
+                                          : 'archive',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            (challenge.status?.toLowerCase() == 'draft' ||
+                                                    challenge.status?.toLowerCase() == 'archived')
+                                                ? Icons.publish
+                                                : Icons.archive,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            (challenge.status?.toLowerCase() == 'draft' ||
+                                                    challenge.status?.toLowerCase() == 'archived')
+                                                ? 'Publish'
+                                                : 'Archive',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.timer_outlined,
+                                color: isEnded ? Colors.grey[500] : challenge.gradient[0],
+                                size: 16,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                _formatCountdown(challenge.endDate, startDate: challenge.startDate),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isEnded ? Colors.grey[600] : challenge.gradient[0],
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.people, color: Colors.grey[700], size: 14),
+                              SizedBox(width: 4),
+                              Text(
+                                '${challenge.participants}',
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+
+                    // Container(
+                    //   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    //   decoration: BoxDecoration(
+                    //     color: Colors.amber[50],
+                    //     borderRadius: BorderRadius.circular(8),
+                    //   ),
+                    //   child: Row(
+                    //     mainAxisSize: MainAxisSize.min,
+                    //     children: [
+                    //       Icon(Icons.star, color: Colors.amber[700], size: 14),
+                    //       SizedBox(width: 4),
+                    //       Text(
+                    //         '${challenge.xp} XP',
+                    //         style: TextStyle(
+                    //           color: Colors.amber[900],
+                    //           fontSize: 12,
+                    //           fontWeight: FontWeight.w700,
+                    //         ),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Full-width Leaderboard footer bar
+          InkWell(
+            onTap: () {
+              final challengeId = int.tryParse(challenge.id ?? '');
+              if (challengeId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChallengeLeader(
+                      fromChallenge: true,
+                      challengeId: challengeId,
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Challenge ID not available'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 13),
+           
+              decoration: BoxDecoration(
+                color: Color(0xFF6366F1),
+                border: Border(
+                  top: BorderSide(color: Colors.grey[200]!, width: 1),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.bar_chart, size: 15,
+                      color: Colors.white),
+                  SizedBox(width: 6),
+                  Text(
+                    'Leaderboard',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 16,
+                      color: isEnded ? Colors.grey[400] : Colors.grey[500]),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gradientColors,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    challenge.icon,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        challenge.title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: isEnded ? Colors.grey[600] : Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        challenge.description,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isEnded ? Colors.grey[500] : Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Row(
-                  children: [
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        isEnded ? 'Ended' : (challenge.status ?? ''),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: isEnded
-                              ? Colors.grey[600]
-                              : challenge.gradient[0],
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    if (challenge.authorId == widget.userId)
-                      PopupMenuButton<String>(
-                        // Position popup below the button (horizontal alignment)
-                        position: PopupMenuPosition.under,
-                        icon: Icon(Icons.more_horiz),
-                        onSelected: (value) {
-                          _handleMenuSelection(value, challenge);
-                          // Handle selection
-                        },
-                        itemBuilder: (context) {
-                          return [
-                            PopupMenuItem<String>(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.edit, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Edit'),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Delete'),
-                                ],
-                              ),
-                            ),
-
-                            // update status option
-                            if (challenge.status != null)
-                              PopupMenuItem<String>(
-                                value: (challenge.status?.toLowerCase() ==
-                                            'draft' ||
-                                        challenge.status?.toLowerCase() ==
-                                            'archived')
-                                    ? 'publish'
-                                    : 'archive',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      (challenge.status?.toLowerCase() ==
-                                                  'draft' ||
-                                              challenge.status?.toLowerCase() ==
-                                                  'archived')
-                                          ? Icons.publish
-                                          : Icons.archive,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      (challenge.status?.toLowerCase() ==
-                                                  'draft' ||
-                                              challenge.status?.toLowerCase() ==
-                                                  'archived')
-                                          ? 'Publish'
-                                          : 'Archive',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ];
-                        },
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-
-            // Modern Countdown Timer
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.timer_outlined,
-                        color:
-                            isEnded ? Colors.grey[500] : challenge.gradient[0],
-                        size: 16,
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        _formatCountdown(challenge.endDate,
-                            startDate: challenge.startDate),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isEnded
-                              ? Colors.grey[600]
-                              : challenge.gradient[0],
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 12),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.people, color: Colors.grey[700], size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        '${challenge.participants}',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.amber[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.star, color: Colors.amber[700], size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        '${challenge.xp} XP',
-                        style: TextStyle(
-                          color: Colors.amber[900],
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 8),
-                Spacer(),
-                Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        // View leaderboard for this challenge
-                        final challengeId = int.tryParse(challenge.id ?? '');
-                        if (challengeId != null) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChallengeLeader(
-                                fromChallenge: true,
-                                challengeId: challengeId,
-                              ),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Challenge ID not available'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[200],
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Leaderboard',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: (isEnded || !_canStartChallenge(challenge))
-                          ? null
-                          : () => _joinChallenge(challenge),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isEnded
-                            ? Colors.grey[400]
-                            : (_canStartChallenge(challenge)
-                                ? challenge.gradient[0]
-                                : Colors.grey[400]),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        _getStartButtonText(challenge),
-                        style: TextStyle(
-                          color: _canStartChallenge(challenge)
-                              ? Colors.white
-                              : Colors.black,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 
   void _handleMenuSelection(String value, ChallengeModel challenge) async {
     switch (value) {

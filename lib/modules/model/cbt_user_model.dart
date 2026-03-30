@@ -84,6 +84,26 @@ class CbtUserModel {
     this.fcmToken,
   });
 
+  String get displayName {
+    final candidates = <String?>[
+      name,
+      username,
+      if ((first_name ?? '').trim().isNotEmpty && (last_name ?? '').trim().isNotEmpty)
+        '${first_name!.trim()} ${last_name!.trim()}',
+      first_name,
+      last_name,
+    ];
+
+    for (final value in candidates) {
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        return trimmed;
+      }
+    }
+
+    return 'User';
+  }
+
   /// Create CbtUserModel from JSON
   factory CbtUserModel.fromJson(Map<String, dynamic> json) {
     // Accepts both {user: {...}, profiles: [...]} or just user fields

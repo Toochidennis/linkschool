@@ -28,7 +28,6 @@ class SubjectProvider with ChangeNotifier {
     try {
       _subjects = await _subjectService.getAllSubjects();
     } catch (error) {
-      print('Error fetching subjects: $error');
     }
 
     _isLoading = false;
@@ -42,7 +41,6 @@ class SubjectProvider with ChangeNotifier {
     try {
       _levels = await _subjectService.getAllLevels();
     } catch (error) {
-      print('Error fetching levels: $error');
     }
 
     _isLoadingLevels = false;
@@ -57,7 +55,6 @@ class SubjectProvider with ChangeNotifier {
       final response = await _subjectService.getDashboardData(levelId);
       _dashboardData = response.data;
     } catch (error) {
-      print('Error fetching dashboard data: $error');
       _dashboardData = null;
     }
 
@@ -65,3 +62,4 @@ class SubjectProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+

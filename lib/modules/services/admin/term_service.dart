@@ -32,8 +32,6 @@ class TermService {
         _apiService.setAuthToken(token);
       }
 
-      print(
-          'Fetching terms for class $classId (year: $year, term: $term, db: $db)');
 
       final response = await _apiService.get(
         endpoint: 'portal/course-registrations/terms',
@@ -45,8 +43,6 @@ class TermService {
         },
       );
 
-      print(
-          'API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
       if (!response.success) {
         throw Exception(response.message ?? 'Failed to fetch terms');
@@ -76,10 +72,8 @@ class TermService {
         }
       }
 
-      print('Successfully fetched ${terms.length} terms');
       return terms;
     } catch (e) {
-      print('Error fetching terms: $e');
       throw Exception('Failed to load terms: ${e.toString()}');
     }
   }
@@ -105,8 +99,6 @@ class TermService {
         _apiService.setAuthToken(token);
       }
 
-      print(
-          'Fetching terms and chart data for class $classId (year: $year, term: $term, db: $db)');
 
       final response = await _apiService.get(
         endpoint: 'portal/course-registrations/terms',
@@ -118,8 +110,6 @@ class TermService {
         },
       );
 
-      print(
-          'API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
       if (!response.success) {
         throw Exception(response.message ?? 'Failed to fetch terms');
@@ -153,11 +143,8 @@ class TermService {
               ?.cast<Map<String, dynamic>>() ??
           [];
 
-      print(
-          'Successfully fetched ${terms.length} terms and ${chartData.length} chart data entries');
       return {'terms': terms, 'chart_data': chartData};
     } catch (e) {
-      print('Error fetching terms and chart data: $e');
       throw Exception('Failed to load terms: ${e.toString()}');
     }
   }
@@ -179,8 +166,6 @@ class TermService {
         _apiService.setAuthToken(token);
       }
 
-      print(
-          'Fetching average scores for class $classId (year: $year, term: $term, db: $db)');
 
       final response = await _apiService.get(
         endpoint: 'portal/classes/$classId/course-registrations/average-scores',
@@ -191,8 +176,6 @@ class TermService {
         },
       );
 
-      print(
-          'API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
       if (!response.success) {
         throw Exception(response.message ?? 'Failed to fetch average scores');
@@ -212,11 +195,10 @@ class TermService {
               }))
           .toList();
 
-      print('Successfully fetched ${averageScores.length} average scores');
       return averageScores;
     } catch (e) {
-      print('Error fetching average scores: $e');
       throw Exception('Failed to load average scores: ${e.toString()}');
     }
   }
 }
+

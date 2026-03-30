@@ -22,7 +22,6 @@ class SyllabusService {
 
     if (token != null) {
       _apiService.setAuthToken(token);
-      print('Token set: $token');
     }
 
     final response = await _apiService.get<List<SyllabusModel>>(
@@ -64,7 +63,6 @@ class SyllabusService {
 
     if (token != null) {
       _apiService.setAuthToken(token);
-      print('Token set: $token');
     }
     final classesJson =
         syllabus.classes.map((classModel) => classModel.toJson()).toList();
@@ -81,7 +79,6 @@ class SyllabusService {
       '_db': dbName
     };
 
-    print('Request Body: $requestBody');
 
     final response = await _apiService.post<Map<String, dynamic>>(
       endpoint: 'portal/elearning/syllabus',
@@ -89,10 +86,8 @@ class SyllabusService {
     );
 
     if (!response.success) {
-      print('Failed to add syllabus: ${response.message}');
       throw Exception('Failed to add syllabus: ${response.message}');
     } else {
-      print('Syllabus added: ${response.message}');
     }
   }
 
@@ -110,7 +105,6 @@ class SyllabusService {
 
     if (token != null) {
       _apiService.setAuthToken(token);
-      print('Token set: $token');
     }
     final classesJson =
         syllabus.classes.map((classModel) => classModel.toJson()).toList();
@@ -121,7 +115,6 @@ class SyllabusService {
       '_db': dbName
     };
 
-    print('Request Body: $requestBody');
 
     final response = await _apiService.put<Map<String, dynamic>>(
       endpoint: 'portal/elearning/syllabus/$syllabusId',
@@ -129,10 +122,8 @@ class SyllabusService {
     );
 
     if (!response.success) {
-      print('Failed to add syllabus: ${response.message}');
       throw Exception('Failed to add syllabus: ${response.message}');
     } else {
-      print('Syllabus added: ${response.message}');
     }
   }
 
@@ -150,7 +141,6 @@ class SyllabusService {
 
     if (token != null) {
       _apiService.setAuthToken(token);
-      print('Token set: $token');
     }
 
     final response = await _apiService.delete<Map<String, dynamic>>(
@@ -159,10 +149,9 @@ class SyllabusService {
     );
 
     if (!response.success) {
-      print('Failed to delete syllabus: ${response.message}');
       throw Exception('Failed to delete syllabus: ${response.message}');
     } else {
-      print('Syllabus deleted: ${response.message}');
     }
   }
 }
+

@@ -31,7 +31,6 @@ class ElearningContentService {
       }
 
       _apiService.setAuthToken(token);
-      // print(getuserdata()['settings']);
       final response = await _apiService.get(
         endpoint: 'portal/elearning/syllabus/$syllabusid/contents',
         queryParams: {
@@ -53,3 +52,4 @@ class ElearningContentService {
     }
   }
 }
+

@@ -26,7 +26,6 @@ class ChallengeQuestionService {
 
       final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
 
-      print("🌐 Requesting: $uri");
 
       final response = await http.get(
         uri,
@@ -37,18 +36,16 @@ class ChallengeQuestionService {
         },
       );
 
-      print("📡 Status code: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
-        print("📊 Response: $body");
         return body;
       } else {
         throw Exception("Failed: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
-      print("💥 Error: $e");
       throw Exception("Error fetching challenge questions: $e");
     }
   }
 }
+

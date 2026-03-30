@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
@@ -1942,6 +1943,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
   Map<String, String> subjectYears = {};
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
+  bool _allowAppOpenAds = false;
 
   AppOpenAd? _appOpenAd;
   bool _isAppOpenAdLoaded = false;
@@ -1955,8 +1957,17 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
       subjectNames[widget.examIds[i]] = widget.subjects[i];
       subjectYears[widget.examIds[i]] = widget.years[i];
     }
+    _initAppOpenAdEligibility();
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) _loadAppOpenAd();
+      if (mounted && _allowAppOpenAds) _loadAppOpenAd();
+    });
+  }
+
+  Future<void> _initAppOpenAdEligibility() async {
+    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
+    if (!mounted) return;
+    setState(() {
+      _allowAppOpenAds = allowed;
     });
   }
 
@@ -1966,12 +1977,15 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
     if (state == AppLifecycleState.paused && !_isNavigatingAway) {
       _shouldShowAdOnResume = true;
     } else if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
-      _showAppOpenAd();
+      if (_allowAppOpenAds) {
+        _showAppOpenAd();
+      }
       _shouldShowAdOnResume = false;
     }
   }
 
   void _loadAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     AppOpenAd.load(
       adUnitId: EnvConfig.cbtAdsOpenApiKey,
       request: const AdRequest(),
@@ -1988,6 +2002,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
   }
 
   void _showAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {

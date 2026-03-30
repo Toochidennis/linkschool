@@ -17,7 +17,6 @@ class SyllabusContentService {
 
       return response;
     } catch (e) {
-      print('Error fetching syllabus contents: $e');
       return ApiResponse<Map<String, dynamic>>.error(
         'Failed to fetch syllabus contents: $e',
         500,
@@ -25,3 +24,4 @@ class SyllabusContentService {
     }
   }
 }
+

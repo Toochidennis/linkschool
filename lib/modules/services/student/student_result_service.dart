@@ -56,7 +56,6 @@ class StudentResultService {
 
       throw Exception("Failed to Fetch Student Result: ${response.message}");
     } catch (e) {
-      print("Error fetching Student Result: $e");
       throw Exception("Failed to Fetch ma: $e");
     }
   }
@@ -66,3 +65,4 @@ class StudentResultService {
 //   // Implement the logic to delete a comment from the API or database
 // }
 }
+

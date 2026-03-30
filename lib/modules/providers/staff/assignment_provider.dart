@@ -14,7 +14,6 @@ class StaffAssignmentProvider extends ChangeNotifier {
     try {
       await _staffAssignmentService.AddAssignment(assignment);
     } catch (e) {
-      print('Error adding assignment: $e');
       rethrow;
     }
     isLoading = false;
@@ -28,7 +27,6 @@ class StaffAssignmentProvider extends ChangeNotifier {
     try {
       await _staffAssignmentService.UpDateAssignment(assignment, id);
     } catch (e) {
-      print('Error adding assignment: $e');
       rethrow;
     }
     isLoading = false;
@@ -42,10 +40,10 @@ class StaffAssignmentProvider extends ChangeNotifier {
     try {
       await _staffAssignmentService.DeleteAssignment(id);
     } catch (e) {
-      print('Error adding assignment: $e');
       rethrow;
     }
     isLoading = false;
     notifyListeners();
   }
 }
+

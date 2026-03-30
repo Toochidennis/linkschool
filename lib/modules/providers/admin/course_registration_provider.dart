@@ -58,14 +58,11 @@ class CourseRegistrationProvider with ChangeNotifier {
         final courseIds = coursesJson
             .map<int>((json) => (json['id'] as num).toInt())
             .toList();
-        print('Fetched course IDs: $courseIds');
         return courseIds;
       }
 
-      print('No registered courses found for student $studentId');
       return [];
     } catch (e) {
-      print('Error fetching student registered courses: ${e.toString()}');
       return [];
     }
   }
@@ -110,3 +107,4 @@ class CourseRegistrationProvider with ChangeNotifier {
     }
   }
 }
+

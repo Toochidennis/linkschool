@@ -26,35 +26,26 @@ class CbtHistoryService {
         // Update existing test (keep the better score)
         if (history.percentage > historyList[existingIndex].percentage) {
           historyList[existingIndex] = history;
-          print('📝 Updated test result for $uniqueKey with higher score');
         } else {
-          print('📝 Keeping existing test result for $uniqueKey (previous score was higher)');
         }
       } else {
         // Add new result
         historyList.add(history);
-        print('✅ Added new test result: $uniqueKey');
       }
       
       // Convert to JSON and save
       final jsonList = historyList.map((h) => h.toJson()).toList();
       await prefs.setString(_historyKey, jsonEncode(jsonList));
       
-      print('💾 Test history saved. Total tests: ${historyList.length}');
       _printAllHistory(historyList);
     } catch (e) {
-      print('❌ Error saving test result: $e');
     }
   }
   
-  // Debug helper to print all history
   void _printAllHistory(List<CbtHistoryModel> history) {
-    print('\n📚 Current Test History:');
     for (int i = 0; i < history.length; i++) {
       final h = history[i];
-      print('   ${i + 1}. ${h.subject} (${h.year}) - ExamID: ${h.examId} - Score: ${h.percentage.toStringAsFixed(1)}%');
     }
-    print('─' * 60);
   }
   
   // Find existing test by parameters
@@ -91,7 +82,6 @@ class CbtHistoryService {
       final List<dynamic> jsonList = jsonDecode(historyJson);
       return jsonList.map((json) => CbtHistoryModel.fromJson(json)).toList();
     } catch (e) {
-      print('Error loading test history: $e');
       return [];
     }
   }
@@ -107,22 +97,17 @@ class CbtHistoryService {
     final history = await getTestHistory();
     
     if (history.isEmpty) {
-      print('📊 Completed Count: No history found, returning 0');
       return 0;
     }
     
     // Count all tests that were fully completed (regardless of pass/fail)
     final completedTests = history.where((h) => h.isFullyCompleted).toList();
     
-    print('📊 Completed Count Calculation:');
-    print('   Total tests: ${history.length}');
-    print('   Completed tests: ${completedTests.length}');
     
     for (var test in history) {
       final status = test.isFullyCompleted 
           ? (test.isPassed ? '✓ Completed & Passed' : '✓ Completed but Failed')
           : '⊘ Incomplete';
-      print('   $status: ${test.subject} (${test.year}): ${test.percentage.toStringAsFixed(1)}%');
     }
     
     return completedTests.length;
@@ -180,9 +165,7 @@ class CbtHistoryService {
     final incompleteTests = history.where((h) => !h.isFullyCompleted).toList();
     incompleteTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     
-    print('\n📋 Incomplete Tests Found: ${incompleteTests.length}');
     for (var test in incompleteTests) {
-      print('   ⊘ ${test.subject} (${test.year}): ${test.percentage.toStringAsFixed(1)}% - ExamID: ${test.examId}');
     }
     
     return incompleteTests;
@@ -205,9 +188,7 @@ class CbtHistoryService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_historyKey);
-      print('Test history cleared');
     } catch (e) {
-      print('Error clearing test history: $e');
     }
   }
 
@@ -219,12 +200,6 @@ class CbtHistoryService {
     final recentHistory = await getRecentHistory(limit: 5);
     final allIncompleteTests = await getAllIncompleteTests();
     
-    print('\n📊 Dashboard Stats:');
-    print('   Total Tests: $totalTests');
-    print('   Success Count: $successCount');
-    print('   Average Score: ${averageScore.toStringAsFixed(1)}%');
-    print('   Recent History: ${recentHistory.length} items');
-    print('   Incomplete Tests: ${allIncompleteTests.length}');
     
     return {
       'totalTests': totalTests,
@@ -235,3 +210,5 @@ class CbtHistoryService {
     };
   }
 }
+
+

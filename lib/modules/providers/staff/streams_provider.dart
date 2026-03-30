@@ -32,7 +32,6 @@ class StaffStreamsProvider with ChangeNotifier {
 
       isLoading = false;
       notifyListeners();
-      print("Paint $result");
       return result;
     } catch (e) {
       isLoading = false;
@@ -42,3 +41,4 @@ class StaffStreamsProvider with ChangeNotifier {
     }
   }
 }
+

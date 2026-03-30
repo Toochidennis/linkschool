@@ -28,8 +28,6 @@ class ChallengeQuestionProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      print('🔄 Fetching challenge questions...');
-      print('📝 exam_id=$examId, challenge_id=$challengeId, limit=$limit');
 
       final data = await _service.fetchChallengeQuestions(
         examId: examId,
@@ -37,7 +35,6 @@ class ChallengeQuestionProvider extends ChangeNotifier {
         limit: limit,
       );
 
-      print('📦 Raw API Response: ${data.toString().substring(0, 200)}...');
 
       if (data['success'] != true) {
         throw Exception('API did not return success:true');
@@ -49,7 +46,6 @@ class ChallengeQuestionProvider extends ChangeNotifier {
       final questionsData = data['data'];
 
       if (questionsData == null) {
-        print('⚠️ No data found in response');
         questions = [];
         return;
       }
@@ -87,7 +83,6 @@ class ChallengeQuestionProvider extends ChangeNotifier {
         }
       }
 
-      print('📝 Flattened questions: ${flatQuestions.length}');
 
       questions = flatQuestions
           .whereType<Map>()
@@ -97,27 +92,20 @@ class ChallengeQuestionProvider extends ChangeNotifier {
               final normalizedQuestion = _normalizeQuestionData(Map<String, dynamic>.from(q));
               return QuestionModel.fromJson(normalizedQuestion);
             } catch (e, stackTrace) {
-              print('⚠️ Error parsing question: $e');
-              print('⚠️ Stack trace: $stackTrace');
-              print('⚠️ Raw question: ${q.toString().substring(0, 200)}...');
               return null;
             }
           })
           .whereType<QuestionModel>()
           .toList();
 
-      print('✅ Loaded questions: ${questions.length}');
 
       // Debug: Print first question's correct answer format
       if (questions.isNotEmpty) {
-        print('📋 First question correct answer: ${questions[0].correctAnswer}');
       }
 
       currentQuestionIndex = 0;
       userAnswers.clear();
     } catch (e, stackTrace) {
-      print("💥 Provider error: $e");
-      print("💥 Stack trace: $stackTrace");
       _error = "Failed to load challenge questions: $e";
       questions = [];
     } finally {
@@ -184,16 +172,13 @@ class ChallengeQuestionProvider extends ChangeNotifier {
   void selectAnswer(int questionIndex, int answerIndex) {
     // Add validation
     if (questionIndex < 0 || questionIndex >= questions.length) {
-      print('⚠️ Invalid question index: $questionIndex (total: ${questions.length})');
       return;
     }
     
     if (answerIndex < 0) {
-      print('⚠️ Invalid answer index: $answerIndex');
       return;
     }
     
-    print('📝 Selecting answer: Q$questionIndex -> Option$answerIndex');
     userAnswers[questionIndex] = answerIndex;
     notifyListeners();
   }

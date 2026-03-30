@@ -14,11 +14,9 @@ class StaffAssignmentService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     assignment['_db'] = dbName;
-    print("Request Payload: $assignment");
 
     // Before sending the assignment, check attachments:
     if (assignment['attachments'] != null) {
@@ -35,19 +33,12 @@ class StaffAssignmentService {
         body: assignment,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to add Material");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to Add Material: ${response.message}");
       } else {
-        print(' Material added successfully.');
-        print('Status Code: ${response.statusCode}');
-        print(' ${response.message}');
       }
     } catch (e) {
-      print("Error adding material: $e");
       throw Exception("Failed to Add Material: $e");
     }
   }
@@ -62,11 +53,9 @@ class StaffAssignmentService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     assignment['_db'] = dbName;
-    print("Request Payload: $assignment");
 
     // Before sending the assignment, check attachments:
     if (assignment['attachments'] != null) {
@@ -83,19 +72,12 @@ class StaffAssignmentService {
         body: assignment,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to add Material");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to Add Material: ${response.message}");
       } else {
-        print(' Material added successfully.');
-        print('Status Code: ${response.statusCode}');
-        print(' ${response.message}');
       }
     } catch (e) {
-      print("Error adding material: $e");
       throw Exception("Failed to Add Material: $e");
     }
   }
@@ -110,7 +92,6 @@ class StaffAssignmentService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     try {
@@ -118,17 +99,12 @@ class StaffAssignmentService {
           endpoint: 'portal/elearning/assignment/$id', body: {'_db': dbName});
 
       if (!response.success) {
-        print("Failed to delete assignment");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to Add Material: ${response.message}");
       } else {
-        print(' Material added successfully.');
-        print('Status Code: ${response.statusCode}');
-        print(' ${response.message}');
       }
     } catch (e) {
-      print("Error adding material: $e");
       throw Exception("Failed to Add Material: $e");
     }
   }
 }
+

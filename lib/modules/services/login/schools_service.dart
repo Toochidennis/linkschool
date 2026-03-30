@@ -24,12 +24,8 @@ class SchoolService {
         },
       );
 
-      print("🛰️ Fetching schools...");
-      print("➡️ Endpoint: $baseUrl");
-      print("➡️ Headers: X-API-KEY: $apiKey");
 
       if (response.statusCode == 200) {
-        print("✅ Response received: ${response.body}");
 
         final decoded = json.decode(response.body);
 
@@ -45,13 +41,11 @@ class SchoolService {
           throw Exception("Unexpected response format: $decoded");
         }
       } else {
-        print("❌ Failed to load schools: ${response.statusCode}");
-        print("Body: ${response.body}");
         throw Exception("Failed to load schools: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching schools: $e");
       throw Exception("Error fetching schools: $e");
     }
   }
 }
+

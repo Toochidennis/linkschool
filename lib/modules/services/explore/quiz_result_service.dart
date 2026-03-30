@@ -41,11 +41,7 @@ class QuizResultService {
       // Save back to SharedPreferences
       await prefs.setString(_quizResultsKey, json.encode(existingResults));
 
-      print('💾 Quiz result saved for: $quizKey');
-      print('   - Score: $totalScore%');
-      print('   - Correct: $correctAnswers/$totalQuestions');
     } catch (e) {
-      print('❌ Error saving quiz result: $e');
     }
   }
 
@@ -62,7 +58,6 @@ class QuizResultService {
       final Map<String, dynamic> results = json.decode(resultsJson);
       return results;
     } catch (e) {
-      print('❌ Error retrieving quiz results: $e');
       return {};
     }
   }
@@ -82,8 +77,6 @@ class QuizResultService {
 
       return null;
     } catch (e) {
-      print(
-          '❌ Error retrieving quiz result for $courseTitle - $lessonTitle: $e');
       return null;
     }
   }
@@ -130,9 +123,7 @@ class QuizResultService {
       existingResults.remove(quizKey);
 
       await prefs.setString(_quizResultsKey, json.encode(existingResults));
-      print('🗑️ Quiz result cleared for: $quizKey');
     } catch (e) {
-      print('❌ Error clearing quiz result: $e');
     }
   }
 
@@ -141,9 +132,8 @@ class QuizResultService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_quizResultsKey);
-      print('🗑️ All quiz results cleared');
     } catch (e) {
-      print('❌ Error clearing all quiz results: $e');
     }
   }
 }
+

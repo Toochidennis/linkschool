@@ -430,5 +430,5 @@ void _registerDeferredServices() {
   locator.registerLazySingleton<StreamsService>(
       () => StreamsService(locator<ApiService>()));
 
-  print('✅ Deferred services registered in background');
 }
+

@@ -26,22 +26,15 @@ class LessonQuizService {
         },
       );
 
-      print("🛰️ Fetching lesson quizzes...");
-      print("➡️ Endpoint: $uri");
-      print("➡️ Headers: X-API-KEY: $apiKey");
 
       if (response.statusCode == 200) {
-        print("✅ Response received: ${response.body}");
 
         final decoded = json.decode(response.body);
         return LessonQuizResponse.fromJson(decoded);
       } else {
-        print("❌ Failed to load lesson quizzes: ${response.statusCode}");
-        print("Body: ${response.body}");
         throw Exception("Failed to load lesson quizzes: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching lesson quizzes: $e");
       throw Exception("Error fetching lesson quizzes: $e");
     }
   }

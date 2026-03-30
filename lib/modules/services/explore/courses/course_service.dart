@@ -69,7 +69,6 @@ class CourseService {
       });
 
 
-      print("🔔 Fetching categories and courses from: $uri");
 
       final response = await http.get(
         uri,
@@ -153,5 +152,6 @@ class CourseService {
     }
   }
 }
+
 
 

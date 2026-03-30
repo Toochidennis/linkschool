@@ -14,8 +14,6 @@ class CbtUserService {
       }
 
       final url = '$baseUrl/$userEmail';
-      print("🛰️ [FETCH USER] GET $url");
-      print("➡️ Headers: X-API-KEY: $apiKey");
       // No body for GET
 
       final response = await http.get(
@@ -28,7 +26,6 @@ class CbtUserService {
       );
 
       if (response.statusCode == 200) {
-        print("✅ Response received: ${response.body}");
 
         final decoded = json.decode(response.body);
 
@@ -38,15 +35,11 @@ class CbtUserService {
           return null;
         }
       } else if (response.statusCode == 404) {
-        print("🔍 User not found (404)");
         return null;
       } else {
-        print("❌ Failed to fetch user: ${response.statusCode}");
-        print("Body: ${response.body}");
         throw Exception("Failed to fetch user: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching user: $e");
       throw Exception("Error fetching user: $e");
     }
   }
@@ -58,9 +51,6 @@ class CbtUserService {
       }
 
       final body = user.toJson();
-      print("🛰️ [CREATE USER] POST $baseUrl");
-      print("➡️ Headers: X-API-KEY: $apiKey");
-      print("➡️ Body: ${json.encode(body)}");
 
       final response = await http.post(
         Uri.parse(baseUrl),
@@ -73,7 +63,6 @@ class CbtUserService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("✅ User created: ${response.body}");
 
         final decoded = json.decode(response.body);
 
@@ -84,12 +73,9 @@ class CbtUserService {
               "Failed to create user: ${decoded['message'] ?? 'Unknown error'}");
         }
       } else {
-        print("❌ Failed to create user: ${response.statusCode}");
-        print("Body: ${response.body}");
         throw Exception("Failed to create user: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error creating user: $e");
       throw Exception("Error creating user: $e");
     }
   }
@@ -119,9 +105,6 @@ class CbtUserService {
         'phone': phone,
       };
 
-      print("🛠️ [SIGNUP USER] POST $url");
-      print("➡️ Headers: X-API-KEY: $apiKey");
-      print("➡️ Body: ${json.encode(body)}");
 
       final response = await http.post(
         Uri.parse(url),
@@ -142,11 +125,8 @@ class CbtUserService {
             "Failed to sign up: ${decoded['message'] ?? 'Unknown error'}");
       }
 
-      print("❌ Failed to sign up: ${response.statusCode}");
-      print("Body: ${response.body}");
       throw Exception("Failed to sign up: ${response.statusCode}");
     } catch (e) {
-      print("❌ Error signing up: $e");
       throw Exception("Error signing up: $e");
     }
   }
@@ -166,9 +146,6 @@ class CbtUserService {
         'password': password,
       };
 
-      print("🛠️ [LOGIN USER] POST $url");
-      print("➡️ Headers: X-API-KEY: $apiKey");
-      print("➡️ Body: ${json.encode(body)}");
 
       final response = await http.post(
         Uri.parse(url),
@@ -189,11 +166,8 @@ class CbtUserService {
             "Failed to login: ${decoded['message'] ?? 'Unknown error'}");
       }
 
-      print("❌ Failed to login: ${response.statusCode}");
-      print("Body: ${response.body}");
       throw Exception("Failed to login: ${response.statusCode}");
     } catch (e) {
-      print("❌ Error logging in: $e");
       throw Exception("Error logging in: $e");
     }
   }
@@ -209,9 +183,6 @@ class CbtUserService {
       }
       final updateUrl = '$baseUrl/$userId';
       final body = user.toJson();
-      print("🛰️ [UPDATE USER] PUT $updateUrl");
-      print("➡️ Headers: X-API-KEY: $apiKey");
-      print("➡️ Body: ${json.encode(body)}");
 
       final response = await http.put(
         Uri.parse(updateUrl),
@@ -223,11 +194,8 @@ class CbtUserService {
         body: json.encode(body),
       );
 
-      print("⬅️ Response status: ${response.statusCode}");
-      print("⬅️ Response body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("✅ User updated: ${response.body}");
         final decoded = json.decode(response.body);
         if (decoded['success'] == true && decoded['data'] != null) {
           return CbtUserModel.fromJson(decoded['data']);
@@ -236,12 +204,9 @@ class CbtUserService {
               "Failed to update user: ${decoded['message'] ?? 'Unknown error'}");
         }
       } else {
-        print("❌ Failed to update user: ${response.statusCode}");
-        print("Body: ${response.body}");
         throw Exception("Failed to update user: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error updating user: $e");
       throw Exception("Error updating user: $e");
     }
   }
@@ -254,15 +219,12 @@ class CbtUserService {
     String? reference,
   }) async {
     try {
-      print("🔄 Syncing user on login: $email");
 
       final existingUser = await fetchUserByEmail(email);
 
       if (existingUser != null) {
-        print("👤 Existing user found, not updating (login only)");
         return existingUser;
       } else {
-        print("🆕 New user, creating with subscribed=0...");
         final newUser = CbtUserModel(
           name: name,
           email: email,
@@ -274,7 +236,6 @@ class CbtUserService {
         return await createUser(newUser);
       }
     } catch (e) {
-      print("❌ Error syncing user: $e");
       throw Exception("Error syncing user: $e");
     }
   }
@@ -304,7 +265,6 @@ class CbtUserService {
       );
       return await updateUser(updatedUser);
     } catch (e) {
-      print("❌ Error updating user after payment: $e");
       throw Exception("Error updating user after payment: $e");
     }
   }
@@ -317,10 +277,7 @@ class CbtUserService {
     required String reference,
     int maxFetchAttempts = 3,
   }) async {
-    print("🚦 Payment success detected. Starting post-payment flow...");
     await Future.delayed(const Duration(seconds: 1));
-    print(
-        "⏳ Waited 1 second. Fetching user with up to $maxFetchAttempts attempts...");
 
     CbtUserModel? user;
     int attempt = 0;
@@ -328,25 +285,19 @@ class CbtUserService {
       try {
         user = await fetchUserByEmail(email);
         if (user != null) {
-          print("✅ User fetched on attempt ${attempt + 1}: ${user.toJson()}");
           break;
         } else {
-          print("❌ User not found on attempt ${attempt + 1}");
         }
       } catch (e) {
-        print("❌ Error fetching user on attempt ${attempt + 1}: $e");
       }
       attempt++;
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
     if (user == null) {
-      print(
-          "❌ Failed to fetch user after $maxFetchAttempts attempts. Aborting.");
       return null;
     }
 
-    print("🛠️ Creating updated user model with payment reference...");
     final updatedUser = user.copyWith(
       name: name,
       profilePicture: profilePicture,
@@ -354,7 +305,6 @@ class CbtUserService {
       reference: reference,
     );
 
-    print("📡 Making PUT request to update user...");
     try {
       await updateUserAfterPayment(
         email: email,
@@ -363,28 +313,20 @@ class CbtUserService {
         reference: reference,
       );
     } catch (e) {
-      print("❌ Error updating user after payment: $e");
       return null;
     }
 
-    print("⏳ Waiting 500ms before verifying update...");
     await Future.delayed(const Duration(milliseconds: 500));
 
-    print("🔍 Fetching user again to verify update...");
     CbtUserModel? verifiedUser;
     try {
       verifiedUser = await fetchUserByEmail(email);
       if (verifiedUser != null && verifiedUser.reference == reference) {
-        print(
-            "✅ Verified user has payment reference: ${verifiedUser.reference}");
         return verifiedUser;
       } else {
-        print(
-            "❌ Verified user missing reference or not updated. Data: ${verifiedUser?.toJson()}");
         return verifiedUser;
       }
     } catch (e) {
-      print("❌ Error verifying user after update: $e");
       return null;
     }
   }
@@ -393,3 +335,4 @@ class CbtUserService {
   // update user details 
  // Future<
 }
+

@@ -10,7 +10,6 @@ class TopicService {
 
   Future<List<Topic>> FetchTopic({required int syllabusId}) async {
     try {
-      print('TopicService: Fetching topics for syllabusId: $syllabusId');
 
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -29,7 +28,6 @@ class TopicService {
         final settings = data['settings'] ?? {};
         dbName = settings['db_name']?.toString() ?? dbName;
       } catch (e) {
-        print('TopicService: Could not extract db_name, using default: $e');
       }
 
       // Get token
@@ -42,14 +40,11 @@ class TopicService {
       }
 
       _apiService.setAuthToken(token);
-      print('TopicService: Token set, making API call');
 
       final response = await _apiService.get<List<Topic>>(
         endpoint: 'portal/elearning/syllabus/$syllabusId/topics',
         queryParams: {'_db': dbName},
         fromJson: (json) {
-          print(
-              'Raw JSON response: ${const JsonEncoder.withIndent('  ').convert(json)}');
           if (json['success'] == true && json['response'] is List) {
             return (json['response'] as List)
                 .map((topicJson) =>
@@ -61,21 +56,14 @@ class TopicService {
         },
       );
 
-      print(
-          'API Response: status=${response.statusCode}, message=${response.message}, data=${response.data != null}');
 
       if (!response.success) {
-        print('Failed to fetch topics: ${response.message}');
         throw Exception(response.message);
       }
 
       final topics = response.data ?? [];
-      print('TopicService: Successfully fetched ${topics.length} topics');
       return topics;
     } catch (e, stackTrace) {
-      print(
-          'TopicService: Error fetching topics for syllabusId: $syllabusId, error: $e');
-      print('TopicService: Stack trace: $stackTrace');
       rethrow; // Re-throw to let the provider handle it
     }
   }
@@ -109,7 +97,6 @@ class TopicService {
         final settings = data['settings'] ?? {};
         dbName = settings['db_name']?.toString() ?? dbName;
       } catch (e) {
-        print('TopicService: Could not extract db_name, using default: $e');
       }
 
       final token = loginData is Map
@@ -118,7 +105,6 @@ class TopicService {
 
       if (token != null) {
         _apiService.setAuthToken(token);
-        print('TopicService: Token set for create topic: $token');
       }
 
       final classesJson =
@@ -138,8 +124,6 @@ class TopicService {
         '_db': dbName,
       };
 
-      print(
-          'TopicService: Create topic request body: ${const JsonEncoder.withIndent('  ').convert(requestBody)}');
 
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/elearning/topic',
@@ -147,14 +131,10 @@ class TopicService {
       );
 
       if (!response.success) {
-        print('TopicService: Failed to create topic: ${response.message}');
         throw Exception('Failed to create topic: ${response.message}');
       } else {
-        print('TopicService: Topic created successfully: ${response.message}');
       }
     } catch (e, stackTrace) {
-      print('TopicService: Error creating topic: $e');
-      print('TopicService: Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -189,7 +169,6 @@ class TopicService {
         final settings = data['settings'] ?? {};
         dbName = settings['db_name']?.toString() ?? dbName;
       } catch (e) {
-        print('TopicService: Could not extract db_name, using default: $e');
       }
 
       final token = loginData is Map
@@ -198,7 +177,6 @@ class TopicService {
 
       if (token != null) {
         _apiService.setAuthToken(token);
-        print('TopicService: Token set for create topic: $token');
       }
 
       final classesJson =
@@ -218,8 +196,6 @@ class TopicService {
         '_db': dbName,
       };
 
-      print(
-          'TopicService: Create topic request body: ${const JsonEncoder.withIndent('  ').convert(requestBody)}');
 
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/elearning/topic/$topicId',
@@ -227,14 +203,10 @@ class TopicService {
       );
 
       if (!response.success) {
-        print('TopicService: Failed to create topic: ${response.message}');
         throw Exception('Failed to create topic: ${response.message}');
       } else {
-        print('TopicService: Topic created successfully: ${response.message}');
       }
     } catch (e, stackTrace) {
-      print('TopicService: Error creating topic: $e');
-      print('TopicService: Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -262,7 +234,6 @@ class TopicService {
 //     }
 
 //     final token = loginData['token'] ?? userBox.get('token');
-//     print('Token: $token');
 //     if (token == null) {
 //       throw Exception('No valid token found');
 //     }
@@ -272,7 +243,6 @@ class TopicService {
 //       endpoint: 'portal/elearning/topic/$syllabusId',
 //       queryParams: {'_db': dbName},
 //       fromJson: (json) {
-//         print('Raw JSON response: ${const JsonEncoder.withIndent('  ').convert(json)}');
 //         if (json['success'] == true && json['response'] is List) {
 //           return (json['response'] as List)
 //               .map((topicJson) => Topic.fromJson(topicJson as Map<String, dynamic>))
@@ -282,17 +252,13 @@ class TopicService {
 //       },
 //     );
 
-//     print('API Response: status=${response.statusCode}, message=${response.message}, data=${response.data != null}');
 
 //     if (!response.success) {
-//       print('Failed to fetch topics: ${response.message}');
 //       throw Exception(response.message);
 //     }
 
 //     return response.data ?? [];
 //   } catch (e, stackTrace) {
-//     print('Error fetching topics for syllabusId: $syllabusId, error: $e');
-//     print('Stack trace: $stackTrace');
 //     return [];
 //   }
 // }
@@ -318,7 +284,6 @@ class TopicService {
 
 //     if (token != null) {
 //       _apiService.setAuthToken(token);
-//       print('Token set: $token');
 //     }
 
 //     final classesJson =
@@ -334,7 +299,6 @@ class TopicService {
 //       '_db': dbName,
 //     };
 
-//     print('Request Body: $requestBody');
 
 //     final response = await _apiService.post<Map<String, dynamic>>(
 //       endpoint: 'portal/elearning/topic',
@@ -342,10 +306,10 @@ class TopicService {
 //     );
 
 //     if (!response.success) {
-//       print('Failed to create topic: ${response.message}');
 //       throw Exception('Failed to create topic: ${response.message}');
 //     } else {
-//       print('Topic created successfully: ${response.message}');
 //     }
 //   }
 // }
+
+

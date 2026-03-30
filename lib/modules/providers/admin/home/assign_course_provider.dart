@@ -24,7 +24,6 @@ class AssignCourseProvider with ChangeNotifier {
       _assignments = response.response;
     } catch (e) {
       debugPrint("Failed to load course assignments: $e");
-      print("llcourse assignments: $_assignments");
     } finally {
       isLoading = false;
       notifyListeners();
@@ -49,3 +48,4 @@ class AssignCourseProvider with ChangeNotifier {
     }
   }
 }
+

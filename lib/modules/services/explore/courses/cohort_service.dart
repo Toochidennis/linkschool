@@ -27,20 +27,16 @@ class CohortService {
         },
       );
 
-      print('🛰️ Fetching cohort...');
-      print('➡️ Endpoint: $uri');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         return CohortResponseModel.fromJson(decoded);
       } else {
-        print('❌ Failed to fetch cohort: ${response.statusCode}');
-        print('Body: ${response.body}');
         throw Exception('Failed to fetch cohort: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error fetching cohort: $e');
       rethrow;
     }
   }
 }
+

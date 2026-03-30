@@ -31,25 +31,17 @@ class CourseVideoService {
         },
       );
 
-      print("🛰️ Fetching course videos...");
-      print("➡️ Endpoint: $url");
-      print("➡️ Level ID: $levelId");
-      print("➡️ Course ID: $courseId");
-      print("➡️ Headers: X-API-KEY: $apiKey");
 
       if (response.statusCode == 200) {
-        print("✅ Response received: ${response.body}");
 
         final decoded = json.decode(response.body);
         return CourseVideosResponseModel.fromJson(decoded);
       } else {
-        print("❌ Failed to load course videos: ${response.statusCode}");
-        print("Body: ${response.body}");
         throw Exception("Failed to load course videos: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching course videos: $e");
       throw Exception("Error fetching course videos: $e");
     }
   }
 }
+

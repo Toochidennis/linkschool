@@ -82,12 +82,10 @@ class QuestionsProvider extends ChangeNotifier {
   /// Load questions for the current topic
   Future<void> _loadNextTopicQuestions() async {
     if (_currentTopicIndex >= _topicIds.length) {
-      print('📚 All topics completed!');
       return;
     }
 
     final topicId = _topicIds[_currentTopicIndex];
-    print('📡 Loading questions for topic $_currentTopicIndex: $topicId');
 
     loading = allQuestions.isEmpty;
     loadingMore = allQuestions.isNotEmpty;
@@ -103,16 +101,12 @@ class QuestionsProvider extends ChangeNotifier {
 
       if (questionsData != null && questionsData!.data.isNotEmpty) {
         allQuestions.addAll(questionsData!.data);
-        print(
-            '✅ Loaded ${questionsData!.data.length} questions. Total: ${allQuestions.length}');
       } else {
-        print('⚠️ No questions found for topic $topicId');
       }
 
       _currentTopicIndex++;
     } catch (e) {
       error = e.toString();
-      print('❌ Error loading questions: $error');
     }
 
     loading = false;
@@ -196,8 +190,6 @@ class QuestionsProvider extends ChangeNotifier {
           (_wrongAnswersPerTopic[topicId] ?? 0) + 1;
     }
 
-    print(
-        '📊 Answer recorded for topic $topicId: ${isCorrect ? "Correct" : "Wrong"}');
   }
 
   /// Find which topic a question belongs to
@@ -287,3 +279,4 @@ class QuestionsProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+

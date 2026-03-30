@@ -16,7 +16,6 @@ class ForYouService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      print('🌐 Making request to: $baseUrl');
 
       final response = await http.get(
         Uri.parse(baseUrl),
@@ -27,19 +26,14 @@ class ForYouService {
         },
       ).timeout(const Duration(seconds: 15)); // Optional safety timeout
 
-      print('📡 Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('✅ Data fetched successfully!');
-        print('$data !');
         return data;
       } else {
-        print('🚨 Error ${response.statusCode}: ${response.body}');
         throw Exception('Failed to load For You data');
       }
     } catch (e) {
-      print('💥 Service error: $e');
       throw Exception('Error fetching For You data: $e');
     }
   }
@@ -84,3 +78,4 @@ class ForYouService {
     return videos;
   }
 }
+

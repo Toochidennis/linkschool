@@ -30,6 +30,8 @@ class LeaderboardProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final resolvedUsername = username.trim().isNotEmpty ? username.trim() : 'User';
+
       // Generate device ID and platform
       final deviceId = const Uuid().v4();
       final platform = Platform.isAndroid
@@ -38,20 +40,11 @@ class LeaderboardProvider extends ChangeNotifier {
               ? 'ios'
               : 'web';
 
-      print('📤 Submitting challenge result...');
-      print('   Challenge ID: $challengeId');
-      print('   User ID: $userId');
-      print('   Username: $username');
-      print('   Score: $score');
-      print('   Correct: $correctAnswers/$totalQuestions');
-      print('   Time: $timeTaken seconds');
-      print('   Device ID: $deviceId');
-      print('   Platform: $platform');
 
       submitResponse = await _service.submitChallengeResult(
         challengeId: challengeId,
         userId: userId,
-        username: username,
+        username: resolvedUsername,
         score: score,
         correctAnswers: correctAnswers,
         totalQuestions: totalQuestions,
@@ -60,14 +53,12 @@ class LeaderboardProvider extends ChangeNotifier {
         platform: platform,
       );
 
-      print('✅ Challenge result submitted successfully!');
 
       submitting = false;
       notifyListeners();
 
       return true;
     } catch (e) {
-      print('❌ Error submitting challenge result: $e');
       error = e.toString();
       submitting = false;
       notifyListeners();
@@ -82,12 +73,9 @@ class LeaderboardProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('📥 Loading leaderboard for challenge $challengeId...');
       final response = await _service.fetchLeaderboard(challengeId);
       leaderboard = response.data;
-      print('✅ Leaderboard loaded: ${leaderboard.length} entries');
     } catch (e) {
-      print('❌ Error loading leaderboard: $e');
       error = e.toString();
     }
 
@@ -95,3 +83,4 @@ class LeaderboardProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+

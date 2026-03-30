@@ -71,8 +71,11 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
 
     print('🔄 Auth State Synced - Role: $_userRole, LoggedIn: $_isLoggedIn');
 
-    // If user became logged in, flip to dashboard
-    if (!wasLoggedIn && newIsLoggedIn && _isInitialized) {
+    // Only auto-flip for manual logins, not restored sessions.
+    if (!wasLoggedIn &&
+        newIsLoggedIn &&
+        _isInitialized &&
+        authProvider.loginSource == LoginSource.manual) {
       if (_flipController.state?.isFront == true) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _flipController.toggleCard();
@@ -96,16 +99,6 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     setState(() {
       _isInitialized = true;
     });
-
-    // If already logged in, flip to dashboard
-    if (_isLoggedIn && _flipController.state?.isFront == true) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _flipController.toggleCard();
-      });
-      setState(() {
-        _isExploreActive = false;
-      });
-    }
   }
 
   Future<void> _checkLoginStatus() async {
@@ -290,6 +283,5 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     );
   }
 }
-
 
 

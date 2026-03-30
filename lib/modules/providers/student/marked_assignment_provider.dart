@@ -29,7 +29,6 @@ class MarkedAssignmentProvider with ChangeNotifier {
         year: year,
       );
 
-      print("Quest $result");
       isLoading = false;
       notifyListeners();
       return result;
@@ -41,3 +40,4 @@ class MarkedAssignmentProvider with ChangeNotifier {
     }
   }
 }
+

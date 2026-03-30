@@ -20,23 +20,17 @@ class ManageStudentService {
 
     _apiService.setAuthToken(token);
     newStudent['_db'] = dbName;
-    print("Request Payload: $newStudent");
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/students',
         body: newStudent,
       );
-      print("Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to create student");
-        print("Error: ${response.message ?? 'No error message provided'}");
        
         throw Exception("Failed to create student: ${response.message}");
       } else {
-        print('Student created successfully.');
       }
     } catch (e) {
-      print("Error creating student: $e");
 
       throw Exception("Failed to create student: $e");
     }
@@ -55,21 +49,16 @@ class ManageStudentService {
 
     _apiService.setAuthToken(token);
     updatedStudent['_db'] = dbName;
-    print("Update Request Payload: $updatedStudent");
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
         endpoint: 'portal/students/$studentId',
         body: updatedStudent,
       );
       if (!response.success) {
-        print("Failed to update student");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to update student: ${response.message}");
       } else {
-        print('Student updated successfully.');
       }
     } catch (e) {
-      print("Error updating student: $e");
       throw Exception("Failed to update student: $e");
     }
   }
@@ -93,14 +82,10 @@ class ManageStudentService {
         },
       );
       if (!response.success) {
-        print("Failed to delete student");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to delete student: ${response.message}");
       } else {
-        print('Student deleted successfully.');
       }
     } catch (e) {
-      print("Error deleting student: $e");
       throw Exception("Failed to delete student: $e");
     }
   }
@@ -123,25 +108,19 @@ class ManageStudentService {
           '_db': dbName,
         },
       );
-      print("Fetch Students Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to fetch students");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to fetch students: ${response.message}");
       }
 
       final data = response.rawData?['response'];
       if (data is List) {
-        print('Students fetched successfully: ${data.length} students found.');
         return data
             .map((json) => Students.fromJson(json as Map<String, dynamic>))
             .toList();
       } else {
-        print("Unexpected response format");
         throw Exception("Unexpected response format");
       }
     } catch (e) {
-      print("Error fetching students: $e");
       throw Exception("Failed to fetch students: $e");
     }
   }
@@ -169,27 +148,19 @@ class ManageStudentService {
       'level_id': levelId.toString(),
     };
     
-    print("Query Params for fetchStudentsByLevel: $queryParams");
     
     try {
-          print("Query Params for fetchStudentsByLevel: $queryParams");
       final response = await _apiService.get<Map<String, dynamic>>(
         
         endpoint: 'portal/students',
         queryParams: queryParams,
       );
-      print("Fetch Students Response Status Code: ${response.statusCode}");
-      print("Query Params: $queryParams");
       if (!response.success) {
-        print("Failed to fetch students");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to fetch students: ${response.message}");
       }
 
-      print('Students fetched successfully for level $levelId');
       return StudentListResponse.fromJson(response.rawData!);
     } catch (e) {
-      print("Error fetching students: $e");
       throw Exception("Failed to fetch students: $e");
     }
   }
@@ -217,25 +188,20 @@ class ManageStudentService {
       'class_id': classId.toString(),
     };
     
-    print("Query Params for fetchStudentsByClass: $queryParams");
     
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/students',
         queryParams: queryParams,
       );
-      print("Fetch Students Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to fetch students");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to fetch students: ${response.message}");
       }
 
-      print('Students fetched successfully for class $classId');
       return StudentListResponse.fromJson(response.rawData!);
     } catch (e) {
-      print("Error fetching students: $e");
       throw Exception("Failed to fetch students: $e");
     }
   }
 }
+

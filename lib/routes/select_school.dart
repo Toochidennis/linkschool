@@ -257,6 +257,7 @@ class _SelectSchoolState extends State<SelectSchool> {
         credentials['username']!,
         credentials['password']!,
         credentials['schoolCode']!,
+        isDemoLogin: true,
       );
 
       // Close loading dialog

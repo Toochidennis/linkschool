@@ -38,8 +38,6 @@ class CbtLicenseService {
         body: json.encode({'user_id': userId}),
       );
 
-      print(
-          'CBT License Activation Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
@@ -93,7 +91,6 @@ class CbtLicenseService {
       final uri = Uri.parse(statusUrl).replace(
         queryParameters: {'user_id': userId.toString()},
       );
-      print('Checking license status with URI: $uri');
       final response = await http.get(
         uri,
         headers: {
@@ -103,8 +100,6 @@ class CbtLicenseService {
         },
       );
 
-      print(
-          'CBT License Status Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
@@ -237,8 +232,6 @@ class CbtLicenseService {
         }),
       );
 
-      print(
-          'CBT Start Trial Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
@@ -254,3 +247,4 @@ class CbtLicenseService {
     }
   }
 }
+

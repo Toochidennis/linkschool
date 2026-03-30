@@ -31,7 +31,6 @@ class StreamsProvider with ChangeNotifier {
 
       isLoading = false;
       notifyListeners();
-      print("Paint $result");
       return result;
     } catch (e) {
       isLoading = false;
@@ -41,3 +40,4 @@ class StreamsProvider with ChangeNotifier {
     }
   }
 }
+

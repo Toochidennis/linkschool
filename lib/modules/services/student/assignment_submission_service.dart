@@ -30,7 +30,6 @@ class AssignmentSubmissionService {
       throw Exception("Authentication token is missing.");
     }
     _apiService.setAuthToken(token);
-    print(submission.toJson());
 
     final response = await _apiService.post(
       endpoint: 'portal/students/$studentid/assignment-submissions',
@@ -40,8 +39,8 @@ class AssignmentSubmissionService {
     if (response.statusCode == 201) {
       return true;
     } else {
-      print('Failed: ${response.message}');
       return false;
     }
   }
 }
+

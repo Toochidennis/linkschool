@@ -149,14 +149,12 @@ class LevelClassProvider with ChangeNotifier {
             .toList();
         return LevelWithClasses(level: level, classes: levelClasses);
       }).toList();
-      print(
-          "Fetched ${levelsWithClasses.length} levels with associated classes");
     } catch (e) {
       error = "Failed to fetch levels and classes: $e";
-      print("Error in provider: $e");
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
 }
+

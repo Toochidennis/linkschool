@@ -20,7 +20,6 @@ class QuestionsService {
 
       final url =
           "$_baseUrl/cbt/exams/questions/by-topic?topic_id=$topicId&course_id=$courseId&exam_type_id=$examTypeId";
-      print("📡 Fetching Questions → $url");
 
       final response = await http.get(
         Uri.parse(url),
@@ -41,3 +40,4 @@ class QuestionsService {
     }
   }
 }
+

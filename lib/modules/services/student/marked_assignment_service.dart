@@ -34,14 +34,11 @@ class MarkedAssignmentService {
       );
 
       if (response.statusCode == 200) {
-        print(
-            "Gottt  ${MarkedAssignmentModel.fromJson(response.rawData!['response'])}");
         return MarkedAssignmentModel.fromJson(response.rawData!['response']);
       }
 
       throw Exception("Failed to Fetch Marked assignment: ${response.message}");
     } catch (e) {
-      print("Error fetching Streams: $e");
       throw Exception("Failed to Fetch ma: $e");
     }
   }
@@ -51,3 +48,4 @@ class MarkedAssignmentService {
 //   // Implement the logic to delete a comment from the API or database
 // }
 }
+

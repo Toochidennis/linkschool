@@ -65,9 +65,6 @@ class AnnouncementProvider with ChangeNotifier {
       _announcements = response.announcements;
 
       // Log the fetched announcements for debugging
-      print('✅ Fetched ${_announcements.length} announcements');
-      print(
-          '📊 Published: ${publishedAnnouncements.length}, Sponsored: ${sponsoredAnnouncements.length}');
 
       if (!isOnline) {
         _errorMessage = 'You are offline. Showing saved announcements.';
@@ -77,10 +74,10 @@ class AnnouncementProvider with ChangeNotifier {
           ? 'Network error. Please try again.'
           : 'No internet connection. Connect and try again.';
       // Log the error for debugging
-      print('❌ Error in AnnouncementProvider: $_errorMessage');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 }
+

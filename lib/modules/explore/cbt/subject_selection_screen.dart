@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -8,6 +8,7 @@ import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
@@ -36,7 +37,8 @@ class SubjectSelectionScreen extends StatefulWidget {
   State<SubjectSelectionScreen> createState() => _SubjectSelectionScreenState();
 }
 
-class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
+class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
+    with WidgetsBindingObserver {
   final _downloadService = CbtDownloadService();
 
   // Set of selected subject IDs
@@ -46,6 +48,13 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   final Map<String, DownloadState> _downloadStates = {};
   final Map<String, bool> _isDownloaded = {};
   bool _checkingDownloads = true;
+  bool _isNavigatingAway = false;
+  bool _shouldShowAdOnResume = false;
+  bool _pendingAdShow = false;
+  bool _allowAppOpenAds = false;
+
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
 
   List<SubjectModel> get _subjects {
     final provider = Provider.of<CBTProvider>(context, listen: false);
@@ -65,9 +74,53 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkDownloadedSubjects();
     });
+
+    debugPrint(
+      '[SubjectSelection AppOpen][initState] '
+      'adUnitId=${EnvConfig.cbtAdsOpenApiKey}',
+    );
+
+    _initAppOpenAdEligibility();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    debugPrint(
+      '[SubjectSelection AppOpen][lifecycle] state=$state, '
+      '_shouldShowAdOnResume=$_shouldShowAdOnResume, '
+      '_isNavigatingAway=$_isNavigatingAway, '
+      '_isAppOpenAdLoaded=$_isAppOpenAdLoaded, '
+      '_hasAd=${_appOpenAd != null}, '
+      '_pendingAdShow=$_pendingAdShow',
+    );
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _shouldShowAdOnResume = true;
+        debugPrint('[SubjectSelection AppOpen] app paused (real background)');
+      } else {
+        debugPrint(
+          '[SubjectSelection AppOpen] app paused due to navigation, skipping',
+        );
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        debugPrint(
+          '[SubjectSelection AppOpen] resumed from background, trying show',
+        );
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      } else {
+        debugPrint('[SubjectSelection AppOpen] resumed from navigation');
+      }
+
+      _isNavigatingAway = false;
+    }
   }
 
   Future<void> _checkDownloadedSubjects() async {
@@ -81,6 +134,131 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
       }
     }
     if (mounted) setState(() => _checkingDownloads = false);
+  }
+
+  Future<void> _initAppOpenAdEligibility() async {
+    debugPrint('[SubjectSelection AppOpen][gate] checking eligibility');
+    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
+    if (!mounted) return;
+
+    setState(() {
+      _allowAppOpenAds = allowed;
+    });
+
+    debugPrint(
+      '[SubjectSelection AppOpen][gate] allowed=$_allowAppOpenAds',
+    );
+
+    if (_allowAppOpenAds) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _allowAppOpenAds) {
+          _loadAppOpenAd();
+        }
+      });
+    }
+  }
+
+  void _loadAppOpenAd() {
+    if (!_allowAppOpenAds) {
+      debugPrint('[SubjectSelection AppOpen][load] blocked by gate');
+      return;
+    }
+    debugPrint(
+      '[SubjectSelection AppOpen][load] start '
+      'adUnitId=${EnvConfig.cbtAdsOpenApiKey}, '
+      '_isAppOpenAdLoaded=$_isAppOpenAdLoaded, '
+      '_hasAd=${_appOpenAd != null}, '
+      '_pendingAdShow=$_pendingAdShow',
+    );
+
+    AppOpenAd.load(
+      adUnitId: EnvConfig.cbtAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          _isAppOpenAdLoaded = true;
+          if (mounted) {
+            setState(() {});
+          }
+          debugPrint(
+            '[SubjectSelection AppOpen][load] success '
+            'adLoaded=$_isAppOpenAdLoaded, hasAd=${_appOpenAd != null}',
+          );
+
+          if (_pendingAdShow) {
+            debugPrint(
+              '[SubjectSelection AppOpen][load] pending show requested',
+            );
+            _showAppOpenAd();
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          debugPrint(
+            '[SubjectSelection AppOpen][load] failed code=${error.code}, '
+            'message=${error.message}',
+          );
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _pendingAdShow = false;
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_allowAppOpenAds) {
+      debugPrint('[SubjectSelection AppOpen][show] blocked by gate');
+      return;
+    }
+    debugPrint(
+      '[SubjectSelection AppOpen][show] requested '
+      'loaded=$_isAppOpenAdLoaded, hasAd=${_appOpenAd != null}, '
+      'pending=$_pendingAdShow',
+    );
+
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) {
+      _pendingAdShow = true;
+      debugPrint(
+        '[SubjectSelection AppOpen][show] not ready, setting pending flag',
+      );
+      return;
+    }
+
+    _pendingAdShow = false;
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (AppOpenAd ad) {
+        debugPrint('[SubjectSelection AppOpen][show] displayed');
+      },
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        debugPrint('[SubjectSelection AppOpen][show] dismissed');
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        debugPrint(
+          '[SubjectSelection AppOpen][show] failed code=${error.code}, '
+          'message=${error.message}',
+        );
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
+    super.dispose();
   }
 
   Future<void> _downloadSubject(SubjectModel subject) async {

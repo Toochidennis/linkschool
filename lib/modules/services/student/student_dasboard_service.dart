@@ -30,7 +30,6 @@ class DashboardService {
       }
 
       _apiService.setAuthToken(token);
-      print(getuserdata()['settings']);
       final response = await _apiService.get(
         endpoint: 'portal/students/$studentid/elearning/dashboard',
         queryParams: {
@@ -45,7 +44,6 @@ class DashboardService {
       );
 
       final data = response;
-      print("Dashboard data received successfully");
       
       // Parse the dashboard data
       final dashboardData = DashboardData.fromJson(data.rawData?['data']);
@@ -67,3 +65,4 @@ class DashboardService {
   }
 }
 //
+

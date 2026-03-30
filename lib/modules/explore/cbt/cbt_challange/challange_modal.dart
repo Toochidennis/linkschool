@@ -102,6 +102,8 @@ class ChallengeModel {
 
     final timeLimit = json['time_limit'] is int ? json['time_limit'] : null;
 
+    final authorName = _extractAuthorName(json);
+
     return ChallengeModel(
       id: json['id']?.toString(),
       title: json['title']?.toString() ?? 'Untitled Challenge',
@@ -120,12 +122,51 @@ class ChallengeModel {
       details: json['details'],
       status: json['status']?.toString(),
       authorId: json['author_id'] is int ? json['author_id'] : int.tryParse(json['author_id']?.toString() ?? ''),
-      authorName: json['author_name']?.toString(),
+      authorName: authorName,
       isActive: json['is_active']?.toString(),
       challengers: json['challengers'],
       isCustomChallenge: json['author_id'] != null, // All personal = custom
       subjects: subjects.isNotEmpty ? subjects : null,
     );
+  }
+
+  static String? _extractAuthorName(Map<String, dynamic> json) {
+    final directKeys = [
+      json['author_name'],
+      json['authorName'],
+      json['username'],
+      json['created_by'],
+    ];
+
+    for (final value in directKeys) {
+      final text = value?.toString().trim();
+      if (text != null && text.isNotEmpty) {
+        return text;
+      }
+    }
+
+    final author = json['author'];
+    if (author is Map<String, dynamic>) {
+      final nestedKeys = [
+        author['name'],
+        author['username'],
+        author['full_name'],
+        author['first_name'],
+      ];
+      for (final value in nestedKeys) {
+        final text = value?.toString().trim();
+        if (text != null && text.isNotEmpty) {
+          return text;
+        }
+      }
+
+      final first = author['first_name']?.toString().trim() ?? '';
+      final last = author['last_name']?.toString().trim() ?? '';
+      final combined = '$first $last'.trim();
+      if (combined.isNotEmpty) return combined;
+    }
+
+    return null;
   }
 
   static String _calculateDifficulty(int? timeLimit) {

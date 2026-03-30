@@ -47,6 +47,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   bool _isInitialCountdownComplete = false;
   bool _isContinueWithAds = false;
   bool _isShowingAdsGate = false;
+  bool _allowAppOpenAds = false;
 
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
@@ -64,6 +65,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     WidgetsBinding.instance.addObserver(this);
     AdManager.instance.preload();
     _loadAdMode();
+    _initAppOpenAdEligibility();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -84,9 +86,17 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     });
 
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
+      if (mounted && _allowAppOpenAds) {
         _loadAppOpenAd();
       }
+    });
+  }
+
+  Future<void> _initAppOpenAdEligibility() async {
+    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
+    if (!mounted) return;
+    setState(() {
+      _allowAppOpenAds = allowed;
     });
   }
 
@@ -107,7 +117,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         _shouldShowAdOnResume = true;
       }
     } else if (state == AppLifecycleState.resumed) {
-      if (_shouldShowAdOnResume) {
+      if (_shouldShowAdOnResume && _allowAppOpenAds) {
         _showAppOpenAd();
         _shouldShowAdOnResume = false;
       }
@@ -115,6 +125,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   }
 
   void _loadAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     AppOpenAd.load(
       adUnitId: EnvConfig.cbtAdsOpenApiKey,
       request: const AdRequest(),
@@ -139,6 +150,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   }
 
   void _showAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     if (_isAppOpenAdLoaded && _appOpenAd != null) {
       _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (AppOpenAd ad) {

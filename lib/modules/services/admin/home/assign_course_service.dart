@@ -34,7 +34,6 @@ Future<CourseAssignmentResponse> fetchCourseAssignments(int staffId, String term
       );
 
       if (response.rawData == null) {
-        print("Response data is ${response.rawData}");
         throw Exception("Empty response from server.");
       }
 
@@ -65,16 +64,12 @@ Future<CourseAssignmentResponse> fetchCourseAssignments(int staffId, String term
 
     _apiService.setAuthToken(token);
     AssignedCourse['_db'] = dbName;
-    print("Request Payload: $AssignedCourse");
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/course-assignments',
         body: AssignedCourse,
       );
-      print("Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to Assigned courses and classes ");
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
@@ -87,8 +82,8 @@ Future<CourseAssignmentResponse> fetchCourseAssignments(int staffId, String term
         );
       }
     } catch (e) {
-      print("Error assigning course: $e");
       throw Exception("Failed to assigning course: $e");
     }
   }
 }
+

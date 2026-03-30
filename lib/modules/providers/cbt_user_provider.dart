@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -48,7 +48,6 @@ String? _errorMessage; String? get errorMessage => _errorMessage;
   // ?? INITIALIZE - Load user from SharedPreferences on app start
   // =========================================================================
   Future<void> initialize() async {
-    print('?? Initializing CbtUserProvider...');
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -57,7 +56,6 @@ String? _errorMessage; String? get errorMessage => _errorMessage;
       if (userJson != null && userJson.isNotEmpty) {
      final userData = json.decode(userJson) as Map<String, dynamic>;
 _currentUser = CbtUserModel.fromJson(userData);
-        print('? User loaded from SharedPreferences: ${_currentUser?.email}');
 
         final cachedProfiles = await _loadProfilesFromPreferences();
         if (cachedProfiles.isNotEmpty) {
@@ -79,10 +77,8 @@ _currentUser = CbtUserModel.fromJson(userData);
       final savedReference = prefs.getString(_keyPaymentReference);
       if (savedReference != null && savedReference.isNotEmpty) {
         paymentReferenceNotifier.value = savedReference;
-        print('? Payment reference loaded: $savedReference');
       }
     } catch (e) {
-      print('?? Error initializing provider: $e');
     }
   }
 
@@ -94,7 +90,6 @@ _currentUser = CbtUserModel.fromJson(userData);
       if (_currentUser!.fcmToken == fcmToken) return;
       if (_currentUser!.id == null) return;
 
-      print('?? Sending FCM token via fcm-token endpoint: $fcmToken');
       final success = await _fcmTokenService.updateFcmToken(
         userId: _currentUser!.id!,
         fcmToken: fcmToken,
@@ -102,9 +97,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       if (!success) return;
       _currentUser = _currentUser!.copyWith(fcmToken: fcmToken);
       await _saveUserToPreferences(_currentUser!);
-      print('✅ Device token updated via fcm-token endpoint');
     } catch (e) {
-      print('❌ Error syncing device token: $e');
     }
   }
 
@@ -118,7 +111,6 @@ _currentUser = CbtUserModel.fromJson(userData);
       if (_currentUser!.id == null) return;
 
       try {
-        print('?? Sending refreshed FCM token via fcm-token endpoint: $newToken');
         final success = await _fcmTokenService.updateFcmToken(
           userId: _currentUser!.id!,
           fcmToken: newToken,
@@ -126,9 +118,7 @@ _currentUser = CbtUserModel.fromJson(userData);
         if (!success) return;
         _currentUser = _currentUser!.copyWith(fcmToken: newToken);
         await _saveUserToPreferences(_currentUser!);
-        print('✅ Device token refreshed and saved via fcm-token endpoint');
       } catch (e) {
-        print('❌ Error updating device token on refresh: $e');
       }
     });
   }
@@ -143,7 +133,6 @@ _currentUser = CbtUserModel.fromJson(userData);
       subscribed: _hasValidLicense ? 1 : 0,
     );
 
-    print('? Subscription service synced with user payment status');
   }
 
   Future<void> syncLicenseStatus({bool forceRefresh = false}) async {
@@ -164,7 +153,6 @@ _currentUser = CbtUserModel.fromJson(userData);
         subscribed: _hasValidLicense ? 1 : 0,
       );
     } catch (e) {
-      print('❌ Error syncing license status: $e');
       _hasValidLicense = false;
     }
   }
@@ -184,9 +172,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       await _saveProfilesToPreferences(user.profiles);
     }
 
-    print('? User saved to SharedPreferences: ${user.email}');
   } catch (e) {
-    print('? Error saving user to SharedPreferences: $e');
   }
 }
 
@@ -198,9 +184,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       final prefs = await SharedPreferences.getInstance();
       final profilesJson = json.encode(profiles.map((p) => p.toJson()).toList());
       await prefs.setString(_keyUserProfiles, profilesJson);
-      print('? User profiles saved to SharedPreferences: ${profiles.length}');
     } catch (e) {
-      print('? Error saving profiles to SharedPreferences: $e');
     }
   }
 
@@ -212,7 +196,6 @@ _currentUser = CbtUserModel.fromJson(userData);
       final decoded = json.decode(profilesString) as List;
       return decoded.map((e) => CbtUserProfile.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('? Error loading profiles from SharedPreferences: $e');
       return [];
     }
   }
@@ -229,24 +212,17 @@ _currentUser = CbtUserModel.fromJson(userData);
       final refExists = prefs.containsKey(_keyPaymentReference);
       final profilesExist = prefs.containsKey(_keyUserProfiles);
 
-      print('??? Clearing user data from SharedPreferences...');
-      print('   - User key exists: $userExists');
-      print('   - Payment reference key exists: $refExists');
-      print('   - Profiles key exists: $profilesExist');
 
       if (userExists) {
         final removed = await prefs.remove(_keyCurrentUser);
-        print('   - User key removed: $removed');
       }
 
       if (refExists) {
         final removed = await prefs.remove(_keyPaymentReference);
-        print('   - Payment reference removed: $removed');
       }
 
       if (profilesExist) {
         final removed = await prefs.remove(_keyUserProfiles);
-        print('   - Profiles removed: $removed');
       }
 
       // Verify removal
@@ -257,9 +233,7 @@ _currentUser = CbtUserModel.fromJson(userData);
         throw Exception('Failed to remove user data from SharedPreferences');
       }
 
-      print('? User data cleared from SharedPreferences');
     } catch (e) {
-      print('? Error clearing user data: $e');
       rethrow;
     }
   }
@@ -269,11 +243,9 @@ _currentUser = CbtUserModel.fromJson(userData);
   // =========================================================================
   Future<CbtUserModel?> fetchUserByEmail(String email) async {
     if (email.isEmpty) {
-      print('?? Cannot fetch user: email is empty');
       return null;
     }
 
-    print('?? [FETCH USER] GET request for: $email');
     _isLoading = true;
     notifyListeners();
 
@@ -281,9 +253,6 @@ _currentUser = CbtUserModel.fromJson(userData);
       final user = await _userService.fetchUserByEmail(email);
 
       if (user != null) {
-        print('? [FETCH USER] User found');
-        print('   - Subscribed: ${user.subscribed}');
-        print('   - Reference: ${user.reference}');
 
         // Save to state
         _currentUser = user;
@@ -304,9 +273,7 @@ await _saveUserToPreferences(_currentUser!);
           await _savePaymentReference(user.reference!);
         }
 
-        print('? [FETCH USER] User saved to SharedPreferences');
       } else {
-        print('?? [FETCH USER] User not found in database');
         _hasValidLicense = false;
       }
 
@@ -314,7 +281,6 @@ await _saveUserToPreferences(_currentUser!);
       notifyListeners();
       return user;
     } catch (e) {
-      print('? [FETCH USER] Error: $e');
       _isLoading = false;
       notifyListeners();
       return null;
@@ -331,8 +297,6 @@ await _saveUserToPreferences(_currentUser!);
     required String name,
     required String profilePicture,
   }) async {
-    print('?? Handling Firebase sign-up for: $email');
-    print('?? Flow: POST only, use returned data');
 
     _isLoading = true;
     notifyListeners();
@@ -340,9 +304,7 @@ await _saveUserToPreferences(_currentUser!);
 
     try {
       final fcmToken = await FirebaseMessagingService().getFcmToken();
-      print('?? FCM token retrieved: $fcmToken');
       if (fcmToken == null || fcmToken.isEmpty) {
-        print('?? FCM token is empty; continuing without it.');
       }
 
 
@@ -359,7 +321,6 @@ await _saveUserToPreferences(_currentUser!);
         subscribed: 0, // New users start as unpaid
         reference: null,
       );
-      print('?? Sending FCM token via createUser (signup): $fcmToken');
       final createdUser = await _userService.createUser(newUser);
       _currentUser = createdUser;
       await _saveUserToPreferences(createdUser);
@@ -370,12 +331,10 @@ await _saveUserToPreferences(_currentUser!);
       await syncLicenseStatus(forceRefresh: true);
       await _syncDeviceTokenIfNeeded();
       _startTokenRefreshListener();
-      print('? Sign-up flow completed successfully');
       _isLoading = false;
       notifyListeners();
       return createdUser;
     } catch (e) {
-      print('? Error in sign-up flow: $e');
       _isLoading = false;
       notifyListeners();
       throw (' $e');
@@ -431,7 +390,6 @@ await _saveUserToPreferences(_currentUser!);
         reference: null,
       );
 
-      print('?? Sending FCM token via createUser (login fallback): $fcmToken');
       final createdUser = await _userService.createUser(newUser);
       _currentUser = createdUser;
       await _saveUserToPreferences(createdUser);
@@ -454,7 +412,7 @@ await _saveUserToPreferences(_currentUser!);
   }
 
   // =========================================================================
-  // 🔗 LINK PORTAL USER (NO CREATE)
+  // ?? LINK PORTAL USER (NO CREATE)
   // =========================================================================
   Future<bool> tryLinkPortalUser({
     required String email,
@@ -591,20 +549,15 @@ await _saveUserToPreferences(_currentUser!);
   // =========================================================================
   Future<void> updateUserAfterPayment({required String reference}) async {
     if (_currentUser == null) {
-      print('?? Cannot update: currentUser is null');
       throw ('No current user to update');
     }
 
-    print('?? Updating user after payment...');
-    print('   - Email: ${_currentUser!.email}');
-    print('   - Reference: $reference');
 
     _isLoading = true;
     notifyListeners();
 
     try {
       // Step 1: Make PUT request to update user
-      print('?? Making PUT request to update user...');
       final updatedUser = await _userService.updateUser(_currentUser!.copyWith(
         subscribed: 1,
         reference: reference,
@@ -629,14 +582,10 @@ await _saveUserToPreferences(_currentUser!);
       await _syncDeviceTokenIfNeeded();
       _startTokenRefreshListener();
 
-      print('? User updated and persisted after payment');
-      print('   - Subscribed: ${updatedUser.subscribed}');
-      print('   - Reference: ${updatedUser.reference}');
 
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('? Error updating user after payment: $e');
       _isLoading = false;
       notifyListeners();
       throw (' $e');
@@ -668,9 +617,7 @@ await _saveUserToPreferences(_currentUser!);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyPaymentReference, reference);
       paymentReferenceNotifier.value = reference;
-      print('? Payment reference saved: $reference');
     } catch (e) {
-      print('? Error saving payment reference: $e');
     }
   }
 
@@ -679,11 +626,9 @@ await _saveUserToPreferences(_currentUser!);
   // =========================================================================
   Future<void> refreshCurrentUser() async {
     if (_currentUser == null) {
-      print('?? Cannot refresh: currentUser is null');
       return;
     }
 
-    print('?? Refreshing user data for: ${_currentUser!.email}');
     await fetchUserByEmail(_currentUser!.email);
   }
 
@@ -691,7 +636,6 @@ await _saveUserToPreferences(_currentUser!);
   // ?? LOGOUT
   // =========================================================================
   Future<void> logout() async {
-    print('?? Logging out user...');
 
     // Clear state
     _currentUser = null;
@@ -703,9 +647,7 @@ await _saveUserToPreferences(_currentUser!);
     // Clear SharedPreferences
     try {
       await _clearUserFromPreferences();
-      print('? User data cleared from SharedPreferences');
     } catch (e) {
-      print('? Error clearing user from preferences: $e');
       rethrow; // Re-throw to let caller handle
     }
 
@@ -713,22 +655,17 @@ await _saveUserToPreferences(_currentUser!);
     try {
       final subscriptionService = CbtSubscriptionService();
       await subscriptionService.clearUserData();
-      print('? Subscription service data cleared');
     } catch (e) {
-      print('? Error clearing subscription service data: $e');
     }
 
     // ? Clear CBT test history data
     try {
       final historyService = CbtHistoryService();
       await historyService.clearHistory();
-      print('? CBT test history cleared on logout');
     } catch (e) {
-      print('? Error clearing CBT test history on logout: $e');
     }
 
     notifyListeners();
-    print('? User logged out successfully');
   }
 
   // =========================================================================
@@ -1206,7 +1143,6 @@ await _saveUserToPreferences(_currentUser!);
 //   /// Helper method to log messages with timestamps
 //   void _log(String message) {
 //     final timestamp = DateTime.now().toIso8601String();
-//     print('[$timestamp] [CbtUserProvider] $message');
 //   }
 
 //   /// Get user summary for debugging
@@ -1221,6 +1157,7 @@ await _saveUserToPreferences(_currentUser!);
 //     };
 //   }
 // }
+
 
 
 

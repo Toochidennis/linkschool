@@ -19,6 +19,7 @@ import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'course_description_screen.dart';
 import 'course_content_screen.dart';
+import 'explore_courses_see_all_screen.dart';
 import 'create_user_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -429,6 +430,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
             name: category.name,
             description: category.description,
             imageUrl: category.imageUrl,
+            slug: category.slug,
             courses: matchingCourses,
           ));
         }
@@ -458,6 +460,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
           name: category.name,
           description: category.description,
           imageUrl: category.imageUrl,
+          slug: category.slug,
           courses: notEnrolled,
         ));
       }
@@ -473,6 +476,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         name: 'Enrolled Courses',
         description: '',
         imageUrl: null,
+        slug: null,
         courses: enrolledCourses,
       ),
       ...remainingCategories,
@@ -1118,9 +1122,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                  final cohortStart = course.cohortStartDate != null
           ? DateTime.tryParse(course.cohortStartDate!)
           : null;
-
-
-           if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
+      if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -2037,18 +2039,66 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Widget _buildCategoryHeaderCard(CategoryModel category) {
-    return Column(
+    final isEnrolledBucket = category.id == -1 || category.name == 'Enrolled Courses';
+    final seeAllColor = isEnrolledBucket
+        ? const Color(0xFF0F766E)
+        : _getCategoryColor(category.name);
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          category.name,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              category.name,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+                height: 1.2,
+              ),
+              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(width: 8),
+        OutlinedButton(
+          onPressed: () {
+            final isEnrolledBucket = category.id == -1;
+     
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExploreCoursesSeeAllScreen(
+                  categoryName: category.name,
+                  categoryColor: seeAllColor,
+                  categorySlug: isEnrolledBucket ? null : category.slug,
+                  categoryId: category.id,
+                  profileId: _activeProfile?.id,
+                  initialCourses: isEnrolledBucket ? category.courses : null,
+                ),
+              ),
+            );
+          },
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFFFFA500),
+            side: const BorderSide(color: Color(0xFFFFA500), width: 1.2),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            minimumSize: const Size(0, 32),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+          ),
+          child: const Text(
+            'See all',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ],
     );
   }

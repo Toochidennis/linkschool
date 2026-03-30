@@ -1,0 +1,2 @@
+/Users/toochidennis/Projects/linkschool/android/app/.cxx/release/l75g3c2f/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/toochidennis/Projects/linkschool/android/app/.cxx/release/l75g3c2f/armeabi-v7a/CMakeFiles/rebuild_cache.dir

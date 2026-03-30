@@ -13,12 +13,11 @@ class AdmissionService {
       if (response.statusCode == 200) {
         return admissionResponseFromJson(response.body);
       } else {
-        print("❌ Failed with status: ${response.statusCode}");
         return null;
       }
     } catch (e) {
-      print("⚠️ Exception fetching admissions: $e");
       return null;
     }
   }
 }
+

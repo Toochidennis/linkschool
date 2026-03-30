@@ -26,10 +26,10 @@ class EbookProvider with ChangeNotifier {
       _categories = await _ebookService.getCategories();
     } catch (e) {
       // Handle error (e.g., show a snackbar or log the error)
-      print('Error fetching books: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 }
+

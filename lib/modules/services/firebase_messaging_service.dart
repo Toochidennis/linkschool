@@ -19,7 +19,6 @@ class FirebaseMessagingService {
       await _ensurePermission();
       return await _messaging.getToken();
     } catch (e) {
-      print('❌ Failed to get FCM token: $e');
       return null;
     }
   }
@@ -33,7 +32,7 @@ class FirebaseMessagingService {
         provisional: false,
       );
     } catch (e) {
-      print('⚠️ FCM permission request failed: $e');
     }
   }
 }
+

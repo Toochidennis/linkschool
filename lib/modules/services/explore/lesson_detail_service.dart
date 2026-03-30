@@ -36,7 +36,6 @@ class LessonDetailService {
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
 
-        print('Decoded response: $decoded');
         debugPrint('Lesson detail fetched successfully');
         return LessonDetailResponse.fromJson(decoded);
       } else {
@@ -61,4 +60,5 @@ class LessonDetailService {
     }
   }
 }
+
 

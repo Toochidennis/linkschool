@@ -45,10 +45,8 @@ class FirebaseAuthService {
       await markSignupAsShown();
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      print('Firebase Google signin error: ${e.message}');
       rethrow;
     } catch (e) {
-      print('Google signin error: $e');
       rethrow;
     }
   }
@@ -66,10 +64,8 @@ class FirebaseAuthService {
       await markSignupAsShown();
       return credential;
     } on FirebaseAuthException catch (e) {
-      print('Firebase email signin error: ${e.message}');
       rethrow;
     } catch (e) {
-      print('Email signin error: $e');
       rethrow;
     }
   }
@@ -93,10 +89,8 @@ class FirebaseAuthService {
       await markSignupAsShown();
       return credential;
     } on FirebaseAuthException catch (e) {
-      print('Firebase email signup error: ${e.message}');
       rethrow;
     } catch (e) {
-      print('Email signup error: $e');
       rethrow;
     }
   }
@@ -130,3 +124,4 @@ class FirebaseAuthService {
     await prefs.setBool(_signupShownKey, false);
   }
 }
+

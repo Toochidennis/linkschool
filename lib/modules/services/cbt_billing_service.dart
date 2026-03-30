@@ -63,7 +63,6 @@ class CbtBillingService {
         'voucher_code': voucherCode,
         'reference': reference,
       };
-      print('Request2 body: $body');
       final response = await http.post(
         Uri.parse(baseUrl),
         headers: {
@@ -74,7 +73,6 @@ class CbtBillingService {
         body: json.encode(body),
       );
 
-      print('CBT Billing Verification Response: ${response.statusCode} - ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
   final decoded = json.decode(response.body);
@@ -143,7 +141,6 @@ class CbtBillingService {
     
     };
 
-    print('Initialize Payment body: $body');
 
     final response = await http.post(
       Uri.parse(initializeUrl),
@@ -217,7 +214,6 @@ Future<BillingVerifyResult> checkPaymentStatus({
       },
     );
 
-    print('CBT Payment Status Response: ${response.statusCode} - ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final decoded = json.decode(response.body);
@@ -299,3 +295,4 @@ String? _extractMessage(String body) {
   return trimmed.isNotEmpty ? trimmed : null;
 }
 }
+

@@ -16,6 +16,8 @@ class StaffSkillsBehaviourScreen extends StatefulWidget {
   final String? term;
   final String? year;
   final String? db;
+  final String screenTitle;
+  final int contentType;
 
   const StaffSkillsBehaviourScreen({
     super.key,
@@ -24,6 +26,8 @@ class StaffSkillsBehaviourScreen extends StatefulWidget {
     this.term,
     this.year,
     this.db,
+    this.screenTitle = 'Skills and Behaviour',
+    this.contentType = 0,
   });
 
   @override
@@ -59,6 +63,7 @@ class _StaffSkillsBehaviourScreenState
       term: currentTerm,
       year: currentYear,
       db: currentDb,
+      type: widget.contentType,
     );
   }
 
@@ -119,7 +124,7 @@ class _StaffSkillsBehaviourScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Skills and Behaviour',
+          widget.screenTitle,
           style: AppTextStyles.normal600(
             fontSize: 18.0,
             color: AppColors.eLearningBtnColor1,
@@ -224,6 +229,7 @@ class _StaffSkillsBehaviourScreenState
                             term: currentTerm,
                             year: currentYear,
                             db: currentDb,
+                            type: widget.contentType,
                           );
                         },
                         child: Text('Retry'),
@@ -309,6 +315,7 @@ class _StaffSkillsBehaviourScreenState
       'year': currentYear,
       'term': currentTerm,
       '_db': currentDb,
+      'type': widget.contentType,
     };
 
     _controllers.forEach((studentIndex, skillControllers) {
@@ -352,6 +359,7 @@ class _StaffSkillsBehaviourScreenState
           term: currentTerm,
           year: currentYear,
           db: currentDb,
+          type: widget.contentType,
         );
       } else {
         success = await provider.createSkillsAndBehaviours(
@@ -361,6 +369,7 @@ class _StaffSkillsBehaviourScreenState
           term: currentTerm,
           year: currentYear,
           db: currentDb,
+          type: widget.contentType,
         );
       }
 

@@ -15,7 +15,6 @@ class DeleteSyllabusService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
     try {
       final response = await _apiService.delete<Map<String, dynamic>>(
@@ -24,20 +23,13 @@ class DeleteSyllabusService {
             '_db': dbName,
           });
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to delete Assignment content");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception(
             "Failed to Delete Assignment Content: ${response.message}");
       } else {
-        print('Assignmentcontent deleted successfully.');
-        print('Status Code: ${response.statusCode}');
-        print('Message: ${response.message}');
       }
     } catch (e) {
-      print("Error deleting Assignment content: $e");
       throw Exception("Failed to Delete Assignment Content: $e");
     }
   }
@@ -52,7 +44,6 @@ class DeleteSyllabusService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
     try {
       final response = await _apiService.delete<Map<String, dynamic>>(
@@ -61,19 +52,12 @@ class DeleteSyllabusService {
             '_db': dbName,
           });
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to delete Quiz content");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to Delete  Quiz  Content: ${response.message}");
       } else {
-        print(' Quiz  content deleted successfully.');
-        print('Status Code: ${response.statusCode}');
-        print('Message: ${response.message}');
       }
     } catch (e) {
-      print("Error deleting  Quiz  content: $e");
       throw Exception("Failed to Delete  Quiz  Content: $e");
     }
   }
@@ -88,7 +72,6 @@ class DeleteSyllabusService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
     try {
       final response = await _apiService.delete<Map<String, dynamic>>(
@@ -97,20 +80,13 @@ class DeleteSyllabusService {
             '_db': dbName,
           });
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to delete material content");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception(
             "Failed to Delete Syllabus Content: ${response.message}");
       } else {
-        print('material content deleted successfully.');
-        print('Status Code: ${response.statusCode}');
-        print('Message: ${response.message}');
       }
     } catch (e) {
-      print("Error deleting material content: $e");
       throw Exception("Failed to Delete material Content: $e");
     }
   }
@@ -125,7 +101,6 @@ class DeleteSyllabusService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
     try {
       final response = await _apiService.delete<Map<String, dynamic>>(
@@ -134,19 +109,12 @@ class DeleteSyllabusService {
             '_db': dbName,
           });
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to delete topic content");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to Delete topic Content: ${response.message}");
       } else {
-        print('topic content deleted successfully.');
-        print('Status Code: ${response.statusCode}');
-        print('Message: ${response.message}');
       }
     } catch (e) {
-      print("Error deleting topic content: $e");
       throw Exception("Failed to Delete topic Content: $e");
     }
   }
@@ -161,7 +129,6 @@ class DeleteSyllabusService {
     final token = loginData['token'] ?? userBox.get('token');
     if (token != null) {
       _apiService.setAuthToken(token);
-      print('Token set: $token');
     }
     final response = await _apiService.delete<Map<String, dynamic>>(
       endpoint: 'portal/elearning/contents/$syllabusId',
@@ -169,10 +136,9 @@ class DeleteSyllabusService {
     );
 
     if (!response.success) {
-      print('Failed to delete syllabus: ${response.message}');
       throw Exception('Failed to delete syllabus: ${response.message}');
     } else {
-      print('Syllabus deleted: ${response.message}');
     }
   }
 }
+

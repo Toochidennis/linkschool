@@ -28,7 +28,6 @@ class FeeProvider with ChangeNotifier {
       // Default fallback to current year
       return DateTime.now().year.toString();
     } catch (e) {
-      print('Error getting current year: $e');
       return DateTime.now().year.toString();
     }
   }
@@ -44,7 +43,6 @@ class FeeProvider with ChangeNotifier {
       // Default fallback
       return '3';
     } catch (e) {
-      print('Error getting current term: $e');
       return '3';
     }
   }
@@ -61,11 +59,9 @@ class FeeProvider with ChangeNotifier {
         _error = null;
       } else {
         _error = response.message;
-        print('Fee names fetch error: ${response.message}');
       }
     } catch (e) {
       _error = 'Failed to fetch fee names: $e';
-      print('Fee names fetch exception: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -83,7 +79,6 @@ class FeeProvider with ChangeNotifier {
         isMandatory: isMandatory,
       );
 
-      print("kkkk $feeName, $isMandatory");
       final response = await _feeService.addFeeName(request);
       if (response.success) {
         // Refresh the fee names list to get the updated data from server
@@ -92,13 +87,11 @@ class FeeProvider with ChangeNotifier {
         return true;
       } else {
         _error = response.message;
-        print('Add fee name error: ${response.message}');
         notifyListeners();
         return false;
       }
     } catch (e) {
       _error = 'Failed to add fee name: $e';
-      print('Add fee name exception: $e');
       notifyListeners();
       return false;
     } finally {
@@ -119,7 +112,6 @@ class FeeProvider with ChangeNotifier {
         isMandatory: isMandatory,
       );
 
-      print("kkkk $feeName, $isMandatory");
 
       final response = await _feeService.updateFeeName(feeNameId, request);
       if (response.success) {
@@ -143,13 +135,11 @@ class FeeProvider with ChangeNotifier {
         return true;
       } else {
         _error = response.message;
-        print('Update fee name error: ${response.message}');
         notifyListeners();
         return false;
       }
     } catch (e) {
       _error = 'Failed to update fee name: $e';
-      print('Update fee name exception: $e');
       notifyListeners();
       return false;
     } finally {
@@ -184,13 +174,11 @@ class FeeProvider with ChangeNotifier {
         return true;
       } else {
         _error = response.message;
-        print('Delete fee name error: ${response.message}');
         notifyListeners();
         return false;
       }
     } catch (e) {
       _error = 'Failed to delete fee name: $e';
-      print('Delete fee name exception: $e');
       notifyListeners();
       return false;
     } finally {
@@ -204,3 +192,4 @@ class FeeProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+

@@ -27,7 +27,6 @@ class StreamsService {
         loginData['response']?['_db'] ?? // some apps store under 'response'
         'aalmgzmy_linkskoo_practice'; // final fallback
 
-    print("✅ Using DB: $dbName");
 
     // ✅ Then use dbName in your API call
     final response = await _apiService.get<Map<String, dynamic>>(
@@ -48,3 +47,4 @@ class StreamsService {
 //   // Implement the logic to delete a comment from the API or database
 // }
 }
+

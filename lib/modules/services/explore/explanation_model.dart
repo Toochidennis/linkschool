@@ -52,7 +52,6 @@ Keep it brief and educational.
         }),
       );
 
-      print("lll ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -61,7 +60,6 @@ Keep it brief and educational.
         throw Exception("API Error: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
-      print("DeepSeek API Error: $e");
       // Return a fallback explanation
       return _getFallbackExplanation(isCorrect, correctAnswer);
     }
@@ -121,7 +119,6 @@ Please answer the student's follow-up question clearly and concisely.
         }),
       );
 
-      print("Follow-up response: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -130,9 +127,9 @@ Please answer the student's follow-up question clearly and concisely.
         throw Exception("API Error: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
-      print("DeepSeek Follow-up API Error: $e");
       throw Exception(
           "Failed to get follow-up explanation. Please try again.");
     }
   }
 }
+

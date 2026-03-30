@@ -27,7 +27,6 @@ class BookProvider with ChangeNotifier {
       _categories = await _ebookService.getCategories();
     } catch (e) {
       _errorMessage = 'Failed to load books: $e';
-      print('Error fetching books: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -40,3 +39,4 @@ class BookProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+
