@@ -58,7 +58,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         });
       }
     } catch (e) {
-      print('Error loading settings: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -68,8 +68,6 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
       userProvider.paymentReferenceNotifier.addListener(() {
         final reference = userProvider.paymentReferenceNotifier.value;
         if (reference != null && reference.isNotEmpty && mounted) {
-          print('💳 Payment reference detected: $reference');
-          print('✅ Auto-dismissing payment dialog...');
           Navigator.of(context).pop();
         }
       });
@@ -140,7 +138,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+            color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -186,7 +184,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+          color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -565,15 +563,11 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         return;
       }
 
-      print('\n💳 Initiating Paystack Payment:');
-      print(' Amount: ₦$_subscriptionPrice');
-      print(' Email: $userEmail');
 
       // Charge with Paystack
       await _chargeWithPaystack(userEmail);
 
     } catch (e) {
-      print('❌ Payment error: $e');
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -597,8 +591,6 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
     final reference = _generateReference();
    final  paystackSecretKey = EnvConfig.paystackSecretKey;
 
-    print('💳 Charging with Paystack using PaystackFlutter...');
-    print(' Reference: $reference');
 
     PaystackFlutter().pay(
       context: context,
@@ -620,11 +612,9 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         "price": _subscriptionPrice,
       },
       onSuccess: (paystackCallback) async {
-        print('✅ Payment successful: ${paystackCallback.reference}');
         await _verifyAndUpdatePayment(reference);
       },
       onCancelled: (paystackCallback) {
-        print('❌ Payment cancelled or failed: ${paystackCallback.reference}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment cancelled'),
@@ -634,7 +624,6 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
       },
     );
   } catch (e) {
-    print('❌ Paystack error: $e');
     throw Exception("Payment failed: $e");
   }
 }
@@ -643,7 +632,6 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
   Future<void> _verifyAndUpdatePayment(String reference) async {
     try {
       final paystackSecretKey = EnvConfig.paystackSecretKey;
-      print('🔍 Verifying payment with Paystack...');
       
       final response = await http.get(
         Uri.parse('https://api.paystack.co/transaction/verify/$reference'),
@@ -657,13 +645,11 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         final data = json.decode(response.body);
         
         if (data['status'] == true && data['data']['status'] == 'success') {
-          print('✅ Payment verified successfully');
           
           // Update user with payment reference via PUT request
           final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
           await userProvider.updateUserAfterPayment(reference: reference);
           
-          print('✅ User updated with payment reference');
           
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -684,7 +670,6 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         throw Exception('Verification request failed');
       }
     } catch (e) {
-      print('❌ Verification error: $e');
       throw Exception('Payment verification failed: $e');
     }
   }

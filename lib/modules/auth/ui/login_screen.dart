@@ -72,7 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
         CustomToaster.toastSuccess(context, 'Success', 'Login successful!');
       } catch (e) {
         CustomToaster.toastError(context, 'Error', 'Login failed');
-        print('error:$e');
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }

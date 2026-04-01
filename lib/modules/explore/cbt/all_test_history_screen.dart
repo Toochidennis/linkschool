@@ -75,7 +75,7 @@ class _AllTestHistoryScreenState extends State<AllTestHistoryScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -251,7 +251,7 @@ class _AllTestHistoryScreenState extends State<AllTestHistoryScreen>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -273,8 +273,8 @@ class _AllTestHistoryScreenState extends State<AllTestHistoryScreen>
                     value: percentage / 100,
                     strokeWidth: 7.5,
                     backgroundColor: history.isFullyCompleted
-                        ? AppColors.attCheckColor2.withOpacity(0.2)
-                        : borderColor.withOpacity(0.2),
+                        ? AppColors.attCheckColor2.withValues(alpha: 0.2)
+                        : borderColor.withValues(alpha: 0.2),
                   ),
                 ),
                 Text(
@@ -418,7 +418,7 @@ class _AllTestHistoryScreenState extends State<AllTestHistoryScreen>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -437,7 +437,7 @@ class _AllTestHistoryScreenState extends State<AllTestHistoryScreen>
                     color: borderColor,
                     value: accuracy / 100,
                     strokeWidth: 7.5,
-                    backgroundColor: borderColor.withOpacity(0.2),
+                    backgroundColor: borderColor.withValues(alpha: 0.2),
                   ),
                 ),
                 Text(

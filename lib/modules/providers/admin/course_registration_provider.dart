@@ -25,11 +25,9 @@ class CourseRegistrationProvider with ChangeNotifier {
         _registeredCourses = response.data!;
       } else {
         _registeredCourses = [];
-        debugPrint('No registered students found or ${response.message}');
       }
     } catch (e) {
       _registeredCourses = [];
-      debugPrint('Error fetching registered students: ${e.toString()}');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -92,14 +90,11 @@ class CourseRegistrationProvider with ChangeNotifier {
           );
           _registeredCourses[index] = updatedStudent;
         }
-        debugPrint('Course registered successfully');
         return true;
       } else {
-        debugPrint('Failed to register course: ${response.message}');
         return false;
       }
     } catch (e) {
-      debugPrint('Error registering course: ${e.toString()}');
       return false;
     } finally {
       _isLoading = false;

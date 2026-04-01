@@ -109,7 +109,7 @@ class _AmountSettingSuccessScreenState extends State<AmountSettingSuccessScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withOpacity(0.3),
+                            color: Colors.green.withValues(alpha: 0.3),
                             spreadRadius: 5,
                             blurRadius: 15,
                             offset: const Offset(0, 3),

@@ -138,7 +138,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
               'Ask me anything about this question',
               style: AppTextStyles.normal400(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
           ],
@@ -200,7 +200,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
               Icon(
                 Icons.question_answer_rounded,
                 size: 64,
-                color: AppColors.eLearningBtnColor1.withOpacity(0.5),
+                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -330,9 +330,9 @@ class _AIChatScreenState extends State<AIChatScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -74,14 +74,11 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
       final userBox = Hive.box('userData');
 
       // Debug: Print all keys in the box
-      print('Hive Box Keys: ${userBox.keys.toList()}');
 
       // Try different approaches to retrieve the data
       final storedUserData = userBox.get('userData');
       final storedLoginResponse = userBox.get('loginResponse');
 
-      print('Stored userData: $storedUserData');
-      print('Stored loginResponse: $storedLoginResponse');
 
       // Determine which stored data to use
       dynamic dataToProcess;
@@ -138,18 +135,14 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                   (level) => levelIdsWithClasses.contains(level[0].toString()))
               .toList();
 
-          print('Processed Level Names: $levelNames');
-          print('Processed Class Names: $classNames');
-          print('Levels with Classes: $levelsWithClasses');
         });
 
         // Start the entrance animations after data is processed
         _runEntranceAnimations();
       } else {
-        print('No valid user data found in Hive');
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -230,7 +223,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
               border: Border.all(color: borderColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withOpacity(0.3),
+                  color: backgroundColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),

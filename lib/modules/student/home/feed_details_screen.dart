@@ -101,13 +101,9 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
               : int.tryParse(settings['term'].toString());
         });
 
-        debugPrint(
-            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm Role=$userRole');
       } else {
-        debugPrint('⚠️ No stored user data found.');
       }
     } catch (e, stack) {
-      debugPrint(stack.toString());
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
@@ -276,7 +272,7 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1.5),
+          left: BorderSide(color: Colors.grey.withValues(alpha: 0.2), width: 1.5),
         ),
       ),
       padding: const EdgeInsets.only(left: 8),
@@ -386,7 +382,7 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryLight.withOpacity(0.1),
+                      color: AppColors.primaryLight.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -534,8 +530,6 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                     );
                   } else if (_commentMode == 'edit' && _activeTarget != null) {
                     _activeTarget!.content = text;
-                    print(
-                        '✅ Updated comment ID: ${_activeTarget!.id} with new content: $text');
                   } else {
                     // Add top-level comment
                     widget.replies.add(

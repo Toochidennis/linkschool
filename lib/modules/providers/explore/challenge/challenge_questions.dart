@@ -19,7 +19,7 @@ class ChallengeQuestionProvider extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> fetchChallengeQuestions({
-    required int examId,
+    required int courseId,
     required int challengeId,
     int? limit,
   }) async {
@@ -30,7 +30,7 @@ class ChallengeQuestionProvider extends ChangeNotifier {
 
 
       final data = await _service.fetchChallengeQuestions(
-        examId: examId,
+        courseId: courseId,
         challengeId: challengeId,
         limit: limit,
       );
@@ -106,7 +106,7 @@ class ChallengeQuestionProvider extends ChangeNotifier {
       currentQuestionIndex = 0;
       userAnswers.clear();
     } catch (e, stackTrace) {
-      _error = "Failed to load challenge questions: $e";
+      _error = "Failed To Load Challenge Questions: $e";
       questions = [];
     } finally {
       _isLoading = false;

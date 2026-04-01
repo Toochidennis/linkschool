@@ -57,7 +57,6 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
     });
 
     try {
-      print('🔐 Starting Google sign-up process...');
       
       final userCredential = await _authService.signInWithGoogle();
       
@@ -75,11 +74,7 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
         throw Exception('No user data received from Firebase');
       }
 
-      print('✅ Google Sign-in successful!');
-      print('User ID: ${user.uid}');
-      print('User Email: ${user.email}');
 
-      print('📡 Sending user data to backend API...');
       
       final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
       
@@ -91,7 +86,6 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
 
       if (!mounted) return;
 
-      print('✅ User data sent to backend successfully');
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -109,7 +103,6 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
       setState(() {
         _errorMessage = _getErrorMessage(e.toString());
       });
-      print('❌ Sign-in error: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -151,7 +144,7 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
               gradient: LinearGradient(
                 colors: [
                   AppColors.eLearningBtnColor1,
-                  AppColors.eLearningBtnColor1.withOpacity(0.8),
+                  AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -159,7 +152,7 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   offset: const Offset(0, 10),
                   blurRadius: 20,
                 ),
@@ -177,7 +170,7 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -207,7 +200,7 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
                   textAlign: TextAlign.center,
                   style: AppTextStyles.normal400(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -217,10 +210,10 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.15),
+                      color: Colors.red.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -310,7 +303,7 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
                           },
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         width: 2,
                       ),
                       shape: RoundedRectangleBorder(
@@ -333,17 +326,17 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.info_outline,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         size: 18,
                       ),
                       const SizedBox(width: 10),
@@ -352,7 +345,7 @@ class _GoogleSignupDialogState extends State<GoogleSignupDialog> with SingleTick
                           'Sign in required to save your test results.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w500,
                           ),
                         ),

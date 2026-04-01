@@ -61,7 +61,6 @@ class _E_lib_vidsState extends State<E_lib_vids> {
   Future<void> initializePlayer() async {
     try {
       final videoUrl = widget.video.url;
-      print('Loading video URL: $videoUrl');
 
       // Check if it's a YouTube video
       if (isYouTubeUrl(videoUrl)) {
@@ -70,7 +69,6 @@ class _E_lib_vidsState extends State<E_lib_vids> {
         await _initializeDirectVideoPlayer(videoUrl);
       }
     } catch (e) {
-      print('Error initializing video player: $e');
       setState(() {
         _errorMessage = 'Failed to load video: $e';
       });
@@ -141,7 +139,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
         playedColor: AppColors.admissionclosed,
         handleColor: AppColors.admissionclosed,
         backgroundColor: AppColors.assessmentColor1,
-        bufferedColor: AppColors.assessmentColor1.withOpacity(0.5),
+        bufferedColor: AppColors.assessmentColor1.withValues(alpha: 0.5),
       ),
     );
 
@@ -283,10 +281,9 @@ class _E_lib_vidsState extends State<E_lib_vids> {
             playedColor: AppColors.admissionclosed,
             handleColor: AppColors.admissionclosed,
             backgroundColor: AppColors.assessmentColor1,
-            bufferedColor: AppColors.assessmentColor1.withOpacity(0.5),
+            bufferedColor: AppColors.assessmentColor1.withValues(alpha: 0.5),
           ),
           onReady: () {
-            print('YouTube player is ready');
           },
         ),
         builder: (context, player) {
@@ -491,7 +488,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                 padding: const EdgeInsets.all(10.0),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                 ),
                 child: const Icon(
                   Icons.play_arrow_rounded,

@@ -237,7 +237,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -251,7 +251,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -300,7 +300,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -314,7 +314,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -381,7 +381,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (group) => AppColors.text2Light.withOpacity(0.8),
+            getTooltipColor: (group) => AppColors.text2Light.withValues(alpha: 0.8),
             tooltipRoundedRadius: 8,
             tooltipPadding: const EdgeInsets.all(8),
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -517,7 +517,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color.fromRGBO(45, 99, 255, 1).withOpacity(0.1),
+                  color: const Color.fromRGBO(45, 99, 255, 1).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 alignment: Alignment.center,

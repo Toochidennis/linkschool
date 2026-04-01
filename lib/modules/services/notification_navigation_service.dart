@@ -7,12 +7,11 @@ import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dar
 import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
+import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
-import 'package:linkschool/modules/providers/explore/courses/program_cohort_provider.dart';
 import 'package:linkschool/modules/services/explore/courses/discussion_service.dart';
-import 'package:linkschool/modules/services/explore/courses/program_cohort_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
@@ -425,45 +424,55 @@ class NotificationNavigationService {
   ) async {
     final ref = _stringFrom(data, ['ref']);
     if (ref.isEmpty) {
+     
       return;
     }
+
+    final courseId = _intFrom(data, ['course_id', 'courseId']) ?? 0;
+    final cohortIdValue = _stringFrom(data, ['cohort_id', 'cohortId']);
+    final cohortId = cohortIdValue.isNotEmpty ? cohortIdValue : courseId.toString();
+    final categoryId = _intFrom(data, ['program_id', 'programId']) ?? 0;
+    final categoryName = _stringFrom(
+      data,
+      ['program_name', 'provider', 'course_provider', 'courseName'],
+    );
 
     final navigator = _navigatorKey?.currentState;
-    final context = _navigatorKey?.currentContext;
-    if (navigator == null || context == null) {
-      return;
-    }
-
-    final provider = ProgramCohortProvider(ProgramCohortService());
-    await provider.loadByRef(ref);
-
-    final cohortData = provider.data;
-    if (cohortData == null || provider.error != null) {
-      return;
-    }
-
-    final course = cohortData.toCourseModel();
-    final program = cohortData.program;
-    final categoryName = program?.name ?? course.courseName;
-    final categoryId = program?.id ?? course.programId ?? 0;
-    final cohortId = course.cohortId?.toString();
-
-    if (cohortId == null || cohortId.isEmpty) {
+    if (navigator == null) {
       return;
     }
 
     navigator.push(
       MaterialPageRoute(
         builder: (context) => CourseDescriptionScreen(
-          course: course,
-          provider: categoryName,
-          categoryName: categoryName,
+          course: CourseModel(
+            id: courseId,
+            programId: categoryId,
+            courseName: categoryName,
+            description: '',
+            imageUrl: '',
+            hasActiveCohort: true,
+            cohortId: int.tryParse(cohortId),
+            isFree: false,
+            trialType: null,
+            trialValue: 0,
+            cost: 0.0,
+            isEnrolled: false,
+            isCompleted: false,
+            enrollmentStatus: null,
+            paymentStatus: null,
+            lessonsTaken: null,
+            trialExpiryDate: null,
+          ),
+          provider: categoryName.isNotEmpty ? categoryName : 'Linkskool',
+          categoryName: categoryName.isNotEmpty ? categoryName : 'Linkskool',
           categoryId: categoryId,
           cohortId: cohortId,
           providerSubtitle: 'Powered By Digital Dreams',
           categoryColor: const Color(0xFF6366F1),
           profileId: _intFrom(data, ['profile_id', 'profileId']),
-          hasEnrolled: course.isEnrolled,
+          hasEnrolled: false,
+          cohortRef: ref,
         ),
       ),
     );

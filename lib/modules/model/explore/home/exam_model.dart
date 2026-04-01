@@ -144,7 +144,6 @@ class QuestionModel {
       final List<dynamic> parsedAnswer = json.decode(answer);
       return parsedAnswer.map((option) => option['text'] as String).toList();
     } catch (e) {
-      print('⚠️ Error parsing options: $e');
       return [];
     }
   }
@@ -157,7 +156,6 @@ class QuestionModel {
       }
       return null;
     } catch (e) {
-      print('⚠️ Error getting option with image: $e');
       return null;
     }
   }
@@ -198,10 +196,8 @@ class QuestionModel {
         return orderValue - 1;
       }
 
-      print('⚠️ Warning: Correct answer order $orderValue out of range (0-${options.length - 1})');
       return null;
     } catch (e) {
-      print('❌ Error in getCorrectAnswerIndex: $e');
       return null;
     }
   }

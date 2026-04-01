@@ -250,7 +250,7 @@ class _ExploreCoursesSeeAllScreenState
                     Icon(
                       Icons.school_outlined,
                       size: 56,
-                      color: widget.categoryColor.withOpacity(0.85),
+                      color: widget.categoryColor.withValues(alpha: 0.85),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -276,8 +276,8 @@ class _ExploreCoursesSeeAllScreenState
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          widget.categoryColor.withOpacity(0.95),
-                          widget.categoryColor.withOpacity(0.70),
+                          widget.categoryColor.withValues(alpha: 0.95),
+                          widget.categoryColor.withValues(alpha: 0.70),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -290,7 +290,7 @@ class _ExploreCoursesSeeAllScreenState
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(
@@ -357,7 +357,7 @@ class _ExploreCoursesSeeAllScreenState
     return Material(
       color: Colors.white,
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.06),
+      shadowColor: Colors.black.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -444,7 +444,7 @@ class _ExploreCoursesSeeAllScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.95),
+        color: color.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -462,7 +462,7 @@ class _ExploreCoursesSeeAllScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

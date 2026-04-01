@@ -53,8 +53,6 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
       questions: widget.questions,
     );
 
-    print(
-        '📊 Quiz auto-saved: ${widget.courseTitle} - ${widget.lessonTitle} = ${widget.totalScore}%');
   }
 
   int _calculateCorrectAnswers() {
@@ -110,7 +108,7 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF667EEA).withOpacity(0.4),
+                    color: const Color(0xFF667EEA).withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -139,7 +137,7 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -150,10 +148,10 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
                     height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -169,7 +167,7 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
                           child: CircularProgressIndicator(
                             value: 1.0,
                             strokeWidth: 8,
-                            backgroundColor: Colors.white.withOpacity(0.3),
+                            backgroundColor: Colors.white.withValues(alpha: 0.3),
                             valueColor: const AlwaysStoppedAnimation<Color>(
                               Colors.transparent,
                             ),
@@ -253,7 +251,7 @@ class _QuizSummaryScreenState extends State<QuizSummaryScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

@@ -44,7 +44,7 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
           _isLoading = false;
         });
       } else {
-        throw Exception(response.message ?? 'Failed to load data');
+        throw Exception(response.message );
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -68,7 +68,7 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
                     height: 50,
                     decoration: BoxDecoration(
                       color: const Color.fromRGBO(209, 219, 255, 1)
-                          .withOpacity(0.35),
+                          .withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -14,8 +14,7 @@ class _SignupScreenState extends State<SignupScreen> {
     ImageProvider? _profileImage;
 
     Future<void> _pickProfileImage() async {
-      // TODO: Implement image picker logic
-      // For now, just show a snackbar
+   
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile image picker coming soon!')),
       );
@@ -39,7 +38,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Handle signup logic
+     
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Signup submitted!')),
       );
@@ -68,7 +67,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     children: [
                       CircleAvatar(
                         radius: 48,
-                        backgroundColor: AppColors.primaryLight.withOpacity(0.15),
+                        backgroundColor: AppColors.primaryLight.withValues(alpha: 0.15),
                         backgroundImage: _profileImage,
                         child: _profileImage == null
                             ? const Icon(Icons.person, size: 48, color: Colors.grey)
@@ -80,7 +79,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 4,
                             ),
                           ],

@@ -173,7 +173,8 @@ class ApiService {
                 try {
                   body['_db'] = _getCurrentDatabase();
                 } catch (e) {
-                }
+      // Intentionally ignored.
+    }
               }
 
               body.forEach((key, value) {

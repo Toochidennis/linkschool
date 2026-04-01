@@ -94,7 +94,7 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -204,7 +204,6 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
       // Navigate back after successful save
       Navigator.of(context).pop(true); // Pass true to indicate success
     } catch (e) {
-      print('Error ${widget.editMode ? 'updating' : 'creating'} topic: $e');
       CustomToaster.toastError(
         context,
         'Error',
@@ -407,7 +406,7 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
               Container(
                 padding: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  color: AppColors.backgroundLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
@@ -457,7 +456,7 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Divider(color: Colors.grey.withOpacity(0.5)),
+        Divider(color: Colors.grey.withValues(alpha: 0.5)),
         const SizedBox(height: 8.0),
       ],
     );

@@ -131,8 +131,8 @@ class Constants {
         begin: Alignment.topRight,
         end: Alignment.bottomCenter,
         colors: [
-          Color.fromRGBO(0, 114, 255, 1).withOpacity(0.3),
-          AppColors.backgroundLight.withOpacity(0.3),
+          Color.fromRGBO(0, 114, 255, 1).withValues(alpha: 0.3),
+          AppColors.backgroundLight.withValues(alpha: 0.3),
         ],
         stops: [0.1, 0.3],
       ),

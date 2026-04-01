@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
-import 'package:linkschool/database/cbt_db-helper.dart';
+import 'package:linkschool/database/cbt_db_helper.dart';
 
 
 class CbtExamSyncService {

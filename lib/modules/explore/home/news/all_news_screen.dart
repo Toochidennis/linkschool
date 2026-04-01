@@ -72,7 +72,6 @@ class _AllnewsScreenState extends State<AllnewsScreen>
       
       listener: NativeAdListener(
         onAdLoaded: (ad) {
-          print('✅ Native ad loaded at position $position');
           if (mounted) {
             setState(() {
               _nativeAds[position] = ad as NativeAd;
@@ -80,10 +79,6 @@ class _AllnewsScreenState extends State<AllnewsScreen>
           }
         },
         onAdFailedToLoad: (ad, error) {
-          print('❌ Native ad failed at position $position');
-          print('Error message: ${error.message}');
-          print('Error code: ${error.code}');
-          print('Error domain: ${error.domain}');
           ad.dispose();
           if (mounted) {
             setState(() {
@@ -236,7 +231,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                           setState(() {});
                         },
                         backgroundColor: Colors.grey.shade100,
-                        selectedColor: getCategoryColor(category).withOpacity(0.2),
+                        selectedColor: getCategoryColor(category).withValues(alpha: 0.2),
                         labelStyle: TextStyle(
                           color: isSelected ? getCategoryColor(category) : Colors.black87,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -390,7 +385,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                        Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.text2Light.withOpacity(0.1),
+                              color: AppColors.text2Light.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -471,7 +466,6 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                       child: AdWidget(ad: ad),
                     );
                   }else{
-                    print("leeeee ${ad?.responseInfo}");
                   }
                   // Return empty container if ad hasn't loaded yet
                   return const SizedBox.shrink();
@@ -614,7 +608,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -653,8 +647,8 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.8),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.8),
                     ],
                     stops: const [0.0, 0.5, 1.0],
                   ),
@@ -769,7 +763,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

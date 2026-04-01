@@ -85,13 +85,11 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
         academicTerm = settings['term'] as int?;
         schoolName = settings['school_name']?.toString();
 
-        debugPrint(
-            'User data loaded: creatorId=$creatorId, academicTerm=$academicTerm');
         // ✅ Extract DB name from response (not inside data)
         databaseName = response['_db']?.toString();
       });
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 

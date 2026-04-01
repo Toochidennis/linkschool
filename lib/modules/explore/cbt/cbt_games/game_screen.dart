@@ -87,10 +87,11 @@ class _GameTestScreenState extends State<GameTestScreen>
     // Preload sounds (optional - for better performance)
     try {
       await _correctSoundPlayer.setSource(AssetSource('sounds/correct.wav'));
-      await _wrongSoundPlayer.setSource(AssetSource('sounds/wrong.wav'));
+      // await _wrongSoundPlayer.setSource(AssetSource('sounds/wrong.wav'));
+       await _wrongSoundPlayer.setSource(AssetSource('sounds/wrong.mp3.mpeg'));
       await _buttonSoundPlayer.setSource(AssetSource('sounds/completed.wav'));
     } catch (e) {
-      print('Error loading sounds: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -165,7 +166,6 @@ Timer? _timer;
       examTypeId: widget.examTypeId,
     );
 
-    print('📚 Loaded ${provider.allQuestions.length} questions');
   }
 
   
@@ -362,16 +362,17 @@ Timer? _timer;
       await _correctSoundPlayer.stop(); // Stop any ongoing playback
       await _correctSoundPlayer.play(AssetSource('sounds/correct.wav'));
     } catch (e) {
-      print('Error playing correct sound: $e');
+      // Intentionally ignored.
     }
   }
 
   void _playWrongSound() async {
     try {
       await _wrongSoundPlayer.stop();
-      await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
+      // await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
+      await _wrongSoundPlayer.play(AssetSource('sounds/wrong.mp3.mpeg'));
     } catch (e) {
-      print('Error playing wrong sound: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -380,7 +381,7 @@ Timer? _timer;
       await _buttonSoundPlayer.stop();
       await _buttonSoundPlayer.play(AssetSource('sounds/completed.wav'));
     } catch (e) {
-      print('Error playing button sound: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -427,7 +428,6 @@ Timer? _timer;
           
           _rewardedAd = ad;
           _isAdLoaded = true;
-          print('✅ Rewarded ad loaded successfully');
 
           // Set full screen content callback
           ad.fullScreenContentCallback = FullScreenContentCallback(
@@ -439,7 +439,6 @@ Timer? _timer;
               if (mounted) _loadRewardedAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              print('❌ Ad failed to show: $error');
               ad.dispose();
               _rewardedAd = null;
               _isAdLoaded = false;
@@ -448,7 +447,6 @@ Timer? _timer;
           );
         },
         onAdFailedToLoad: (error) {
-          print('❌ Rewarded ad failed to load: $error');
           _isAdLoaded = false;
           // Retry loading after a delay
           Future.delayed(const Duration(seconds: 5), () {
@@ -478,7 +476,6 @@ Timer? _timer;
           
           _shuffleRewardedAd = ad;
           _isShuffleAdLoaded = true;
-          print('✅ Shuffle rewarded ad loaded successfully');
 
           // Set full screen content callback
           ad.fullScreenContentCallback = FullScreenContentCallback(
@@ -490,7 +487,6 @@ Timer? _timer;
               if (mounted) _loadShuffleRewardedAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              print('❌ Shuffle ad failed to show: $error');
               ad.dispose();
               _shuffleRewardedAd = null;
               _isShuffleAdLoaded = false;
@@ -499,7 +495,6 @@ Timer? _timer;
           );
         },
         onAdFailedToLoad: (error) {
-          print('❌ Shuffle rewarded ad failed to load: $error');
           _isShuffleAdLoaded = false;
           // Retry loading after a delay
           Future.delayed(const Duration(seconds: 5), () {
@@ -549,7 +544,7 @@ Timer? _timer;
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: AppColors.eLearningBtnColor1
-                                  .withOpacity(0.08),
+                                  .withValues(alpha: 0.08),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.error_outline,
@@ -725,7 +720,6 @@ Timer? _timer;
 
   void _reviveWithCoins() {
     if (_userCoins < 20) {
-      print('❌ Not enough coins to revive');
       return;
     }
 
@@ -776,13 +770,11 @@ Timer? _timer;
 
   void _showRewardedAd() {
     if (_rewardedAd == null) {
-      print('❌ Rewarded ad is not ready yet');
       return;
     }
 
     _rewardedAd!.show(
       onUserEarnedReward: (ad, reward) {
-        print('✅ User earned reward: ${reward.amount} ${reward.type}');
 
         // Clear pending finish flag since user is continuing
         _isPendingFinish = false;
@@ -899,7 +891,7 @@ Timer? _timer;
             gradient: LinearGradient(
               colors: [
                 AppColors.eLearningBtnColor1,
-                AppColors.eLearningBtnColor1.withOpacity(0.8),
+                AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
@@ -972,7 +964,7 @@ Timer? _timer;
             gradient: LinearGradient(
               colors: [
                 AppColors.eLearningBtnColor1,
-                AppColors.eLearningBtnColor1.withOpacity(0.8),
+                AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
@@ -1053,13 +1045,11 @@ Timer? _timer;
 
   void _showShuffleRewardedAd() {
     if (_shuffleRewardedAd == null) {
-      print('❌ Shuffle rewarded ad is not ready yet');
       return;
     }
 
     _shuffleRewardedAd!.show(
       onUserEarnedReward: (ad, reward) {
-        print('✅ User earned shuffle reward: ${reward.amount} ${reward.type}');
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1354,7 +1344,7 @@ Timer? _timer;
                     end: Alignment.bottomRight,
                     colors: [
                       AppColors.eLearningBtnColor1,
-                      AppColors.eLearningBtnColor1.withOpacity(0.8),
+                      AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
                     ],
                   ),
                 ),
@@ -1398,7 +1388,7 @@ Timer? _timer;
               // Answer Popup Overlay
               if (_showAnswerPopup && _isAnswered)
                 Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   child: Center(
                     child: _AnswerPopup(
                       isCorrect: isCorrect,
@@ -1413,7 +1403,7 @@ Timer? _timer;
               // Explanation Modal Overlay
               if (_showExplanationModal)
                 Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   child: Center(
                     child: _ExplanationModal(
                       explanation: question.explanation,
@@ -1433,10 +1423,10 @@ Timer? _timer;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -1506,7 +1496,7 @@ Timer? _timer;
             child: LinearProgressIndicator(
               value: (provider.currentQuestionIndex + 1) /
                   provider.allQuestions.length,
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation<Color>(Colors.greenAccent),
               minHeight: 8,
             ),
@@ -1525,10 +1515,10 @@ Timer? _timer;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -1541,7 +1531,7 @@ Timer? _timer;
                 label,
                 style: AppTextStyles.normal400(
                   fontSize: 10,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
               SizedBox(width: 4),
@@ -1597,7 +1587,7 @@ Timer? _timer;
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1612,7 +1602,7 @@ Timer? _timer;
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.15),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -1668,8 +1658,8 @@ Timer? _timer;
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withOpacity(0),
-                          Colors.white.withOpacity(0.7),
+                          Colors.white.withValues(alpha: 0),
+                          Colors.white.withValues(alpha: 0.7),
                           Colors.white,
                         ],
                         stops: const [0.0, 0.5, 1.0],
@@ -1887,7 +1877,7 @@ Timer? _timer;
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: Offset(0, 4),
               ),
@@ -1942,13 +1932,13 @@ Timer? _timer;
               gradient: LinearGradient(
                 colors: [
                   AppColors.eLearningBtnColor1,
-                  AppColors.eLearningBtnColor1.withOpacity(0.8),
+                  AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.4),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
                   blurRadius: 8,
                   offset: Offset(0, 2),
                 ),
@@ -2018,7 +2008,7 @@ Timer? _timer;
           borderColor = Colors.red;
           textColor = Colors.red.shade900;
         } else if (isSelected) {
-          backgroundColor = AppColors.eLearningBtnColor1.withOpacity(0.1);
+          backgroundColor = AppColors.eLearningBtnColor1.withValues(alpha: 0.1);
           borderColor = AppColors.eLearningBtnColor1;
         } else if (isComputerSuggestion) {
           backgroundColor = Colors.blue.shade50;
@@ -2049,7 +2039,7 @@ Timer? _timer;
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: borderColor.withOpacity(0.2),
+                    color: borderColor.withValues(alpha: 0.2),
                     blurRadius: isSelected ? 8 : 4,
                     offset: Offset(0, 2),
                   ),
@@ -2239,7 +2229,7 @@ Timer? _timer;
                         ? [
                             BoxShadow(
                               color:
-                                  AppColors.eLearningBtnColor1.withOpacity(0.2),
+                                  AppColors.eLearningBtnColor1.withValues(alpha: 0.2),
                               blurRadius: 12,
                               offset: Offset(0, 4),
                             ),
@@ -2268,7 +2258,7 @@ Timer? _timer;
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.withOpacity(0.4),
+                            color: Colors.red.withValues(alpha: 0.4),
                             blurRadius: 4,
                             offset: Offset(0, 2),
                           ),
@@ -2293,7 +2283,7 @@ Timer? _timer;
               label,
               style: AppTextStyles.normal600(
                 fontSize: 12,
-                color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
+                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -2310,10 +2300,10 @@ Timer? _timer;
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: Offset(0, -2),
           ),
@@ -2328,7 +2318,7 @@ Timer? _timer;
                 side: BorderSide(
                   color: currentIndex > 0
                       ? Colors.white
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
                 ),
                 padding: EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -2341,7 +2331,7 @@ Timer? _timer;
                   fontSize: 14,
                   color: currentIndex > 0
                       ? Colors.white
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
                 ),
               ),
             ),
@@ -2385,7 +2375,7 @@ Timer? _timer;
                 side: BorderSide(
                   color: currentIndex < totalQuestions - 1 && !_isAnswered
                       ? Colors.white
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
                 ),
                 padding: EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -2398,7 +2388,7 @@ Timer? _timer;
                   fontSize: 14,
                   color: currentIndex < totalQuestions - 1 && !_isAnswered
                       ? Colors.white
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
                 ),
               ),
             ),
@@ -2441,7 +2431,7 @@ class _ResultDialog extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
@@ -2452,7 +2442,7 @@ class _ResultDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -2474,14 +2464,14 @@ class _ResultDialog extends StatelessWidget {
               'Great job! Here\'s your result',
               style: AppTextStyles.normal400(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
             SizedBox(height: 24),
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -2555,7 +2545,7 @@ class _ResultDialog extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontFamily: 'Urbanist',
           ),
         ),
@@ -2759,7 +2749,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
                   boxShadow: [
                     BoxShadow(
                       color: (widget.isCorrect ? Colors.green : Colors.red)
-                          .withOpacity(0.4),
+                          .withValues(alpha: 0.4),
                       blurRadius: 30,
                       spreadRadius: 8,
                     ),
@@ -2810,11 +2800,11 @@ class _AnswerPopupState extends State<_AnswerPopup>
                         child: Container(
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 8,
                                 offset: Offset(0, 2),
                               ),
@@ -2896,7 +2886,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
                       boxShadow: [
                         BoxShadow(
                           color: (widget.isCorrect ? Colors.green : Colors.red)
-                              .withOpacity(0.5),
+                              .withValues(alpha: 0.5),
                           blurRadius: 25,
                           offset: Offset(0, 10),
                         ),
@@ -2967,7 +2957,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.amber.withOpacity(0.5),
+                color: Colors.amber.withValues(alpha: 0.5),
                 blurRadius: 15,
                 offset: Offset(0, 5),
               ),
@@ -3104,7 +3094,7 @@ class _ConfettiPainter extends CustomPainter {
       final rotation = (progress * 4 * math.pi + i * 0.5);
 
       if (y > -30 && y < size.height + 30) {
-        paint.color = colors[i % colors.length].withOpacity(0.8);
+        paint.color = colors[i % colors.length].withValues(alpha: 0.8);
 
         canvas.save();
         canvas.translate(x, y);
@@ -3158,7 +3148,7 @@ class _ParticleBurstPainter extends CustomPainter {
       final y = centerY + math.sin(angle) * distance;
       final opacity = 1.0 - progress;
 
-      paint.color = Colors.amber.withOpacity(opacity * 0.8);
+      paint.color = Colors.amber.withValues(alpha: opacity * 0.8);
       canvas.drawCircle(
         Offset(x, y),
         6 * (1 - progress),
@@ -3180,7 +3170,7 @@ class _FloatingStarsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.amber.withOpacity(0.6)
+      ..color = Colors.amber.withValues(alpha: 0.6)
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < 8; i++) {
@@ -3288,7 +3278,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -3296,7 +3286,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -3309,7 +3299,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -3349,10 +3339,10 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 3,
                 ),
               ),
@@ -3386,7 +3376,7 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontStyle: FontStyle.italic,
                 fontFamily: 'Urbanist',
               ),
@@ -3471,7 +3461,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -3479,7 +3469,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -3492,7 +3482,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -3536,7 +3526,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -3567,7 +3557,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -3656,7 +3646,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -3664,7 +3654,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -3677,7 +3667,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -3706,7 +3696,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontFamily: 'Urbanist',
               ),
             ),
@@ -3733,7 +3723,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -3764,7 +3754,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
               'Get ready for more! 🚀',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),

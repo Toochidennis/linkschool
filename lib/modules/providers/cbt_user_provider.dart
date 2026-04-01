@@ -79,6 +79,7 @@ _currentUser = CbtUserModel.fromJson(userData);
         paymentReferenceNotifier.value = savedReference;
       }
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -98,6 +99,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       _currentUser = _currentUser!.copyWith(fcmToken: fcmToken);
       await _saveUserToPreferences(_currentUser!);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -119,7 +121,8 @@ _currentUser = CbtUserModel.fromJson(userData);
         _currentUser = _currentUser!.copyWith(fcmToken: newToken);
         await _saveUserToPreferences(_currentUser!);
       } catch (e) {
-      }
+      // Intentionally ignored.
+    }
     });
   }
 
@@ -173,7 +176,8 @@ _currentUser = CbtUserModel.fromJson(userData);
     }
 
   } catch (e) {
-  }
+      // Intentionally ignored.
+    }
 }
 
   // =========================================================================
@@ -185,6 +189,7 @@ _currentUser = CbtUserModel.fromJson(userData);
       final profilesJson = json.encode(profiles.map((p) => p.toJson()).toList());
       await prefs.setString(_keyUserProfiles, profilesJson);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -618,6 +623,7 @@ await _saveUserToPreferences(_currentUser!);
       await prefs.setString(_keyPaymentReference, reference);
       paymentReferenceNotifier.value = reference;
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -656,6 +662,7 @@ await _saveUserToPreferences(_currentUser!);
       final subscriptionService = CbtSubscriptionService();
       await subscriptionService.clearUserData();
     } catch (e) {
+      // Intentionally ignored.
     }
 
     // ? Clear CBT test history data
@@ -663,6 +670,7 @@ await _saveUserToPreferences(_currentUser!);
       final historyService = CbtHistoryService();
       await historyService.clearHistory();
     } catch (e) {
+      // Intentionally ignored.
     }
 
     notifyListeners();

@@ -4,7 +4,7 @@ import 'package:linkschool/config/env_config.dart';
 
 class ChallengeQuestionService {
   Future<Map<String, dynamic>> fetchChallengeQuestions({
-    required int examId,
+    required int courseId,
     required int challengeId,
     int? limit,
   }) async {
@@ -19,14 +19,14 @@ class ChallengeQuestionService {
           "https://linkskool.net/api/v3/public/cbt/challenges/questions";
 
       final queryParams = {
-        "exam_id": examId.toString(),
+        "course_id": courseId.toString(),
         "challenge_id": challengeId.toString(),
         if (limit != null) "limit": limit.toString(),
       };
 
       final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
 
-
+print("Fetching challenge questions from URL: $uri ");
       final response = await http.get(
         uri,
         headers: {
@@ -39,6 +39,7 @@ class ChallengeQuestionService {
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
+        print("Received response: $body");
         return body;
       } else {
         throw Exception("Failed: ${response.statusCode} - ${response.body}");

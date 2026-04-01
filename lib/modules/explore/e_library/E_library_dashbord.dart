@@ -464,7 +464,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.text2Light.withOpacity(0.1),
+              color: AppColors.text2Light.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -503,12 +503,12 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
             end: Alignment.bottomRight,
             colors: [
               item.backgroundColor,
-              item.backgroundColor.withOpacity(0.7),
+              item.backgroundColor.withValues(alpha: 0.7),
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: item.backgroundColor.withOpacity(0.4),
+              color: item.backgroundColor.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 6),
               spreadRadius: 0,
@@ -526,7 +526,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -539,7 +539,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     width: 2,
                   ),
                 ),
@@ -584,7 +584,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                           item.subtitle,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             fontWeight: FontWeight.w400,
                             fontFamily: 'Urbanist',
                           ),
@@ -644,7 +644,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: gradient[0].withOpacity(0.3),
+              color: gradient[0].withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -659,7 +659,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
               child: Icon(
                 Icons.auto_awesome,
                 size: 120,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
             // Content
@@ -675,7 +675,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -699,7 +699,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                     subtitle,
                     style: AppTextStyles.normal400(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -753,7 +753,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.text2Light.withOpacity(0.1),
+              color: AppColors.text2Light.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -845,7 +845,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -891,7 +891,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.3),
+                            Colors.black.withValues(alpha: 0.3),
                           ],
                         ),
                       ),
@@ -908,7 +908,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -972,7 +972,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.text2Light.withOpacity(0.1),
+                                  color: AppColors.text2Light.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
@@ -1094,7 +1094,7 @@ class _BookCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -1116,7 +1116,7 @@ class _BookCard extends StatelessWidget {
                             children: [
                               Icon(
                                 Icons.menu_book_rounded,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 size: 40,
                               ),
                               const SizedBox(height: 8),
@@ -1152,7 +1152,7 @@ class _BookCard extends StatelessWidget {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Colors.black.withOpacity(0.6),
+                              Colors.black.withValues(alpha: 0.6),
                             ],
                           ),
                         ),
@@ -1296,7 +1296,7 @@ class headingWithAdvert extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.text2Light.withOpacity(0.1),
+              color: AppColors.text2Light.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -1336,7 +1336,7 @@ class blueHeading extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.text2Light.withOpacity(0.1),
+              color: AppColors.text2Light.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

@@ -65,7 +65,7 @@ class _ChatScreenState extends State<ChatScreen> {
       // Scroll to bottom after receiving response
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
-      print('Error sending message: $e'); // Debug print
+ // Debug print
       setState(() {
         String errorMessage =
             "Sorry, I couldn't process your request. Please try again.";
@@ -89,7 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),

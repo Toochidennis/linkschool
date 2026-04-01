@@ -31,7 +31,7 @@ class _PatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.08 + 0.07 * animationValue)
+      ..color = Colors.white.withValues(alpha: 0.08 + 0.07 * animationValue)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
@@ -157,8 +157,8 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF6366F1).withOpacity(0.1),
-              Color(0xFF8B5CF6).withOpacity(0.05),
+              Color(0xFF6366F1).withValues(alpha: 0.1),
+              Color(0xFF8B5CF6).withValues(alpha: 0.05),
               Colors.white,
             ],
           ),
@@ -212,7 +212,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -253,7 +253,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF6366F1).withOpacity(0.4),
+            color: Color(0xFF6366F1).withValues(alpha: 0.4),
             blurRadius: 15,
             offset: Offset(0, 8),
           ),
@@ -282,7 +282,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                     Container(
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -308,7 +308,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                             'Quiz Game',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -350,7 +350,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 7),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.25),
+          color: Colors.white.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -369,7 +369,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
               subtitle,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -396,7 +396,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -456,7 +456,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: Color(0xFF6366F1).withOpacity(0.1),
+                        color: Color(0xFF6366F1).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -550,7 +550,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (player['color'] as Color).withOpacity(0.2),
+                    color: (player['color'] as Color).withValues(alpha: 0.2),
                     blurRadius: 10,
                     offset: Offset(0, 4),
                   ),
@@ -566,13 +566,13 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                       gradient: LinearGradient(
                         colors: [
                           player['color'] as Color,
-                          (player['color'] as Color).withOpacity(0.7),
+                          (player['color'] as Color).withValues(alpha: 0.7),
                         ],
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: (player['color'] as Color).withOpacity(0.4),
+                          color: (player['color'] as Color).withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: Offset(0, 4),
                         ),
@@ -625,7 +625,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: (player['color'] as Color).withOpacity(0.1),
+                      color: (player['color'] as Color).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -669,7 +669,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
               borderRadius: BorderRadius.circular(16),
             ),
             elevation: 8,
-            shadowColor: Color(0xFF6366F1).withOpacity(0.5),
+            shadowColor: Color(0xFF6366F1).withValues(alpha: 0.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

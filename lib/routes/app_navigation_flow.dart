@@ -69,7 +69,6 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       _isLoggedIn = newIsLoggedIn;
     });
 
-    print('🔄 Auth State Synced - Role: $_userRole, LoggedIn: $_isLoggedIn');
 
     // Only auto-flip for manual logins, not restored sessions.
     if (!wasLoggedIn &&

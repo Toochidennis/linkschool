@@ -104,7 +104,7 @@ class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 32,
               spreadRadius: 2,
               offset: const Offset(0, 12),
@@ -121,10 +121,10 @@ class _CbtContinueAdsDialogState extends State<CbtContinueAdsDialog> {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.eLearningBtnColor1.withOpacity(0.2),
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.2),
                     width: 2,
                   ),
                 ),

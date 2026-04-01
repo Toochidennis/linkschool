@@ -24,7 +24,7 @@ class ViewQuestionScreen extends StatefulWidget {
   final Question question;
   final Map<String, dynamic> questiondata;
   final dynamic class_ids;
-  final syllabusClasses;
+  final dynamic syllabusClasses;
   final List<Map<String, dynamic>>? questions;
   final bool editMode;
   final VoidCallback? onSaveFlag;
@@ -67,7 +67,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       showSaveButton = true;
       // Print the IDs of each question in widget.questions
       for (var q in widget.questions!) {
-        print("Question ID: ${q['question_id']}");
       }
     }
     _initializeQuestions();
@@ -99,7 +98,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -110,7 +109,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     final questionType = q['question_type'] ?? q['type'] ?? 'short_answer';
     final questionText = q['question_text'] ?? q['title'] ?? '';
     final id = q['question_id']?.toString() ?? '';
-    print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS$id');
     final grade =
         q['question_grade']?.toString() ?? q['grade']?.toString() ?? '1';
 
@@ -221,8 +219,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       correctAnswerController,
       false,
     );
-    print('Questions ID: $id, Type: $questionType, Text: $questionText');
-    print('Question image path: $imagePath'); // Debug log
+ // Debug log
 
     return {
       'type': questionType,
@@ -694,11 +691,8 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
 
     try {
       // Debug: Print the assessment to check the structure
-      print('Assessment JSON: ${jsonEncode(assessment)}');
       final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-      print('Updating existing quiz with ID: ${widget.question.id}');
       if (widget.editMode == true) {
-        print('Updated assessment: ${jsonEncode(Updatedassessment)}');
 
         await quizProvider.updateTest(Updatedassessment);
         widget.onCreation?.call();
@@ -713,7 +707,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       setState(() {
         showSaveButton = false;
       });
-      print('Quiz posted!');
       if (mounted) {
         widget.onSaveFlag?.call();
         widget.onCreation?.call();
@@ -736,9 +729,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         }
       }
     } catch (e) {
-      print('Error posting quiz: $e');
       CustomToaster.toastError(context, "Error", "Error saving questions: $e");
-      print('Error posting quiz: $assessment');
     } finally {
       setState(() {
         _isSaving = false;
@@ -931,7 +922,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         ),
       ),
     );
-    print('result: $result');
     if (result != null) {
       setState(() {
         currentQuestion = result;
@@ -973,7 +963,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
+            color: Colors.grey.withValues(alpha: 0.5),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, -3),
@@ -995,7 +985,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
               onPressed: () async {
                 await _SaveToPrefs();
 
-                print('Created Questions: $createdQuestions');
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -1197,25 +1186,14 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
 
       // Validate that we have questions to save
       if (questionsForPreview.isEmpty) {
-        print('WARNING: No questions to save for preview');
         CustomToaster.toastError(
             context, "Error", "No questions available for preview");
         return;
       }
 
       // Debug: Print questions being saved
-      print('=== SAVING QUESTIONS FOR PREVIEW ===');
-      print('Saving ${questionsForPreview.length} questions');
       for (int i = 0; i < questionsForPreview.length; i++) {
         final q = questionsForPreview[i];
-        print('Question $i:');
-        print('  - ID: ${q['question_id']}');
-        print('  - Text: "${q['question_text']}"');
-        print('  - Type: ${q['question_type']}');
-        print('  - Grade: ${q['question_grade']}');
-        print('  - Has image: ${q['question_files'].isNotEmpty}');
-        print('  - Options count: ${q['options'].length}');
-        print('  - Correct: ${q['correct']}');
       }
 
       // Save questions to SharedPreferences
@@ -1229,13 +1207,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           'preview_duration', currentQuestion.duration.inSeconds.toString());
       await prefs.setBool('is_edit_mode', widget.editMode);
 
-      print(
-          '✓ Questions saved successfully. JSON length: ${questionsJson.length}');
-      print('✓ Title saved: ${widget.questiondata['title']}');
-      print('✓ Duration saved: ${currentQuestion.duration.inSeconds} seconds');
     } catch (e, stackTrace) {
-      print('ERROR saving questions to SharedPreferences: $e');
-      print('Stack trace: $stackTrace');
       CustomToaster.toastError(
           context, "Error", "Failed to save questions for preview: $e");
       return;
@@ -1445,7 +1417,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     width: double.infinity,
                     height: 50,
-                    color: AppColors.textGray.withOpacity(0.1),
+                    color: AppColors.textGray.withValues(alpha: 0.1),
                     child: Row(
                       children: [
                         Icon(
@@ -1715,7 +1687,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                                     style: AppTextStyles.normal600(
                                       fontSize: 14,
                                       color:
-                                          AppColors.textGray.withOpacity(0.5),
+                                          AppColors.textGray.withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ],
@@ -1790,7 +1762,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
               color: isEditing
-                  ? AppColors.primaryLight.withOpacity(0.5)
+                  ? AppColors.primaryLight.withValues(alpha: 0.5)
                   : Colors.transparent,
               width: 1,
             ),
@@ -2007,7 +1979,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         // Update save button visibility
         showSaveButton = createdQuestions.isNotEmpty;
       });
-      print('Deleting question with ID: $id and setting ID: $settingId');
       await provider.deleteQuestion(id!, settingId);
       CustomToaster.toastSuccess(
           context, "Success", "Questions deleted successfully");
@@ -2390,7 +2361,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

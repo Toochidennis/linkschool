@@ -57,7 +57,6 @@ class EnrollmentProvider  extends ChangeNotifier {
     }
   }void updateTrialViewsSilently(Map<String, dynamic> trialData, int courseId) {
     _enrollmentService.updateTrialView(trialData, courseId).catchError((e) {
-      debugPrint("Silent trial update failed: $e");
     });
   }
   //  update trial views

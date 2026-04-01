@@ -28,7 +28,8 @@ class TopicService {
         final settings = data['settings'] ?? {};
         dbName = settings['db_name']?.toString() ?? dbName;
       } catch (e) {
-      }
+      // Intentionally ignored.
+    }
 
       // Get token
       final token = loginData is Map
@@ -97,7 +98,8 @@ class TopicService {
         final settings = data['settings'] ?? {};
         dbName = settings['db_name']?.toString() ?? dbName;
       } catch (e) {
-      }
+      // Intentionally ignored.
+    }
 
       final token = loginData is Map
           ? (loginData['token'] ?? userBox.get('token'))
@@ -169,7 +171,8 @@ class TopicService {
         final settings = data['settings'] ?? {};
         dbName = settings['db_name']?.toString() ?? dbName;
       } catch (e) {
-      }
+      // Intentionally ignored.
+    }
 
       final token = loginData is Map
           ? (loginData['token'] ?? userBox.get('token'))

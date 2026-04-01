@@ -74,7 +74,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
             "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
       });
     } else {
-      print('No settings found in Hive, using defaults');
       _settings = {'year': '2023', 'term': 1};
       _selectedTerm = 'First term';
       _academicSession = '2022/2023 academic session';
@@ -87,7 +86,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
     final key =
         'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
     await userBox.put(key, courseIds);
-    print('Saved registered courses to Hive: $courseIds');
   }
 
   // Get registered courses from Hive
@@ -97,7 +95,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
         'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
     final cachedCourses = userBox.get(key);
     if (cachedCourses == null) {
-      print('No cached courses found in Hive for key: $key');
       return [];
     }
     // Ensure cachedCourses is a List and cast its elements to int
@@ -107,10 +104,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
               id is int || (id is num && id is int)) // Filter valid integers
           .cast<int>()
           .toList();
-      print('Retrieved cached courses from Hive: $result');
       return result;
     }
-    print('Invalid cached courses format in Hive: $cachedCourses');
     return [];
   }
 
@@ -132,12 +127,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
       final term = settings['term']?.toString() ?? '1';
       final dbName = userData?['_db'] ?? 'aalmgzmy_linkskoo_practice';
 
-      print('Fetching registered courses with params:');
-      print('Student ID: ${widget.studentId}');
-      print('Class ID: ${widget.classId}');
-      print('Year: $year');
-      print('Term: $term');
-      print('DB Name: $dbName');
 
       final provider =
           Provider.of<CourseRegistrationProvider>(context, listen: false);
@@ -156,12 +145,10 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
           selectedSubjects[i] = _registeredCourseIds.contains(courses[i]['id']);
         }
         _hasSelectedCourses = selectedSubjects.contains(true);
-        print('Updated selectedSubjects: $selectedSubjects');
         // Save to Hive for persistence
         _saveRegisteredCoursesToHive(_registeredCourseIds);
       });
     } catch (e) {
-      print('Error fetching registered courses: $e');
       // Fallback to cached data
       setState(() {
         _registeredCourseIds = _getRegisteredCoursesFromHive();
@@ -169,7 +156,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
           selectedSubjects[i] = _registeredCourseIds.contains(courses[i]['id']);
         }
         _hasSelectedCourses = selectedSubjects.contains(true);
-        print('Using cached selectedSubjects: $selectedSubjects');
       });
     } finally {
       setState(() {
@@ -190,7 +176,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
         final result = coursesList
             .map((course) => Map<String, dynamic>.from(course as Map))
             .toList();
-        print('Courses retrieved from Hive: $result');
         return result;
       }
 
@@ -199,13 +184,11 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
         final result = courses
             .map((course) => Map<String, dynamic>.from(course as Map))
             .toList();
-        print('Courses retrieved from Hive (fallback): $result');
         return result;
       }
     } catch (e) {
-      print('Error converting courses data: $e');
+      // Intentionally ignored.
     }
-    print('No courses found in Hive');
     return [];
   }
 
@@ -237,7 +220,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
         "_db": userData?['_db'] ?? 'aalmgzmy_linkskoo_practice',
       };
 
-      print('Saving courses with payload: $payload');
 
       final provider =
           Provider.of<CourseRegistrationProvider>(context, listen: false);
@@ -298,8 +280,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
     setState(() {
       selectedSubjects[index] = isSelected;
       _hasSelectedCourses = selectedSubjects.contains(true);
-      print(
-          'Updated selection for index $index: $isSelected, selectedSubjects: $selectedSubjects');
     });
   }
 
@@ -381,7 +361,7 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                                   const BorderRadius.all(Radius.circular(100)),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   blurRadius: 7,
                                   spreadRadius: 7,
                                   offset: const Offset(3, 5),

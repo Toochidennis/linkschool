@@ -91,11 +91,6 @@ class AttendanceHistoryListState extends State<AttendanceHistoryList> {
         throw Exception('Term or year is empty');
       }
 
-      print('Fetching attendance with params:');
-      print('- classId: ${widget.classId}');
-      print('- term: $term');
-      print('- year: $year');
-      print('- dbName: $dbName');
 
       // Fetch attendance history with validated parameters
       await attendanceProvider.fetchAttendanceHistory(
@@ -105,7 +100,6 @@ class AttendanceHistoryListState extends State<AttendanceHistoryList> {
         dbName: dbName.toString(),
       );
     } catch (e) {
-      print('Error in _fetchAttendanceHistory: $e');
       // Set error in provider to show in UI
       final attendanceProvider = locator<AttendanceProvider>();
       // Since we can't directly set error, we'll let the provider handle it

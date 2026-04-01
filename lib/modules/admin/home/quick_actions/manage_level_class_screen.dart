@@ -82,7 +82,7 @@ class _LevelClassManagementScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -539,7 +539,7 @@ class _LevelClassManagementScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -552,7 +552,7 @@ class _LevelClassManagementScreenState
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.text2Light.withOpacity(0.05),
+              color: AppColors.text2Light.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -563,7 +563,7 @@ class _LevelClassManagementScreenState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.text2Light.withOpacity(0.1),
+                    color: AppColors.text2Light.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -593,7 +593,7 @@ class _LevelClassManagementScreenState
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.text2Light.withOpacity(0.1),
+                              color: AppColors.text2Light.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -621,7 +621,7 @@ class _LevelClassManagementScreenState
                   icon: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.text2Light.withOpacity(0.1),
+                      color: AppColors.text2Light.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -714,7 +714,7 @@ class _LevelClassManagementScreenState
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: AppColors.text2Light.withOpacity(0.02),
+                color: AppColors.text2Light.withValues(alpha: 0.02),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
@@ -751,7 +751,7 @@ class _LevelClassManagementScreenState
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.text2Light.withOpacity(0.08),
+          color: AppColors.text2Light.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
@@ -780,7 +780,7 @@ class _LevelClassManagementScreenState
         icon: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: AppColors.text2Light.withOpacity(0.05),
+            color: AppColors.text2Light.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(6),
           ),
           child: const Icon(

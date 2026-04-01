@@ -19,7 +19,7 @@ class StaffQuizScreen extends StatefulWidget {
   final List<Map<String, dynamic>>? correctAnswers;
   final Map<String, dynamic>? questiondata;
   final List<Map<String, String>>? class_ids;
-  final syllabusClasses;
+  final dynamic syllabusClasses;
   const StaffQuizScreen(
       {super.key,
       required this.question,
@@ -168,7 +168,7 @@ class _StaffQuizScreenState extends State<StaffQuizScreen> {
           context, 'Success', 'Assignment deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error deleting assignment: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -193,8 +193,6 @@ class _StaffQuizScreenState extends State<StaffQuizScreen> {
         CustomLongElevatedButton(
           onPressed: () {
             // Navigate to the assessment screen
-            print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.correctAnswers}");
-            print("https://linkskool.net/${widget.questions}");
 
             Navigator.push(
               context,

@@ -21,7 +21,7 @@ class AppThemes {
       foregroundColor: Colors.white,
       iconTheme: const IconThemeData(color: Colors.white),
       actionsIconTheme: const IconThemeData(color: Colors.white),
-      systemOverlayStyle: SystemUiOverlayStyle.light,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
       titleTextStyle: AppTextStyles.normal600(
           fontSize: 18.0, color: Colors.white),
     ),

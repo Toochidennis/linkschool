@@ -70,7 +70,6 @@ class _AllSubjectsScreenState extends State<AllSubjectsScreen>
           }
         },
         onAdFailedToLoad: (LoadAdError error) {
-          debugPrint('AllSubjectsScreen CBT app open ad failed to load: $error');
           _appOpenAd = null;
           _pendingShowAppOpenAd = false;
           if (mounted) {
@@ -103,7 +102,6 @@ class _AllSubjectsScreenState extends State<AllSubjectsScreen>
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
-        debugPrint('AllSubjectsScreen CBT app open ad failed to show: $error');
         ad.dispose();
         _appOpenAd = null;
         if (mounted) {

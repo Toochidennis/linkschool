@@ -22,6 +22,7 @@ class StudyHistoryService {
       await prefs.setString(_studyHistoryKey, jsonEncode(jsonList));
 
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -50,6 +51,7 @@ class StudyHistoryService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_studyHistoryKey);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 

@@ -71,8 +71,6 @@ class _StudentResultScreenState extends State<StudentResultScreen>
         year = settings['year']?.toString();
       });
 
-      print(
-          'Loaded student data: studentId=$studentId, classId=$classId, levelId=$levelId, year=$year');
     }
   }
 
@@ -329,25 +327,25 @@ class _StudentResultScreenState extends State<StudentResultScreen>
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       decoration: BoxDecoration(
         color:
-            isHovered ? indicatorColor.withOpacity(0.08) : Colors.transparent,
+            isHovered ? indicatorColor.withValues(alpha: 0.08) : Colors.transparent,
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(
           color: isHovered
-              ? indicatorColor.withOpacity(0.3)
+              ? indicatorColor.withValues(alpha: 0.3)
               : AppColors.borderGray,
           width: isHovered ? 1.5 : 1,
         ),
         boxShadow: isHovered
             ? [
                 BoxShadow(
-                  color: indicatorColor.withOpacity(0.15),
+                  color: indicatorColor.withValues(alpha: 0.15),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ]
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 2,
                   offset: const Offset(0, 1),
                 ),
@@ -367,8 +365,8 @@ class _StudentResultScreenState extends State<StudentResultScreen>
                     padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(
                       color: isHovered
-                          ? indicatorColor.withOpacity(0.15)
-                          : indicatorColor.withOpacity(0.1),
+                          ? indicatorColor.withValues(alpha: 0.15)
+                          : indicatorColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     child: Icon(
@@ -413,7 +411,7 @@ class _StudentResultScreenState extends State<StudentResultScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8.0, vertical: 4.0),
                   decoration: BoxDecoration(
-                    color: indicatorColor.withOpacity(0.1),
+                    color: indicatorColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6.0),
                   ),
                   child: Text(
@@ -434,7 +432,7 @@ class _StudentResultScreenState extends State<StudentResultScreen>
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: indicatorColor.withOpacity(0.1),
+                      color: indicatorColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -448,7 +446,7 @@ class _StudentResultScreenState extends State<StudentResultScreen>
                     ),
                   ),
                   progressColor: indicatorColor,
-                  backgroundColor: indicatorColor.withOpacity(0.1),
+                  backgroundColor: indicatorColor.withValues(alpha: 0.1),
                   circularStrokeCap: CircularStrokeCap.round,
                 ),
                 const SizedBox(width: 8),
@@ -516,7 +514,7 @@ class _StudentResultScreenState extends State<StudentResultScreen>
             horizontalInterval: 20,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 strokeWidth: 1,
                 dashArray: [5, 5],
               );

@@ -20,7 +20,7 @@ class SingleAssessmentScreen extends StatefulWidget {
   final String? quizTitle;
   final SingleElearningContentData? childContent;
   final List<Question>? questions;
-  final correctAnswer;
+  final dynamic correctAnswer;
   const SingleAssessmentScreen(
       {super.key,
       this.timer,
@@ -166,7 +166,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading questions: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -445,7 +445,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                       (question).correctAnswers.contains(value);
 
                   userAnswers[_currentQuestionIndex] = value;
-                  print("ansss $userAnswers");
                 });
               },
               activeColor: Colors.blue, // Radio color when selected
@@ -631,7 +630,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
       );
     } else {
       //Error
-      print("E no goooo ");
     }
   }
 }

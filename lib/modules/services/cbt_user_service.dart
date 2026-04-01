@@ -289,7 +289,8 @@ class CbtUserService {
         } else {
         }
       } catch (e) {
-      }
+      // Intentionally ignored.
+    }
       attempt++;
       await Future.delayed(const Duration(milliseconds: 500));
     }

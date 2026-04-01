@@ -91,8 +91,8 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            AppColors.eLearningBtnColor1.withOpacity(0.1),
-                            AppColors.eLearningBtnColor1.withOpacity(0.05),
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.05),
                           ],
                         ),
                         borderRadius: const BorderRadius.only(
@@ -109,7 +109,7 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.eLearningBtnColor1.withOpacity(0.2),
+                                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.2),
                                   blurRadius: 20,
                                   offset: const Offset(0, 4),
                                 ),
@@ -156,13 +156,13 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                                 end: Alignment.bottomRight,
                                 colors: [
                                   AppColors.eLearningBtnColor1,
-                                  AppColors.eLearningBtnColor1.withOpacity(0.85),
+                                  AppColors.eLearningBtnColor1.withValues(alpha: 0.85),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.eLearningBtnColor1.withOpacity(0.25),
+                                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.25),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -174,7 +174,7 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                                   'Course Fee',
                                   style: AppTextStyles.normal500(
                                     fontSize: 12,
-                                    color: Colors.white.withOpacity(0.85),
+                                    color: Colors.white.withValues(alpha: 0.85),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -222,7 +222,7 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   elevation: 0,
-                                  shadowColor: AppColors.eLearningBtnColor1.withOpacity(0.4),
+                                  shadowColor: AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
                                 ),
                                 child: _isProcessing
                                     ? const SizedBox(
@@ -550,10 +550,6 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
       final reference = 'COURSE_${DateTime.now().millisecondsSinceEpoch}';
       final amountInKobo = widget.amount * 100;
 
-      print('Initiating Paystack payment...');
-      print('Amount: NGN ${widget.amount}');
-      print('Email: $email');
-      print('Reference: $reference');
 
       PaystackFlutter().pay(
         context: context,
@@ -573,7 +569,6 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
           'amount_naira': widget.amount,
         },
         onSuccess: (callback) async {
-          print('Payment successful: ${callback.reference}');
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -605,7 +600,6 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
           }
         },
         onCancelled: (callback) {
-          print('Payment cancelled');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -617,7 +611,6 @@ class _CoursePaymentDialogState extends State<CoursePaymentDialog>
         },
       );
     } catch (e) {
-      print('❌ Payment error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

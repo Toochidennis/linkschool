@@ -10,9 +10,8 @@ class StaffProfileScreen extends StatelessWidget {
   final String studentName;
   final String classId;
   final String className;
-  final String levelId; // ✅ Pass as string
+  final String levelId;
   final int? studentId;
-  late double opacity;
   final String name;
   final String mobile = '+234 819 567 000'; // Sample mobile number
   final String email = 'joraphkeke@gmail.com'; // Sample email
@@ -35,8 +34,6 @@ class StaffProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Brightness brightness = Theme.of(context).brightness;
-    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -201,7 +198,7 @@ class StaffProfileScreen extends StatelessWidget {
                             builder: (context) => StudentResultScreen(
                               studentName: studentName,
                               classId: classId,
-                              className: className ?? "Unknown Class",
+                              className: className,
                               levelId: levelId.toString(), // ✅ Pass as string
                               studentId: studentId ?? 0,
                             ),

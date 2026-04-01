@@ -15,12 +15,16 @@ class ChallengeService {
         throw Exception("API KEY not found");
       }
 
+      
+
       final url = Uri.parse("$_baseUrl/cbt/challenges").replace(
         queryParameters: {
           'author_id': authorId.toString(),
           'exam_type_id': examTypeId.toString(),
         },
       );
+    print("Fetching Challenges from URL: $url");
+      
 
       final response = await http.get(
         url,
@@ -30,12 +34,13 @@ class ChallengeService {
         },
       );
 
+   
+
       if (response.statusCode != 200) {
         throw Exception("Failed: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
-
       return ChallengeResponse.fromJson(decoded);
     } catch (e) {
       throw Exception("Error: $e");
@@ -52,6 +57,8 @@ class ChallengeService {
       if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
+
+      print("Creating Challenge with payload: $payload");
 
       final url = "$_baseUrl/cbt/challenges";
 

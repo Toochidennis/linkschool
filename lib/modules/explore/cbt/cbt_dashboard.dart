@@ -138,7 +138,6 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
       }
       return true;
     } catch (e) {
-      print('[CBT_FLOW] License check failed: $e');
       if (!mounted) return false;
       await NetworkDialog.ensureOnline(
         context,
@@ -361,7 +360,7 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
         });
       }
     } catch (e) {
-      print('❌ Error preloading subscription: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -370,7 +369,7 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
       final settings = await CbtSettingsHelper.getSettings();
       await _subscriptionService.setMaxFreeTests(settings.freeTrialDays);
     } catch (e) {
-      print('Error syncing trial settings: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -463,7 +462,6 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
       if (!authenticated || !mounted) return false;
       return true;
     } catch (e) {
-      print('Subscription check error: $e');
       if (!mounted) return false;
       return await _showPlansAndReturn();
     } finally {
@@ -474,11 +472,9 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
   }
 
   Future<bool> _showPlansAndReturn() async {
-    print('[CBT_FLOW] Opening plans screen...');
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
     );
-    print('[CBT_FLOW] Plans closed result=$result');
     if (result == 'continue_ads') {
       await _subscriptionService.setContinueWithAds(true);
       return true;
@@ -488,12 +484,10 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
     final userId = cbtUserProvider.currentUser?.id;
-    print('[CBT_FLOW] Checking license after plans userId=$userId');
     if (userId == null) return false;
 
     final isActive =
         await _licenseService.isLicenseActive(userId: userId, forceRefresh: true);
-    print('[CBT_FLOW] License active after plans=$isActive');
     return isActive;
   }
 
@@ -702,8 +696,8 @@ _wasLoading = loading;
       clipBehavior: Clip.antiAlias, // ✅ important for ripple + overlay
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        splashColor: boardColor.withOpacity(0.18),
-        highlightColor: boardColor.withOpacity(0.10),
+        splashColor: boardColor.withValues(alpha: 0.18),
+        highlightColor: boardColor.withValues(alpha: 0.10),
         onTap: () async {
           // ✅ instant visual feedback
           setState(() => _pressedBoardCode = board.boardCode);
@@ -727,15 +721,15 @@ _wasLoading = loading;
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: boardColor.withOpacity(0.15),
+                      color: boardColor.withValues(alpha: 0.15),
                       border: Border.all(
-                        color: boardColor.withOpacity(0.3),
+                        color: boardColor.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: boardColor.withOpacity(0.18),
+                          color: boardColor.withValues(alpha: 0.18),
                           blurRadius: 18,
                           spreadRadius: 2,
                           offset: const Offset(0, 8),
@@ -750,7 +744,7 @@ _wasLoading = loading;
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: boardColor.withOpacity(0.12),
+                        color: boardColor.withValues(alpha: 0.12),
                       ),
                     ),
                   ),
@@ -828,7 +822,7 @@ _wasLoading = loading;
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: boardColor.withOpacity(0.4),
+                            color: boardColor.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -848,7 +842,7 @@ _wasLoading = loading;
                 if (_isCheckingSubscription)
                   Positioned.fill(
                     child: Container(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       child: const Center(
                         child: CircularProgressIndicator(color: Colors.white),
                       ),
@@ -986,8 +980,6 @@ _wasLoading = loading;
 
             final userName = cbtuserProvider.currentUser?.displayName ?? 'User';
             int userId = cbtuserProvider.currentUser?.id ?? 0;
-            print(
-                'userName: $userName, userId: $userId , examTypeId: $CurrentexamTypeId');
 
             Navigator.push(
               context,
@@ -1033,11 +1025,11 @@ _wasLoading = loading;
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.text6Light.withOpacity(0.3),
+                color: AppColors.text6Light.withValues(alpha: 0.3),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1051,8 +1043,8 @@ _wasLoading = loading;
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.eLearningBtnColor1.withOpacity(0.1),
-                        AppColors.eLearningBtnColor1.withOpacity(0.05),
+                        AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                        AppColors.eLearningBtnColor1.withValues(alpha: 0.05),
                       ],
                     ),
                     shape: BoxShape.circle,
@@ -1170,7 +1162,7 @@ _wasLoading = loading;
             gradient: LinearGradient(
               colors: [
                 AppColors.eLearningBtnColor1,
-                AppColors.eLearningBtnColor1.withOpacity(0.8),
+                AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -1178,7 +1170,7 @@ _wasLoading = loading;
             borderRadius: BorderRadius.circular(12.0),
             boxShadow: [
               BoxShadow(
-                color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -1189,7 +1181,7 @@ _wasLoading = loading;
               Container(
                 padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1215,7 +1207,7 @@ _wasLoading = loading;
                       '${incompleteTest.subject} (${incompleteTest.year})',
                       style: AppTextStyles.normal500(
                         fontSize: 14.0,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                     const SizedBox(height: 4.0),
@@ -1223,7 +1215,7 @@ _wasLoading = loading;
                       '${incompleteTest.percentage.toStringAsFixed(0)}% completed',
                       style: AppTextStyles.normal400(
                         fontSize: 12.0,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -1365,7 +1357,7 @@ _wasLoading = loading;
               spreadRadius: 0,
               offset: const Offset(0, 1),
               blurRadius: 2,
-              color: Colors.black.withOpacity(0.25),
+              color: Colors.black.withValues(alpha: 0.25),
             )
           ],
         ),
@@ -1633,7 +1625,7 @@ class _OptionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

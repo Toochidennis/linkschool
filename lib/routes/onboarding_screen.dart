@@ -134,7 +134,7 @@
 //             begin: Alignment.topCenter,
 //             end: Alignment.bottomCenter,
 //             colors: [
-//               _onboardingData[currentPage].accentColor.withOpacity(0.1),
+//               _onboardingData[currentPage].accentColor.withValues(alpha: 0.1),
 //               Colors.white,
 //               Colors.white,
 //             ],
@@ -221,7 +221,7 @@
 //                           elevation: 8,
 //                           shadowColor: _onboardingData[currentPage]
 //                               .accentColor
-//                               .withOpacity(0.5),
+//                               .withValues(alpha: 0.5),
 //                           shape: RoundedRectangleBorder(
 //                             borderRadius:
 //                                 BorderRadius.circular(isLastPage ? 16 : 30),
@@ -285,7 +285,7 @@
 //                   borderRadius: BorderRadius.circular(24),
 //                   boxShadow: [
 //                     BoxShadow(
-//                       color: data.accentColor.withOpacity(0.2),
+//                       color: data.accentColor.withValues(alpha: 0.2),
 //                       blurRadius: 30,
 //                       offset: const Offset(0, 15),
 //                     ),
@@ -303,7 +303,7 @@
 //                       fit: BoxFit.contain,
 //                       errorBuilder: (context, error, stackTrace) {
 //                         return Container(
-//                           color: data.accentColor.withOpacity(0.1),
+//                           color: data.accentColor.withValues(alpha: 0.1),
 //                           child: Icon(
 //                             Icons.school_rounded,
 //                             size: 80,
@@ -327,7 +327,7 @@
 //                       height: 12,
 //                       width: 120,
 //                       decoration: BoxDecoration(
-//                         color: data.accentColor.withOpacity(0.2),
+//                         color: data.accentColor.withValues(alpha: 0.2),
 //                         borderRadius: BorderRadius.circular(6),
 //                       ),
 //                     ),

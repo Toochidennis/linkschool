@@ -37,6 +37,7 @@ class WatchHistoryService {
       // Save to SharedPreferences
       await prefs.setStringList(_watchHistoryKey, history);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -73,6 +74,7 @@ class WatchHistoryService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_watchHistoryKey);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -89,6 +91,7 @@ class WatchHistoryService {
 
       await prefs.setStringList(_watchHistoryKey, history);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 

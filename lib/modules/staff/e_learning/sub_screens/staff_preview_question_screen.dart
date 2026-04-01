@@ -261,7 +261,7 @@ class _StaffQuestionPreviewScreenState
         builder: (context) => QuestionScreen(
           question: currentQuestion,
           isEditing: true,
-          onSave: (Question) {},
+          onSave: (question) {},
         ),
       ),
     );
@@ -309,7 +309,7 @@ class _StaffQuestionPreviewScreenState
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
+            color: Colors.grey.withValues(alpha: 0.5),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, -3),
@@ -428,7 +428,7 @@ class _StaffQuestionPreviewScreenState
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
               color: isEditing
-                  ? AppColors.paymentTxtColor1.withOpacity(0.5)
+                  ? AppColors.paymentTxtColor1.withValues(alpha: 0.5)
                   : Colors.transparent,
               width: 1,
             ),
@@ -507,7 +507,7 @@ class _StaffQuestionPreviewScreenState
                                     style: AppTextStyles.normal600(
                                       fontSize: 14,
                                       color:
-                                          AppColors.textGray.withOpacity(0.5),
+                                          AppColors.textGray.withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ],
@@ -699,7 +699,7 @@ class _StaffQuestionPreviewScreenState
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

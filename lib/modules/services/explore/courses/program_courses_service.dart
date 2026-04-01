@@ -20,7 +20,6 @@ class ProgramCoursesService {
       '$baseUrl/public/programs/${Uri.encodeComponent(trimmedSlug)}/courses',
     );
 
-    debugPrint('Fetching program courses from: $uri');
 
     final response = await http.get(
       uri,

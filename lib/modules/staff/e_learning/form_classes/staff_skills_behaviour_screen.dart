@@ -52,8 +52,6 @@ class _StaffSkillsBehaviourScreenState
     currentTerm = widget.term ?? SettingsService.getCurrentTerm().toString();
     currentDb = widget.db ?? SettingsService.getDatabaseName();
 
-    print(
-        'Skills Behaviour Screen - Year: $currentYear, Term: $currentTerm, DB: $currentDb');
 
     final skillsProvider =
         Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
@@ -104,7 +102,7 @@ class _StaffSkillsBehaviourScreenState
         databaseName = response['_db']?.toString();
       });
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -162,7 +160,7 @@ class _StaffSkillsBehaviourScreenState
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             margin: EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+              color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -276,9 +274,9 @@ class _StaffSkillsBehaviourScreenState
                       margin: EdgeInsets.all(16),
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [

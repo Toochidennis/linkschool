@@ -43,10 +43,6 @@ class _StudentSingleTermResultScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final studentProvider =
           Provider.of<StudentProvider>(context, listen: false);
-      debugPrint(
-          'StudentSingleTermResult: Fetching term results for studentId=${widget.studentId}, '
-          'termId=${widget.termId}, classId=${widget.classId}, '
-          'year=${widget.year}, levelId=${widget.levelId}');
       studentProvider.fetchStudentTermResults(
         studentId: widget.studentId,
         termId: widget.termId,
@@ -132,10 +128,6 @@ class _StudentSingleTermResultScreenState
         decoration: Constants.customBoxDecoration(context),
         child: Consumer<StudentProvider>(
           builder: (context, studentProvider, child) {
-            debugPrint(
-                'StudentSingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
-                'errorMessage=${studentProvider.errorMessage}, '
-                'termResult=${studentProvider.studentTermResult}');
 
             if (studentProvider.isLoading) {
               return const Center(child: CircularProgressIndicator());

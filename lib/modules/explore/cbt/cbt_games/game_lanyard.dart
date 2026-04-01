@@ -160,7 +160,7 @@ class _LanyardPainter extends CustomPainter {
     canvas.drawPath(p, paint);
 
     final highlight = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -185,7 +185,7 @@ class _LanyardPainter extends CustomPainter {
     canvas.drawRRect(
       shadow,
       Paint()
-        ..color = Colors.black.withOpacity(0.3)
+        ..color = Colors.black.withValues(alpha: 0.3)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 

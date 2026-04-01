@@ -29,7 +29,7 @@ class CustomFloatingSaveButton extends StatelessWidget {
           borderRadius: const BorderRadius.all(Radius.circular(100)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 7,
               spreadRadius: 7,
               offset: const Offset(3, 5),

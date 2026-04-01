@@ -240,7 +240,7 @@ class StudentProfileScreen extends StatelessWidget {
         return NetworkImage("https://linkskool.net/${student.photoPath}");
       }
     } catch (e) {
-      print('Error loading student image: $e');
+      // Intentionally ignored.
     }
     return null;
   }

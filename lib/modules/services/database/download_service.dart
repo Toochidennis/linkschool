@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:http/http.dart' as http;
-import 'package:linkschool/database/cbt_db-helper.dart';
+import 'package:linkschool/database/cbt_db_helper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:linkschool/config/env_config.dart';
 
@@ -116,7 +116,9 @@ class CbtDownloadService {
         if (await file.exists()) {
           await file.delete();
         }
-      } catch (_) {}
+      } catch (_) {
+      // Intentionally ignored.
+    }
     }
   }
 

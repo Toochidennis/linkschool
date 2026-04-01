@@ -286,7 +286,6 @@ String? get _submittedAssignmentUrl {
       'cohort_id': widget.cohortId,
       'course_id': widget.courseId,
     };
-    print('attendance: $payload');
     final success = await _lessonAttendanceProvider.submitAttendance(
       lessonId: widget.lessonId!,
       payload: payload,
@@ -395,7 +394,7 @@ String? get _submittedAssignmentUrl {
             border: Border.all(color: const Color(0xFF0F172A)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -521,7 +520,6 @@ void initState() {
   }
   
   // DON'T initialize video here - wait for lesson data
-  print('initState completed, waiting for lesson data...');
   
   // Initialize interstitial ad
   _loadInterstitialAd();
@@ -544,18 +542,14 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!_isNavigatingAway) {
       _lastPauseTime = DateTime.now();
       _shouldShowAdOnResume = true;
-      print('App paused (real background) at: $_lastPauseTime');
     } else {
-      print('App paused due to navigation, skipping ad flag');
     }
   } else if (state == AppLifecycleState.resumed) {
     // Only show ad if it was a real background event
     if (_shouldShowAdOnResume) {
-      print('App resumed from real background, attempting to show App Open Ad');
       _showAppOpenAd();
       _shouldShowAdOnResume = false;
     } else {
-      print('App resumed from navigation, skipping ad');
     }
     
     // Reset navigation flag
@@ -601,7 +595,9 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
         try {
           dob = f.parseStrict(trimmed);
           break;
-        } catch (_) {}
+        } catch (_) {
+      // Intentionally ignored.
+    }
       }
     }
     if (dob == null) return null;
@@ -611,14 +607,12 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
         (now.month > dob.month) ||
         (now.month == dob.month && now.day >= dob.day);
     if (!hadBirthdayThisYear) age -= 1;
-    print('Computed age: $age from birth date: $raw');
     return age < 0 ? null : age;
   }
 
   void _applyAgeGate(String? birthDate) {
     final age = _computeAgeFromBirthDate(birthDate);
     final isMinor = age != null && age < 13;
-    print('Applying age gate. Birth date: $birthDate, Computed age: $age, Is minor: $isMinor');
     if (_isMinor == isMinor) return;
     setState(() {
       _isMinor = isMinor;
@@ -637,7 +631,6 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
   final AdRequest request;
   if (_isMinor == true) {
     request = AdRequest(nonPersonalizedAds: true);
-    print('AppOpenAd: Loading with nonPersonalizedAds for minor');
   } else {
     request = AdRequest();
   }
@@ -654,10 +647,8 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
             _isAppOpenAdLoaded = true;
           });
         }
-        print('App Open Ad loaded successfully');
       },
       onAdFailedToLoad: (LoadAdError error) {
-        print('App Open Ad failed to load: $error');
         if (mounted) {
           setState(() {
             _isAppOpenAdLoaded = false;
@@ -677,7 +668,7 @@ void _showAppOpenAd() {
   // if (_lastAppOpenAdTime != null) {
   //   final timeSinceLastAd = DateTime.now().difference(_lastAppOpenAdTime!);
   //   if (timeSinceLastAd < _minTimeBetweenAds) {
-  //     print('App Open Ad: Cooling period active, ${_minTimeBetweenAds.inHours - timeSinceLastAd.inHours} hours remaining');
+
   //     return;
   //   }
   // }
@@ -687,10 +678,8 @@ void _showAppOpenAd() {
   if (_isAppOpenAdLoaded && _appOpenAd != null) {
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (AppOpenAd ad) {
-        print('App Open Ad showed');
       },
       onAdDismissedFullScreenContent: (AppOpenAd ad) {
-        print('App Open Ad dismissed');
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
@@ -699,7 +688,6 @@ void _showAppOpenAd() {
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
-        print('App Open Ad failed to show: $error');
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
@@ -710,7 +698,6 @@ void _showAppOpenAd() {
     
     _appOpenAd!.show();
   } else {
-    print('App Open Ad not ready to show');
   }
 }
 
@@ -722,7 +709,6 @@ void _loadRewardedAd() {
   final AdRequest request;
   if (_isMinor == true) {
     request = AdRequest(nonPersonalizedAds: true);
-    print('RewardedAd: Loading with nonPersonalizedAds for minor');
   } else {
     request = AdRequest();
   }
@@ -741,10 +727,8 @@ void _loadRewardedAd() {
         } else {
           _isRewardedAdLoading = false;
         }
-        print('Rewarded Ad loaded successfully');
       },
       onAdFailedToLoad: (LoadAdError error) {
-        print('Rewarded Ad failed to load: $error');
         if (mounted) {
           setState(() {
             _isRewardedAdLoaded = false;
@@ -762,10 +746,8 @@ void _showRewardedAdAndUnlock(_RewardAction action) {
   if (_isRewardedAdLoaded && _rewardedAd != null) {
     _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) {
-        print('Rewarded ad showed');
       },
       onAdDismissedFullScreenContent: (RewardedAd ad) {
-        print('Rewarded ad dismissed');
         ad.dispose();
         _rewardedAd = null;
         _isRewardedAdLoaded = false;
@@ -773,7 +755,6 @@ void _showRewardedAdAndUnlock(_RewardAction action) {
         _loadRewardedAd();
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-        print('Rewarded ad failed to show: $error');
         ad.dispose();
         _rewardedAd = null;
         _isRewardedAdLoaded = false;
@@ -784,7 +765,6 @@ void _showRewardedAdAndUnlock(_RewardAction action) {
 
     _rewardedAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        print('User earned reward: ${reward.amount} ${reward.type}');
         if (action == _RewardAction.quizRetake) {
           // Unlock the quiz
           setState(() {
@@ -907,7 +887,7 @@ void _showUnlockRewardDialog(_RewardAction action) {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFA500).withOpacity(0.1),
+                        color: const Color(0xFFFFA500).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -949,7 +929,7 @@ void _showUnlockRewardDialog(_RewardAction action) {
                         color: const Color(0xFFFFF3E0),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: const Color(0xFFFFB74D).withOpacity(0.3),
+                          color: const Color(0xFFFFB74D).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -1106,7 +1086,6 @@ Future<void> _navigateToQuiz() async {
     final AdRequest request;
      if (_isMinor == true) {
     request = AdRequest(nonPersonalizedAds: true);
-     print('AdRequest created with nonPersonalizedAds: $_isMinor');
 
   } else {
 
@@ -1282,7 +1261,7 @@ Future<void> _navigateToQuiz() async {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -1342,14 +1321,9 @@ Future<void> _navigateToQuiz() async {
       lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
   final metaSignature = _buildLessonMetaSignature(lesson, submission);
   
-  print('=== APPLYING LESSON DATA ===');
-  print('Video URL: $resolvedVideoUrl');
-  print('Already applied: $_hasAppliedLessonData');
-  print('Last initialized URL: $_lastInitializedUrl');
   
   // Prevent applying the same lesson data twice
   if (_hasAppliedLessonData && _lastMetaSignature == metaSignature) {
-    print('Same lesson already applied, skipping...');
     return;
   }
   
@@ -1407,7 +1381,6 @@ Future<void> _navigateToQuiz() async {
 
   // NOW initialize video after lesson data is applied
   if (_hasVideo && resolvedVideoUrl.isNotEmpty) {
-    print('Lesson data applied, now initializing video...');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isInitializing) {
         _initializeVideo(resolvedVideoUrl);
@@ -1517,7 +1490,7 @@ Future<void> _navigateToQuiz() async {
         _isAssignmentSubmitted = isSubmitted;
       });
     } catch (e) {
-      print('Error loading submission status: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -1531,7 +1504,7 @@ Future<void> _navigateToQuiz() async {
         _isAssignmentSubmitted = true;
       });
     } catch (e) {
-      print('Error saving submission status: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -1549,7 +1522,7 @@ Future<void> _navigateToQuiz() async {
             prefs.getString('${key}_assignment_base64');
       });
     } catch (e) {
-      debugPrint('Error loading pending assignment data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -1575,7 +1548,7 @@ Future<void> _navigateToQuiz() async {
         _pendingAssignmentFileBase64 = assignmentBase64;
       });
     } catch (e) {
-      debugPrint('Error saving pending assignment data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -1596,7 +1569,7 @@ Future<void> _navigateToQuiz() async {
         _pendingAssignmentFileBase64 = null;
       });
     } catch (e) {
-      debugPrint('Error clearing pending assignment data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -1649,7 +1622,7 @@ Future<void> _navigateToQuiz() async {
       }
       setState(() => _loadedActiveProfile = true);
     } catch (e) {
-      print('Error loading active profile: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -2115,7 +2088,6 @@ Map<String, dynamic> _getZoomStatus() {
         'url': null,
       };
     } catch (e) {
-      debugPrint('Error parsing class date: $e');
       // If time parsing fails but we have a live URL, make it available
       return {
         'status': 'available',
@@ -2162,7 +2134,6 @@ Map<String, dynamic> _getZoomStatus() {
         }
       }
     } catch (e) {
-      debugPrint('Error launching URL: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2177,22 +2148,16 @@ Map<String, dynamic> _getZoomStatus() {
 Future<void> _initializeVideo(String url) async {
   // Guard 1: Prevent multiple simultaneous initializations
   if (_isInitializing) {
-    print('Already initializing video, skipping...');
     return;
   }
   
   // Guard 2: Don't re-initialize the same video
   if (_lastInitializedUrl == url && _isVideoInitialized) {
-    print('Video already initialized with same URL, skipping...');
     return;
   }
   
   _isInitializing = true;
   
-  print('=== DEBUG VIDEO INITIALIZATION ===');
-  print('URL: $url');
-  print('isYouTubeUrl check: ${isYouTubeUrl(url)}');
-  print('extractYouTubeId result: ${extractYouTubeId(url)}');
   
   try {
     // Store old controllers
@@ -2219,49 +2184,41 @@ Future<void> _initializeVideo(String url) async {
     if (oldYoutubeController != null) {
       try {
         oldYoutubeController.dispose();
-        print('Disposed old YouTube controller');
       } catch (e) {
-        print('Error disposing YouTube controller: $e');
-      }
+      // Intentionally ignored.
+    }
     }
     if (oldChewieController != null) {
       try {
         oldChewieController.dispose();
-        print('Disposed old Chewie controller');
       } catch (e) {
-        print('Error disposing Chewie controller: $e');
-      }
+      // Intentionally ignored.
+    }
     }
     if (oldVideoController != null) {
       try {
         await oldVideoController.dispose();
-        print('Disposed old video controller');
       } catch (e) {
-        print('Error disposing video controller: $e');
-      }
+      // Intentionally ignored.
+    }
     }
 
     // Wait for disposal to complete
     await Future.delayed(const Duration(milliseconds: 200));
 
     final sanitized = url.replaceAll(r'\/', '/').trim();
-    print('Sanitized URL: $sanitized');
     
     // Check if it's a YouTube video
     if (isYouTubeUrl(sanitized)) {
-      print('Detected as YouTube URL');
       await _initializeYouTubePlayer(sanitized);
     } else {
-      print('Detected as regular video URL');
       await _initializeDirectVideoPlayer(sanitized);
     }
     
     // Mark URL as initialized
     _lastInitializedUrl = url;
-    print('Video initialization completed successfully');
     
   } catch (e) {
-    print('Error initializing video: $e');
     if (mounted) {
       setState(() {
         _isVideoInitialized = true;
@@ -2277,7 +2234,6 @@ Future<void> _initializeVideo(String url) async {
 Future<void> _initializeYouTubePlayer(String url) async {
   try {
     final videoId = extractYouTubeId(url);
-    print('Extracted YouTube ID: $videoId');
 
     if (videoId == null || videoId.isEmpty) {
       throw Exception('Could not extract YouTube video ID from: $url');
@@ -2302,7 +2258,6 @@ Future<void> _initializeYouTubePlayer(String url) async {
     // Add error listener
     controller.addListener(() {
       if (controller.value.hasError == true) {
-        print('YouTube player error: ${controller.value.metaData}');
         if (mounted) {
           setState(() {
             _videoError = 'YouTube error: ${controller.value.metaData}';
@@ -2321,10 +2276,8 @@ Future<void> _initializeYouTubePlayer(String url) async {
       });
     }
     
-    print('YouTube player initialized successfully');
     
   } catch (e) {
-    print('Error initializing YouTube player: $e');
     if (mounted) {
       setState(() {
         _isVideoInitialized = true;
@@ -2339,7 +2292,6 @@ Future<void> _initializeYouTubePlayer(String url) async {
 
 Future<void> _initializeDirectVideoPlayer(String url) async {
   try {
-    print('Initializing direct video player for URL: $url');
     
     if (url.contains('youtube') || url.contains('youtu.be')) {
       throw Exception('This appears to be a YouTube URL. Please check your YouTube detection logic.');
@@ -2397,7 +2349,7 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
         playedColor: const Color(0xFF6366F1),
         handleColor: const Color(0xFF6366F1),
         backgroundColor: Colors.grey,
-        bufferedColor: Colors.grey.withOpacity(0.5),
+        bufferedColor: Colors.grey.withValues(alpha: 0.5),
       ),
     );
 
@@ -2406,10 +2358,8 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
       _isVideoInitialized = true;
     });
     
-    print('Direct video player initialized successfully');
     
   } catch (e) {
-    print('Error initializing direct video player: $e');
     throw Exception('Failed to initialize video: $e');
   }
 }
@@ -2749,7 +2699,7 @@ Future<void> _handleBackButton() async {
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.04),
+                                          color: Colors.black.withValues(alpha: 0.04),
                                           blurRadius: 10,
                                           offset: const Offset(0, 2),
                                         ),
@@ -2812,7 +2762,7 @@ Future<void> _handleBackButton() async {
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.04),
+                                          color: Colors.black.withValues(alpha: 0.04),
                                           blurRadius: 10,
                                           offset: const Offset(0, 2),
                                         ),
@@ -2909,7 +2859,7 @@ Future<void> _handleBackButton() async {
                                                 children: [
                                                   CustomPaint(
                                                     painter: _DashedRRectPainter(
-                                                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                                                      color: const Color(0xFF6366F1).withValues(alpha: 0.3),
                                                       strokeWidth: 2,
                                                       dashLength: 8,
                                                       gapLength: 6,
@@ -2921,7 +2871,7 @@ Future<void> _handleBackButton() async {
                                                         horizontal: 24,
                                                       ),
                                                       decoration: BoxDecoration(
-                                                        color: const Color(0xFF6366F1).withOpacity(0.02),
+                                                        color: const Color(0xFF6366F1).withValues(alpha: 0.02),
                                                         borderRadius: BorderRadius.circular(16),
                                                       ),
                                                       child: Column(
@@ -2930,7 +2880,7 @@ Future<void> _handleBackButton() async {
                                                           Container(
                                                             padding: const EdgeInsets.all(16),
                                                             decoration: BoxDecoration(
-                                                              color: const Color(0xFF6366F1).withOpacity(0.1),
+                                                              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                                                               shape: BoxShape.circle,
                                                             ),
                                                             child: const Icon(
@@ -2992,10 +2942,10 @@ Future<void> _handleBackButton() async {
                                                     Container(
                                                       padding: const EdgeInsets.all(16),
                                                       decoration: BoxDecoration(
-                                                        color: const Color(0xFF6366F1).withOpacity(0.05),
+                                                        color: const Color(0xFF6366F1).withValues(alpha: 0.05),
                                                         borderRadius: BorderRadius.circular(12),
                                                         border: Border.all(
-                                                          color: const Color(0xFF6366F1).withOpacity(0.2),
+                                                          color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                                                         ),
                                                       ),
                                                       child: Row(
@@ -3003,7 +2953,7 @@ Future<void> _handleBackButton() async {
                                                           Container(
                                                             padding: const EdgeInsets.all(8),
                                                             decoration: BoxDecoration(
-                                                              color: const Color(0xFF6366F1).withOpacity(0.1),
+                                                              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                                                               borderRadius: BorderRadius.circular(8),
                                                             ),
                                                             child: const Icon(
@@ -3044,10 +2994,10 @@ Future<void> _handleBackButton() async {
                                                       child: Container(
                                                         padding: const EdgeInsets.all(12),
                                                         decoration: BoxDecoration(
-                                                          color: Colors.red.withOpacity(0.05),
+                                                          color: Colors.red.withValues(alpha: 0.05),
                                                           borderRadius: BorderRadius.circular(8),
                                                           border: Border.all(
-                                                            color: Colors.red.withOpacity(0.2),
+                                                            color: Colors.red.withValues(alpha: 0.2),
                                                           ),
                                                         ),
                                                         child: Row(
@@ -3224,7 +3174,7 @@ Future<void> _handleBackButton() async {
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF6366F1).withOpacity(0.05),
+                                            color: const Color(0xFF6366F1).withValues(alpha: 0.05),
                                             borderRadius: BorderRadius.circular(10),
                                           ),
                                           child: Row(
@@ -3270,7 +3220,7 @@ Future<void> _handleBackButton() async {
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, -2),
                             ),
@@ -3436,10 +3386,9 @@ Future<void> _handleBackButton() async {
                                   // Debug: print final payload per submission type
                                   try {
                                     final payloadJson = jsonEncode(submissionData);
-                                    print('Assignment submission payload: $payloadJson');
                                   } catch (e) {
-                                    print('Failed to encode submission payload: $e');
-                                  }
+      // Intentionally ignored.
+    }
 
                                   final success = await provider.submitAssignment(
                                     name: submissionData['name'],
@@ -3489,7 +3438,7 @@ Future<void> _handleBackButton() async {
                                                 borderRadius: BorderRadius.circular(24),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: Colors.black.withOpacity(0.1),
+                                                    color: Colors.black.withValues(alpha: 0.1),
                                                     blurRadius: 40,
                                                     offset: const Offset(0, 10),
                                                   ),
@@ -3503,7 +3452,7 @@ Future<void> _handleBackButton() async {
                                                     width: 80,
                                                     height: 80,
                                                     decoration: BoxDecoration(
-                                                      color: const Color(0xFF10B981).withOpacity(0.1),
+                                                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
                                                       shape: BoxShape.circle,
                                                     ),
                                                     child: const Icon(
@@ -3676,7 +3625,7 @@ Future<void> _handleBackButton() async {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF6366F1).withOpacity(0.1)
+              ? const Color(0xFF6366F1).withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -3821,8 +3770,8 @@ Future<void> _handleBackButton() async {
       return filename;
     }
   } catch (e) {
-    print('Error extracting filename: $e');
-  }
+      // Intentionally ignored.
+    }
   
   // Fallback to timestamp-based name
   return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
@@ -3929,7 +3878,6 @@ Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
     );
     return result;
   } catch (e) {
-    print('Error saving to Downloads: $e');
     return null;
   }
 }
@@ -3957,8 +3905,8 @@ Future<String?> _saveToDownloadsUsingMediaStore(
       return filePath;
     }
   } catch (e) {
-    print('MediaStore save failed: $e');
-  }
+      // Intentionally ignored.
+    }
   return null;
 }
 Future<void> _openFileWithChooser(String filePath) async {
@@ -3967,8 +3915,8 @@ Future<void> _openFileWithChooser(String filePath) async {
   try {
     await platform.invokeMethod('openFile', {'filePath': filePath});
   } catch (e) {
-    print('Error opening file: $e');
-  }
+      // Intentionally ignored.
+    }
 }
 
 // Download Material - simplified version
@@ -4106,7 +4054,6 @@ Future<void> _downloadCertificate(String certificateUrl) async {
       }
     }
   } catch (e) {
-    print('Download error: $e');
     if (mounted) {
       if (Navigator.canPop(context)) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -4134,7 +4081,6 @@ Future<String?> _saveToAppStorage(Uint8List bytes, String fileName) async {
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
   } catch (e) {
-    print('Error saving to app storage: $e');
     return null;
   }
 }
@@ -4204,7 +4150,6 @@ Future<void> _downloadAssignment(String assignmentUrl) async {
       }
     }
   } catch (e) {
-    print('Download error: $e');
     if (mounted) {
       if (Navigator.canPop(context)) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -4228,8 +4173,6 @@ Widget build(BuildContext context) {
       builder: (context, provider, child) {
         final hasLessonRequest =
             widget.profileId != null && widget.lessonId != null;
-        print("lesson: ${widget.lessonId}");
-        print("profile: ${widget.profileId}");
 
         if (!_requestSent && hasLessonRequest && !provider.isLoading) {
           _requestSent = true;
@@ -4497,7 +4440,6 @@ Widget _buildVideoPlayer() {
 
   // YouTube player
   if (_isYoutubeVideo && _youtubeController != null) {
-    print('Rendering YouTube player with ID: ${_youtubeController!.initialVideoId}');
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: YoutubePlayerBuilder(
@@ -4513,7 +4455,6 @@ Widget _buildVideoPlayer() {
             bufferedColor: Colors.grey,
           ),
           onReady: () {
-            print('YouTube player ready and visible');
           },
         ),
         builder: (context, player) {
@@ -4525,7 +4466,6 @@ Widget _buildVideoPlayer() {
 
   // Direct video player
   if (!_isYoutubeVideo && _chewieController != null && _isVideoInitialized) {
-    print('Rendering Chewie player');
     return AspectRatio(
       aspectRatio: 16 / 9,
       key: ValueKey(_videoController.hashCode),
@@ -4556,7 +4496,6 @@ Widget _buildVideoPlayer() {
   }
 
   // Loading state - show while waiting for lesson data or video initialization
-  print('Showing loading state. hasAppliedData: $_hasAppliedLessonData, isInitializing: $_isInitializing, initialized: $_isVideoInitialized');
   return AspectRatio(
     aspectRatio: 16 / 9,
     child: Container(
@@ -4776,7 +4715,7 @@ Widget _buildVideoPlayer() {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.white.withOpacity(0.0),
+                      Colors.white.withValues(alpha: 0.0),
                       Colors.white,
                     ],
                   ),
@@ -4813,7 +4752,7 @@ Widget _buildVideoPlayer() {
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -4900,7 +4839,7 @@ Widget _buildVideoPlayer() {
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -5055,7 +4994,7 @@ Widget _buildVideoPlayer() {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -5340,7 +5279,7 @@ if (_hasAttendance) ...[
       border: Border.all(color: Colors.grey.shade200),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.05),
+          color: Colors.black.withValues(alpha: 0.05),
           blurRadius: 10,
           offset: const Offset(0, 2),
         ),
@@ -5465,7 +5404,7 @@ if (_hasAttendance) ...[
                             strokeWidth: 12,
                             backgroundColor: Colors.transparent,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              const Color(0xFF1D4ED8).withOpacity(0.15),
+                              const Color(0xFF1D4ED8).withValues(alpha: 0.15),
                             ),
                           ),
                         ),
@@ -5632,7 +5571,7 @@ if (_hasAttendance) ...[
             decoration: BoxDecoration(
               color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.3)),
+              border: Border.all(color: const Color(0xFFFFB74D).withValues(alpha: 0.3)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -5770,7 +5709,7 @@ if (_hasAttendance) ...[
               border: Border.all(color: Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -5850,7 +5789,7 @@ if (_hasAttendance) ...[
               border: Border.all(color: Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -5966,7 +5905,7 @@ if (_hasAttendance) ...[
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -6138,11 +6077,6 @@ if (_hasAttendance) ...[
 }
 
 Widget _buildReviewsTab() {
-  print('=== _buildReviewsTab ===');
-  print('_dataLoaded: $_dataLoaded');
-  print('_lessonHasQuiz: $_lessonHasQuiz');
-  print('_quizTaken: $_quizTaken');
-  print('_quizScore: $_quizScore');
 
   // Show loading while waiting for data
   if (!_dataLoaded) {
@@ -6237,7 +6171,7 @@ Widget _buildReviewsTab() {
           decoration: BoxDecoration(
             color: const Color(0xFFFFEBEE),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEF5350).withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -6348,7 +6282,7 @@ Widget _buildReviewsTab() {
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -6471,7 +6405,7 @@ Widget _buildReviewsTab() {
                           strokeWidth: 12,
                           backgroundColor: Colors.transparent,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            const Color(0xFFFFA500).withOpacity(0.15),
+                            const Color(0xFFFFA500).withValues(alpha: 0.15),
                           ),
                         ),
                       ),
@@ -6966,7 +6900,7 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                                       Text(
                                         ' / ${_formatDuration(widget.controller.value.duration)}',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(alpha: 0.7),
                                           fontSize: 14,
                                         ),
                                       ),
@@ -6994,7 +6928,7 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                                               horizontal: 12, vertical: 6),
                                           decoration: BoxDecoration(
                                             color:
-                                                Colors.white.withOpacity(0.2),
+                                                Colors.white.withValues(alpha: 0.2),
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                           ),
@@ -7120,7 +7054,6 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     );
     return result;
   } catch (e) {
-    print('Error saving to Downloads: $e');
     return null;
   }
 }
@@ -7148,7 +7081,6 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
         }
       }
     } catch (e) {
-      debugPrint('PDF download error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -7174,8 +7106,8 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
       return filename;
     }
   } catch (e) {
-    print('Error extracting filename: $e');
-  }
+      // Intentionally ignored.
+    }
   
   return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
 }
@@ -7243,8 +7175,8 @@ Future<void> _openFileWithChooser(String filePath) async {
     const platform = MethodChannel('com.linkskool.app/downloads');
     await platform.invokeMethod('openFile', {'filePath': filePath});
   } catch (e) {
-    print('Error opening file: $e');
-  }
+      // Intentionally ignored.
+    }
 }
 
   @override
@@ -7336,7 +7268,6 @@ Future<void> _openFileWithChooser(String filePath) async {
                           setState(() => _currentPage = page ?? 0);
                         },
                         onError: (error) {
-                          debugPrint('PDF Error: $error');
                         },
                       ),
                     ),
@@ -7408,7 +7339,6 @@ class _CourseBannerAdState extends State<_CourseBannerAd> {
   listener: BannerAdListener(
     onAdLoaded: (_) => mounted ? setState(() => _isLoaded = true) : null,
     onAdFailedToLoad: (ad, error) {
-      print('Banner Ad failed: ${error.code} - ${error.message}');
       ad.dispose();
     },
   ),

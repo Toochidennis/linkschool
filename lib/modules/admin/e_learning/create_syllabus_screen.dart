@@ -100,6 +100,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
         });
       }
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -431,7 +432,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
               Container(
                 padding: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  color: AppColors.backgroundLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
@@ -466,7 +467,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Divider(color: Colors.grey.withOpacity(0.5)),
+        Divider(color: Colors.grey.withValues(alpha: 0.5)),
         const SizedBox(height: 8.0),
       ],
     );

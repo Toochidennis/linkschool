@@ -177,7 +177,7 @@ class _ChallengeAccessDialogState extends State<ChallengeAccessDialog>
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.95),
+                            color: Colors.white.withValues(alpha: 0.95),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Center(
@@ -221,7 +221,7 @@ class _ChallengeAccessDialogState extends State<ChallengeAccessDialog>
                 Container(
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: AppColors.eLearningRedBtnColor.withOpacity(0.1),
+                    color: AppColors.eLearningRedBtnColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -277,7 +277,7 @@ class _ChallengeAccessDialogState extends State<ChallengeAccessDialog>
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 24),
       decoration: BoxDecoration(
-        color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -864,7 +864,7 @@ class _SubscriptionEnforcementDialogState
                           Positioned.fill(
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.95),
+                                color: Colors.white.withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Center(
@@ -917,7 +917,7 @@ class _SubscriptionEnforcementDialogState
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningRedBtnColor.withOpacity(0.1),
+                  color: AppColors.eLearningRedBtnColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -1049,7 +1049,7 @@ class _SubscriptionEnforcementDialogState
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -1147,7 +1147,7 @@ class _SubscriptionEnforcementDialogState
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 24),
       decoration: BoxDecoration(
-        color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -1595,12 +1595,6 @@ class _SubscriptionEnforcementDialogState
           : widget.amount;
       final amountInKobo = finalAmount * 100;
 
-      print('💳 Initiating PaystackFlutter payment...');
-      print(' Original Amount: ₦${widget.amount}');
-      print(' Discount Rate: ${widget.discountRate}');
-      print(' Final Amount: ₦$finalAmount');
-      print(' Email: $email');
-      print(' Reference: $reference');
       final paystackSecretKey = EnvConfig.paystackSecretKey;
       // Step 3: Call PaystackFlutter payment
       PaystackFlutter().pay(
@@ -1625,7 +1619,6 @@ class _SubscriptionEnforcementDialogState
           'final_price': finalAmount,
         },
         onSuccess: (callback) async {
-          print('✅ Payment successful: ${callback.reference}');
 
           // Update user after payment
           await userProvider.updateUserAfterPayment(
@@ -1646,7 +1639,6 @@ class _SubscriptionEnforcementDialogState
           }
         },
         onCancelled: (callback) {
-          print('❌ Payment cancelled or failed: ${callback.reference}');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -1658,7 +1650,6 @@ class _SubscriptionEnforcementDialogState
         },
       );
     } catch (e) {
-      print('❌ Subscription payment error: $e');
       _showError(e.toString());
     } finally {
       if (mounted) setState(() => _isProcessing = false);

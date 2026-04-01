@@ -242,9 +242,9 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                                           gradient: LinearGradient(
                                             colors: [
                                               AppColors.bookText
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                               AppColors.bookText
-                                                  .withOpacity(0.05),
+                                                  .withValues(alpha: 0.05),
                                             ],
                                           ),
                                           borderRadius:
@@ -361,8 +361,8 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    color.withOpacity(0.2),
-                    color.withOpacity(0.1),
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -528,7 +528,7 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.grey.withValues(alpha: 0.1),
                               spreadRadius: 1,
                               blurRadius: 4,
                               offset: Offset(0, 2),

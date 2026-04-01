@@ -235,7 +235,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         await cbtUserProvider.replaceProfiles(profiles);
       }
     } catch (e) {
-      debugPrint("Failed to fetch profiles on load: $e");
+      // Intentionally ignored.
     }
 
     if (!mounted) return;
@@ -544,7 +544,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                             },
                             backgroundColor: Colors.grey.shade100,
                             selectedColor:
-                                const Color(0xFFFFA500).withOpacity(0.2),
+                                const Color(0xFFFFA500).withValues(alpha: 0.2),
                             checkmarkColor: const Color(0xFFFFA500),
                             labelStyle: TextStyle(
                               color: isSelected
@@ -724,37 +724,22 @@ class _ExploreCoursesState extends State<ExploreCourses>
             _activeProfile = activeProfile;
           });
 
-          debugPrint(
-              'After bootstrap - _pendingCourse: ${_pendingCourse?.courseName}');
-          debugPrint(
-              'After bootstrap - _pendingCategory: ${_pendingCategory?.name}');
-          debugPrint('After bootstrap - _activeProfile: ${_activeProfile?.id}');
 
           if (_pendingCourse != null && _pendingCategory != null) {
-            debugPrint('Entering enrollment check block');
             final profileId = _activeProfile?.id;
-            debugPrint('Profile ID: $profileId');
-            debugPrint('Cohort ID: ${_pendingCourse!.cohortId}');
 
             if (profileId != null && _pendingCourse!.cohortId != null) {
-              debugPrint('About to check enrollment...');
               try {
                 final isEnrolled = await CourseService().checkIsEnrolled(
                   cohortId: _pendingCourse!.cohortId!,
                   profileId: profileId,
                 );
-                debugPrint(
-                    'Enrollment check after sign-in: isEnrolled=$isEnrolled for course ${_pendingCourse!.courseName}');
               } catch (e) {
-                debugPrint('Error checking enrollment after sign-in: $e');
-              }
+      // Intentionally ignored.
+    }
             } else {
-              debugPrint(
-                  'Skipped enrollment check - profileId: $profileId, cohortId: ${_pendingCourse!.cohortId}');
             }
           } else {
-            debugPrint(
-                'Skipped enrollment check - _pendingCourse: $_pendingCourse, _pendingCategory: $_pendingCategory');
           }
 
           await _resumePendingCourseSelection();
@@ -781,12 +766,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
  Future<void> _showAccountSwitcherDialog(BuildContext context, dynamic user) async {
   // Prevent multiple dialogs from opening
   if (_isShowingAccountSwitcher) {
-    debugPrint('Dialog already showing, ignoring tap');
     return;
   }
   
  _isShowingAccountSwitcher = true;
- debugPrint('Opening account switcher dialog, flag set to: $_isShowingAccountSwitcher');
 
   final userId = user?.id;
   if (userId == null) {
@@ -813,7 +796,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
           .replaceProfiles(profiles);
     }
   } catch (e) {
-    debugPrint("Failed to fetch profiles: $e");
     _isShowingAccountSwitcher = false;
     return;
   }
@@ -932,14 +914,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
       },
     );
   } finally {
-    debugPrint('Account switcher dialog closed');
-    debugPrint('Flag before reset: $_isShowingAccountSwitcher');
     
     // Add a small delay to ensure the dialog animation completes
     await Future.delayed(const Duration(milliseconds: 300));
     
     _isShowingAccountSwitcher = false;
-    debugPrint('Flag after reset: $_isShowingAccountSwitcher');
   }
 }
   
@@ -1023,7 +1002,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -1211,7 +1190,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
       shape: BoxShape.circle,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.15),
+          color: Colors.black.withValues(alpha: 0.15),
           blurRadius: 4,
           offset: const Offset(0, 2),
         ),
@@ -1506,7 +1485,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
               border: Border.all(color: borderColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withOpacity(0.3),
+                  color: backgroundColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -1727,7 +1706,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade200.withOpacity(0.3),
+                            color: Colors.grey.shade200.withValues(alpha: 0.3),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -1893,7 +1872,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
                               child: GestureDetector(
                                 onTap: () async {
     if (_isShowingAccountSwitcher) {
-      debugPrint('Dialog already showing, ignoring tap');
       return;
     }
     await _showAccountSwitcherDialog(context, user);
@@ -1985,11 +1963,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
                                   Container(
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFA500)
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                           color: const Color(0xFFFFA500)
-                                              .withOpacity(0.3)),
+                                              .withValues(alpha: 0.3)),
                                     ),
                                     child: IconButton(
                                       icon: const Icon(
@@ -2114,7 +2092,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         child: Material(
           color: Colors.white,
           elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.06),
+          shadowColor: Colors.black.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -2123,8 +2101,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
             onTapCancel: _clearPressedCourseId,
             onTapUp: (_) => _clearPressedCourseId(),
             borderRadius: BorderRadius.circular(12),
-            splashColor: const Color(0xFFFFA500).withOpacity(0.16),
-            highlightColor: const Color(0xFFFFA500).withOpacity(0.08),
+            splashColor: const Color(0xFFFFA500).withValues(alpha: 0.16),
+            highlightColor: const Color(0xFFFFA500).withValues(alpha: 0.08),
             child: AnimatedScale(
               scale: isPressed ? 0.985 : 1.0,
               duration: const Duration(milliseconds: 120),
@@ -2346,7 +2324,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                           opacity: 1,
                           duration: const Duration(milliseconds: 120),
                           child: Container(
-                            color: Colors.white.withOpacity(0.55),
+                            color: Colors.white.withValues(alpha: 0.55),
                             child: const Center(
                               child: SizedBox(
                                 width: 24,

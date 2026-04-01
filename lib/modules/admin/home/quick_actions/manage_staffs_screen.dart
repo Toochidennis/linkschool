@@ -234,7 +234,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
         border: Border.all(color: AppColors.text6Light, width: 1),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -246,7 +246,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -331,7 +331,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
           border: Border.all(color: AppColors.text6Light, width: 1),
           boxShadow: [
             BoxShadow(
-              color: AppColors.text2Light.withOpacity(0.05),
+              color: AppColors.text2Light.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -348,7 +348,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: AppColors.text2Light.withOpacity(0.1),
+                    color: AppColors.text2Light.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: Icon(
@@ -391,8 +391,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: staff['status'] == 'Active'
-                        ? AppColors.attCheckColor2.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                        ? AppColors.attCheckColor2.withValues(alpha: 0.1)
+                        : Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -572,10 +572,10 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.2)),
+        border: Border.all(color: AppColors.text2Light.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -1460,7 +1460,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.text2Light.withOpacity(0.1),
+                                  color: AppColors.text2Light.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(

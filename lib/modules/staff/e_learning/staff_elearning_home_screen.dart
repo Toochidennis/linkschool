@@ -123,10 +123,6 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
   }
 
   void _navigateToCourseDetail(Map<String, dynamic> course, String classId) {
-    print("======Navigating to Course Detail=====");
-    print("Course Name: ${course['course_name']}");
-    print("Course ID: ${course['course_id']}");
-    print("Class ID: $classId");
 
     // Find the classData from levelsWithCourses to get class_name
     final classData = levelsWithCourses.firstWhere(
@@ -141,10 +137,8 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
         'name': classData['class_name']?.toString() ?? '',
       }
     ];
-    print("Class Name: $classesList");
     // Validate classesList
     if (classesList[0]['id'].isEmpty || classesList[0]['name'].isEmpty) {
-      print("Warning: Invalid class data - id or name is empty");
       CustomToaster.toastError(
         context,
         'Navigation Error',
@@ -223,10 +217,9 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
             Provider.of<StaffOverviewProvider>(context, listen: false);
         provider.fetchOverview(academicTerm, year, staffId);
 
-        print("levelsWithCourses: $levelsWithCourses");
       }
     } catch (e) {
-      print("Error loading user data: $e");
+      // Intentionally ignored.
     }
   }
 
@@ -373,8 +366,6 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                                 onTap: () {
                                   if (activity.type.toLowerCase() ==
                                       'material') {
-                                    print(
-                                        "syllabus classes ${activity.classes.map((e) => e.toJson()).toList()}");
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -437,7 +428,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                                     color: Colors.white,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
+                                        color: Colors.black.withValues(alpha: 0.2),
                                         blurRadius: 12,
                                         spreadRadius: 2,
                                         offset: const Offset(0, 4),
@@ -632,11 +623,11 @@ Widget _buildStaffQuizCard({
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [bg.withOpacity(0.95), bg.withOpacity(0.70)],
+          colors: [bg.withValues(alpha: 0.95), bg.withValues(alpha: 0.70)],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -655,7 +646,7 @@ Widget _buildStaffQuizCard({
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.10),
+                  color: Colors.white.withValues(alpha: 0.10),
                 ),
               ),
             ),
@@ -667,7 +658,7 @@ Widget _buildStaffQuizCard({
                 height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                 ),
               ),
             ),
@@ -689,7 +680,7 @@ Widget _buildStaffQuizCard({
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
+                                color: Colors.white.withValues(alpha: 0.85),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.3,
@@ -701,9 +692,9 @@ Widget _buildStaffQuizCard({
                                 horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(999),
-                              color: Colors.white.withOpacity(0.18),
+                              color: Colors.white.withValues(alpha: 0.18),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.22),
+                                color: Colors.white.withValues(alpha: 0.22),
                               ),
                             ),
                             child: Row(
@@ -758,7 +749,7 @@ Widget _buildStaffQuizCard({
                   Text(
                     "Classes",
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -786,9 +777,9 @@ Widget _buildStaffQuizCard({
                             horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.white.withOpacity(0.14),
+                          color: Colors.white.withValues(alpha: 0.14),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                           ),
                         ),
                         child: const Column(
@@ -820,9 +811,9 @@ Widget _buildStaffQuizCard({
                             horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.white.withOpacity(0.14),
+                          color: Colors.white.withValues(alpha: 0.14),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                           ),
                         ),
                         child: const Column(

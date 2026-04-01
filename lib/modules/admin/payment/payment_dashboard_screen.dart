@@ -92,7 +92,6 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen>
       final token = userBox.get('token');
 
       if (token == null || token.toString().isEmpty) {
-        print('No authentication token found. User needs to login again.');
         // Optionally redirect to login screen
         return;
       }
@@ -101,9 +100,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen>
       apiService.setAuthToken(token.toString());
       _paymentService = PaymentService(apiService);
 
-      print('ApiService initialized with authentication token');
     } catch (e) {
-      print('Error initializing services: $e');
       // Handle error - maybe show error dialog or redirect to login
     }
   }
@@ -121,7 +118,6 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen>
       _runEntranceAnimations();
     } catch (e) {
       setState(() => _isLoading = false);
-      print('Error loading dashboard data: $e');
     }
   }
 
@@ -194,7 +190,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen>
               border: Border.all(color: borderColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withOpacity(0.3),
+                  color: backgroundColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),

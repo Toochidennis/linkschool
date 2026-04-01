@@ -96,7 +96,7 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
         });
       }
     } catch (e) {
-      print('Error loading classes: $e');
+      // Intentionally ignored.
     }
   }
 

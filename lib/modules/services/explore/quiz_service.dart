@@ -42,6 +42,7 @@ class QuizResultService {
       await prefs.setString(_quizResultsKey, json.encode(existingResults));
 
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -124,6 +125,7 @@ class QuizResultService {
 
       await prefs.setString(_quizResultsKey, json.encode(existingResults));
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -133,6 +135,7 @@ class QuizResultService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_quizResultsKey);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 }

@@ -146,6 +146,7 @@ class CBTProvider extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 
@@ -227,8 +228,6 @@ class CBTProvider extends ChangeNotifier {
       (subject) => subject.name == subjectName,
       orElse: () => SubjectModel(id: '', name: subjectName, years: []),
     );
-    debugPrint(
-        'Year models for $subjectName: ${subject.years?.map((y) => y.year).join(', ')}');
     return subject.years ?? [];
   }
 

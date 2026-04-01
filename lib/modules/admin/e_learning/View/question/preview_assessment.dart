@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/timer_widget.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/preview_quiz_assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 
-import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart'
     show QuizQuestion, OptionsQuestion, TextQuestion, TypedAnswerQuestion;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +17,7 @@ class PreviewAssessment extends StatefulWidget {
   final List<Map<String, dynamic>>? questions;
   final String? mark;
   final String? title;
-  final correctAnswer;
+  final dynamic correctAnswer;
   const PreviewAssessment(
       {super.key,
       this.timer,
@@ -31,17 +28,15 @@ class PreviewAssessment extends StatefulWidget {
       this.title});
 
   @override
-  _PreviewAssessmentState createState() => _PreviewAssessmentState();
+  State<PreviewAssessment> createState() => _PreviewAssessmentState();
 }
 
 class _PreviewAssessmentState extends State<PreviewAssessment> {
-  bool _isTimerStopped = false;
   int _currentQuestionIndex = 0;
   late int _totalQuestions;
   String? _selectedOption;
   String? _typedAnswer;
   bool _isAnswered = false;
-  bool _isCorrect = false;
   late double opacity;
   dynamic _tempAnswer;
   bool _isEditMode = false;
@@ -64,17 +59,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
     super.dispose();
   }
 
-  String _formatTime(int seconds) {
-    int hours = seconds ~/ 3600;
-    int minutes = (seconds % 3600) ~/ 60;
-    int remainingSeconds = seconds % 60;
-    if (hours == 0) {
-      return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
-    } else {
-      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-    }
-  }
-
   // Fixed _loadQuestions method in PreviewAssessment
   Future<void> _loadQuestions() async {
     try {
@@ -84,12 +68,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
       final String? savedDuration = prefs.getString('preview_duration');
       final bool isEditMode = prefs.getBool('is_edit_mode') ?? false;
 
-      print('=== LOADING QUESTIONS DEBUG ===');
-      print('SavedQuestions exists: ${savedQuestions != null}');
-      print('SavedQuestions length: ${savedQuestions?.length ?? 0}');
-      print('SavedTitle: $savedTitle');
-      print('SavedDuration: $savedDuration');
-      print('IsEditMode: $isEditMode');
 
       // Set preview metadata
       setState(() {
@@ -98,7 +76,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
         if (savedDuration != null) {
           final seconds = int.tryParse(savedDuration) ?? 3600;
           _previewDuration = Duration(seconds: seconds);
-          print('Parsed duration: $seconds seconds');
         }
       });
 
@@ -106,42 +83,33 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
 
       // Prefer questions passed via widget
       if (widget.questions != null && widget.questions!.isNotEmpty) {
-        print(
-            'Loading questions from widget.questions: ${widget.questions!.length}');
         for (int i = 0; i < widget.questions!.length; i++) {
           try {
             final q = widget.questions![i];
             final QuizQuestion processedQuestion = _processQuestionData(q, i);
             loadedQuestions.add(processedQuestion);
           } catch (e) {
-            print('Error processing widget question $i: $e');
             loadedQuestions.add(_createFallbackQuestion(i));
           }
         }
       } else if (savedQuestions != null && savedQuestions.isNotEmpty) {
-        print('Loading questions from SharedPreferences...');
 
         try {
           final List<dynamic> questionsJson = jsonDecode(savedQuestions);
-          print(
-              'Successfully decoded ${questionsJson.length} questions from JSON');
 
           // Process each question with better error handling
           for (int i = 0; i < questionsJson.length; i++) {
             try {
               final q = questionsJson[i] as Map<String, dynamic>;
-              print('Processing question $i: ${q['question_text']}');
 
               final QuizQuestion processedQuestion = _processQuestionData(q, i);
               loadedQuestions.add(processedQuestion);
             } catch (e) {
-              print('Error processing question $i: $e');
               // Create a fallback question to prevent complete failure
               loadedQuestions.add(_createFallbackQuestion(i));
             }
           }
         } catch (jsonError) {
-          print('JSON decode error: $jsonError');
           // Fall through to widget.questions fallback
         }
       }
@@ -157,34 +125,21 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
               List<dynamic>.filled(_totalQuestions, null, growable: false);
         });
 
-        print('=== QUESTIONS LOADED SUCCESSFULLY ===');
-        print('Total questions: $_totalQuestions');
         for (int i = 0; i < questions.length; i++) {
           final q = questions[i];
-          print('Question $i: "${q.questionText}" (${q.runtimeType})');
           if (q is TypedAnswerQuestion) {
-            print('  - Type: Short Answer');
-            print('  - Correct: ${q.correctAnswer}');
           } else if (q is TextQuestion) {
-            print('  - Type: Multiple Choice');
-            print('  - Options: ${q.options.length}');
-            print('  - Correct: ${q.correctAnswers}');
           }
-          print('  - Grade: ${q.questionGrade}');
-          print('  - Has Image: ${q.imageUrl != null}');
         }
       } else {
         // No questions available at all
-        print('ERROR: No questions found from any source');
         setState(() {
           questions = [];
           _totalQuestions = 0;
           userAnswers = [];
         });
       }
-    } catch (e, stackTrace) {
-      print('Critical error in _loadQuestions: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
 
       // Set empty state to prevent crashes
       setState(() {
@@ -203,7 +158,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
     final int questionGrade =
         int.tryParse(q['question_grade']?.toString() ?? '0') ?? 1;
 
-    print('  Processing: "$questionText" (Grade: $questionGrade)');
 
     // Handle question image
     String? imagePath = _processQuestionImage(q['question_files']);
@@ -247,7 +201,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
   TextQuestion _createMultipleChoiceQuestion(Map<String, dynamic> q,
       String topic, String questionText, int questionGrade, String? imagePath) {
     final List<dynamic> optionsData = q['options'] as List<dynamic>? ?? [];
-    print('    Processing ${optionsData.length} options');
 
     final List<Map<String, dynamic>> options = optionsData.map((opt) {
       final optMap = opt as Map<String, dynamic>;
@@ -289,7 +242,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
       correctAnswers.add(correctData.first['text']?.toString() ?? '');
     }
 
-    print('    Correct answers: $correctAnswers');
 
     return TextQuestion(
       topic: topic,
@@ -313,7 +265,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
       correctAnswer = correctData.first['text']?.toString();
     }
 
-    print('    Correct answer: $correctAnswer');
 
     return TypedAnswerQuestion(
       topic: topic,
@@ -350,16 +301,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
     }
   }
 
-  // Helper method to check if a string is base64
-  bool _isBase64String(String str) {
-    try {
-      base64Decode(str);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   // Updated back button handler
   Future<void> _handleBackPress() async {
     final prefs = await SharedPreferences.getInstance();
@@ -367,6 +308,9 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
     await prefs.remove('preview_title');
     await prefs.remove('preview_duration');
     await prefs.remove('is_edit_mode');
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop();
   }
 
@@ -422,7 +366,7 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
                       padding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.3),
+                        color: Colors.orange.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.orange),
                       ),
@@ -447,7 +391,7 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
                       padding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.3),
+                        color: Colors.orange.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.orange),
                       ),
@@ -496,43 +440,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
         ),
       ],
     );
-  }
-
-  void _showStopTimerDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Are you Sure?'),
-        content: const Text('Stopping the timer will end and submit your quiz'),
-        actions: [
-          Row(
-            children: [
-              CustomOutlineButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _submitQuiz();
-                },
-                text: 'End and Submit',
-                borderColor: AppColors.eLearningBtnColor3,
-                textColor: AppColors.eLearningBtnColor3,
-              ),
-              CustomMediumElevatedButton(
-                text: 'Continue Quiz',
-                onPressed: () => Navigator.of(context).pop(),
-                backgroundColor: AppColors.eLearningBtnColor5,
-                textStyle: AppTextStyles.normal600(
-                    fontSize: 14, color: AppColors.backgroundLight),
-                padding: const EdgeInsets.all(8.0),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ).then((_) {
-      setState(() {
-        _isTimerStopped = true;
-      });
-    });
   }
 
   Widget _buildProgressSection() {
@@ -693,7 +600,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
 
   Widget _buildOptions(QuizQuestion question) {
     if (question is OptionsQuestion && question.options.isNotEmpty) {
-      print(question.options);
       return Column(
         children: question.options.map((option) {
           // Check if the option is an image (has imageUrl and is not null)
@@ -770,15 +676,13 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
               value: option['text'],
               groupValue: _selectedOption,
               onChanged: (value) {
-                setState(() {
-                  _selectedOption = value;
-                  _tempAnswer =
-                      value; // Store in _tempAnswer instead of userAnswers
-                  _isAnswered = true;
-                  _isCorrect = question is TextQuestion &&
-                      (question).correctAnswers.contains(value);
-                });
-              },
+              setState(() {
+                _selectedOption = value;
+                _tempAnswer =
+                    value; // Store in _tempAnswer instead of userAnswers
+                _isAnswered = true;
+              });
+            },
               activeColor: Colors.blue,
               tileColor: Colors.transparent,
             ),
@@ -793,9 +697,6 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
             _typedAnswer = value;
             _tempAnswer = value;
             _isAnswered = value.isNotEmpty;
-            _isCorrect = question.correctAnswer != null &&
-                value.trim().toLowerCase() ==
-                    question.correctAnswer!.toLowerCase();
           });
         },
         decoration: const InputDecoration(
@@ -809,12 +710,7 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
 
   Color _getOptionColor(String option) {
     if (_selectedOption == option && _isAnswered) {
-      // return _isCorrect
-      //     ? const Color.fromARGB(255, 230, 236, 255)
-      //     : AppColors.eLearningBtnColor7;
-
       return const Color.fromARGB(255, 230, 236, 255);
-      // Red for incorrect
     }
     return Colors.transparent;
   }
@@ -885,30 +781,18 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
       _typedAnswer = null;
       _textController.clear(); // Clear the text field
       _isAnswered = _selectedOption != null;
-      _isCorrect = question is TextQuestion &&
-          (question).correctAnswers.contains(_selectedOption);
     } else if (question is TypedAnswerQuestion) {
       _typedAnswer = answer as String?;
       _selectedOption = null;
       _textController.text =
           _typedAnswer ?? ''; // Restore previous answer or clear
       _isAnswered = _typedAnswer != null && _typedAnswer!.isNotEmpty;
-      _isCorrect = question.correctAnswer != null &&
-          _typedAnswer != null &&
-          _typedAnswer!.trim().toLowerCase() ==
-              question.correctAnswer!.toLowerCase();
     } else {
       _selectedOption = null;
       _typedAnswer = null;
       _textController.clear(); // Clear the text field
       _isAnswered = false;
-      _isCorrect = false;
     }
-  }
-
-  void _resetQuestionState() {
-    // This is now handled by _restoreUserAnswer when navigating
-    _restoreUserAnswer();
   }
 
   void _submitQuiz() {

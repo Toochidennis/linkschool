@@ -63,7 +63,6 @@ class AuthProvider with ChangeNotifier {
           loginSource: LoginSource.manual,
         );
 
-        print('✅ Login successful - User role: ${_user!.role}');
         notifyListeners();
       } else {
         throw Exception(response.message);
@@ -94,9 +93,8 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isDemoLogin', isDemoLogin);
 
-      print('🔐 Login credentials saved securely');
     } catch (e) {
-      print('⚠️ Warning: Could not save credentials: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -200,7 +198,6 @@ class AuthProvider with ChangeNotifier {
   /// Check login status on app startup - always attempts fresh login if credentials exist
   Future<void> checkLoginStatus() async {
     try {
-      print('🔍 Checking login status...');
 
       final userBox = Hive.box('userData');
 
@@ -213,32 +210,23 @@ class AuthProvider with ChangeNotifier {
           savedPassword != null &&
           savedSchoolCode != null;
 
-      print('📊 Credentials Check:');
-      print('  - Has saved credentials: $hasSecureCredentials');
-      print('  - Saved username: ${savedUsername ?? "none"}');
 
       // If we have saved credentials, always attempt a fresh login
       if (hasSecureCredentials) {
-        print('🔑 Found saved credentials - attempting login...');
         final result = await _attemptSilentLogin();
 
         if (result == SilentLoginResult.success) {
-          print('✅ Login successful with saved credentials');
           return;
         } else if (result == SilentLoginResult.networkError) {
-          print(
-              '⚠️ Silent login failed due to network - restoring cached session');
           await _restoreFromSavedSession();
           return;
         } else {
-          print('⚠️ Login failed with saved credentials - clearing them');
           // Clear invalid credentials
           await _clearSavedCredentials();
         }
       }
 
       // No valid credentials - user needs to log in manually
-      print('⚠️ No saved credentials found - user not logged in');
       _isLoggedIn = false;
       _user = null;
       _token = null;
@@ -247,8 +235,6 @@ class AuthProvider with ChangeNotifier {
       _settings = null;
       notifyListeners();
     } catch (e, stackTrace) {
-      print('❌ Error checking login status: $e');
-      print('Stack trace: $stackTrace');
       await _clearCorruptedSession();
     }
   }
@@ -257,12 +243,10 @@ class AuthProvider with ChangeNotifier {
   void _attemptSilentLoginInBackground() {
     Future.microtask(() async {
       try {
-        print('🔄 Background session refresh started...');
         await _attemptSilentLogin();
-        print('✅ Background session refresh completed');
       } catch (e) {
-        print('⚠️ Background session refresh failed: $e');
-      }
+      // Intentionally ignored.
+    }
     });
   }
 
@@ -283,11 +267,9 @@ class AuthProvider with ChangeNotifier {
       final demoLoginPrefs = prefs.getBool('isDemoLogin') ?? false;
 
       if (username == null || password == null || schoolCode == null) {
-        print('❌ Missing credentials for silent login');
         return SilentLoginResult.invalidCredentials;
       }
 
-      print('🔄 Performing silent login for user: $username');
 
       // Perform login in background
       final response = await _authService.login(username, password, schoolCode);
@@ -303,10 +285,8 @@ class AuthProvider with ChangeNotifier {
         _isSilentLoginInProgress = false;
         notifyListeners();
 
-        print('✅ Silent login completed - Fresh data loaded');
         return SilentLoginResult.success;
       } else {
-        print('❌ Silent login failed: ${response.message}');
         final message = response.message.toLowerCase();
         if (message.contains('network') ||
             message.contains('socketexception') ||
@@ -316,7 +296,6 @@ class AuthProvider with ChangeNotifier {
         return SilentLoginResult.invalidCredentials;
       }
     } catch (e) {
-      print('❌ Silent login error: $e');
       final message = e.toString().toLowerCase();
       if (message.contains('network') ||
           message.contains('socketexception') ||
@@ -342,12 +321,6 @@ class AuthProvider with ChangeNotifier {
     final demoLoginHive = userBox.get('isDemoLogin', defaultValue: false);
     final demoLoginPrefs = prefs.getBool('isDemoLogin') ?? false;
 
-    print('📊 Session Status:');
-    print('  - Hive isLoggedIn: $isLoggedInHive');
-    print('  - Prefs isLoggedIn: $isLoggedInPrefs');
-    print('  - Session valid: $sessionValid');
-    print('  - Has userData: ${userData != null}');
-    print('  - Has token: ${token != null}');
 
     if ((isLoggedInHive || isLoggedInPrefs) &&
         userData != null &&
@@ -355,14 +328,12 @@ class AuthProvider with ChangeNotifier {
       final userDataMap = _deepConvertMap(userData);
 
       if (userDataMap == null || !userDataMap.containsKey('data')) {
-        print('❌ Invalid userData format, clearing session');
         await _clearCorruptedSession();
         return;
       }
 
       final userDataContent = userDataMap['data'];
       if (userDataContent == null || userDataContent is! Map<String, dynamic>) {
-        print('❌ Invalid user data content, clearing session');
         await _clearCorruptedSession();
         return;
       }
@@ -385,18 +356,12 @@ class AuthProvider with ChangeNotifier {
         await userBox.put(
             'lastLoginTime', DateTime.now().millisecondsSinceEpoch);
 
-        print('✅ Session restored from cache');
-        print('   - User: ${_user!.name}');
-        print('   - Role: ${_user!.role}');
 
         notifyListeners();
       } catch (e, stackTrace) {
-        print('❌ Error restoring session: $e');
-        print('Stack trace: $stackTrace');
         await _clearCorruptedSession();
       }
     } else {
-      print('⚠️ No valid session found');
       _isLoggedIn = false;
       _user = null;
       _token = null;
@@ -423,16 +388,14 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('isDemoLogin');
 
-      print('🔐 Saved credentials cleared');
     } catch (e) {
-      print('⚠️ Error clearing saved credentials: $e');
+      // Intentionally ignored.
     }
   }
 
   /// Logout - clears all saved user data and credentials
   Future<void> logout() async {
     try {
-      print('🚪 Logging out...');
 
       // Always clear saved credentials on logout
       await _clearSavedCredentials();
@@ -457,10 +420,8 @@ class AuthProvider with ChangeNotifier {
       _loginSource = LoginSource.none;
       _settings = null;
 
-      print('✅ Logout successful - all user data cleared');
       notifyListeners();
     } catch (e) {
-      print('❌ Error during logout: $e');
       _user = null;
       _token = null;
       _isLoggedIn = false;
@@ -516,10 +477,9 @@ class AuthProvider with ChangeNotifier {
       _loginSource = LoginSource.none;
       _settings = null;
 
-      print('🧹 Corrupted session cleared');
       notifyListeners();
     } catch (e) {
-      print('❌ Error clearing corrupted session: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -656,7 +616,6 @@ class AuthProvider with ChangeNotifier {
     if (_isLoggedIn && _token != null) {
       final userBox = Hive.box('userData');
       await userBox.put('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
-      print('♻️ Session refreshed');
     }
   }
 

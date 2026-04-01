@@ -28,6 +28,7 @@ class SubjectProvider with ChangeNotifier {
     try {
       _subjects = await _subjectService.getAllSubjects();
     } catch (error) {
+      // Intentionally ignored.
     }
 
     _isLoading = false;
@@ -41,6 +42,7 @@ class SubjectProvider with ChangeNotifier {
     try {
       _levels = await _subjectService.getAllLevels();
     } catch (error) {
+      // Intentionally ignored.
     }
 
     _isLoadingLevels = false;

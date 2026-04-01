@@ -21,6 +21,7 @@ class AccountService {
       } else {
       }
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 

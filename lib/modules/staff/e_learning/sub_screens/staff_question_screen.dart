@@ -24,7 +24,7 @@ class StaffQuestionScreen extends StatefulWidget {
   final String? levelId;
   final String? courseName;
   final int? syllabusId;
-  final syllabusClasses;
+  final dynamic syllabusClasses;
 
   final bool editMode;
   final Question? questionToEdit;
@@ -140,7 +140,6 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
   }
 
   Future<void> _loadUserData() async {
-    print('selected levellllllllllllllllllllllllllId: ${widget.levelId}');
 
     try {
       final userBox = Hive.box('userData');
@@ -164,7 +163,7 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -191,7 +190,6 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
         final storedCourseId = userBox.get('selectedCourseId');
         final storedLevelId = userBox.get('selectedLevelId');
         final selectedClassIds = userBox.get('selectedClassIds') ?? [];
-        print('Selected Class IDs: $selectedClassIds');
 
         final courseId = widget.courseId ??
             storedCourseId?.toString() ??
@@ -202,7 +200,6 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
         final storedUserData =
             userBox.get('userData') ?? userBox.get('loginResponse');
         if (storedUserData == null) {
-          print('Error: No user data found in Hive');
           return;
         }
         final processedData = storedUserData is String
@@ -211,8 +208,6 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
         final response = processedData['response'] ?? processedData;
         final data = response['data'] ?? response;
         final classes = data['classes'] ?? [];
-        print(
-            'Classes Data: ${const JsonEncoder.withIndent('  ').convert(classes)}');
 
         final classIdList =
             selectedClassIds.map<Map<String, String>>((classId) {
@@ -238,8 +233,6 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
             'name': (classData['class_name']?.toString() ?? _selectedClass),
           });
         }
-        print(
-            'Class ID List: ${const JsonEncoder.withIndent('  ').convert(classIdList)}');
 
         final question = Question(
           topicId: _selectedTopicId ?? 0,
@@ -274,14 +267,11 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
           'creator_id': creatorId ?? 0,
         };
 
-        print(
-            'Complete Question Data: ${const JsonEncoder.withIndent('  ').convert(questionData)}');
 
         await Future.delayed(const Duration(seconds: 1));
 
         if (mounted) {
           widget.onSave(question);
-          print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS $_selectedDuration');
 
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -300,7 +290,6 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
           );
         }
       } catch (e) {
-        print('Error saving question: $e');
         if (mounted) {
           CustomToaster.toastError(
             context,
@@ -513,7 +502,7 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
               Container(
                 padding: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  color: AppColors.backgroundLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
@@ -532,7 +521,7 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
                         ? Colors.transparent
                         : isValid
                             ? AppColors.eLearningBtnColor2
-                            : Colors.red.withOpacity(0.2),
+                            : Colors.red.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(18),
                     border: isValid
                         ? null
@@ -580,7 +569,7 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Divider(color: Colors.grey.withOpacity(0.5)),
+        Divider(color: Colors.grey.withValues(alpha: 0.5)),
         const SizedBox(height: 8.0),
       ],
     );
@@ -797,8 +786,6 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
         ),
       ),
     );
-    print(
-        "Selected ${widget.syllabusId!} Class: ${widget.levelId}, Syllabus ID: ${widget.syllabusId}");
     if (result != null && result is Map) {
       setState(() {
         _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
@@ -978,7 +965,7 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundLight.withOpacity(0.1),
+                    color: AppColors.backgroundLight.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -1005,7 +992,7 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundLight.withOpacity(0.1),
+                    color: AppColors.backgroundLight.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(

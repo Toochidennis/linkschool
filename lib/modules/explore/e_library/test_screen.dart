@@ -114,13 +114,7 @@ final TimerController _timerController = TimerController();
           limit: widget.questionLimit,
           randomizeQuestions: true,
         );
-        print("Fetching exam data for examTypeId: ${widget.examTypeId}");
-        print(
-            "SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
-        print("Question Limit: ${widget.questionLimit ?? 'All'}");
         if (widget.totalDurationInSeconds != null) {
-          print(
-              "⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
         }
       }
     });
@@ -138,13 +132,11 @@ final TimerController _timerController = TimerController();
     if (hasPaid) return false;
     final mode = await _subscriptionService.getAdMode();
     final isActive = mode == 'continue_with_ads';
-    print('[_isContinueWithAdsActive] adMode: $mode, isActive: $isActive');
     return isActive;
   }
 
   Future<void> _loadAdMode() async {
     final isActive = await _isContinueWithAdsActive();
-    print('[_loadAdMode] Loaded ad mode - isActive: $isActive');
     if (!mounted) return;
     setState(() {
       _isContinueWithAds = isActive;
@@ -194,17 +186,10 @@ final TimerController _timerController = TimerController();
     }
     
     // Debug logging
-    print('=== ADS GATE DEBUG ===');
-    print('_isShowingAdsGate: $_isShowingAdsGate');
-    print('isActive: $isActive');
-    print('attemptedCount: $attemptedCount');
-    print('attemptedCount: $attemptedCount');
-    print('======================');
     _timerController.pause();
     _isShowingAdsGate = true;
     _adsGatePending = true;
     try {
-      print('==== Showing ADS GATE at attempt $attemptedCount ====');
       if (!mounted) return false;
 
       final result = await showDialog<String>(
@@ -274,7 +259,6 @@ final TimerController _timerController = TimerController();
 
     if (!wasAttempted) {
       _attemptedQuestionIndexes.add(questionIndex);
-      print('[_registerAttemptAndGate] Attempted count: ${_attemptedQuestionIndexes.length}');
     }
 
     final attemptedCount = _attemptedQuestionIndexes.length;
@@ -292,10 +276,8 @@ final TimerController _timerController = TimerController();
   Future<void> _handleAnswerTap(ExamProvider provider, int index) async {
     final questionIndex = provider.currentQuestionIndex;
     final wasAttempted = _attemptedQuestionIndexes.contains(questionIndex);
-    print('[_handleAnswerTap] Question $questionIndex answered. Was previously attempted: $wasAttempted');
     provider.selectAnswer(questionIndex, index);
     if (wasAttempted) {
-      print('[_handleAnswerTap] Question already attempted');
     }
   }
 
@@ -338,13 +320,7 @@ final TimerController _timerController = TimerController();
       limit: widget.questionLimit,
       randomizeQuestions: true,
     );
-    print("Fetching exam data for examTypeId: ${widget.examTypeId}");
-    print(
-        "SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
-    print("Question Limit: ${widget.questionLimit ?? 'All'}");
     if (widget.totalDurationInSeconds != null) {
-      print(
-          "⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
     }
   }
 
@@ -643,7 +619,7 @@ final TimerController _timerController = TimerController();
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -840,7 +816,7 @@ final TimerController _timerController = TimerController();
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -855,7 +831,7 @@ final TimerController _timerController = TimerController();
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.15),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -912,8 +888,8 @@ final TimerController _timerController = TimerController();
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withOpacity(0),
-                          Colors.white.withOpacity(0.7),
+                          Colors.white.withValues(alpha: 0),
+                          Colors.white.withValues(alpha: 0.7),
                           Colors.white,
                         ],
                         stops: const [0.0, 0.5, 1.0],
@@ -982,7 +958,7 @@ final TimerController _timerController = TimerController();
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1160,7 +1136,7 @@ final TimerController _timerController = TimerController();
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 2,
             offset: const Offset(0, 1),
@@ -1235,7 +1211,6 @@ final TimerController _timerController = TimerController();
       }
       return null;
     } catch (e) {
-      print('Error extracting file URL: $e');
       return null;
     }
   }
@@ -2088,7 +2063,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2096,7 +2071,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2109,7 +2084,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2138,7 +2113,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontFamily: 'Urbanist',
               ),
             ),
@@ -2153,7 +2128,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2184,7 +2159,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -2269,7 +2244,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2277,7 +2252,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2290,7 +2265,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2334,7 +2309,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2365,7 +2340,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -2422,8 +2397,8 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
 //       final provider = Provider.of<ExamProvider>(context, listen: false);
 //       provider.fetchExamData(widget.examTypeId);
-//       print("Fetching exam data for examTypeId: ${widget.examTypeId}");
-//       print("SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
+
+
 //     });
 //   }
 
@@ -2610,7 +2585,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //               borderRadius: BorderRadius.circular(8),
 //               boxShadow: [
 //                 BoxShadow(
-//                   color: Colors.black.withOpacity(0.1),
+//                   color: Colors.black.withValues(alpha: 0.1),
 //                   blurRadius: 4,
 //                   offset: const Offset(0, 2),
 //                 ),
@@ -2693,7 +2668,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //         borderRadius: BorderRadius.circular(8),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.black.withOpacity(0.1),
+//             color: Colors.black.withValues(alpha: 0.1),
 //             blurRadius: 4,
 //             offset: const Offset(0, 2),
 //           ),
@@ -2762,15 +2737,15 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //       return Container(
 //         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
 //         decoration: BoxDecoration(
-//           color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.white,
+//           color: isSelected ? Colors.blue.withValues(alpha: 0.5) : Colors.white,
 //           borderRadius: BorderRadius.circular(8.0),
 //           border: Border.all(
-//             color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.grey.shade300,
+//             color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.grey.shade300,
 //             width: 1.5,
 //           ),
 //           boxShadow: [
 //             BoxShadow(
-//               color: Colors.grey.withOpacity(0.1),
+//               color: Colors.grey.withValues(alpha: 0.1),
 //               spreadRadius: 1,
 //               blurRadius: 2,
 //               offset: const Offset(0, 1),
@@ -2914,7 +2889,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //               Navigator.of(context).pop(); // Close dialog
               
 //               // Navigate to result screen
-//               print(" questions: ${provider.questions}, userAnswers: ${provider.userAnswers}, isFullyCompleted: $isFullyCompleted");
+
 //               Navigator.pushReplacement(
 //                 context,
 //                 MaterialPageRoute(

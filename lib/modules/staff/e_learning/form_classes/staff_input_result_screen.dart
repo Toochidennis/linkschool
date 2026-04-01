@@ -289,7 +289,6 @@ class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
         child: ElevatedButton(
           onPressed: () {
             // Implement save logic here
-            print(studentData);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.eLearningBtnColor1,

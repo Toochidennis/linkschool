@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -79,10 +79,6 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
       _checkDownloadedSubjects();
     });
 
-    debugPrint(
-      '[SubjectSelection AppOpen][initState] '
-      'adUnitId=${EnvConfig.cbtAdsOpenApiKey}',
-    );
 
     _initAppOpenAdEligibility();
   }
@@ -90,33 +86,17 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    debugPrint(
-      '[SubjectSelection AppOpen][lifecycle] state=$state, '
-      '_shouldShowAdOnResume=$_shouldShowAdOnResume, '
-      '_isNavigatingAway=$_isNavigatingAway, '
-      '_isAppOpenAdLoaded=$_isAppOpenAdLoaded, '
-      '_hasAd=${_appOpenAd != null}, '
-      '_pendingAdShow=$_pendingAdShow',
-    );
 
     if (state == AppLifecycleState.paused) {
       if (!_isNavigatingAway) {
         _shouldShowAdOnResume = true;
-        debugPrint('[SubjectSelection AppOpen] app paused (real background)');
       } else {
-        debugPrint(
-          '[SubjectSelection AppOpen] app paused due to navigation, skipping',
-        );
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
-        debugPrint(
-          '[SubjectSelection AppOpen] resumed from background, trying show',
-        );
         _showAppOpenAd();
         _shouldShowAdOnResume = false;
       } else {
-        debugPrint('[SubjectSelection AppOpen] resumed from navigation');
       }
 
       _isNavigatingAway = false;
@@ -137,7 +117,6 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
   }
 
   Future<void> _initAppOpenAdEligibility() async {
-    debugPrint('[SubjectSelection AppOpen][gate] checking eligibility');
     final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
     if (!mounted) return;
 
@@ -145,9 +124,6 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
       _allowAppOpenAds = allowed;
     });
 
-    debugPrint(
-      '[SubjectSelection AppOpen][gate] allowed=$_allowAppOpenAds',
-    );
 
     if (_allowAppOpenAds) {
       Future.delayed(const Duration(seconds: 2), () {
@@ -160,16 +136,8 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
 
   void _loadAppOpenAd() {
     if (!_allowAppOpenAds) {
-      debugPrint('[SubjectSelection AppOpen][load] blocked by gate');
       return;
     }
-    debugPrint(
-      '[SubjectSelection AppOpen][load] start '
-      'adUnitId=${EnvConfig.cbtAdsOpenApiKey}, '
-      '_isAppOpenAdLoaded=$_isAppOpenAdLoaded, '
-      '_hasAd=${_appOpenAd != null}, '
-      '_pendingAdShow=$_pendingAdShow',
-    );
 
     AppOpenAd.load(
       adUnitId: EnvConfig.cbtAdsOpenApiKey,
@@ -181,23 +149,12 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
           if (mounted) {
             setState(() {});
           }
-          debugPrint(
-            '[SubjectSelection AppOpen][load] success '
-            'adLoaded=$_isAppOpenAdLoaded, hasAd=${_appOpenAd != null}',
-          );
 
           if (_pendingAdShow) {
-            debugPrint(
-              '[SubjectSelection AppOpen][load] pending show requested',
-            );
             _showAppOpenAd();
           }
         },
         onAdFailedToLoad: (LoadAdError error) {
-          debugPrint(
-            '[SubjectSelection AppOpen][load] failed code=${error.code}, '
-            'message=${error.message}',
-          );
           _appOpenAd = null;
           _isAppOpenAdLoaded = false;
           _pendingAdShow = false;
@@ -211,40 +168,25 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
 
   void _showAppOpenAd() {
     if (!_allowAppOpenAds) {
-      debugPrint('[SubjectSelection AppOpen][show] blocked by gate');
       return;
     }
-    debugPrint(
-      '[SubjectSelection AppOpen][show] requested '
-      'loaded=$_isAppOpenAdLoaded, hasAd=${_appOpenAd != null}, '
-      'pending=$_pendingAdShow',
-    );
 
     if (!_isAppOpenAdLoaded || _appOpenAd == null) {
       _pendingAdShow = true;
-      debugPrint(
-        '[SubjectSelection AppOpen][show] not ready, setting pending flag',
-      );
       return;
     }
 
     _pendingAdShow = false;
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (AppOpenAd ad) {
-        debugPrint('[SubjectSelection AppOpen][show] displayed');
       },
       onAdDismissedFullScreenContent: (AppOpenAd ad) {
-        debugPrint('[SubjectSelection AppOpen][show] dismissed');
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
-        debugPrint(
-          '[SubjectSelection AppOpen][show] failed code=${error.code}, '
-          'message=${error.message}',
-        );
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
@@ -466,7 +408,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.arrow_back_rounded,
@@ -496,7 +438,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -539,7 +481,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
           Container(
             padding: const EdgeInsets.all(24),
             decoration:  BoxDecoration(
-              color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+              color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.book_outlined,
@@ -628,7 +570,7 @@ class _SubjectDownloadCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -656,7 +598,7 @@ class _SubjectDownloadCard extends StatelessWidget {
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: accent.withOpacity(0.10),
+                          color: accent.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
@@ -1010,7 +952,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
                   width: 36,
                   height: 36,
                   decoration:  BoxDecoration(
-                    color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.arrow_back_rounded,
@@ -1110,7 +1052,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -1146,7 +1088,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
               decoration: BoxDecoration(
                 color: ready
                     ?  AppColors.eLearningBtnColor1
-                    :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+                    :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Center(
@@ -1228,7 +1170,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1260,7 +1202,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                             width: 46,
                             height: 46,
                             decoration: BoxDecoration(
-                              color: accent.withOpacity(0.10),
+                              color: accent.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
@@ -1362,7 +1304,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 5),
                               decoration: BoxDecoration(
-                                color: accent.withOpacity(0.12),
+                                color: accent.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -1516,7 +1458,7 @@ class _YearPickerSheet extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Material(
                     color: isSelected
-                        ?  AppColors.eLearningBtnColor1.withOpacity(0.1)
+                        ?  AppColors.eLearningBtnColor1.withValues(alpha: 0.1)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
@@ -1549,7 +1491,7 @@ class _YearPickerSheet extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ?  AppColors.eLearningBtnColor1
-                                        .withOpacity(0.15)
+                                        .withValues(alpha: 0.15)
                                     : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -1627,7 +1569,7 @@ class _SummaryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color:  AppColors.eLearningBtnColor1.withOpacity(0.1),
+        color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -1677,7 +1619,7 @@ class _SettingDropdown<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color:  Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color:  AppColors.eLearningBtnColor1.withOpacity(0.3)),
+        border: Border.all(color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1757,7 +1699,7 @@ class _ContinueBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -1771,7 +1713,7 @@ class _ContinueBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: count > 0
                 ?  AppColors.eLearningBtnColor1
-                :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+                :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(30),
           ),
           child: Center(

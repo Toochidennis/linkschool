@@ -19,7 +19,6 @@ class LessonAttendanceService {
       }
 
       final url = '$_baseUrl/public/learning/lessons/$lessonId/attendance';
-      debugPrint('Submitting lesson attendance to $url');
 
       final response = await http.post(
         Uri.parse(url),
@@ -31,11 +30,9 @@ class LessonAttendanceService {
         body: json.encode(payload),
       );
 
-      debugPrint('Attendance response status: ${response.statusCode}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = json.decode(response.body) as Map<String, dynamic>;
-        debugPrint('Attendance submitted successfully');
         return decoded;
       }
 
@@ -50,8 +47,6 @@ class LessonAttendanceService {
         );
       }
     } catch (e, stackTrace) {
-      debugPrint('Error submitting lesson attendance: $e');
-      debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
   }

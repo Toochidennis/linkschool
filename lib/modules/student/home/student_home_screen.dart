@@ -379,10 +379,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
         border:
-            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+            Border.all(color: AppColors.text2Light.withValues(alpha: 0.3), width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -601,10 +601,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.2)),
+        border: Border.all(color: AppColors.text2Light.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -1069,7 +1069,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.text2Light.withOpacity(0.1),
+                            color: AppColors.text2Light.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -1098,7 +1098,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen>
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            color: AppColors.text2Light.withOpacity(0.1),
+                            color: AppColors.text2Light.withValues(alpha: 0.1),
                           ),
                           padding: const EdgeInsets.symmetric(
                               vertical: 6, horizontal: 12),

@@ -123,7 +123,6 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
           : (_selectedGender ?? '').trim();
 
       final birthDateIso = _toIsoDate(_birthDate!);
-      print("Submitting profile: $phone, $gender, $birthDateIso");
 
       await widget.onSave(phone: phone, gender: gender, birthDate: birthDateIso);
       Navigator.of(context).pop();
@@ -208,7 +207,7 @@ class _UserProfileUpdateModalState extends State<UserProfileUpdateModal> {
                     blurRadius: 20,
                     spreadRadius: 0,
                     offset: const Offset(0, 10),
-                    color: Colors.black.withOpacity(0.18),
+                    color: Colors.black.withValues(alpha: 0.18),
                   ),
                 ],
               ),

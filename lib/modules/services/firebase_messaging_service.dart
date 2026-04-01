@@ -32,6 +32,7 @@ class FirebaseMessagingService {
         provisional: false,
       );
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 }

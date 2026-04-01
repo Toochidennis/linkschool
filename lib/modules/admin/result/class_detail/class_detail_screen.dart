@@ -51,26 +51,19 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   void _storeLevelId() async {
     final userBox = Hive.box('userData');
     await userBox.put('currentLevelId', widget.levelId);
-    print('Stored level ID: ${widget.levelId}');
-    print('Hive currentLevelId after store: ${userBox.get('currentLevelId')}');
   }
 
   void _debugHiveContents() {
     final userBox = Hive.box('userData');
-    print('Hive box keys: ${userBox.keys.toList()}');
-    print('Current Level ID: ${widget.levelId}');
     for (var key in userBox.keys) {
-      print('Hive key $key: ${userBox.get(key)}');
     }
   }
 
   Future<void> _loadTerms() async {
-    print(
-        'Loading terms for classId: ${widget.classId}, levelId: ${widget.levelId}');
     try {
       await _termProvider.fetchTerms(widget.classId);
     } catch (e) {
-      print('Error loading terms: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -116,12 +109,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   ])
               .toList();
 
-          print('Loaded Level Names: $levelNames');
-          print('Loaded Class Names: $classNames');
         });
       }
     } catch (e) {
-      print('Error loading user data for class selection: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -213,7 +204,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withValues(alpha: 0.3),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 2))
@@ -221,7 +212,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       ),
       child: Material(
         color: isCurrentClass
-            ? AppColors.primaryLight.withOpacity(0.1)
+            ? AppColors.primaryLight.withValues(alpha: 0.1)
             : AppColors.dialogBtnColor,
         child: InkWell(
           onTap: isCurrentClass ? null : onPressed,
@@ -229,7 +220,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
           child: Ink(
             decoration: BoxDecoration(
               color: isCurrentClass
-                  ? AppColors.primaryLight.withOpacity(0.1)
+                  ? AppColors.primaryLight.withValues(alpha: 0.1)
                   : Colors.white,
               borderRadius: BorderRadius.circular(4),
               border: isCurrentClass
@@ -289,7 +280,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   Widget build(BuildContext context) {
     final termProvider = Provider.of<TermProvider>(context);
 
-    print('Current Terms: ${termProvider.terms}');
 
     return Scaffold(
       appBar: AppBar(
@@ -341,12 +331,12 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.25),
+                          color: Colors.black.withValues(alpha: 0.25),
                           offset: const Offset(0, 2),
                           blurRadius: 4,
                         ),
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.25),
+                          color: Colors.black.withValues(alpha: 0.25),
                           offset: const Offset(0, -1),
                           blurRadius: 4,
                           spreadRadius: 0,
@@ -495,7 +485,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),

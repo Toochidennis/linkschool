@@ -35,10 +35,9 @@ Future<void> main() async {
     await Hive.openBox('userData');
     await Hive.openBox('attendance');
     await Hive.openBox('loginResponse');
-    print('Hive initialized successfully');
   } catch (e) {
-    print('Error initializing Hive: $e');
-  }
+      // Intentionally ignored.
+    }
 
   setupServiceLocator();
 
@@ -47,8 +46,8 @@ Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
     ),
   );
 
@@ -57,7 +56,6 @@ Future<void> main() async {
   // Handle cold start via link (app was closed)
   _initialDeepLink = await _appLinks.getInitialLink();
   if (_initialDeepLink != null) {
-    debugPrint('Cold start via link: $_initialDeepLink');
   }
 
   runApp(
@@ -77,7 +75,6 @@ Future<void> _logFacebookAppLaunchSafely() async {
     await FacebookAnalyticsService.initialize();
     await FacebookAnalyticsService.logAppLaunch();
   } catch (e, stackTrace) {
-    debugPrint('Facebook app launch logging failed: $e');
     debugPrintStack(stackTrace: stackTrace);
   }
 }
@@ -100,6 +97,15 @@ class MyApp extends StatelessWidget {
                 ? AppThemes.darkTheme
                 : AppThemes.lightTheme,
             themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            builder: (context, child) {
+              final overlayStyle = settings.isDarkMode
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark;
+              return AnnotatedRegion<SystemUiOverlayStyle>(
+                value: overlayStyle,
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             home: const AppInitializer(),
             navigatorKey: appNavigatorKey,
             navigatorObservers: [routeObserver],
@@ -141,10 +147,8 @@ class _AppInitializerState extends State<AppInitializer> {
 
   void _initLinkListener() {
     _linkSub = _appLinks.uriLinkStream.listen((uri) {
-      debugPrint('Link while app open: $uri');
       unawaited(NotificationNavigationService().handleDeepLink(uri));
     }, onError: (Object error) {
-      debugPrint('Deep link stream error: $error');
     });
   }
 

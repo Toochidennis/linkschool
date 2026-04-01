@@ -46,7 +46,6 @@ Future<CourseAssignmentResponse> fetchCourseAssignments(int staffId, String term
 
       return result;
     } catch (e) {
-      debugPrint("Error fetching course assignments: $e");
       throw Exception("Error fetching course assignments: $e");
     }
   }

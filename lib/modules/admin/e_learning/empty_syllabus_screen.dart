@@ -106,8 +106,6 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen>
         final settings = data['settings'] ?? {};
         term = settings['term']?.toString() ?? '';
       }
-      print('Handler: Loading syllabuses for levelId: $levelId, term: $term');
-      print('Handler: courseId: ${widget.term}, classId: ${widget.classId}');
 
       // Validate required parameters
       if (levelId.isEmpty) {
@@ -115,10 +113,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen>
       }
 
       await _syllabusProvider.fetchSyllabus(levelId, term, courseId);
-      print(
-          "handler: qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq courses selected $courseId");
       final syllabusModels = _syllabusProvider.syllabusList;
-      print('Handler: Received ${syllabusModels.length} syllabus models');
 
       if (_syllabusProvider.error.isNotEmpty) {
         throw Exception(_syllabusProvider.error);
@@ -130,7 +125,6 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen>
           final index = entry.key;
           final syllabus = entry.value;
           if (syllabus.id == null) {
-            print('Warning: Syllabus at index $index has null ID');
             return null; // Skip invalid syllabuses
           }
 
@@ -161,10 +155,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen>
         }).whereType<Map<String, dynamic>>());
       });
 
-      print(
-          'Handler: Successfully processed ${_syllabusList.length} syllabuses for UI');
     } catch (e) {
-      print('Handler Error: $e');
       if (mounted) {
         CustomToaster.toastError(
             context, 'Error', 'Failed to load syllabuses: $e');
@@ -297,9 +288,6 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen>
   }
 
   Widget _buildSyllabusList() {
-    print('Building syllabus list with ${_syllabusList.length} items');
-    print(
-        'Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}');
 
     return ListView.builder(
       itemCount: _syllabusList.length,
@@ -334,8 +322,6 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen>
   }
 
   VoidCallback _addNewSyllabus() {
-    print(
-        "Adding new ${widget.courseId} syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.course_name}");
     return () async {
       await Navigator.of(context).push(
         MaterialPageRoute(

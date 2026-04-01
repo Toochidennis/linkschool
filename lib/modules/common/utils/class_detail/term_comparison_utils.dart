@@ -10,7 +10,6 @@ class TermComparisonUtils {
       // Get user's login data
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
       if (loginData == null) {
-        print('No login data found for term comparison');
         return false;
       }
 
@@ -23,11 +22,8 @@ class TermComparisonUtils {
       final userYear = settings['year']?.toString();
       final userTerm = settings['term'];
 
-      print('User login year: $userYear, term: $userTerm');
-      print('Selected year: $selectedYear, term: $selectedTermValue');
 
       if (userYear == null || userTerm == null) {
-        print('User year or term is null');
         return false;
       }
 
@@ -36,7 +32,6 @@ class TermComparisonUtils {
           userTerm is int ? userTerm : int.tryParse(userTerm.toString());
 
       if (userTermInt == null) {
-        print('Could not parse user term to int');
         return false;
       }
 
@@ -44,11 +39,9 @@ class TermComparisonUtils {
       final yearMatch = userYear == selectedYear;
       final termMatch = userTermInt == selectedTermValue;
 
-      print('Year match: $yearMatch, Term match: $termMatch');
 
       return yearMatch && termMatch;
     } catch (e) {
-      print('Error in term comparison: $e');
       return false;
     }
   }
@@ -72,7 +65,6 @@ class TermComparisonUtils {
         'term': settings['term'],
       };
     } catch (e) {
-      print('Error getting user year/term: $e');
       return {'year': null, 'term': null};
     }
   }

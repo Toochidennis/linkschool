@@ -14,20 +14,16 @@ class StudentService {
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
       if (loginData == null) {
-        debugPrint('Error: No user data found in Hive');
         throw Exception('No user data found');
       }
 
       final token = loginData['token']?.toString();
       if (token == null || token.isEmpty) {
-        debugPrint('Error: No auth token found in user data');
         throw Exception('No auth token found');
       }
 
       _apiService.setAuthToken(token);
-      debugPrint('Auth token set successfully');
     } catch (e) {
-      debugPrint('Error setting auth token: $e');
       throw Exception('Failed to set auth token: $e');
     }
   }
@@ -51,7 +47,6 @@ class StudentService {
       // Fallback values
       return {'year': '2025', 'term': '3'};
     } catch (e) {
-      debugPrint('Error getting year and term: $e');
       return {'year': '2025', 'term': '3'};
     }
   }
@@ -74,14 +69,11 @@ class StudentService {
       );
 
       if (response.success) {
-        debugPrint('Fetched ${response.data?.length ?? 0} students');
         return response.data ?? [];
       } else {
-        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching students: $e');
       throw Exception('Error fetching students: $e');
     }
   }
@@ -106,11 +98,9 @@ class StudentService {
       if (response.success) {
         return response.data ?? [];
       } else {
-        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching all students: $e');
       throw Exception('Error fetching all students: $e');
     }
   }
@@ -143,15 +133,11 @@ class StudentService {
       );
 
       if (response.success) {
-        debugPrint(
-            'Fetched ${response.data?.length ?? 0} students for course $courseId, year ${settings['year']}, term ${settings['term']}');
         return response.data ?? [];
       } else {
-        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching students by course: $e');
       throw Exception('Error fetching students by course: $e');
     }
   }
@@ -187,11 +173,9 @@ class StudentService {
         }
         return formattedData;
       } else {
-        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching student result terms: $e');
       throw Exception('Error fetching student result terms: $e');
     }
   }
@@ -242,7 +226,6 @@ class StudentService {
         // Database parameter will be automatically added by ApiService
       };
 
-      debugPrint('Saving attendance with payload: $payload');
 
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/classes/$classId/attendance',
@@ -251,12 +234,10 @@ class StudentService {
       );
 
       if (!response.success) {
-        debugPrint('API Error: ${response.message}');
       }
 
       return response.success;
     } catch (e) {
-      debugPrint('Error saving attendance: $e');
       throw Exception('Error saving attendance: $e');
     }
   }
@@ -307,7 +288,6 @@ class StudentService {
         // Database parameter will be automatically added by ApiService
       };
 
-      debugPrint('Saving course attendance with payload: $payload');
 
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/courses/$courseId/attendance',
@@ -316,12 +296,10 @@ class StudentService {
       );
 
       if (!response.success) {
-        debugPrint('API Error: ${response.message}');
       }
 
       return response.success;
     } catch (e) {
-      debugPrint('Error saving course attendance: $e');
       throw Exception('Error saving course attendance: $e');
     }
   }
@@ -335,7 +313,6 @@ class StudentService {
       await _setAuthToken();
       final yearAndTerm = _getYearAndTerm();
 
-      debugPrint('Fetching course attendance with date: $date');
 
       // Database parameter will be automatically added by ApiService
       final response = await _apiService.get<List<Map<String, dynamic>>>(
@@ -347,7 +324,6 @@ class StudentService {
           'term': yearAndTerm['term']!,
         },
         fromJson: (json) {
-          debugPrint('Course Attendance API response: $json');
 
           if (json.containsKey('data') && json['data'] != null) {
             final data = json['data'];
@@ -365,21 +341,15 @@ class StudentService {
         // Handle 404 as a normal case (no attendance records exist yet)
         if (response.statusCode == 404 ||
             response.message.contains('No attendance records found')) {
-          debugPrint(
-              'No attendance records found for course $courseId on $date - this is normal');
           return [];
         }
-        debugPrint('API Error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
       // Check if it's a "no records found" error
       if (e.toString().contains('No attendance records found')) {
-        debugPrint(
-            'No attendance records found for course $courseId on $date - returning empty list');
         return [];
       }
-      debugPrint('Error fetching course attendance records: $e');
       throw Exception('Error fetching course attendance records: $e');
     }
   }
@@ -392,7 +362,6 @@ class StudentService {
       await _setAuthToken();
       final yearAndTerm = _getYearAndTerm();
 
-      debugPrint('Fetching class attendance with date: $date');
 
       // Database parameter will be automatically added by ApiService
       final response = await _apiService.get<List<Map<String, dynamic>>>(
@@ -403,7 +372,6 @@ class StudentService {
           'term': yearAndTerm['term']!,
         },
         fromJson: (json) {
-          debugPrint('Class Attendance API response: $json');
 
           if (json.containsKey('data') && json['data'] != null) {
             final data = json['data'];
@@ -421,21 +389,15 @@ class StudentService {
         // Handle 404 as a normal case (no attendance records exist yet)
         if (response.statusCode == 404 ||
             response.message.contains('No attendance records found')) {
-          debugPrint(
-              'No attendance records found for class $classId on $date - this is normal');
           return [];
         }
-        debugPrint('API Error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
       // Check if it's a "no records found" error
       if (e.toString().contains('No attendance records found')) {
-        debugPrint(
-            'No attendance records found for class $classId on $date - returning empty list');
         return [];
       }
-      debugPrint('Error fetching class attendance records: $e');
       throw Exception('Error fetching class attendance records: $e');
     }
   }
@@ -479,7 +441,6 @@ class StudentService {
         // Database parameter will be automatically added by ApiService
       };
 
-      debugPrint('Updating attendance with payload: $payload');
 
       final response = await _apiService.put<Map<String, dynamic>>(
         endpoint: 'portal/attendance/$attendanceId',
@@ -488,12 +449,10 @@ class StudentService {
       );
 
       if (!response.success) {
-        debugPrint('API Error: ${response.message}');
       }
 
       return response.success;
     } catch (e) {
-      debugPrint('Error updating attendance: $e');
       throw Exception('Error updating attendance: $e');
     }
   }
@@ -508,10 +467,6 @@ class StudentService {
     try {
       await _setAuthToken();
 
-      debugPrint(
-          'Making API call to: portal/students/$studentId/result/$termId '
-          'with queryParams: class_id=$classId, '
-          'year=$year, level_id=$levelId');
 
       // Database parameter will be automatically added by ApiService
       final response = await _apiService.get<Map<String, dynamic>>(
@@ -522,20 +477,16 @@ class StudentService {
           'level_id': levelId,
         },
         fromJson: (json) {
-          debugPrint('Raw API response: $json');
           return json['response'] as Map<String, dynamic>? ?? {};
         },
       );
 
       if (response.success) {
-        debugPrint('Fetched term results: ${response.data}');
         return response.data ?? {};
       } else {
-        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching student term results: $e');
       throw Exception('Error fetching student term results: $e');
     }
   }
@@ -549,9 +500,6 @@ class StudentService {
     try {
       await _setAuthToken();
 
-      debugPrint('Making API call to: portal/students/$studentId/result/annual '
-          'with queryParams: class_id=$classId, '
-          'year=$year, level_id=$levelId');
 
       // Database parameter will be automatically added by ApiService
       final response = await _apiService.get<List<Map<String, dynamic>>>(
@@ -562,7 +510,6 @@ class StudentService {
           'level_id': levelId,
         },
         fromJson: (json) {
-          debugPrint('Raw API response: $json');
           if (json['response'] is List) {
             return (json['response'] as List)
                 .map((item) => item as Map<String, dynamic>)
@@ -573,14 +520,11 @@ class StudentService {
       );
 
       if (response.success) {
-        debugPrint('Fetched annual results: ${response.data}');
         return response.data ?? [];
       } else {
-        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching student annual results: $e');
       throw Exception('Error fetching student annual results: $e');
     }
   }

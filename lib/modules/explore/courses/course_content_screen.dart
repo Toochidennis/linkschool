@@ -230,7 +230,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             border: Border.all(color: const Color(0xFF0F172A)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -528,7 +528,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
           }
         },
         onAdFailedToLoad: (LoadAdError error) {
-          debugPrint('CourseContentScreen app open ad failed to load: $error');
           _appOpenAd = null;
           _pendingShowAppOpenAd = false;
           if (mounted) {
@@ -560,7 +559,6 @@ class _CourseContentScreenState extends State<CourseContentScreen>
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
-        debugPrint('CourseContentScreen app open ad failed to show: $error');
         ad.dispose();
         _appOpenAd = null;
         if (mounted) {
@@ -776,8 +774,8 @@ Widget build(BuildContext context) {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.05),
-                          Colors.black.withOpacity(0.65),
+                          Colors.black.withValues(alpha: 0.05),
+                          Colors.black.withValues(alpha: 0.65),
                         ],
                       ),
                     ),
@@ -1211,10 +1209,10 @@ Widget build(BuildContext context) {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.4)),
+          border: Border.all(color: const Color(0xFFFFA500).withValues(alpha: 0.4)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFFA500).withOpacity(0.15),
+              color: const Color(0xFFFFA500).withValues(alpha: 0.15),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1389,12 +1387,12 @@ Widget build(BuildContext context) {
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFFFFCA28).withOpacity(0.4),
+                    color: const Color(0xFFFFCA28).withValues(alpha: 0.4),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFFCA28).withOpacity(0.15),
+                      color: const Color(0xFFFFCA28).withValues(alpha: 0.15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1579,12 +1577,12 @@ Widget build(BuildContext context) {
       color: card.bgLight,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: card.iconColor.withOpacity(0.15),
+        color: card.iconColor.withValues(alpha: 0.15),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
-          color: card.iconColor.withOpacity(0.08),
+          color: card.iconColor.withValues(alpha: 0.08),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -1670,7 +1668,7 @@ Text(
         border: Border.all(color: Colors.grey.shade100, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1845,7 +1843,7 @@ Row(
         children: [
           CircularProgressIndicator(
             value: (quizPct + assignmentPct) / 2,
-            backgroundColor: const Color(0xFF4F46E5).withOpacity(0.1),
+            backgroundColor: const Color(0xFF4F46E5).withValues(alpha: 0.1),
             valueColor: const AlwaysStoppedAnimation<Color>(
               Color(0xFF4F46E5),
             ),
@@ -1912,7 +1910,7 @@ Row(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: percent,
-            backgroundColor: color.withOpacity(0.12),
+            backgroundColor: color.withValues(alpha: 0.12),
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 6,
           ),

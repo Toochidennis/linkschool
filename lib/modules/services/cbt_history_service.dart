@@ -39,6 +39,7 @@ class CbtHistoryService {
       
       _printAllHistory(historyList);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
   
@@ -189,6 +190,7 @@ class CbtHistoryService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_historyKey);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 

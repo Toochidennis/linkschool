@@ -13,8 +13,7 @@ class OpenAIService {
     if (this.apiKey.isEmpty) {
       throw Exception('OpenAI API key not found. Please check your .env file.');
     }
-    print(
-        'API Key loaded: ${this.apiKey.substring(0, 10)}...'); // Print first 10 chars for verification
+ // Print first 10 chars for verification
   }
 
   final int _maxRequestsPerMinute = 20;
@@ -39,8 +38,7 @@ class OpenAIService {
     // Wait for rate limit to reset before making a new request. This prevents hitting the API too quickly.
     await _waitForRateLimit();
     try {
-      print(
-          'Attempting API call with key: ${apiKey.substring(0, 10)}...'); // Debug print
+ // Debug print
 
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -58,8 +56,6 @@ class OpenAIService {
         }),
       );
 
-      print('Response status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -77,7 +73,6 @@ class OpenAIService {
         throw Exception('API Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('Error in sendMessage: $e');
       rethrow;
     }
   }
@@ -95,7 +90,7 @@ class DeepSeekService {
 
   Future<String> sendMessage(String message) async {
     try {
-      print('Sending request with message: $message'); // Debug print
+ // Debug print
 
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -113,8 +108,8 @@ class DeepSeekService {
         }),
       );
 
-      print('Response status code: ${response.statusCode}'); // Debug print
-      print('Response body: ${response.body}'); // Debug print
+ // Debug print
+ // Debug print
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -123,7 +118,7 @@ class DeepSeekService {
         throw Exception('API Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('Error in sendMessage: $e'); // Debug print
+ // Debug print
       throw Exception('Failed to communicate with DeepSeek API: $e');
     }
   }

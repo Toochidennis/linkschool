@@ -176,13 +176,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
               : int.tryParse(formClassesCount?.toString() ?? '') ??
                   (formClasses is List ? formClasses.length : 0);
         });
-        debugPrint(
-            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
       } else {
-        debugPrint('⚠️ No stored user data found.');
       }
     } catch (e, stack) {
-      debugPrint(stack.toString());
       if (mounted) {
         //CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
@@ -242,10 +238,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.2)),
+        border: Border.all(color: AppColors.text2Light.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -459,7 +455,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
         'parent_id': feed.parentId,
         'replies': feed.replies.map((r) => r.toJson()).toList(),
       };
-      debugPrint('Updated Feed Data: $updatedFeed');
       await provider.updateFeed(feed.id.toString(), updatedFeed);
       if (mounted) {
         CustomToaster.toastSuccess(
@@ -469,7 +464,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
     } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to update feed: $e');
-        debugPrint('Error updating feed: ${feed.id}, Error: $e');
       }
     }
   }
@@ -519,10 +513,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
         border:
-            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+            Border.all(color: AppColors.text2Light.withValues(alpha: 0.3), width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -837,7 +831,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         color: AppColors.text2Light
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Icon(
@@ -876,7 +870,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                                           boxShadow: [
                                             BoxShadow(
                                               color: AppColors.text2Light
-                                                  .withOpacity(0.3),
+                                                  .withValues(alpha: 0.3),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),

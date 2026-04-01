@@ -33,6 +33,7 @@ class CbtPlanService {
       await prefs.setString(_cacheKey, payload);
       await prefs.setInt(_cacheTsKey, DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
+      // Intentionally ignored.
     }
   }
 

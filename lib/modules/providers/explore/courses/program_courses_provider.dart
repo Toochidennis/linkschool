@@ -44,7 +44,6 @@ class ProgramCoursesProvider with ChangeNotifier {
       _program = null;
       _courses = [];
       _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      debugPrint('Failed to fetch program courses: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

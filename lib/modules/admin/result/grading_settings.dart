@@ -191,7 +191,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                           const BorderRadius.all(Radius.circular(100)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 5,
                           spreadRadius: 2,
                           offset: const Offset(1, 2),
@@ -388,7 +388,6 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
 
     // Ensure controllers are created when needed
     if (!editingControllers.containsKey(key)) {
-      print('Warning: Missing controller for $key');
       return const SizedBox();
     }
 
@@ -542,7 +541,6 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                           // Force rebuild to make new grade visible
                           setState(() {});
                         } catch (error) {
-                          print('Error adding grade: ${error.toString()}');
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                                 content: Text(

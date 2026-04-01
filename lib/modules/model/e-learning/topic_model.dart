@@ -30,7 +30,6 @@ class Topic {
   });
 
   factory Topic.fromJson(Map<String, dynamic> json) {
-    print('Parsing topic: ${json['content']}');
 
     // Safe parsing with null checks
     int? parseId(dynamic value) {
@@ -61,7 +60,6 @@ class Topic {
             try {
               return ClassModel.fromJson(e as Map<String, dynamic>);
             } catch (error) {
-              print('Error parsing class: $error');
               return null;
             }
           })

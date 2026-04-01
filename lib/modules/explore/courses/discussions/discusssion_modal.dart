@@ -140,7 +140,6 @@ class _CreateDiscussionModalState extends State<_CreateDiscussionModal>
       _imageBase64 = base64Encode(bytes);
       _imageFileName = name;
     });
-    debugPrint('🖼️ Picked image: $name (${bytes.length} bytes)');
   }
 
   void _removeImage() => setState(() {
@@ -239,12 +238,6 @@ class _CreateDiscussionModalState extends State<_CreateDiscussionModal>
       'is_locked': _isLocked ? 1 : 0,
       'is_pinned': _isPinned ? 1 : 0,
     };
-    debugPrint('🧾 Create discussion payload: $payload');
-    debugPrint(
-      _imageFile == null
-          ? '🖼️ No image attached'
-          : '🖼️ Image attached: $_imageFileName',
-    );
 
     final ok = _isEdit
         ? await widget.provider.updateDiscussion(
@@ -555,7 +548,7 @@ Stack(
                         onPressed: _isSubmitting ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _blue,
-                          disabledBackgroundColor: _blue.withOpacity(0.5),
+                          disabledBackgroundColor: _blue.withValues(alpha: 0.5),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -812,7 +805,7 @@ class _LockToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: value
-                ? const Color(0xFFF97316).withOpacity(0.3)
+                ? const Color(0xFFF97316).withValues(alpha: 0.3)
                 : const Color(0xFFE5E7EB),
           ),
         ),
@@ -823,7 +816,7 @@ class _LockToggle extends StatelessWidget {
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: value
-                    ? const Color(0xFFF97316).withOpacity(0.12)
+                    ? const Color(0xFFF97316).withValues(alpha: 0.12)
                     : const Color(0xFFE5E7EB),
                 shape: BoxShape.circle,
               ),
@@ -895,7 +888,7 @@ class _PinToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: value
-                ? const Color(0xFF2563EB).withOpacity(0.3)
+                ? const Color(0xFF2563EB).withValues(alpha: 0.3)
                 : const Color(0xFFE5E7EB),
           ),
         ),
@@ -906,7 +899,7 @@ class _PinToggle extends StatelessWidget {
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: value
-                    ? const Color(0xFF2563EB).withOpacity(0.12)
+                    ? const Color(0xFF2563EB).withValues(alpha: 0.12)
                     : const Color(0xFFE5E7EB),
                 shape: BoxShape.circle,
               ),
@@ -989,7 +982,7 @@ class _CheckOption extends StatelessWidget {
           color: value ? activeBackground : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: value ? activeColor.withOpacity(0.3) : const Color(0xFFE5E7EB),
+            color: value ? activeColor.withValues(alpha: 0.3) : const Color(0xFFE5E7EB),
           ),
         ),
         child: Row(

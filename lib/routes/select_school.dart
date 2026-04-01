@@ -74,7 +74,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight.withOpacity(0.1),
+                          color: AppColors.primaryLight.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -180,7 +180,7 @@ class _SelectSchoolState extends State<SelectSchool> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -310,7 +310,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withOpacity(0.1),
+                    color: AppColors.primaryLight.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const CircularProgressIndicator(
@@ -404,7 +404,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                           gradient: LinearGradient(
                             colors: [
                               AppColors.eLearningBtnColor1,
-                              AppColors.eLearningBtnColor1.withOpacity(0.8),
+                              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -413,7 +413,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                           boxShadow: [
                             BoxShadow(
                               color:
-                                  AppColors.eLearningBtnColor1.withOpacity(0.3),
+                                  AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -459,7 +459,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.primaryLight.withOpacity(0.3),
+                            color: AppColors.primaryLight.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                         ),
@@ -544,11 +544,11 @@ class _SelectSchoolState extends State<SelectSchool> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.red.withOpacity(0.2),
+                            color: Colors.red.withValues(alpha: 0.2),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 2),
                             ),
@@ -560,7 +560,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
+                                color: Colors.red.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(

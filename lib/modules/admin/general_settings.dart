@@ -167,7 +167,6 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
         };
 
         // TODO: Implement API call to save settings
-        debugPrint('Settings Data: $settingsData');
         await Future.delayed(const Duration(seconds: 2)); // Simulated API call
 
         setState(() {
@@ -178,8 +177,6 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
         
         // Print base64 string for debugging (remove in production)
         if (_base64Image != null) {
-          debugPrint('Base64 Image Length: ${_base64Image!.length}');
-          debugPrint('Base64 Preview: ${_base64Image!.substring(0, 100)}...');
         }
         
       } catch (e) {

@@ -138,7 +138,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
      // CustomToaster.toastError(context, 'Error', 'Failed to load user data');
     }
   }
@@ -152,7 +151,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         isLoading = false;
       });
     } catch (e) {
-      print('Error fetching streams: $e');
       CustomToaster.toastError(
           context, 'Error', 'Failed to load forum streams');
       setState(() {
@@ -187,7 +185,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         CustomToaster.toastError(context, 'Error', contentProvider.error);
       }
     } catch (e) {
-      print('Error loading syllabus contents: $e');
       CustomToaster.toastError(
           context, 'Error', 'Failed to load syllabus contents: $e');
     }
@@ -245,7 +242,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
           final topicId = item.topicId ?? 0;
           if (topicId != 0 && topicMap.containsKey(topicId)) {
             topicMap[topicId]!.children.add(item);
-            print('Reassigned item ${item.id} to topic $topicId');
           } else {
             _noTopicItems.add(item);
           }
@@ -260,12 +256,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   }
 
   void _debugTopicData(TopicContent topic) {
-    print('Topic: ${topic.name}, ID: ${topic.id}');
     for (int i = 0; i < topic.children.length; i++) {
       final child = topic.children[i];
-      print('Child $i: ${child.title} (${child.type})');
     }
-    print('========================');
   }
 
   void _showCreateOptionsBottomSheet(BuildContext context) {
@@ -515,7 +508,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         if (_isEditing) {
           await commentProvider.UpdateComment(comment, contentId.toString());
         } else {
-          print('Creating comment: $comment');
           await commentProvider.createComment(comment, sm.id.toString());
         }
         setState(() {
@@ -1155,7 +1147,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               height: 40,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: SvgPicture.asset(
@@ -1246,7 +1238,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               height: 40,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: SvgPicture.asset(
@@ -1715,7 +1707,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
           context, 'Success', '"${item.title}" has been deleted.');
       _loadSyllabusContents();
     } catch (e) {
-      print('Error during deletion: $e');
       CustomToaster.toastError(
           context, 'Error', 'An unexpected error occurred.');
     }
