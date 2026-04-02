@@ -11,7 +11,12 @@ import 'package:linkschool/modules/admin/home/portal_dashboard.dart';
 import 'package:linkschool/routes/select_school.dart';
 
 class AppNavigationFlow extends StatefulWidget {
-  const AppNavigationFlow({super.key});
+  final int initialSelectedIndex;
+
+  const AppNavigationFlow({
+    super.key,
+    this.initialSelectedIndex = 0,
+  });
 
   @override
   _AppNavigationFlowState createState() => _AppNavigationFlowState();
@@ -20,7 +25,7 @@ class AppNavigationFlow extends StatefulWidget {
 class _AppNavigationFlowState extends State<AppNavigationFlow> {
   bool _isLoggedIn = false;
   String _userRole = '';
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   bool _isExploreActive = true;
   late FlipCardController _flipController;
   bool _showLogin = false;
@@ -33,6 +38,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   void initState() {
     super.initState();
     _flipController = FlipCardController();
+    _selectedIndex = widget.initialSelectedIndex;
   }
 
   @override
@@ -282,5 +288,3 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     );
   }
 }
-
-

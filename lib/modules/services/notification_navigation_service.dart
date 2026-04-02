@@ -6,12 +6,15 @@ import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
+import 'package:linkschool/modules/explore/courses/course_selection_screen.dart';
+import 'package:linkschool/modules/explore/courses/explore_courses_see_all_screen.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
 import 'package:linkschool/modules/services/explore/courses/discussion_service.dart';
+import 'package:linkschool/routes/app_navigation_flow.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
@@ -96,6 +99,12 @@ class NotificationNavigationService {
       case 'course_description_by_ref':
         await _navigateToCourseDescriptionByRef(data);
         break;
+      case 'program_enroll':
+        await _navigateToProgramEnroll(data);
+        break;
+      case 'program_courses_by_slug':
+        await _navigateToProgramCoursesBySlug(data);
+        break;
       case 'cbt_payment':
         await _navigateToCbtPlans();
         break;
@@ -139,6 +148,12 @@ class NotificationNavigationService {
         break;
       case "news_posted":
         await _navigateToNewsDetails(data);
+        break;
+      case 'program_enroll':
+        await _navigateToProgramEnroll(data);
+        break;
+      case 'program_courses_by_slug':
+        await _navigateToProgramCoursesBySlug(data);
         break;
 
       default:
@@ -382,6 +397,18 @@ class NotificationNavigationService {
       return data;
     }
 
+    if (first == 'programs' && segments.length >= 2) {
+      data.putIfAbsent('program_slug', () => segments[1]);
+      if (segments.length >= 3 && segments[2].toLowerCase() == 'enroll') {
+        data.putIfAbsent('type', () => 'program_enroll');
+        return data;
+      }
+      if (segments.length == 2) {
+        data.putIfAbsent('type', () => 'program_courses_by_slug');
+        return data;
+      }
+    }
+
     if (first == 'cbt') {
       if (segments.length >= 3 &&
           segments[1].toLowerCase() == 'payment' &&
@@ -476,6 +503,82 @@ class NotificationNavigationService {
         ),
       ),
     );
+  }
+
+  Future<void> _navigateToProgramCoursesBySlug(
+    Map<String, dynamic> data,
+  ) async {
+    final slug = _stringFrom(data, ['program_slug', 'slug']);
+    if (slug.isEmpty) {
+      return;
+    }
+
+    int? profileId = _intFrom(data, ['profile_id', 'profileId']);
+    if (profileId == null || profileId <= 0) {
+      final prefs = await SharedPreferences.getInstance();
+      profileId = prefs.getInt('active_profile_id');
+    }
+
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => ExploreCoursesSeeAllScreen(
+          categoryName: _displayNameFromSlug(slug),
+          categoryColor: const Color(0xFF6366F1),
+          categoryId: _intFrom(data, ['program_id', 'programId']) ?? 0,
+          categorySlug: slug,
+          profileId: profileId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToProgramEnroll(Map<String, dynamic> data) async {
+    final slug = _stringFrom(data, ['program_slug', 'slug']);
+    if (slug.isEmpty) {
+      return;
+    }
+
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => CourseSelectionScreen(
+          slug: slug,
+          returnToExploreCourses: true,
+          onReturnToExploreCourses: () async {
+            navigator.pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => const AppNavigationFlow(
+                  initialSelectedIndex: 1,
+                ),
+              ),
+              (route) => false,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _displayNameFromSlug(String slug) {
+    final cleaned = slug.replaceAll(RegExp(r'[-_]+'), ' ').trim();
+    if (cleaned.isEmpty) return 'Program';
+
+    return cleaned
+        .split(RegExp(r'\s+'))
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1);
+        })
+        .join(' ');
   }
 
   Future<void> _waitForNavigatorReady() async {

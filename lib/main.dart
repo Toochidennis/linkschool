@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -9,7 +10,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/config/providers_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/ads_service/facebook_service.dart';
@@ -23,25 +23,23 @@ final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 final AppLinks _appLinks = AppLinks();
-Uri? _initialDeepLink;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   try {
     await Hive.initFlutter();
     await Hive.openBox('userData');
     await Hive.openBox('attendance');
     await Hive.openBox('loginResponse');
   } catch (e) {
-      // Intentionally ignored.
-    }
+    // Intentionally ignored.
+  }
 
   setupServiceLocator();
-
-  await CbtExamSyncService().syncOnStartup();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -51,13 +49,6 @@ Future<void> main() async {
     ),
   );
 
-  await MobileAds.instance.initialize();
-
-  // Handle cold start via link (app was closed)
-  _initialDeepLink = await _appLinks.getInitialLink();
-  if (_initialDeepLink != null) {
-  }
-
   runApp(
     MultiProvider(
       providers: getAppProviders(),
@@ -66,6 +57,8 @@ Future<void> main() async {
   );
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(CbtExamSyncService().syncOnStartup());
+    unawaited(MobileAds.instance.initialize());
     unawaited(_logFacebookAppLaunchSafely());
   });
 }
@@ -126,30 +119,33 @@ class AppInitializer extends StatefulWidget {
 class _AppInitializerState extends State<AppInitializer> {
   bool _isInitialized = false;
   bool _showOnboarding = false;
-  StreamSubscription<Uri>? _linkSub; // ✅ nullable — not assigned at declaration
+  StreamSubscription<Uri>? _linkSub;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_initializeServices());
-    _initializeApp();
-    _initLinkListener();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_initializeServices());
+      unawaited(_initializeApp());
+      _initLinkListener();
+    });
   }
 
   Future<void> _initializeServices() async {
     await NotificationNavigationService().initialize(appNavigatorKey);
-    final initialLink = _initialDeepLink;
+    final initialLink = await _appLinks.getInitialLink();
     if (initialLink != null) {
       await NotificationNavigationService().handleDeepLink(initialLink);
-      _initialDeepLink = null;
     }
   }
 
   void _initLinkListener() {
-    _linkSub = _appLinks.uriLinkStream.listen((uri) {
-      unawaited(NotificationNavigationService().handleDeepLink(uri));
-    }, onError: (Object error) {
-    });
+    _linkSub = _appLinks.uriLinkStream.listen(
+      (uri) {
+        unawaited(NotificationNavigationService().handleDeepLink(uri));
+      },
+      onError: (Object error) {},
+    );
   }
 
   Future<void> _initializeApp() async {
@@ -190,16 +186,12 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   void dispose() {
-    _linkSub?.cancel(); // ✅ cancels stream subscription on widget unmount
+    _linkSub?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // if (_showOnboarding) {
-    //   return const Onboardingscreen();
-    // }
-
     return const AppNavigationFlow();
   }
 }

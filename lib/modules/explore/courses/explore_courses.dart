@@ -19,6 +19,7 @@ import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'course_description_screen.dart';
 import 'course_content_screen.dart';
+import 'course_selection_screen.dart';
 import 'explore_courses_see_all_screen.dart';
 import 'create_user_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -2043,39 +2044,77 @@ class _ExploreCoursesState extends State<ExploreCourses>
           ),
         ),
         const SizedBox(width: 8),
-        OutlinedButton(
-          onPressed: () {
-            final isEnrolledBucket = category.id == -1;
-     
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ExploreCoursesSeeAllScreen(
-                  categoryName: category.name,
-                  categoryColor: seeAllColor,
-                  categorySlug: isEnrolledBucket ? null : category.slug,
-                  categoryId: category.id,
-                  profileId: _activeProfile?.id,
-                  initialCourses: isEnrolledBucket ? category.courses : null,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            OutlinedButton(
+              onPressed: () {
+                final isEnrolledBucket = category.id == -1;
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ExploreCoursesSeeAllScreen(
+                      categoryName: category.name,
+                      categoryColor: seeAllColor,
+                      categorySlug: isEnrolledBucket ? null : category.slug,
+                      categoryId: category.id,
+                      profileId: _activeProfile?.id,
+                      initialCourses:
+                          isEnrolledBucket ? category.courses : null,
+                    ),
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFFFA500),
+                side: const BorderSide(color: Color(0xFFFFA500), width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              child: const Text(
+                'See all',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            );
-          },
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFFFFA500),
-            side: const BorderSide(color: Color(0xFFFFA500), width: 1.2),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            minimumSize: const Size(0, 32),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
-          child: const Text(
-            'See all',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
             ),
-          ),
+            // const SizedBox(height: 8),
+            // OutlinedButton(
+            //   onPressed: () async {
+            //     final result = await Navigator.push<bool>(
+            //       context,
+            //       MaterialPageRoute(
+            //         builder: (context) => CourseSelectionScreen(
+            //           slug: category.slug ?? "",
+            //         ),
+            //       ),
+            //     );
+
+            //     if (result == true && mounted) {
+            //       await _bootstrapScreen();
+            //     }
+            //   },
+            //   style: OutlinedButton.styleFrom(
+            //     foregroundColor: const Color(0xFF4F46E5),
+            //     side: const BorderSide(color: Color(0xFF4F46E5), width: 1.2),
+            //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            //     minimumSize: const Size(0, 32),
+            //     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            //     visualDensity: VisualDensity.compact,
+            //   ),
+            //   child: const Text(
+            //     'Test enroll',
+            //     style: TextStyle(
+            //       fontSize: 13,
+            //       fontWeight: FontWeight.w700,
+            //     ),
+            //   ),
+            // ),
+          ],
         ),
       ],
     );
