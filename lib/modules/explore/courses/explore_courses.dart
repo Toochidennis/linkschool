@@ -2082,38 +2082,38 @@ class _ExploreCoursesState extends State<ExploreCourses>
                 ),
               ),
             ),
-            // const SizedBox(height: 8),
-            // OutlinedButton(
-            //   onPressed: () async {
-            //     final result = await Navigator.push<bool>(
-            //       context,
-            //       MaterialPageRoute(
-            //         builder: (context) => CourseSelectionScreen(
-            //           slug: category.slug ?? "",
-            //         ),
-            //       ),
-            //     );
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CourseSelectionScreen(
+                      slug: category.slug ?? "",
+                    ),
+                  ),
+                );
 
-            //     if (result == true && mounted) {
-            //       await _bootstrapScreen();
-            //     }
-            //   },
-            //   style: OutlinedButton.styleFrom(
-            //     foregroundColor: const Color(0xFF4F46E5),
-            //     side: const BorderSide(color: Color(0xFF4F46E5), width: 1.2),
-            //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            //     minimumSize: const Size(0, 32),
-            //     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            //     visualDensity: VisualDensity.compact,
-            //   ),
-            //   child: const Text(
-            //     'Test enroll',
-            //     style: TextStyle(
-            //       fontSize: 13,
-            //       fontWeight: FontWeight.w700,
-            //     ),
-            //   ),
-            // ),
+                if (result == true && mounted) {
+                  await _bootstrapScreen();
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF4F46E5),
+                side: const BorderSide(color: Color(0xFF4F46E5), width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              child: const Text(
+                'Test enroll',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ],
         ),
       ],

@@ -44,7 +44,10 @@ class _ExploreCoursesSeeAllScreenState
     }
     
     if (widget.categorySlug != null && widget.categorySlug!.trim().isNotEmpty) {
-      unawaited(_fetchCourses());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(_fetchCourses());
+      });
     }
   }
 

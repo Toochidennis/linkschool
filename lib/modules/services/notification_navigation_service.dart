@@ -63,26 +63,33 @@ class NotificationNavigationService {
   }
 
   Future<void> handleDeepLink(Uri uri) async {
+    debugPrint('NotificationNavigationService.handleDeepLink: $uri');
     if (!_isSupportedDeepLink(uri)) {
+      debugPrint('Deep link ignored: unsupported host/scheme -> $uri');
       return;
     }
 
     final data = _payloadFromUri(uri);
     if (data.isEmpty) {
+      debugPrint('Deep link ignored: empty payload -> $uri');
       return;
     }
 
+    debugPrint('Deep link payload: $data');
     await _waitForNavigatorReady();
 
     final type = _stringFrom(data, ['type']);
+    debugPrint('Deep link type: ${type.isEmpty ? '(missing)' : type}');
     switch (type) {
       case 'news_posted':
+        debugPrint('Routing deep link -> NewsDetails');
         await _navigateToNewsDetails(data);
         break;
       case 'discussion_started':
       case 'discussion_comment_added':
       case 'discussion_post_replied':
       case 'discussion_reply_replied':
+        debugPrint('Routing deep link -> TopicDetailScreen');
         await _navigateToDiscussionDetail(data);
         break;
       case 'lesson_published':
@@ -91,37 +98,49 @@ class NotificationNavigationService {
       case 'live_class_reminder':
       case 'assignment_due_reminder':
       case 'course_content':
+        debugPrint('Routing deep link -> CourseDetailScreen (content)');
         await _navigateToCourseContent(data);
         break;
       case 'course_detail':
+        debugPrint('Routing deep link -> CourseDetailScreen');
         _navigateToCourseDetail(data);
         break;
       case 'course_description_by_ref':
+        debugPrint('Routing deep link -> CourseDescriptionScreen');
         await _navigateToCourseDescriptionByRef(data);
         break;
       case 'program_enroll':
+        debugPrint('Routing deep link -> CourseSelectionScreen');
         await _navigateToProgramEnroll(data);
         break;
       case 'program_courses_by_slug':
+        debugPrint('Routing deep link -> ExploreCoursesSeeAllScreen');
         await _navigateToProgramCoursesBySlug(data);
         break;
       case 'cbt_payment':
+        debugPrint('Routing deep link -> CbtPlansScreen');
         await _navigateToCbtPlans();
         break;
       case 'cbt_dashboard':
+        debugPrint('Routing deep link -> CBTDashboard');
         _navigateToCbtDashboard();
         break;
       case 'app_home':
         debugPrint('Deep link opened app home: $uri');
         break;
       default:
+        debugPrint('Deep link default routing check for payload: $data');
         if (_looksLikeCourseContentPayload(data)) {
+          debugPrint('Routing deep link -> CourseDetailScreen (fallback content)');
           await _navigateToCourseContent(data);
         } else if (_looksLikeCoursePayload(data)) {
+          debugPrint('Routing deep link -> CourseDetailScreen (fallback course)');
           _navigateToCourseDetail(data);
         } else if (_intFrom(data, ['news_id', 'newsId', 'id']) != null) {
+          debugPrint('Routing deep link -> NewsDetails (fallback)');
           await _navigateToNewsDetails(data);
         } else {
+          debugPrint('Deep link ignored: no matching route -> $uri');
         }
     }
   }
@@ -537,36 +556,27 @@ class NotificationNavigationService {
     );
   }
 
-  Future<void> _navigateToProgramEnroll(Map<String, dynamic> data) async {
-    final slug = _stringFrom(data, ['program_slug', 'slug']);
-    if (slug.isEmpty) {
-      return;
-    }
+ Future<void> _navigateToProgramEnroll(Map<String, dynamic> data) async {
+  final slug = _stringFrom(data, ['program_slug', 'slug']);
+  if (slug.isEmpty) return;
 
-    final navigator = _navigatorKey?.currentState;
-    if (navigator == null) {
-      return;
-    }
+  final navigator = _navigatorKey?.currentState;
+  if (navigator == null) return;
 
-    navigator.push(
-      MaterialPageRoute(
-        builder: (context) => CourseSelectionScreen(
-          slug: slug,
-          returnToExploreCourses: true,
-          onReturnToExploreCourses: () async {
-            navigator.pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (_) => const AppNavigationFlow(
-                  initialSelectedIndex: 1,
-                ),
-              ),
-              (route) => false,
-            );
-          },
-        ),
+  debugPrint('Routing program_enroll push start: slug=$slug');
+  navigator.push(
+    MaterialPageRoute(
+      builder: (context) => CourseSelectionScreen(
+        slug: slug,
+        returnToExploreCourses: true,
+        onReturnToExploreCourses: () async {
+          navigator.popUntil((route) => route.isFirst);
+        },
       ),
-    );
-  }
+    ),
+  );
+  debugPrint('Routing program_enroll push submitted: slug=$slug');
+}
 
   String _displayNameFromSlug(String slug) {
     final cleaned = slug.replaceAll(RegExp(r'[-_]+'), ' ').trim();

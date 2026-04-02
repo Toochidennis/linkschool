@@ -41,16 +41,22 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
   void initState() {
     super.initState();
     _selectedCourses = {};
+    debugPrint('CourseSelectionScreen initState: slug=${widget.slug}, returnToExploreCourses=${widget.returnToExploreCourses}');
     
     if (widget.slug.trim().isNotEmpty) {
-      unawaited(_fetchCourses());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(_fetchCourses());
+      });
     }
   }
 
   Future<void> _fetchCourses() async {
     final slug = widget.slug.trim();
     if (slug.isEmpty) return;
+    debugPrint('CourseSelectionScreen fetching courses for slug: $slug');
     await context.read<ProgramCoursesProvider>().fetchBySlug(slug);
+    debugPrint('CourseSelectionScreen fetch complete for slug: $slug');
   }
 
   List<CourseModel> _getDisplayCourses(List<CourseModel> courses) {
@@ -83,6 +89,12 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
 
   void _clearAll() => setState(() {
         _selectedCourses.clear();
+        _checkoutErrorMessage = null;
+      });
+
+  void _toggleCourseSelection(int courseId, [bool? selected]) => setState(() {
+        final nextValue = selected ?? !(_selectedCourses[courseId] ?? false);
+        _selectedCourses[courseId] = nextValue;
         _checkoutErrorMessage = null;
       });
 
@@ -812,6 +824,9 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint(
+      'CourseSelectionScreen build: slug=${widget.slug}, isMounted=$mounted',
+    );
     return Consumer<ProgramCoursesProvider>(
       builder: (context, provider, _) {
         return _buildScaffold(
@@ -834,7 +849,6 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          _buildAppBar(context, programTitle),
           Expanded(
             child: Stack(
               children: [
@@ -849,7 +863,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHero(),
+                        _buildAppBar(context, programTitle, courses),
                         _buildBody(courses),
                         const SizedBox(height: 150),
                       ],
@@ -870,69 +884,50 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, String programTitle) {
+  Widget _buildAppBar(
+    BuildContext context,
+    String programTitle,
+    List<CourseModel> courses,
+  ) {
     return Container(
-      color: Colors.white,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFF3B2FA0),
+        
+      ),
       child: SafeArea(
         bottom: false,
-        child: Container(
-          height: 56,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              bottom: BorderSide(color: Color(0xFFEBEBEB), width: 1),
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  await _finishAndReturn(false);
-                },
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F2F7),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 16,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                programTitle,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHero() {
-    return Consumer<ProgramCoursesProvider>(
-      builder: (context, provider, _) {
-        final title = provider.program?.name ?? 'Programme';
-        return Container(
-          width: double.infinity,
-          color: const Color(0xFF3B2FA0),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      await _finishAndReturn(false);
+                    },
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  
+                ],
+              ),
+              const SizedBox(height: 18),
               Text(
-                'Enroll in $title',
+                'Enroll in $programTitle',
                 style: const TextStyle(
                   fontSize: 21,
                   fontWeight: FontWeight.w500,
@@ -940,19 +935,31 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
                   height: 1.3,
                 ),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                'Select one or more courses and complete a single checkout flow.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xBFFFFFFF),
-                  height: 1.5,
+              
+              if (courses.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: courses
+                        .map(
+                          (course) => Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _PillButton(
+                              label: course.courseName,
+                              filled: _selectedCourses[course.id] ?? false,
+                              onTap: () => _toggleCourseSelection(course.id),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -962,40 +969,48 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Choose courses',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          
-          const SizedBox(height: 10),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _PillButton(
-                label: 'Select all',
-                filled: true,
-                onTap: _selectAll,
+              const Text(
+                'Choose Courses',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1A1A1A),
+                ),
               ),
-              const SizedBox(width: 10),
-              _PillButton(
-                label: 'Clear',
-                filled: false,
-                onTap: _clearAll,
+              Row(
+                children: [
+                  _UnderlineAction(
+                    label: 'Select All',
+                    onTap: _selectAll,
+                  ),
+                  const SizedBox(width: 14),
+                  _UnderlineAction(
+                    label: 'Clear',
+                    onTap: _clearAll,
+                  ),
+                ],
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Select one or more courses and complete a single checkout flow.',
+            style: TextStyle(
+              fontSize: 13,
+              color: Color(0x8A000000),
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 18),
           ...courses.map(
             (course) => _CourseCard(
               course: course,
               isSelected: _selectedCourses[course.id] ?? false,
-                onTap: () => setState(() {
-                  _selectedCourses[course.id] = !(_selectedCourses[course.id] ?? false);
-                  _checkoutErrorMessage = null;
-                }),
+              onTap: () => _toggleCourseSelection(course.id),
             ),
           ),
         ],
@@ -1218,6 +1233,49 @@ class _PillButton extends StatelessWidget {
   }
 }
 
+class _UnderlineAction extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _UnderlineAction({
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF4F46E5),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Container(
+              height: 2,
+              width: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4F46E5),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _CourseCard extends StatelessWidget {
   final CourseModel course;
   final bool isSelected;
@@ -1258,7 +1316,7 @@ class _CourseCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF7F7FF) : Colors.white,
           borderRadius: BorderRadius.circular(22),
@@ -1278,47 +1336,36 @@ class _CourseCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Checkbox(checked: isSelected),
-                const SizedBox(width: 12),
-                _CourseImage(
-                  imageUrl: course.imageUrl,
-                  fallbackLabel: _initialsForCourse(course.courseName),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+            Padding(
+              padding: const EdgeInsets.only(right: 52),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        course.courseName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827),
-                          height: 1.3,
-                        ),
+                      _CourseImage(
+                        imageUrl: course.imageUrl,
+                        fallbackLabel: _initialsForCourse(course.courseName),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        course.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6B7280),
-                          height: 1.45,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(children: [
-                        Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              course.courseName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF111827),
+                                height: 1.3,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
                               children: [
                                 if (_hasDiscount) ...[
                                   Text(
@@ -1342,59 +1389,76 @@ class _CourseCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                      ],),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          
-                          if (_hasDiscount) ...[
-                            Container(
-                              margin: const EdgeInsets.only(right: 10),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEAF7EF),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                _discountLabel,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF16A34A),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 8,
+                              children: [
+                                if (_hasDiscount)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEAF7EF),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      _discountLabel,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF16A34A),
+                                      ),
+                                    ),
+                                  ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEDE9FE),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Text(
+                                    'Instructor-led',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF5B21B6),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEDE9FE),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: const Text(
-                              'Instructor-led',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF5B21B6),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          
-         
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: _Checkbox(checked: isSelected),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

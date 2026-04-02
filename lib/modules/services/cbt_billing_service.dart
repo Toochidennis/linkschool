@@ -72,7 +72,9 @@ class CbtBillingService {
         },
         body: json.encode(body),
       );
+print('CBT Billing Verify Request: $body');
 
+print('CBT Billing Verify Response: ${response.statusCode} - ${response.body}');    
 
     if (response.statusCode == 200 || response.statusCode == 201) {
   final decoded = json.decode(response.body);
