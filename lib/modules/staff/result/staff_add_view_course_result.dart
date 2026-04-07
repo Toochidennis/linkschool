@@ -48,7 +48,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
   void initState() {
     super.initState();
     _problematicFieldKey = null;
-    print('Initializing StaffAddViewCourseResultFixed');
     _loadSettingsFromStorage();
   }
 
@@ -112,7 +111,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
           termName = 'Term $term';
         });
 
-        print('Loaded settings from storage - Year: $year, Term: $term');
 
         // Fetch results once; max scores are already included in the payload.
         await fetchCourseResults();
@@ -121,14 +119,12 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
           error = 'Settings not found in local storage';
           isLoading = false;
         });
-        print('No settings found in local storage');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load settings: $e';
         isLoading = false;
       });
-      print('Error loading settings: $e');
     }
   }
 
@@ -164,8 +160,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
         'level_id': levelId,
       };
 
-      print(
-          'Fetching course results from: $endpoint with params: $queryParams');
 
       final response = await apiService.get(
         endpoint: endpoint,
@@ -180,8 +174,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
 
         for (var result in results) {
           final assessments = result['assessments'] as List;
-          print(
-              'Result assessments for result_id ${result['result_id']}: $assessments');
           for (var assessment in assessments) {
             final assessmentName = assessment['assessment_name']?.toString();
             if (assessmentName == null || assessmentName.isEmpty) continue;
@@ -212,22 +204,17 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
           _controllers.clear();
         });
 
-        print(
-            'Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
-        print('Derived max scores from results: $maxScores');
       } else {
         setState(() {
           error = response.message;
           isLoading = false;
         });
-        print('Failed to fetch results: ${response.message}');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load results: $e';
         isLoading = false;
       });
-      print('Error fetching results: $e');
     }
   }
 
@@ -246,8 +233,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
         queryParams: {'_db': dbName},
       );
 
-      print('Fetching assessments with db: $dbName');
-      print('Assessments API response: ${response.rawData}');
 
       if (response.success && response.rawData != null) {
         final tempMaxScores = <String, int>{};
@@ -292,24 +277,19 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
         setState(() {
           maxScores = tempMaxScores;
         });
-        print('Fetched max scores: $maxScores');
 
         // Debug: Print each assessment name and max score
         maxScores.forEach((name, score) {
-          print('Assessment: $name, Max Score: $score');
         });
       } else {
-        print('Failed to fetch assessments: ${response.message}');
       }
     } catch (e) {
-      print('Error fetching assessments: $e');
       // Don't set error state for assessments failure as it's not critical
     }
   }
 
   Future<void> saveEditedResult(int resultId) async {
     if (!editedScores.containsKey(resultId)) {
-      print('No edits for resultId: $resultId');
       return;
     }
 
@@ -338,7 +318,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
           'Error',
           'Staff ID not found',
         );
-        print('Staff ID not found');
         return;
       }
 
@@ -365,8 +344,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
             'Validation Error',
             'Score for $assessmentName exceeds max score of $maxScore',
           );
-          print(
-              'Validation failed: Score $score for $assessmentName exceeds max $maxScore');
           return;
         }
 
@@ -390,7 +367,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
         '_db': dbName,
       };
 
-      print('Saving for resultId: $resultId with payload: $payload');
 
       final response = await apiService.put(
         endpoint: 'portal/result/class-result',
@@ -435,14 +411,12 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
           'Success',
           'Result updated successfully',
         );
-        print('Result updated successfully for resultId: $resultId');
       } else {
         CustomToaster.toastError(
           context,
           'Update Failed',
           'Failed to update result: ${response.message}',
         );
-        print('Failed to update result: ${response.message}');
       }
     } catch (e) {
       CustomToaster.toastError(
@@ -450,7 +424,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
         'Error',
         'Error updating result: $e',
       );
-      print('Error updating result: $e');
     }
   }
 
@@ -468,7 +441,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
       }
       return 'F';
     } catch (e) {
-      print('Error calculating grade for score $totalScore: $e');
       return 'N/A';
     }
   }
@@ -497,8 +469,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     final isEditing = editedScores.isNotEmpty;
 
-    print(
-        'Building UI with isEditing: $isEditing, editedScores: $editedScores');
 
     return Scaffold(
       appBar: AppBar(
@@ -525,8 +495,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
           if (isEditing)
             TextButton(
               onPressed: () async {
-                print(
-                    'Save button pressed, processing ${editedScores.keys.length} edited results');
                 final resultIds = editedScores.keys.toList();
                 for (var resultId in resultIds) {
                   await saveEditedResult(resultId);
@@ -888,8 +856,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
                       setState(() {
                         editedScores[resultId] ??= {};
                         _editingFields.add(controllerKey);
-                        print(
-                            'Tapped assessment: $title for resultId: $resultId - field ready for editing');
                       });
                     },
                     onChanged: (value) {
@@ -909,8 +875,6 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
                             _problematicFieldKey = null;
                           }
                         }
-                        print(
-                            'Changed $title for resultId: $resultId to: $value');
                       });
 
                       // Show warning if score exceeds max

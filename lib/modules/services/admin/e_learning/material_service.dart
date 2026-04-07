@@ -14,11 +14,9 @@ class MaterialService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     material['_db'] = dbName;
-    print("Request Payload: $material");
 
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
@@ -26,19 +24,12 @@ class MaterialService {
         body: material,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to add Material");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to Add Material: ${response.message}");
       } else {
-        print(' Material added successfully.');
-        print('Status Code: ${response.statusCode}');
-        print(' ${response.message}');
       }
     } catch (e) {
-      print("Error adding material: $e");
       throw Exception("Failed to Add Material: $e");
     }
   }
@@ -53,11 +44,9 @@ class MaterialService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     material['_db'] = dbName;
-    print("Request Payload: $material");
 
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
@@ -65,19 +54,12 @@ class MaterialService {
         body: material,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to update Material");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to Add Material: ${response.message}");
       } else {
-        print(' Material updated successfully.');
-        print('Status Code: ${response.statusCode}');
-        print(' ${response.message}');
       }
     } catch (e) {
-      print("Error updating  material: $e");
       throw Exception("Failed to Update Material: $e");
     }
   }
@@ -101,12 +83,11 @@ class MaterialService {
       );
 
       if (!response.success) {
-        print("Failed to delete material: ${response.message} ssssssss $id");
         throw Exception("Failed to delete material: ${response.message}");
       }
     } catch (e) {
-      print("Error deleting material: $e");
       throw Exception("Failed to delete material: $e");
     }
   }
 }
+

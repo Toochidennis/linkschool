@@ -100,7 +100,6 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
   }
 
   Future<void> _loadUserData() async {
-    print('ffffffdata: ${widget.syllabusClasses}');
     try {
       final userBox = Hive.box('userData');
       final storedUserData =
@@ -122,8 +121,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
-      print('ffffffdata: ${widget.syllabusClasses}');
+      // Intentionally ignored.
     }
   }
 
@@ -226,7 +224,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: _buildAttachmentsSection(),
                 ),
-                Divider(color: Colors.grey.withOpacity(0.5)),
+                Divider(color: Colors.grey.withValues(alpha: 0.5)),
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: _buildGroupRow(
@@ -286,7 +284,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
               Container(
                 padding: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  color: AppColors.backgroundLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
@@ -339,7 +337,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Divider(color: Colors.grey.withOpacity(0.5)),
+        Divider(color: Colors.grey.withValues(alpha: 0.5)),
         const SizedBox(height: 8.0),
       ],
     );
@@ -706,7 +704,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                 CustomOutlineButton(
                   onPressed: () => Navigator.of(context).pop(),
                   text: 'Cancel',
-                  borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+                  borderColor: AppColors.eLearningBtnColor3.withValues(alpha: 0.4),
                   textColor: AppColors.eLearningBtnColor3,
                 ),
                 CustomSaveElevatedButton(
@@ -747,7 +745,6 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      print('Error picking file: $e');
       CustomToaster.toastError(context, 'Error', 'Failed to pick file: $e');
     }
   }
@@ -913,19 +910,14 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
 
       if (widget.editMode && widget.assignmentToEdit != null) {
         final id = widget.assignmentToEdit?.id ?? widget.itemId;
-        print('Updating Assignment Data:');
-        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
         await assignmentProvider.UpDateAssignment(assignmentPayload, id!);
       } else {
-        print('Creating Assignment Data:');
-        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
         await assignmentProvider.addAssignment(assignmentPayload);
       }
 
       widget.onSave(assignmentPayload);
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error saving assignment: $e');
       CustomToaster.toastError(
           context, 'Error', 'Failed to save assignment: $e');
     } finally {

@@ -463,6 +463,4 @@ void main() {
 
   // This will now work with your API response format
   final contentData = SingleElearningContentData.fromJson(apiResponse);
-  print('Content: ${contentData.title}');
-  print('Questions: ${contentData.questions.length}');
 }

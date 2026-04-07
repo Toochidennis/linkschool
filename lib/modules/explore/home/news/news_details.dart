@@ -226,7 +226,6 @@ class _NewsDetailsState extends State<NewsDetails>
     if (await canLaunchUrlString(url)) {
       await launchUrlString(url, mode: LaunchMode.externalApplication);
     } else {
-      print("Could not launch $url");
     }
   } 
 
@@ -296,7 +295,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         // Optional: Dimmed background for popup effect
         Positioned.fill(
           child: Container(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
           ),
         ),
         Align(
@@ -322,7 +321,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                           icon: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -338,7 +337,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                             icon: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -383,8 +382,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                                     end: Alignment.bottomCenter,
                                     colors: [
                                       Colors.transparent,
-                                      Colors.black.withOpacity(0.3),
-                                      Colors.black.withOpacity(0.8),
+                                      Colors.black.withValues(alpha: 0.3),
+                                      Colors.black.withValues(alpha: 0.8),
                                     ],
                                     stops: const [0.0, 0.5, 1.0],
                                   ),
@@ -496,7 +495,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: AppColors.text2Light.withOpacity(0.1),
+                                          color: AppColors.text2Light.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Icon(
@@ -525,7 +524,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: AppColors.text2Light.withOpacity(0.1),
+                                          color: AppColors.text2Light.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Icon(
@@ -709,7 +708,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -834,7 +833,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

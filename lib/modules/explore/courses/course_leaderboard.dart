@@ -92,7 +92,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           _persistedProfileName = persistedName;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      // Intentionally ignored.
+    }
   }
 
   void _loadInterstitialAd() {
@@ -483,7 +485,7 @@ if (showCurrentUserAtBottom && !userIsInList) {
                 height: avatarSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: rankColor.withOpacity(0.14),
+                  color: rankColor.withValues(alpha: 0.14),
                   border: Border.all(color: rankColor, width: 2.5),
                 ),
                 child: Center(
@@ -576,7 +578,7 @@ if (showCurrentUserAtBottom && !userIsInList) {
             color: const Color(0xFFFFF3E8),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _C.accent.withOpacity(0.45),
+              color: _C.accent.withValues(alpha: 0.45),
               width: 1.5,
             ),
           )
@@ -611,9 +613,9 @@ if (showCurrentUserAtBottom && !userIsInList) {
                   // Solid fill for "me", tinted for others
                   color: isMe
                       ? _C.accent
-                      : avatarColor.withOpacity(0.13),
+                      : avatarColor.withValues(alpha: 0.13),
                   border: Border.all(
-                    color: isMe ? Colors.white : avatarColor.withOpacity(0.4),
+                    color: isMe ? Colors.white : avatarColor.withValues(alpha: 0.4),
                     width: isMe ? 2 : 1.5,
                   ),
                 ),
@@ -709,10 +711,10 @@ if (showCurrentUserAtBottom && !userIsInList) {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _C.accent.withOpacity(0.35), width: 1.5),
+        border: Border.all(color: _C.accent.withValues(alpha: 0.35), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: _C.accent.withOpacity(0.07),
+            color: _C.accent.withValues(alpha: 0.07),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -726,7 +728,7 @@ if (showCurrentUserAtBottom && !userIsInList) {
             decoration: BoxDecoration(
               color: _C.accentSoft,
               borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: _C.accent.withOpacity(0.3)),
+              border: Border.all(color: _C.accent.withValues(alpha: 0.3)),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -896,7 +898,7 @@ class _ConfettiPainter extends CustomPainter {
 
     for (final d in dots) {
       final paint = Paint()
-        ..color = Color(d[2].toInt()).withOpacity(0.38)
+        ..color = Color(d[2].toInt()).withValues(alpha: 0.38)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(
         Offset(size.width * d[0], size.height * d[1]),

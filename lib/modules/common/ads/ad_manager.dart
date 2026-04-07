@@ -51,19 +51,16 @@ Future<void> preload() async {
         _isLoaded = true;
         _isLoading = false;
         _retryAttempt = 0; 
-        print('Ad loaded successfully');
       },
       onAdFailedToLoad: (LoadAdError error) {
         _interstitialAd = null;
         _isLoaded = false;
         _isLoading = false;
-        print('Ad failed to load: $error');
 
        
         if (error.code == 3 && _retryAttempt < _maxRetryAttempts) {
           _retryAttempt++;
           final delaySeconds = _retryAttempt * 30; 
-          print('Retrying ad load in ${delaySeconds}s (attempt $_retryAttempt)');
           Future.delayed(Duration(seconds: delaySeconds), () => preload());
         } else {
           _retryAttempt = 0; // reset after max attempts
@@ -95,7 +92,6 @@ Future<void> preload() async {
           _rewardedAd = null;
           _isRewardedLoading = false;
           _rewardedLoadCompleter?.complete(false);
-          print('Rewarded ad failed to load: $error');
         },
       ),
     );
@@ -107,7 +103,6 @@ Future<void> preload() async {
     if (_isRewardedShowing) return false;
     final isReady = await _ensureRewardedLoaded();
     if (!isReady || _rewardedAd == null) {
-      print('Rewarded ad not ready');
       return false;
     }
 
@@ -130,7 +125,6 @@ Future<void> preload() async {
         _rewardedAd = null;
         _isRewardedShowing = false;
         _ensureRewardedLoaded();
-        print('Rewarded ad failed to show: $error');
         if (!completer.isCompleted) {
           completer.complete(false);
         }
@@ -152,40 +146,49 @@ Future<void> preload() async {
   }) async {
     final tier = await _getTier(context);
     if (!_shouldShow(tier, trigger)) {
-      print('No ad to show for trigger: $trigger, tier: $tier');
       return;
     }
-    print('Showing ad for trigger: $trigger, tier: $tier');
     await _showInterstitialOrContinue();
+  }
+
+Future<bool> shouldShowCbtOpenAds(BuildContext context) async {
+  final tier = await _getTier(context);
+  final should = tier != AdTier.paid;
+  return should;
+}
+
+  Future<AdTier> getCbtAdTier(BuildContext context) async {
+    return _getTier(context);
   }
 
   Future<AdTier> _getTier(BuildContext context) async {
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    final adMode = await CbtSubscriptionService().getAdMode();
-    if (adMode == 'continue_with_ads') {
-      print('Ad mode is continue_with_ads, treating as freeAds tier');
-      return AdTier.freeAds;
+    if (userProvider.hasPaid) {
+      return AdTier.paid;
     }
-    if (adMode == 'free_trial') {
-      return AdTier.freeTrial;
+
+    final localPaid = await CbtSubscriptionService().hasPaid();
+    if (localPaid) {
+      return AdTier.paid;
     }
 
     final userId = userProvider.currentUser?.id;
     if (userId != null) {
       try {
-        final cached = await CbtLicenseService().getCachedLicenseStatus(userId);
-        if (cached == true) return AdTier.paid;
-        if (cached == false) {
-          final trialExpired = await CbtSubscriptionService().isTrialExpired();
-          return trialExpired ? AdTier.freeAds : AdTier.freeTrial;
-        }
-
         final isActive =
             await CbtLicenseService().isLicenseActive(userId: userId);
         if (isActive) return AdTier.paid;
       } catch (_) {
-        // Fall through to trial logic if license check fails.
+        // Fall through to ad-mode / trial logic if license check fails.
       }
+    }
+
+    final adMode = await CbtSubscriptionService().getAdMode();
+    if (adMode == 'continue_with_ads') {
+      return AdTier.freeAds;
+    }
+    if (adMode == 'free_trial') {
+      return AdTier.freeTrial;
     }
 
     final trialExpired = await CbtSubscriptionService().isTrialExpired();
@@ -235,7 +238,6 @@ Future<void> _showInterstitialOrContinue() async {
         _isLoaded = false;
         _isShowing = false;
         preload();
-        print('Ad failed to show: $error');
         completer.complete(); 
       },
     );
@@ -246,7 +248,7 @@ Future<void> _showInterstitialOrContinue() async {
   }
 
   // No ad ready — silently continue and preload for next time
-  print('No ad ready (no fill or still loading); continuing without ad.');
+
   preload();
 }
 }

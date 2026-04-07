@@ -1,14 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
+
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -62,7 +57,6 @@ class _SingleAttachmentPreviewScreenState
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<StudentComment> comments = [];
-  bool _isAddingComment = true;
   bool _isEditing = false;
   StudentComment? _editingComment;
   late double opacity;
@@ -115,13 +109,12 @@ class _SingleAttachmentPreviewScreenState
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
   getuserdata() {
     final userBox = Hive.box('userData');
-    print(userBox.get('userData'));
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
     final processedData =
@@ -137,39 +130,6 @@ class _SingleAttachmentPreviewScreenState
     _scrollController.dispose();
     _commentFocusNode.dispose();
     super.dispose();
-  }
-
-  void _showAttachmentOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                'Add attachment',
-                style: AppTextStyles.normal600(
-                    fontSize: 20, color: AppColors.backgroundDark),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              /*    _buildAttachmentOption(
-                  'Insert link',
-                  'assets/icons/student/link1.svg',
-                  _showInsertLinkDialog),*/
-              _buildAttachmentOption('Upload file',
-                  'assets/icons/e_learning/upload_file.svg', _uploadFile),
-              /*      _buildAttachmentOption(
-                  'Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
-              _buildAttachmentOption(
-                  'Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),*/
-            ],
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -229,18 +189,6 @@ class _SingleAttachmentPreviewScreenState
                   color: AppColors.eLearningBtnColor1,
                 ),
               ),
-              Column(
-                children: [
-                  ..._attachments.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final attachment = entry.value;
-                    return _buildAttachmentItem(attachment,
-                        isFirst: index == 0);
-                  }),
-                  const SizedBox(height: 8.0),
-                  _buildAddMoreButton(),
-                ],
-              ),
               const SizedBox(height: 16),
               // Two-column attachment layout
               const SizedBox(height: 24),
@@ -265,6 +213,7 @@ class _SingleAttachmentPreviewScreenState
                 onPressed: () async {
                   AssignmentSubmissionService service =
                       AssignmentSubmissionService();
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
                   final List<Map<String, dynamic>> files =
                       _attachments.map((attachment) {
                     return {
@@ -300,9 +249,15 @@ class _SingleAttachmentPreviewScreenState
                     final int assignmentId = widget.childContent!.id;
                     assignmentssubmitted.add(assignmentId);
                     userBox.put('assignments', assignmentssubmitted);
-                    _Assignmentsubmissionpop();
+                    if (!mounted) {
+                      return;
+                    }
+                    _assignmentSubmissionPop();
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (!mounted) {
+                      return;
+                    }
+                    scaffoldMessenger.showSnackBar(
                       const SnackBar(
                           content: Text("Failed to submit assignment.")),
                     );
@@ -322,154 +277,6 @@ class _SingleAttachmentPreviewScreenState
         ),
       ),
     );
-  }
-
-  void _showInsertLinkDialog() {
-    TextEditingController linkController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Insert Link',
-            style: AppTextStyles.normal600(
-                fontSize: 20, color: AppColors.backgroundDark),
-            textAlign: TextAlign.center,
-          ),
-          content: TextField(
-            controller: linkController,
-            decoration: InputDecoration(
-              fillColor: Colors.grey[100],
-              filled: true,
-              hintText: 'Enter link here',
-              prefixIcon: SvgPicture.asset(
-                'assets/icons/e_learning/link3.svg',
-                width: 24,
-                height: 24,
-                fit: BoxFit.scaleDown,
-              ),
-              border: const UnderlineInputBorder(),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: AppColors.primaryLight),
-              ),
-            ),
-          ),
-          actions: [
-            CustomOutlineButton(
-              onPressed: () => Navigator.of(context).pop(),
-              text: 'Cancel',
-              borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
-              textColor: AppColors.eLearningBtnColor3,
-            ),
-            CustomSaveElevatedButton(
-              onPressed: () {
-                if (linkController.text.isNotEmpty) {
-                  _addAttachment(
-                      linkController.text,
-                      'assets/icons/e_learning/link3.svg',
-                      'link',
-                      'Link: ${linkController.text}');
-                  print("AAQASSSS ${widget.attachments}");
-                }
-                Navigator.of(context).pop();
-              },
-              text: 'Save',
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildAttachmentOption(
-      String text, String iconPath, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        margin: const EdgeInsets.only(bottom: 8),
-        color: AppColors.backgroundLight,
-        child: Row(
-          children: [
-            SvgPicture.asset(iconPath, width: 24, height: 24),
-            const SizedBox(width: 16),
-            Text(text,
-                style: AppTextStyles.normal400(
-                    fontSize: 16, color: AppColors.backgroundDark)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _uploadFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      withData: true, type: FileType.custom, // Specify custom file types
-      allowedExtensions: ['pdf', 'ppt'],
-    );
-    if (result != null) {
-      PlatformFile plat = result.files.first;
-
-      String? extension = plat.extension;
-      if (plat.bytes != null) {
-        String base64String = base64Encode(plat.bytes!);
-        String fileName = result.files.single.name;
-
-        setState(() {
-//
-          _attachments.add(
-            AssignmentFile(
-              fileName: result.files.single.name,
-              file: base64String,
-              type: extension ?? 'file',
-            ),
-          );
-        });
-        // _navigateToAttachmentPreview();
-      }
-    }
-  }
-
-  Future<void> _takePhoto() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-    if (photo != null) {
-      File imageFile = File(photo.path);
-
-      // Convert to bytes
-      List<int> imageBytes = await imageFile.readAsBytes();
-
-      // Encode to Base64
-      String base64Image = base64Encode(imageBytes);
-      _addAttachment(base64Image, 'assets/icons/e_learning/camera.svg', 'photo',
-          'Photo: ${photo.name}');
-      // _navigateToAttachmentPreview();
-    }
-  }
-
-  Future<void> _recordVideo() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? video = await picker.pickVideo(source: ImageSource.camera);
-    if (video != null) {
-      File videoFile = File(video.path);
-
-      // Read as bytes
-      List<int> videoBytes = await videoFile.readAsBytes();
-
-      // Encode to Base64
-      String base64Video = base64Encode(videoBytes);
-      _addAttachment(base64Video, 'assets/icons/e_learning/video.svg', 'video',
-          'Video: ${video.name}');
-    }
-  }
-
-  void _addAttachment(
-      String content, String iconPath, String type, String filename) {
-    setState(() {
-      print(_attachments);
-      _attachments
-          .add(AssignmentFile(type: type, file: content, fileName: filename));
-    });
   }
 
   Widget _buildCommentSection() {
@@ -550,7 +357,7 @@ class _SingleAttachmentPreviewScreenState
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -622,112 +429,7 @@ class _SingleAttachmentPreviewScreenState
     );
   }
 
-  Widget _buildAttachmentsSection() {
-    return GestureDetector(
-      onTap: _attachments.isEmpty ? _showAttachmentOptions : null,
-      child: Container(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_attachments.isEmpty)
-              Container(
-                width: double
-                    .infinity, // Same as minimumSize: Size(double.infinity, 50)
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1, // backgroundColor
-                  borderRadius: BorderRadius.circular(8), // shape borderRadius
-                ),
-                alignment: Alignment.center, // centers the child
-                child: const Text(
-                  'Add work',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              )
-            else
-              Column(
-                children: [
-                  ..._attachments.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final attachment = entry.value;
-                    return _buildAttachmentItem(attachment,
-                        isFirst: index == 0);
-                  }),
-                  const SizedBox(height: 8.0),
-                  _buildAddMoreButton(),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAttachmentItem(AssignmentFile attachment,
-      {bool isFirst = false}) {
-    return Container(
-      margin: EdgeInsets.only(bottom: isFirst ? 0 : 8.0),
-      child: Row(
-        children: [
-          SvgPicture.asset(
-            "assets/icons/e_learning/upload.svg",
-            width: 20,
-            height: 20,
-          ),
-          const SizedBox(width: 8.0),
-          Expanded(
-            child: Text(
-              attachment.fileName ?? "No filename",
-              style: AppTextStyles.normal400(
-                  fontSize: 14.0, color: AppColors.primaryLight),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20, color: Colors.red),
-            onPressed: () {
-              setState(() {
-                _attachments.remove(attachment);
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddMoreButton() {
-    return GestureDetector(
-      onTap: _showAttachmentOptions,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Spacer(),
-          OutlinedButton(
-            onPressed: _showAttachmentOptions,
-            style: OutlinedButton.styleFrom(
-              textStyle: AppTextStyles.normal600(
-                  fontSize: 14.0, color: AppColors.backgroundLight),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              side: const BorderSide(color: AppColors.eLearningBtnColor1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('+ Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCommentInput() {
-    final provider =
-        Provider.of<StudentCommentProvider>(context, listen: false);
     return Row(
       children: [
         Expanded(
@@ -766,7 +468,6 @@ class _SingleAttachmentPreviewScreenState
           };
 
       try {
-//
         final commentProvider =
             Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
@@ -779,8 +480,10 @@ class _SingleAttachmentPreviewScreenState
         }
 
         await commentProvider.fetchComments(widget.childContent!.id.toString());
+        if (!mounted) {
+          return;
+        }
         setState(() {
-          _isAddingComment = false;
           _isEditing = false;
           _editingComment = null;
           _commentController.clear();
@@ -799,6 +502,9 @@ class _SingleAttachmentPreviewScreenState
           }
         });
       } catch (e) {
+        if (!mounted) {
+          return;
+        }
         CustomToaster.toastError(context, 'Error',
             _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
@@ -808,11 +514,11 @@ class _SingleAttachmentPreviewScreenState
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(color: Colors.grey.withOpacity(0.5)),
+      child: Divider(color: Colors.grey.withValues(alpha: 0.5)),
     );
   }
 
-  void _Assignmentsubmissionpop() {
+  void _assignmentSubmissionPop() {
     showDialog(
       context: context,
       barrierDismissible: false,

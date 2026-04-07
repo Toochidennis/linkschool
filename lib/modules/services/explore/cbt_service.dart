@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:linkschool/database/cbt_db-helper.dart';
+import 'package:linkschool/database/cbt_db_helper.dart';
 import 'package:linkschool/modules/model/explore/home/cbt_board_model.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:http/http.dart' as http;
@@ -21,13 +21,11 @@ class CBTService {
     if (!forceNetwork) {
       final localBoards = await _loadFromDb();
       if (localBoards.isNotEmpty) {
-        print('✅ Loaded ${localBoards.length} boards from local DB');
         return localBoards;
       }
     }
 
     // 2. Fetch from network
-    print('🌐 Fetching CBT boards from network...');
     return await _fetchFromNetwork();
   }
 
@@ -73,7 +71,6 @@ class CBTService {
 
       return boards;
     } catch (e) {
-      print('⚠️ Error reading from local DB: $e');
       return [];
     }
   }
@@ -111,7 +108,6 @@ class CBTService {
     }
 
  
-    print('✅ Fetched and saved ${rawList.length} boards from network');
 
     return rawList
         .map((e) => CBTBoardModel.fromJson(e as Map<String, dynamic>))

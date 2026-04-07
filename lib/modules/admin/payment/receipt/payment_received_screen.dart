@@ -36,7 +36,6 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
   late PaymentService _paymentService;
   late int _currentLevelId;
   late int _currentClassId;
-  late String _currentClassName;
 
   @override
   void initState() {
@@ -44,7 +43,6 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
     _initializeServices();
     _currentLevelId = widget.levelId;
     _currentClassId = widget.classId;
-    _currentClassName = widget.className;
     selectedClass = widget.className;
     _loadPaidInvoices();
   }
@@ -55,7 +53,6 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
       final token = userBox.get('token');
 
       if (token == null || token.toString().isEmpty) {
-        print('No authentication token found. User needs to login again.');
         return;
       }
 
@@ -63,9 +60,8 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
       apiService.setAuthToken(token.toString());
       _paymentService = PaymentService(apiService);
 
-      print('ApiService initialized with authentication token');
     } catch (e) {
-      print('Error initializing services: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -83,7 +79,6 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      print('Error loading paid invoices: $e');
     }
   }
 
@@ -160,7 +155,6 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
         Navigator.pop(context);
         setState(() {
           _currentClassId = classModel.id;
-          _currentClassName = classModel.className;
           selectedClass = classModel.className;
         });
         _loadPaidInvoices();

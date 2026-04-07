@@ -289,7 +289,7 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              question[index].questionText ?? 'Question text not available',
+              question[index].questionText ,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -379,91 +379,4 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildQuestionCard({
-    required int questionNumber,
-    required String status,
-    required Color statusColor,
-    required String question,
-    required String userAnswer,
-    required String correctAnswer,
-    required int marks,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Question $questionNumber',
-                    style: AppTextStyles.normal600(
-                        fontSize: 18, color: AppColors.eLearningContColor2)),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        status,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                      if (status != 'No answer') ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          status == 'Correct' ? Icons.check : Icons.close,
-                          color: Colors.white,
-                          size: 12,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              question,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Your answer:'),
-                Text(userAnswer.isEmpty ? 'No answer' : userAnswer),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Correct Answer:'),
-                Text(correctAnswer),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              // Use the dynamic color for the marks
-              child: Text(
-                '$marks marks',
-                style: AppTextStyles.normal600(
-                    fontSize: 16, color: _getMarksColor(status)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

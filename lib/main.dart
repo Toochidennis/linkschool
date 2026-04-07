@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -9,7 +10,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/config/providers_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/ads_service/facebook_service.dart';
@@ -23,42 +23,31 @@ final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 final AppLinks _appLinks = AppLinks();
-Uri? _initialDeepLink;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   try {
     await Hive.initFlutter();
     await Hive.openBox('userData');
     await Hive.openBox('attendance');
     await Hive.openBox('loginResponse');
-    print('Hive initialized successfully');
   } catch (e) {
-    print('Error initializing Hive: $e');
+    // Intentionally ignored.
   }
 
   setupServiceLocator();
 
-  await CbtExamSyncService().syncOnStartup();
-
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
     ),
   );
-
-  await MobileAds.instance.initialize();
-
-  // Handle cold start via link (app was closed)
-  _initialDeepLink = await _appLinks.getInitialLink();
-  if (_initialDeepLink != null) {
-    debugPrint('Cold start via link: $_initialDeepLink');
-  }
 
   runApp(
     MultiProvider(
@@ -68,7 +57,11 @@ Future<void> main() async {
   );
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    unawaited(_logFacebookAppLaunchSafely());
+    Future<void>.delayed(const Duration(seconds: 2), () {
+      unawaited(CbtExamSyncService().syncOnStartup());
+      unawaited(MobileAds.instance.initialize());
+      unawaited(_logFacebookAppLaunchSafely());
+    });
   });
 }
 
@@ -77,7 +70,6 @@ Future<void> _logFacebookAppLaunchSafely() async {
     await FacebookAnalyticsService.initialize();
     await FacebookAnalyticsService.logAppLaunch();
   } catch (e, stackTrace) {
-    debugPrint('Facebook app launch logging failed: $e');
     debugPrintStack(stackTrace: stackTrace);
   }
 }
@@ -100,6 +92,15 @@ class MyApp extends StatelessWidget {
                 ? AppThemes.darkTheme
                 : AppThemes.lightTheme,
             themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            builder: (context, child) {
+              final overlayStyle = settings.isDarkMode
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark;
+              return AnnotatedRegion<SystemUiOverlayStyle>(
+                value: overlayStyle,
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             home: const AppInitializer(),
             navigatorKey: appNavigatorKey,
             navigatorObservers: [routeObserver],
@@ -117,36 +118,76 @@ class AppInitializer extends StatefulWidget {
   State<AppInitializer> createState() => _AppInitializerState();
 }
 
-class _AppInitializerState extends State<AppInitializer> {
+class _AppInitializerState extends State<AppInitializer>
+    with WidgetsBindingObserver {
   bool _isInitialized = false;
   bool _showOnboarding = false;
-  StreamSubscription<Uri>? _linkSub; // ✅ nullable — not assigned at declaration
+  Uri? _lastHandledDeepLink;
+DateTime? _lastHandledAt;
+  StreamSubscription<Uri>? _linkSub;
+   static bool _initialLinkHandled = false;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_initializeServices());
-    _initializeApp();
+    WidgetsBinding.instance.addObserver(this);
     _initLinkListener();
-  }
-
-  Future<void> _initializeServices() async {
-    await NotificationNavigationService().initialize(appNavigatorKey);
-    final initialLink = _initialDeepLink;
-    if (initialLink != null) {
-      await NotificationNavigationService().handleDeepLink(initialLink);
-      _initialDeepLink = null;
-    }
-  }
-
-  void _initLinkListener() {
-    _linkSub = _appLinks.uriLinkStream.listen((uri) {
-      debugPrint('Link while app open: $uri');
-      unawaited(NotificationNavigationService().handleDeepLink(uri));
-    }, onError: (Object error) {
-      debugPrint('Deep link stream error: $error');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_initializeServices());
+      unawaited(_initializeApp());
     });
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint('App lifecycle: $state');
+  }
+
+
+Future<void> _initializeServices() async {
+  debugPrint('Notification/deeplink services initializing');
+  await NotificationNavigationService().initialize(appNavigatorKey);
+
+  // Only handle initial link on true cold start (app not already running)
+  if (!_initialLinkHandled) {
+    _initialLinkHandled = true;
+    final initialLink = await _appLinks.getInitialLink();
+    if (initialLink != null) {
+      debugPrint('Deep link initial: $initialLink');
+      _recordAndHandle(initialLink);
+    }
+  }
+  debugPrint('Notification/deeplink services initialized');
+}
+
+void _initLinkListener() {
+  debugPrint('AppLinks uriLinkStream listener attached');
+  _linkSub = _appLinks.uriLinkStream.listen(
+    (uri) {
+      debugPrint('Deep link stream: $uri');
+      _recordAndHandle(uri);
+    },
+    onError: (Object error) {},
+  );
+}
+
+void _recordAndHandle(Uri uri) {
+  final now = DateTime.now();
+  
+  if (_lastHandledDeepLink == uri && _lastHandledAt != null) {
+    final diff = now.difference(_lastHandledAt!);
+    if (diff < const Duration(seconds: 2)) {
+      debugPrint('Deep link DEDUPLICATED after ${diff.inMilliseconds}ms: $uri');
+      return;
+    }
+    debugPrint('Deep link SAME URI, but ${diff.inSeconds}s elapsed — allowing: $uri');
+  }
+
+  _lastHandledDeepLink = uri;
+  _lastHandledAt = now;
+  debugPrint('Deep link DISPATCHING: $uri');
+  unawaited(NotificationNavigationService().handleDeepLink(uri));
+}
 
   Future<void> _initializeApp() async {
     try {
@@ -186,16 +227,13 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   void dispose() {
-    _linkSub?.cancel(); // ✅ cancels stream subscription on widget unmount
+    _linkSub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // if (_showOnboarding) {
-    //   return const Onboardingscreen();
-    // }
-
     return const AppNavigationFlow();
   }
 }

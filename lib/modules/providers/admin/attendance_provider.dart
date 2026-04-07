@@ -52,11 +52,6 @@ class AttendanceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print('AttendanceProvider: Fetching attendance history with params:');
-      print('- classId: $classId');
-      print('- term: $term');
-      print('- year: $year');
-      print('- dbName: $dbName');
 
       final response = await _attendanceService.getAttendanceHistory(
         classId: classId,
@@ -65,28 +60,20 @@ class AttendanceProvider with ChangeNotifier {
         dbName: dbName,
       );
 
-      print(
-          'AttendanceProvider: Response received - Success: ${response.success}');
-      print(
-          'AttendanceProvider: Raw data: ${response.rawData}'); // Add raw data logging
+ // Add raw data logging
 
       if (response.success && response.data != null) {
         _attendanceRecords = response.data!;
         _attendanceRecords.sort((a, b) => b.date.compareTo(a.date));
-        print(
-            'AttendanceProvider: ${_attendanceRecords.length} records loaded');
-        print(
-            'AttendanceProvider: Records: ${_attendanceRecords.map((r) => r.toJson())}'); // Log records
+ // Log records
         _error = '';
       } else {
         _error = response.message.isNotEmpty
             ? response.message
             : 'Failed to load attendance history';
-        print('AttendanceProvider: Error - $_error');
       }
     } catch (e) {
       _error = 'Failed to fetch attendance records: ${e.toString()}';
-      print('AttendanceProvider: Exception - $_error');
 
       if (e.toString().contains('Values for IN cannot be empty')) {
         _error =
@@ -125,31 +112,23 @@ class AttendanceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print(
-          'AttendanceProvider: Fetching attendance details for ID: $attendanceId, dbName: $dbName');
 
       final response = await _attendanceService.getAttendanceDetails(
         attendanceId: attendanceId,
         dbName: dbName,
       );
 
-      print(
-          'AttendanceProvider: Response received - Success: ${response.success}, Status: ${response.statusCode}');
-      print('AttendanceProvider: Raw data: ${response.rawData}');
 
       if (response.success && response.data != null) {
         _attendanceDetails = response.data;
         _error = '';
-        print('AttendanceProvider: Attendance details loaded successfully');
       } else {
         _error = response.message.isNotEmpty
             ? response.message
             : 'Failed to load attendance details: No data received';
-        print('AttendanceProvider: Error loading details - $_error');
       }
     } catch (e) {
       _error = 'Failed to fetch attendance details: ${e.toString()}';
-      print('AttendanceProvider: Exception loading details - $_error');
 
       if (e.toString().contains('Network')) {
         _error = 'Network error. Please check your internet connection.';
@@ -182,3 +161,4 @@ class AttendanceProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+

@@ -20,7 +20,6 @@ class StaffStreamsService {
     final token = loginData['token'] ?? userBox.get('token');
     if (token != null) {
       _apiService.setAuthToken(token);
-      print('Token set: $token');
     }
 
     try {
@@ -42,7 +41,6 @@ class StaffStreamsService {
 
       throw Exception("Failed to fetch streams: ${response.message}");
     } catch (e) {
-      print("Error fetching streams: $e");
       throw Exception("Failed to fetch streams: $e");
     }
   }
@@ -52,3 +50,4 @@ class StaffStreamsService {
   //   // Implement delete logic here
   // }
 }
+

@@ -232,8 +232,7 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
             await markProvider.markQuiz(
                 widget.contentId, _getTotalPossibleScore().toString());
 
-            print('Returning submission id: ${widget.contentId}');
-            //print('Grader id: ${widget.quizId}, name: ');
+
             CustomToaster.toastSuccess(
                 context, 'Returned', 'Grade shared with student');
             widget.onGraded?.call();

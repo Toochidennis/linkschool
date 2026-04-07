@@ -22,7 +22,6 @@ class CbtPlanService {
           .map((e) => CbtPlanModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('❌ Error loading cached plans: $e');
       return [];
     }
   }
@@ -34,7 +33,7 @@ class CbtPlanService {
       await prefs.setString(_cacheKey, payload);
       await prefs.setInt(_cacheTsKey, DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
-      print('❌ Error saving cached plans: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -44,8 +43,6 @@ class CbtPlanService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      print("🛠️ [FETCH PLANS] GET $baseUrl");
-      print("➡️ Headers: X-API-KEY: $apiKey");
 
       final response = await http.get(
         Uri.parse(baseUrl),
@@ -69,12 +66,10 @@ class CbtPlanService {
             "Failed to fetch plans: ${decoded['message'] ?? 'Unknown error'}");
       }
 
-      print("❌ Failed to fetch plans: ${response.statusCode}");
-      print("Body: ${response.body}");
       throw Exception("Failed to fetch plans: ${response.statusCode}");
     } catch (e) {
-      print("❌ Error fetching plans: $e");
       throw Exception("Error fetching plans: $e");
     }
   }
 }
+

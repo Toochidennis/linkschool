@@ -258,7 +258,7 @@ class _WatchHistoryScreenState extends State<WatchHistoryScreen> {
                     padding: const EdgeInsets.all(10.0),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                     ),
                     child: const Icon(
                       Icons.play_arrow_rounded,

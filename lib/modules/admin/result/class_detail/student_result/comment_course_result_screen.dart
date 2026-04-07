@@ -105,13 +105,10 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
         queryParams: queryParams,
       );
 
-      print('Raw API Response: ${response.rawData}');
 
       if (response.success && response.rawData != null) {
         final jsonResponse = response.rawData as Map<String, dynamic>;
-        print('Extracted jsonResponse: $jsonResponse');
         final results = jsonResponse['response'] as List<dynamic>? ?? [];
-        print('Extracted results: $results');
 
         final uniqueAssessments = <String>{};
         for (var student in results) {
@@ -146,7 +143,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
         });
       }
     } catch (e) {
-      print('Error in fetchStudentResults: $e');
       setState(() {
         error = 'Failed to load results: $e';
         isLoading = false;
@@ -366,9 +362,9 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -620,9 +616,9 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

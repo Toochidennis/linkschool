@@ -75,13 +75,12 @@ class CourseProvider with ChangeNotifier {
     notifyListeners();
     try {
       courses = await _courseService.fetchCourses();
-      print("Fetched ${courses.length} courses");
     } catch (e) {
       error = "Failed to fetch courses: $e";
-      print("Error in provider: $e");
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
 }
+

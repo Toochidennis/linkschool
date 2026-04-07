@@ -14,8 +14,8 @@ class SelectTopicScreen extends StatefulWidget {
   final VoidCallback? onTopicCreated;
   final String? levelId;
   final int? syllabusId;
-  final courseId;
-  final courseName;
+  final dynamic courseId;
+  final dynamic courseName;
   final int? preSelectedTopicId; // Add this parameter
 
   const SelectTopicScreen({
@@ -47,11 +47,9 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Add null safety check
       if (widget.syllabusId != null && widget.syllabusId! > 0) {
-        print('Fetching topics with syllabusId: ${widget.syllabusId}');
         Provider.of<TopicProvider>(context, listen: false)
             .fetchTopic(syllabusId: widget.syllabusId!);
       } else {
-        print('Invalid syllabusId: ${widget.syllabusId}, skipping fetch');
       }
     });
   }

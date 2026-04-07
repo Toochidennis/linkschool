@@ -91,9 +91,7 @@ class CBTProvider extends ChangeNotifier {
         _error = 'No internet connection. Connect and try again.';
       }
 
-      print('✅ loadBoards complete — ${_boards.length} boards loaded');
     } catch (e) {
-      print('❌ loadBoards error: $e');
 
       // Last resort — try forcing network even if we thought we were offline
       try {
@@ -116,7 +114,6 @@ class CBTProvider extends ChangeNotifier {
         _error = isOnline
             ? 'Network error. Please try again.'
             : 'No internet connection. Connect and try again.';
-        print('❌ Fallback also failed: $e2');
       }
     } finally {
       _isLoading = false;
@@ -146,14 +143,10 @@ class CBTProvider extends ChangeNotifier {
         }).toList();
       }
 
-      print('🔄 CBTProvider - Stats loaded:');
-      print('   Total Tests: $_totalTests');
-      print('   Success Count: $_successCount');
-      print('   Average Score: ${_averageScore.toStringAsFixed(1)}%');
 
       notifyListeners();
     } catch (e) {
-      print('Error loading dashboard stats: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -235,8 +228,6 @@ class CBTProvider extends ChangeNotifier {
       (subject) => subject.name == subjectName,
       orElse: () => SubjectModel(id: '', name: subjectName, years: []),
     );
-    debugPrint(
-        'Year models for $subjectName: ${subject.years?.map((y) => y.year).join(', ')}');
     return subject.years ?? [];
   }
 
@@ -247,9 +238,6 @@ class CBTProvider extends ChangeNotifier {
       orElse: () => SubjectModel(id: '', name: subjectName, years: []),
     );
 
-    print('Finding exam ID for Subject: $subjectName, Year: $year');
-    print(
-        'Available years for $subjectName: ${subject.years?.map((y) => y.id).join(', ')}');
 
     final yearModel = subject.years?.firstWhere(
       (y) => y.year == year,
@@ -287,3 +275,4 @@ class CBTProvider extends ChangeNotifier {
     return subject.cardColor ?? AppColors.cbtCardColor1;
   }
 }
+

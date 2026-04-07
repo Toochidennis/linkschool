@@ -26,7 +26,6 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     String? textContent,
     List<Map<String, dynamic>>? assignments,
   }) async {
-    print("🚀 AssignmentSubmissionProvider: submitAssignment called");
 
     
     _isSubmitting = true;
@@ -35,16 +34,7 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      print("📞 Calling service.submitAssignment...");
-      print("=====ssignment datas=====");
-      print("  - name: $name");
-    print("  - quiz_score: $quizScore");
-    print("  - lesson_id: $lessonId");
-    print("  - cohort_id: $cohortId");
-    print("  - profile_id: $profileId");
-    print("  - Assignemt: $assignments");
 
-    print("  - assignments count: ${assignments?.length ?? 0}");
       final result = await _service.submitAssignment(
         name: name,
         email: email,
@@ -59,14 +49,12 @@ class AssignmentSubmissionProvider with ChangeNotifier {
         profileId: profileId,
       );
 
-      print("✅ Service returned success: $result");
       _submissionResult = result;
       _isSubmitting = false;
       notifyListeners();
       
       return true;
     } catch (error) {
-      print("❌ Provider caught error: $error");
       _errorMessage = error.toString();
       _isSubmitting = false;
       notifyListeners();
@@ -88,3 +76,4 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+

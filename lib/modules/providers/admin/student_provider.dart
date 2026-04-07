@@ -69,7 +69,7 @@ class StudentProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('Error creating student from login data: $e');
+      // Intentionally ignored.
     }
     return null;
   }
@@ -121,7 +121,6 @@ class StudentProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       _errorMessage = e.toString();
-      debugPrint('Error in fetchStudentResultTerms: $e');
       notifyListeners();
     }
   }
@@ -254,8 +253,6 @@ class StudentProvider extends ChangeNotifier {
           }
         }
       } else {
-        debugPrint(
-            'No existing attendance records found for class $classId on $date');
       }
 
       // Update student attendance status
@@ -275,7 +272,6 @@ class StudentProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       _errorMessage = e.toString();
-      debugPrint('Error in fetchAttendance: $e');
       notifyListeners();
     }
   }
@@ -325,8 +321,6 @@ class StudentProvider extends ChangeNotifier {
           }
         }
       } else {
-        debugPrint(
-            'No existing attendance records found for course $courseId on $date');
       }
 
       // Update student attendance status
@@ -347,7 +341,6 @@ class StudentProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       _errorMessage = e.toString();
-      debugPrint('Error in fetchCourseAttendance: $e');
       notifyListeners();
     }
   }
@@ -418,8 +411,6 @@ class StudentProvider extends ChangeNotifier {
       final key = 'attended_${classId}_$dateOnly';
       await attendanceBox.put(key, studentIds);
       _attendedStudentIds = studentIds;
-      debugPrint('Saved attended students with key: $key');
-      debugPrint('Attended students: $_attendedStudentIds');
 
       for (int i = 0; i < _students.length; i++) {
         final isAttended = _attendedStudentIds.contains(_students[i].id);
@@ -427,7 +418,7 @@ class StudentProvider extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      debugPrint('Error saving attended students: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -439,23 +430,18 @@ class StudentProvider extends ChangeNotifier {
       final attendanceBox = await Hive.openBox('attendance');
       final dateOnly = date.split(' ')[0];
       final key = 'attended_${classId}_$dateOnly';
-      debugPrint("Loading attended students with key: $key");
       final localData = attendanceBox.get(key);
       if (localData is List<dynamic>) {
         _attendedStudentIds = localData.cast<int>();
-        debugPrint("Loaded attended students: $_attendedStudentIds");
         for (int i = 0; i < _students.length; i++) {
           final isAttended = _attendedStudentIds.contains(_students[i].id);
-          debugPrint(
-              "Student ${_students[i].id}: ${_students[i].name} - isAttended: $isAttended");
           _students[i] = _students[i].copyWith(hasAttended: isAttended);
         }
         notifyListeners();
       } else {
-        debugPrint("No attended students data found for key: $key");
       }
     } catch (e) {
-      debugPrint("Error loading attended students: $e");
+      // Intentionally ignored.
     }
   }
 
@@ -468,11 +454,9 @@ class StudentProvider extends ChangeNotifier {
       final attendanceBox = await Hive.openBox('attendance');
       final dateOnly = date.split(' ')[0];
       final key = '${classId}_${dateOnly}_$courseId';
-      debugPrint("Fetching local attendance with key: $key");
       final localData = attendanceBox.get(key);
       if (localData is List<dynamic>) {
         _localAttendance = localData.cast<int>();
-        debugPrint("Loaded local attendance: $_localAttendance");
         for (var i = 0; i < _students.length; i++) {
           final isSelected = _localAttendance.contains(_students[i].id);
           _students[i] = _students[i].copyWith(isSelected: isSelected);
@@ -480,10 +464,9 @@ class StudentProvider extends ChangeNotifier {
         _updateSelectAllStatus();
         notifyListeners();
       } else {
-        debugPrint("No local attendance data found for key: $key");
       }
     } catch (e) {
-      debugPrint('Error fetching local attendance: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -554,11 +537,9 @@ class StudentProvider extends ChangeNotifier {
       final key = '${classId}_${dateOnly}_$courseId';
       await attendanceBox.put(key, studentIds);
       _localAttendance = studentIds;
-      debugPrint('Saved local attendance with key: $key');
-      debugPrint('Local attendance: $_localAttendance');
       notifyListeners();
     } catch (e) {
-      debugPrint('Error saving local attendance: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -571,8 +552,6 @@ class StudentProvider extends ChangeNotifier {
     try {
       _isLoading = true;
       _errorMessage = '';
-      debugPrint('Fetching annual results with params: '
-          'studentId=$studentId, classId=$classId, levelId=$levelId, year=$year');
       notifyListeners();
 
       final result = await _studentService.getStudentAnnualResults(
@@ -582,14 +561,12 @@ class StudentProvider extends ChangeNotifier {
         year: year,
       );
 
-      debugPrint('Received annual results: $result');
       _annualResults = result;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Error fetching annual results: $e';
-      debugPrint(_errorMessage);
       notifyListeners();
     }
   }
@@ -646,16 +623,12 @@ class StudentProvider extends ChangeNotifier {
         _isLoading = false;
         _errorMessage =
             'Invalid parameters: classId, levelId, or year is empty';
-        debugPrint(_errorMessage);
         notifyListeners();
         return;
       }
 
       _isLoading = true;
       _errorMessage = '';
-      debugPrint('Fetching term results with params: '
-          'studentId=$studentId, termId=$termId, classId=$classId, '
-          'year=$year, levelId=$levelId');
       notifyListeners();
 
       final result = await _studentService.getStudentTermResults(
@@ -666,14 +639,12 @@ class StudentProvider extends ChangeNotifier {
         levelId: levelId,
       );
 
-      debugPrint('Received term results: $result');
       _studentTermResult = result;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Error fetching term results: $e';
-      debugPrint(_errorMessage);
       notifyListeners();
     }
   }

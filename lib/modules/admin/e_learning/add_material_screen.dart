@@ -123,7 +123,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -265,7 +265,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: _buildAttachmentsSection(),
                           ),
-                          Divider(color: Colors.grey.withOpacity(0.5)),
+                          Divider(color: Colors.grey.withValues(alpha: 0.5)),
                           _buildGroupRow(
                             context,
                             iconPath: 'assets/icons/e_learning/clipboard.svg',
@@ -301,7 +301,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
               Container(
                 padding: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  color: AppColors.backgroundLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
@@ -354,7 +354,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Divider(color: Colors.grey.withOpacity(0.5)),
+        Divider(color: Colors.grey.withValues(alpha: 0.5)),
         const SizedBox(height: 8.0),
       ],
     );
@@ -626,7 +626,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                 CustomOutlineButton(
                   onPressed: () => Navigator.of(context).pop(),
                   text: 'Cancel',
-                  borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+                  borderColor: AppColors.eLearningBtnColor3.withValues(alpha: 0.4),
                   textColor: AppColors.eLearningBtnColor3,
                 ),
                 CustomSaveElevatedButton(
@@ -667,7 +667,6 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      print('Error picking file: $e');
       CustomToaster.toastError(context, 'Error', 'Failed to pick file: $e');
     }
   }
@@ -743,12 +742,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         // If result is empty or null, maintain current selection
       });
 
-      print(
-          'Topic selection result: ${result['topicName']} (ID: ${result['topicId']})');
     } else {
       // If no result (user cancelled), maintain current selection
-      print(
-          'No topic selection result - maintaining current topic: $_selectedTopic');
     }
   }
 
@@ -843,19 +838,14 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
 
       if (widget.editMode && widget.materialToEdit != null) {
         final id = widget.id ?? widget.itemId;
-        print('Updating Material Data:');
-        print(const JsonEncoder.withIndent('  ').convert(materialPayload));
         await materialProvider.UpDateMaterial(materialPayload, id!);
       } else {
-        print('Creating Material Data:');
-        print(const JsonEncoder.withIndent('  ').convert(materialPayload));
         await materialProvider.addMaterial(materialPayload);
       }
 
       widget.onSave(materialPayload);
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error saving material: $e');
       CustomToaster.toastError(context, 'Error', 'Failed to save material: $e');
     } finally {
       setState(() {

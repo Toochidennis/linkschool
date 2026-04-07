@@ -72,7 +72,6 @@ class _PaystackCbtWebViewState extends State<PaystackCbtWebView> {
 
   void _log(String message) {
     final timestamp = DateTime.now().toIso8601String();
-    print('[$timestamp] $message');
   }
 
   void _initializeWebView() {
@@ -480,7 +479,6 @@ class _PaystackCbtWebViewState extends State<PaystackCbtWebView> {
                           Navigator.of(context).pop();
                           // After pop, refetch user data
                           final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-                          print('🔄 User cancelled payment, refetching user data... ${userProvider.currentUser?.email}');
                           await userProvider.fetchUserByEmail(userProvider.currentUser?.email ?? '');
                         }
                       },
@@ -508,7 +506,7 @@ class _PaystackCbtWebViewState extends State<PaystackCbtWebView> {
           // Quick processing overlay (shorter message)
           if (_isVerifying)
             Container(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               child: Center(
                 child: Card(
                   margin: const EdgeInsets.all(32),

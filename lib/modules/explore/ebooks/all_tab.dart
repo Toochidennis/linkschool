@@ -180,7 +180,7 @@ class AllTab extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Icon(
                           Icons.broken_image,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           size: 40,
                         ),
                       );
@@ -251,7 +251,7 @@ class AllTab extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Icon(
                           Icons.broken_image,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           size: 40,
                         ),
                       );

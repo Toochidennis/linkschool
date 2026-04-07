@@ -25,11 +25,9 @@ class CourseRegistrationProvider with ChangeNotifier {
         _registeredCourses = response.data!;
       } else {
         _registeredCourses = [];
-        debugPrint('No registered students found or ${response.message}');
       }
     } catch (e) {
       _registeredCourses = [];
-      debugPrint('Error fetching registered students: ${e.toString()}');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -58,14 +56,11 @@ class CourseRegistrationProvider with ChangeNotifier {
         final courseIds = coursesJson
             .map<int>((json) => (json['id'] as num).toInt())
             .toList();
-        print('Fetched course IDs: $courseIds');
         return courseIds;
       }
 
-      print('No registered courses found for student $studentId');
       return [];
     } catch (e) {
-      print('Error fetching student registered courses: ${e.toString()}');
       return [];
     }
   }
@@ -95,14 +90,11 @@ class CourseRegistrationProvider with ChangeNotifier {
           );
           _registeredCourses[index] = updatedStudent;
         }
-        debugPrint('Course registered successfully');
         return true;
       } else {
-        debugPrint('Failed to register course: ${response.message}');
         return false;
       }
     } catch (e) {
-      debugPrint('Error registering course: ${e.toString()}');
       return false;
     } finally {
       _isLoading = false;
@@ -110,3 +102,4 @@ class CourseRegistrationProvider with ChangeNotifier {
     }
   }
 }
+

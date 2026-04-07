@@ -21,9 +21,8 @@ class StudyHistoryService {
           historyList.map((session) => _sessionToJson(session)).toList();
       await prefs.setString(_studyHistoryKey, jsonEncode(jsonList));
 
-      print('💾 Study session saved. Total sessions: ${historyList.length}');
     } catch (e) {
-      print('❌ Error saving study session: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -34,17 +33,14 @@ class StudyHistoryService {
       final String? jsonString = prefs.getString(_studyHistoryKey);
 
       if (jsonString == null || jsonString.isEmpty) {
-        print('📖 No study history found');
         return [];
       }
 
       final List<dynamic> jsonList = jsonDecode(jsonString);
       final history = jsonList.map((json) => _sessionFromJson(json)).toList();
 
-      print('📖 Retrieved ${history.length} study sessions');
       return history;
     } catch (e) {
-      print('❌ Error retrieving study history: $e');
       return [];
     }
   }
@@ -54,9 +50,8 @@ class StudyHistoryService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_studyHistoryKey);
-      print('🗑️ Study history cleared');
     } catch (e) {
-      print('❌ Error clearing study history: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -101,3 +96,4 @@ class StudyHistoryService {
     );
   }
 }
+

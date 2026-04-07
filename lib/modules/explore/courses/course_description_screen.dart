@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:linkschool/modules/model/explore/cohorts/cohort_model.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
@@ -34,6 +35,7 @@ class CourseDescriptionScreen extends StatefulWidget {
   final String? lastName;
   final bool? isFree;
   final String? trialExpiryDate;
+  final String? cohortRef;
 
   const CourseDescriptionScreen({
     super.key,
@@ -50,6 +52,7 @@ class CourseDescriptionScreen extends StatefulWidget {
     this.lastName,
     this.isFree,
     this.trialExpiryDate,
+    this.cohortRef,
   });
 
   @override
@@ -64,10 +67,20 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
   void initState() {
     super.initState();
     _cohortProvider = CohortProvider(CohortService());
-    _cohortProvider.loadCohort(widget.cohortId);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_loadCohort());
       _syncActiveProfileAndUpdateUser();
     });
+  }
+
+  Future<void> _loadCohort() async {
+    debugPrint(
+      'Loading cohort details: cohortId=${widget.cohortId}, ref=${widget.cohortRef ?? ''}',
+    );
+    await _cohortProvider.loadCohort(
+      widget.cohortId,
+      ref: widget.cohortRef,
+    );
   }
 
   Future<void> _syncActiveProfileAndUpdateUser() async {
@@ -174,7 +187,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
       create: (_) => _cohortProvider,
       child: Consumer<CohortProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) {
+          if (provider.isLoading || provider.cohort == null) {
             return Scaffold(
               backgroundColor: Colors.white,
               body: const Center(
@@ -217,7 +230,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () => provider.loadCohort(widget.cohortId),
+                      onPressed: _loadCohort,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFFA500),
                         shape: RoundedRectangleBorder(
@@ -232,7 +245,17 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
             );
           }
 
-          final cohort = provider.cohort!;
+          final cohort = provider.cohort;
+          if (cohort == null) {
+            return Scaffold(
+              backgroundColor: Colors.white,
+              body: const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFFFFA500),
+                ),
+              ),
+            );
+          }
           final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
           final isFree = cohort.isFree == 1;
 
@@ -261,7 +284,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
           return Scaffold(
             backgroundColor: Colors.white,
             body: RefreshIndicator(
-              onRefresh: () => provider.loadCohort(widget.cohortId),
+            onRefresh: _loadCohort,
               child: Stack(
                 children: [
                   CustomScrollView(
@@ -272,13 +295,10 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                         backgroundColor: Colors.white,
                         elevation: 0,
                         iconTheme: const IconThemeData(color: Colors.black87),
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.black.withOpacity(0.08),
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.black87),
-                            onPressed: () => Navigator.pop(context),
-                          ),
+                        leading: IconButton(
+                          icon: const Icon(Icons.arrow_back,
+                              color: Colors.black87),
+                          onPressed: () => Navigator.pop(context),
                         ),
                       ),
 
@@ -302,7 +322,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
-                                        Colors.black.withOpacity(0.12),
+                                        Colors.black.withValues(alpha: 0.12),
                                         Colors.transparent,
                                       ],
                                     ),
@@ -324,7 +344,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: widget.categoryColor.withOpacity(0.1),
+                                  color: widget.categoryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -507,7 +527,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                                       horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF10B981)
-                                        .withOpacity(0.12),
+                                        .withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: const Text(
@@ -637,7 +657,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, -5),
                           ),
@@ -1298,22 +1318,18 @@ class _CourseMediaHeaderState extends State<_CourseMediaHeader> {
   }
 
   Future<void> _initializeForUrl(String? rawUrl) async {
-    print('🎬 Video URL received: $rawUrl');
    if (_activeVideoUrl == rawUrl) return;
     _activeVideoUrl = rawUrl;
     await _disposeControllers();
 
     final videoUrl = rawUrl?.trim();
     if (videoUrl == null || videoUrl.isEmpty) {
-      print('⚠️ Video URL is empty or null');
       if (mounted) setState(() {});
       return;
     }
 
     final videoId = _extractYouTubeId(videoUrl);
-    print('🔍 Extracted YouTube ID: $videoId from URL: $videoUrl');
     if (videoId != null && videoId.isNotEmpty) {
-      print('✅ Creating YouTube player with ID: $videoId');
       final controller = YoutubePlayerController(
         initialVideoId: videoId,
         flags: const YoutubePlayerFlags(
@@ -1331,11 +1347,9 @@ class _CourseMediaHeaderState extends State<_CourseMediaHeader> {
       return;
     }
 
-    print('📹 Attempting to load as network video: $videoUrl');
     try {
       final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
       await controller.initialize();
-      print('✅ Network video initialized successfully');
       final chewieController = ChewieController(
         videoPlayerController: controller,
         autoPlay: false,
@@ -1355,8 +1369,6 @@ class _CourseMediaHeaderState extends State<_CourseMediaHeader> {
         chewieController.dispose();
       }
     } catch (e) {
-      print('❌ Failed to load network video: $e');
-      print('🖼️ Falling back to image thumbnail');
       if (mounted) setState(() {});
     }
   }

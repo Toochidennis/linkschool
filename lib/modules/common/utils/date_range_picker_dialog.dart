@@ -134,7 +134,7 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundLight.withOpacity(0.1),
+                    color: AppColors.backgroundLight.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -158,7 +158,7 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundLight.withOpacity(0.1),
+                    color: AppColors.backgroundLight.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(

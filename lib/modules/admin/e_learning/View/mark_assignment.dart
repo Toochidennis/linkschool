@@ -89,7 +89,9 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
           _creatorName = profile['name']?.toString();
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      // Intentionally ignored.
+    }
   }
 
   @override
@@ -216,9 +218,6 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
     try {
       final marker = context.read<MarkAssignmentProvider>();
       await marker.markAssignment(widget.assignmentId, score.toString());
-      print('Marked with score: $score');
-      print('Returning submission id: ${widget.assignmentId}');
-      print('Grader id: ${widget.assignmentId}, name: $_creatorName');
       CustomToaster.toastSuccess(
           context, 'Returned', 'Grade shared with student');
       widget.onGraded?.call();
@@ -337,7 +336,6 @@ class _SubmissionPreview extends StatelessWidget {
           return InkWell(
             onTap: () async {
               if (isImg) {
-                print("this is an image $name");
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -349,7 +347,6 @@ class _SubmissionPreview extends StatelessWidget {
                   ),
                 );
               } else if (isPdf) {
-                print("this is an image $name");
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -456,7 +453,7 @@ BoxDecoration _cardDecoration(BuildContext context) {
     border: Border.all(color: Colors.white10),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.08),
+        color: Colors.black.withValues(alpha: 0.08),
         blurRadius: 10,
         offset: const Offset(0, 4),
       ),

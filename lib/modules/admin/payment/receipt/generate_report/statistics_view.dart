@@ -97,7 +97,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                       height: 50,
                       decoration: BoxDecoration(
                         color: const Color.fromRGBO(209, 219, 255, 1)
-                            .withOpacity(0.35),
+                            .withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -313,7 +313,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: const Color.fromRGBO(209, 219, 255, 1)
-                              .withOpacity(0.2),
+                              .withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -526,7 +526,7 @@ extension StringExtension on String {
 //               // width: 327,
 //               height: 50,
 //               decoration: BoxDecoration(
-//                 color:  const Color.fromRGBO(209, 219, 255, 1).withOpacity(0.35),
+//                 color:  const Color.fromRGBO(209, 219, 255, 1).withValues(alpha: 0.35),
 //                 borderRadius: BorderRadius.circular(4),
 //               ),
 //               padding: const EdgeInsets.symmetric(horizontal: 16),

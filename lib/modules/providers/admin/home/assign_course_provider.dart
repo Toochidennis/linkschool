@@ -23,8 +23,7 @@ class AssignCourseProvider with ChangeNotifier {
           await _assignCourseService.fetchCourseAssignments(staffId,  year,term);
       _assignments = response.response;
     } catch (e) {
-      debugPrint("Failed to load course assignments: $e");
-      print("llcourse assignments: $_assignments");
+      // Intentionally ignored.
     } finally {
       isLoading = false;
       notifyListeners();
@@ -49,3 +48,4 @@ class AssignCourseProvider with ChangeNotifier {
     }
   }
 }
+

@@ -1,3 +1,10 @@
+int _parseInt(dynamic value, {int fallback = 0}) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is bool) return value ? 1 : 0;
+  return int.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
 class CohortModel {
   final int id;
   final int programId;
@@ -59,9 +66,9 @@ class CohortModel {
 
   factory CohortModel.fromJson(Map<String, dynamic> json) {
     return CohortModel(
-      id: json['id'] ?? 0,
-      programId: json['program_id'] ?? 0,
-      courseId: json['course_id'] ?? 0,
+      id: _parseInt(json['id']),
+      programId: _parseInt(json['program_id']),
+      courseId: _parseInt(json['course_id']),
       slug: json['slug'] ?? '',
       courseName: json['course_name'] ?? '',
       title: json['title'] ?? '',
@@ -72,12 +79,12 @@ class CohortModel {
       endDate: json['end_date'] ?? '',
       status: json['status'] ?? '',
       imageUrl: json['image_url'] ?? '',
-      capacity: json['capacity'] ?? 0,
+      capacity: _parseInt(json['capacity']),
       deliveryMode: json['delivery_mode'] ?? '',
       zoomLink: json['zoom_link'] ?? '',
-      isFree: json['is_free'] ?? 0,
+      isFree: _parseInt(json['is_free']),
       trialType: json['trial_type'] ?? '',
-      trialValue: json['trial_value'] ?? 0,
+      trialValue: _parseInt(json['trial_value']),
       cost: json['cost']?.toString() ?? '',
       learningType: json['learning_type']?.toString() ?? '',
       discount: json['discount']?.toString(),

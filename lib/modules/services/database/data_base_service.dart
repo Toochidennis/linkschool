@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
-import 'package:linkschool/database/cbt_db-helper.dart';
+import 'package:linkschool/database/cbt_db_helper.dart';
 
 
 class CbtExamSyncService {
@@ -17,11 +17,9 @@ class CbtExamSyncService {
     final alreadySeeded = await _db.isSeedDone('exam_types_seed');
 
     if (alreadySeeded) {
-      print('✅ CBT boards already seeded — skipping network');
       return;
     }
 
-    print('🌐 First launch — fetching CBT boards from API...');
 
     try {
       final apiKey = EnvConfig.apiKey;
@@ -60,10 +58,8 @@ class CbtExamSyncService {
       // Mark as done so we never fetch again
       await _db.markSeedDone('exam_types_seed');
 
-      print('✅ CBT boards synced and saved — ${rawList.length} boards');
     } catch (e) {
       // Don't mark as seeded — will retry next app launch
-      print('⚠️ CBT sync failed (will retry next launch): $e');
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
@@ -283,7 +284,7 @@ Widget _buildHeader(String boardName) {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.arrow_back_rounded,
@@ -313,7 +314,7 @@ Widget _buildHeader(String boardName) {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -356,7 +357,7 @@ Widget _buildHeader(String boardName) {
           Container(
             padding: const EdgeInsets.all(24),
             decoration:  BoxDecoration(
-              color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+              color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.book_outlined,
@@ -441,7 +442,7 @@ class _SubjectDownloadCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -469,7 +470,7 @@ class _SubjectDownloadCard extends StatelessWidget {
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: accent.withOpacity(0.10),
+                          color: accent.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
@@ -803,7 +804,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
                   width: 36,
                   height: 36,
                   decoration:  BoxDecoration(
-                    color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.arrow_back_rounded,
@@ -900,7 +901,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -936,7 +937,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
               decoration: BoxDecoration(
                 color: ready
                     ?  AppColors.eLearningBtnColor1
-                    :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+                    :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Center(
@@ -1018,7 +1019,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1050,7 +1051,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                             width: 46,
                             height: 46,
                             decoration: BoxDecoration(
-                              color: accent.withOpacity(0.10),
+                              color: accent.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
@@ -1153,7 +1154,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 5),
                               decoration: BoxDecoration(
-                                color: accent.withOpacity(0.12),
+                                color: accent.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -1312,7 +1313,7 @@ class _YearPickerSheet extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Material(
                     color: isSelected
-                        ?  AppColors.eLearningBtnColor1.withOpacity(0.1)
+                        ?  AppColors.eLearningBtnColor1.withValues(alpha: 0.1)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
@@ -1345,7 +1346,7 @@ class _YearPickerSheet extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ?  AppColors.eLearningBtnColor1
-                                        .withOpacity(0.15)
+                                        .withValues(alpha: 0.15)
                                     : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -1423,7 +1424,7 @@ class _SummaryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color:  AppColors.eLearningBtnColor1.withOpacity(0.1),
+        color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -1473,7 +1474,7 @@ class _SettingDropdown<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color:  Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color:  AppColors.eLearningBtnColor1.withOpacity(0.3)),
+        border: Border.all(color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1553,7 +1554,7 @@ class _ContinueBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -1567,7 +1568,7 @@ class _ContinueBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: count > 0
                 ?  AppColors.eLearningBtnColor1
-                :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+                :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(30),
           ),
           child: Center(
@@ -1942,6 +1943,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
   Map<String, String> subjectYears = {};
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
+  bool _allowAppOpenAds = false;
 
   AppOpenAd? _appOpenAd;
   bool _isAppOpenAdLoaded = false;
@@ -1955,8 +1957,17 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
       subjectNames[widget.examIds[i]] = widget.subjects[i];
       subjectYears[widget.examIds[i]] = widget.years[i];
     }
+    _initAppOpenAdEligibility();
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) _loadAppOpenAd();
+      if (mounted && _allowAppOpenAds) _loadAppOpenAd();
+    });
+  }
+
+  Future<void> _initAppOpenAdEligibility() async {
+    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
+    if (!mounted) return;
+    setState(() {
+      _allowAppOpenAds = allowed;
     });
   }
 
@@ -1966,12 +1977,15 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
     if (state == AppLifecycleState.paused && !_isNavigatingAway) {
       _shouldShowAdOnResume = true;
     } else if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
-      _showAppOpenAd();
+      if (_allowAppOpenAds) {
+        _showAppOpenAd();
+      }
       _shouldShowAdOnResume = false;
     }
   }
 
   void _loadAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     AppOpenAd.load(
       adUnitId: EnvConfig.cbtAdsOpenApiKey,
       request: const AdRequest(),
@@ -1988,6 +2002,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
   }
 
   void _showAppOpenAd() {
+    if (!_allowAppOpenAds) return;
     if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
     _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {

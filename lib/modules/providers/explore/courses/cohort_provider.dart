@@ -15,19 +15,28 @@ class CohortProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> loadCohort(String cohortId) async {
+  Future<void> loadCohort(
+    String cohortId, {
+    String? ref,
+  }) async {
+    debugPrint('CohortProvider.loadCohort start: cohortId=$cohortId ref=${ref ?? ''}');
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _cohortService.fetchCohort(cohortId);
+      final response = await _cohortService.fetchCohort(
+        cohortId,
+        ref: ref,
+      );
+      debugPrint('CohortProvider.loadCohort response: success=${response.success} message=${response.message}');
       if (response.success && response.data != null) {
         _cohort = response.data;
       } else {
         _error = response.message.isNotEmpty ? response.message : 'Failed to load cohort';
       }
     } catch (e) {
+      debugPrint('CohortProvider.loadCohort error: $e');
       _error = e.toString();
     }
 

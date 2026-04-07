@@ -11,7 +11,6 @@
 //       endpoint: 'portal/classes/$classId/course-registrations/history',
 //       queryParams: {'_db': 'aalmgzmy_linkskoo_practice'},
 //       fromJson: (json) {
-//         print('Raw API Response: $json');
 //         // Handle the actual API response structure
 //         if (json.containsKey('data')) {
 //           return RegistrationHistoryResponse.fromJson(json['data']);
@@ -37,3 +36,4 @@
 // //     );
 // //   }
 // // }
+

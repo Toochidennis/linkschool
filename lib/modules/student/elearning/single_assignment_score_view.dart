@@ -74,7 +74,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -255,7 +255,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
           // Divider
           Container(
             height: 1,
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
           ),
 
           // Content Section
@@ -298,7 +298,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -323,7 +323,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
@@ -347,11 +347,11 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.grey.withOpacity(0.2),
+                        color: Colors.grey.withValues(alpha: 0.2),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -363,7 +363,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -424,9 +424,11 @@ class _YourWorkModalState extends State<YourWorkModal> {
     try {
       final Uri uri = Uri.parse(url);
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        if (!mounted) return;
         CustomToaster.toastError(context, 'Error', 'Could not launch $url');
       }
     } catch (e) {
+      if (!mounted) return;
       CustomToaster.toastError(context, 'Error', 'Invalid URL: $url');
     }
   }
@@ -455,7 +457,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -487,7 +489,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
@@ -575,7 +577,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                           width: 24,
                                           height: 24,
                                           decoration: BoxDecoration(
-                                            color: Colors.grey.withOpacity(0.2),
+                                            color: Colors.grey.withValues(alpha: 0.2),
                                             borderRadius:
                                                 BorderRadius.circular(4),
                                           ),
@@ -696,7 +698,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -709,7 +711,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -832,6 +834,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
           }
         });
       } catch (e) {
+        if (!mounted) return;
         CustomToaster.toastError(context, 'Error',
             _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
@@ -841,7 +844,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(color: Colors.grey.withOpacity(0.5)),
+      child: Divider(color: Colors.grey.withValues(alpha: 0.5)),
     );
   }
 
@@ -958,7 +961,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1090,10 +1093,10 @@ class _AddCommentModalState extends State<AddCommentModal> {
                               margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.05),
+                                color: Colors.grey.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.grey.withOpacity(0.2),
+                                  color: Colors.grey.withValues(alpha: 0.2),
                                 ),
                               ),
                               child: TextField(

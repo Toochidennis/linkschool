@@ -67,7 +67,6 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
     WidgetsBinding.instance.addObserver(this);
     _loadSyllabuses();
     _loadUserData();
-    print("Received classesList: ${widget.classesList}");
   }
 
   @override
@@ -111,19 +110,13 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
           _levelId = fallbackLevelId ?? '';
         });
 
-        print('Loaded user data: '
-            'creatorId=$creatorId, creatorName=$creatorName, creatorRole=$creatorRole, '
-            'academicTerm=$academicTerm, academicYear=$academicYear, '
-            'levelId=$_levelId');
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
   Future<void> _loadSyllabuses() async {
-    print(
-        "Loading syllabuses with courseId: ${widget.courseId}, classId: ${widget.classId}, levelId: ${widget.levelId}, classesList: ${widget.classesList}");
 
     final syllabusProvider =
         Provider.of<StaffSyllabusProvider>(context, listen: false);
@@ -168,7 +161,6 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
       );
 
       final syllabusModels = syllabusProvider.syllabusList;
-      print('Received ${syllabusModels.length} syllabus models');
 
       if (syllabusProvider.error.isNotEmpty) {
         throw Exception(syllabusProvider.error);
@@ -182,7 +174,6 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
             final syllabus = entry.value;
 
             if (syllabus.id == null) {
-              print('Warning: Syllabus at index $index has null ID');
               return null;
             }
 
@@ -220,9 +211,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
         );
       });
 
-      print('Successfully processed ${_syllabusList.length} syllabuses for UI');
     } catch (e) {
-      print('Error: $e');
       if (mounted) {
         CustomToaster.toastError(
             context, 'Error', 'Failed to load syllabuses: $e');
@@ -235,8 +224,6 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
   }
 
   void _addNewSyllabus() async {
-    print(
-        "Adding new syllabus with courseId: ${widget.courseId}, levelId: ${widget.levelId}, course_name: ${widget.course_name}, classId: ${widget.classId}, classesList: ${widget.classesList}");
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
@@ -325,9 +312,6 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
   }
 
   Widget _buildSyllabusList() {
-    print('Building syllabus list with ${_syllabusList.length} items');
-    print(
-        'Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}, classesList: ${widget.classesList}');
 
     return ListView.builder(
       itemCount: _syllabusList.length,

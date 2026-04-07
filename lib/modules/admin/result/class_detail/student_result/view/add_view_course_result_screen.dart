@@ -48,7 +48,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
   @override
   void initState() {
     super.initState();
-    print('Initializing AddViewCourseResultScreen');
     _problematicFieldKey = null;
     fetchCourseResults();
     fetchAssessments();
@@ -89,8 +88,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
         'level_id': levelId,
       };
 
-      print(
-          'Fetching course results from: $endpoint with params: $queryParams');
 
       final response = await apiService.get(
         endpoint: endpoint,
@@ -104,8 +101,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
         final uniqueAssessments = <String>{};
         for (var result in results) {
           final assessments = result['assessments'] as List;
-          print(
-              'Result assessments for result_id ${result['result_id']}: $assessments');
           for (var assessment in assessments) {
             uniqueAssessments.add(assessment['assessment_name'] as String);
           }
@@ -121,21 +116,17 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
           _controllers.forEach((_, controller) => controller.dispose());
           _controllers.clear();
         });
-        print(
-            'Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
       } else {
         setState(() {
           error = response.message;
           isLoading = false;
         });
-        print('Failed to fetch results: ${response.message}');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load results: $e';
         isLoading = false;
       });
-      print('Error fetching results: $e');
     }
   }
 
@@ -153,7 +144,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
         queryParams: {'_db': dbName},
       );
 
-      print('Fetching assessments with db: $dbName');
 
       if (response.success && response.rawData != null) {
         final assessmentsData = response.rawData!['assessments'] as List;
@@ -168,19 +158,16 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
         setState(() {
           maxScores = tempMaxScores;
         });
-        print('Fetched max scores: $maxScores}');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load assessments: $e';
       });
-      print('Error fetching assessments: $e');
     }
   }
 
   Future<void> saveEditedResult(int resultId) async {
     if (!editedScores.containsKey(resultId)) {
-      print('No edits for resultId: $resultId');
       return;
     }
 
@@ -209,7 +196,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
           'Error',
           'Staff ID not found',
         );
-        print('Staff ID not found');
         return;
       }
 
@@ -236,8 +222,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
             'Validation Error',
             'Score for $assessmentName exceeds max score of $maxScore',
           );
-          print(
-              'Validation failed: Score $score for $assessmentName exceeds max $maxScore');
           return;
         }
 
@@ -262,7 +246,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
         '_db': dbName,
       };
 
-      print('Saving for resultId: $resultId with payload: $payload');
 
       final response = await apiService.put(
         endpoint: 'portal/result/class-result',
@@ -307,14 +290,12 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
           'Success',
           'Result updated successfully',
         );
-        print('Result updated successfully for resultId: $resultId');
       } else {
         CustomToaster.toastError(
           context,
           'Update Failed',
           'Failed to update result: ${response.message}',
         );
-        print('Failed to update result: ${response.message}');
       }
     } catch (e) {
       CustomToaster.toastError(
@@ -322,7 +303,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
         'Error',
         'Error updating result: $e',
       );
-      print('Error updating result: $e');
     }
   }
 
@@ -339,7 +319,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
       }
       return 'F';
     } catch (e) {
-      print('Error calculating grade for score $totalScore: $e');
       return 'N/A';
     }
   }
@@ -350,13 +329,11 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
     final isEditing = editedScores.isNotEmpty;
-    print(
-        'Building UI with isEditing: $isEditing, editedScores: $editedScores');
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '${widget.subject} Result',
+          '${widget.subject} rResultcourse',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -378,8 +355,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
           if (isEditing)
             TextButton(
               onPressed: () async {
-                print(
-                    'Save button pressed, processing ${editedScores.keys.length} edited results');
                 final resultIds = editedScores.keys.toList();
                 for (var resultId in resultIds) {
                   await saveEditedResult(resultId);

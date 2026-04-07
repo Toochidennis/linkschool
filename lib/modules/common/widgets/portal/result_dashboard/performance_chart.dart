@@ -148,7 +148,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
                   horizontalInterval: 20,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       strokeWidth: 1,
                       dashArray: [5, 5],
                     );

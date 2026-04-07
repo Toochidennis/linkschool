@@ -137,16 +137,11 @@ class CourseVideoProvider extends ChangeNotifier {
       if (response.success) {
         _courses = response.courses;
         
-        print('✅ Course videos loaded successfully:');
-        print('   Total courses: ${_courses.length}');
-        print('   Total videos: $totalVideosCount');
       } else {
         _error = 'Failed to load course videos';
-        print('❌ Failed to load course videos');
       }
     } catch (e) {
       _error = e.toString();
-      print('❌ Error in CourseVideoProvider: $_error');
     }
 
     _isLoading = false;

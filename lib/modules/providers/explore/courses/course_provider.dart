@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/services/explore/courses/course_service.dart';
@@ -191,13 +191,11 @@ class ExploreCourseProvider with ChangeNotifier {
           ? ''
           : 'You are offline. Showing saved courses.';
       
-      debugPrint('✅ Successfully fetched ${_categories.length} categories');
     } catch (e) {
       final isOnline = await ConnectivityService.isOnline();
       _errorMessage = isOnline
           ? 'Network error. Please try again.'
           : 'No internet connection. Connect and try again.';
-      debugPrint('❌ Error fetching courses: $e');
     } finally {
       if (showLoading) {
         _isLoading = false;
@@ -216,11 +214,10 @@ class ExploreCourseProvider with ChangeNotifier {
         _categories = response.categories.reversed.toList();
         _lastProfileId = null;
         _lastDateOfBirth = null;
-        debugPrint('✅ Loaded courses from fallback cache key: $key');
         return true;
       }
     } catch (e) {
-      debugPrint('❌ Failed to load fallback cache key: $e');
+      // Intentionally ignored.
     }
     return false;
   }
@@ -230,7 +227,6 @@ class ExploreCourseProvider with ChangeNotifier {
     int? profileId,
     String? dateOfBirth,
   }) async {
-    debugPrint('🔄 Force refreshing course data...');
     return fetchCategoriesAndCourses(
       profileId: profileId,
       dateOfBirth: dateOfBirth,
@@ -243,7 +239,6 @@ class ExploreCourseProvider with ChangeNotifier {
   void invalidateCache() {
     _lastProfileId = null;
     _lastDateOfBirth = null;
-    debugPrint('🗑️ Cache invalidated');
   }
 
   Future<void> clearPersistedProfile() async {

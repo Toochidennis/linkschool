@@ -71,22 +71,19 @@ class AnnouncementService {
               jsonData['message'] ?? 'Failed to load announcements');
         }
 
-        print("✅ Announcements fetched successfully: ${jsonData['message']}");
         await ExploreDashboardCache.save(
             'explore_home:announcements', jsonData);
         return AnnouncementResponse.fromJson(jsonData);
       } else {
-        print(
-            "❌ Failed to load announcements: ${response.statusCode} ${response.body}");
         throw Exception("Failed to load announcements: ${response.statusCode}");
       }
     } catch (e) {
       try {
         return await _loadCachedOrThrow();
       } catch (_) {
-        print("❌ Error fetching announcements: $e");
         throw Exception("Failed to load announcements: $e");
       }
     }
   }
 }
+

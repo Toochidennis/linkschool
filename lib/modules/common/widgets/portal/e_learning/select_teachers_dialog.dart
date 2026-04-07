@@ -125,7 +125,7 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
           child: Column(
             children: [
               _buildSelectAllRow(),
-              // Divider(color: Colors.grey.withOpacity(0.5)),
+              // Divider(color: Colors.grey.withValues(alpha: 0.5)),
               Expanded(child: _buildTeacherList()),
             ],
           ),

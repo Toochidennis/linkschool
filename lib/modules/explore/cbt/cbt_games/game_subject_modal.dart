@@ -240,14 +240,9 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     final canTakeTest = await _subscriptionService.canTakeTest();
     final remainingTests = await _subscriptionService.getRemainingFreeTests();
 
-    print('\n🎮 Gamify Module Access Check:');
-    print('   - Backend says paid: $hasUserPaid');
-    print('   - Local says can take test: $canTakeTest');
-    print('   - Remaining free tests: $remainingTests');
 
     // If backend confirms payment, allow access
     if (hasUserPaid) {
-      print('   ✅ User has paid (verified from backend) - starting game');
       _proceedWithGame();
       return;
     }
@@ -258,7 +253,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     if (!mounted) return;
 
     // if (!canTakeTest || trialExpired) {
-    //   print('   ❌ Gamify access denied - showing enforcement dialog');
+
     //   final allowProceed = await showDialog<bool>(
     //     context: context,
     //     barrierDismissible: true,
@@ -268,7 +263,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
     //       amount: settings.amount,
     //       discountRate: settings.discountRate,
     //       onSubscribed: () async {
-    //         print('✅ User subscribed from Gamify module');
+
     //         await userProvider.refreshCurrentUser();
     //         if (mounted) {
     //           setState(() {});
@@ -367,7 +362,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
             colors: [
               Colors.white,
               _showTopics
-                  ? _colorForId(_selectedSubject ?? '').withOpacity(0.08)
+                  ? _colorForId(_selectedSubject ?? '').withValues(alpha: 0.08)
                   : Colors.grey.shade50,
             ],
           ),
@@ -402,7 +397,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                         const BorderRadius.vertical(top: Radius.circular(24)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 15,
                         offset: const Offset(0, 3),
                       ),
@@ -412,7 +407,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight.withOpacity(0.1),
+                          color: AppColors.primaryLight.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -489,14 +484,14 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                             gradient: LinearGradient(
                               colors: [
                                 _colorForId(_selectedSubject!),
-                                _colorForId(_selectedSubject!).withOpacity(0.7),
+                                _colorForId(_selectedSubject!).withValues(alpha: 0.7),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
                                 color: _colorForId(_selectedSubject!)
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -625,14 +620,14 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        subjectColor.withOpacity(0.15),
-                        subjectColor.withOpacity(0.05),
+                        subjectColor.withValues(alpha: 0.15),
+                        subjectColor.withValues(alpha: 0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: subjectColor.withOpacity(0.3),
+                        color: subjectColor.withValues(alpha: 0.3),
                         blurRadius: 12 + (_pulseController.value * 4),
                         offset: Offset(0, 4 + (_pulseController.value * 2)),
                       ),
@@ -653,13 +648,13 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                           gradient: LinearGradient(
                             colors: [
                               subjectColor,
-                              subjectColor.withOpacity(0.7),
+                              subjectColor.withValues(alpha: 0.7),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: subjectColor.withOpacity(0.4),
+                              color: subjectColor.withValues(alpha: 0.4),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -697,7 +692,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: subjectColor.withOpacity(0.2),
+                        color: subjectColor.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -735,7 +730,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  subjectColor.withOpacity(0.05),
+                  subjectColor.withValues(alpha: 0.05),
                   Colors.white,
                 ],
               ),
@@ -767,7 +762,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  subjectColor.withOpacity(0.05),
+                  subjectColor.withValues(alpha: 0.05),
                   Colors.white,
                 ],
               ),
@@ -830,7 +825,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  subjectColor.withOpacity(0.05),
+                  subjectColor.withValues(alpha: 0.05),
                   Colors.white,
                 ],
               ),
@@ -867,7 +862,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  subjectColor.withOpacity(0.05),
+                  subjectColor.withValues(alpha: 0.05),
                   Colors.white,
                 ],
               ),
@@ -910,7 +905,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                subjectColor.withOpacity(0.05),
+                subjectColor.withValues(alpha: 0.05),
                 Colors.white,
               ],
             ),
@@ -922,9 +917,9 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: subjectColor.withOpacity(0.1),
+                  color: subjectColor.withValues(alpha: 0.1),
                   border: Border(
-                    bottom: BorderSide(color: subjectColor.withOpacity(0.2)),
+                    bottom: BorderSide(color: subjectColor.withValues(alpha: 0.2)),
                   ),
                 ),
                 child: Row(
@@ -982,7 +977,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: subjectColor.withOpacity(0.15),
+                              color: subjectColor.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -999,8 +994,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      subjectColor.withOpacity(0.1),
-                                      subjectColor.withOpacity(0.05),
+                                      subjectColor.withValues(alpha: 0.1),
+                                      subjectColor.withValues(alpha: 0.05),
                                     ],
                                   ),
                                   borderRadius: isExpanded
@@ -1032,7 +1027,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                                   : [
                                                       subjectColor,
                                                       subjectColor
-                                                          .withOpacity(0.7)
+                                                          .withValues(alpha: 0.7)
                                                     ],
                                             ),
                                             borderRadius:
@@ -1043,7 +1038,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                                             syllabus.topics)
                                                         ? Colors.green
                                                         : subjectColor)
-                                                    .withOpacity(0.4),
+                                                    .withValues(alpha: 0.4),
                                                 blurRadius: 8,
                                                 offset: const Offset(0, 2),
                                               ),
@@ -1071,7 +1066,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                           gradient: LinearGradient(
                                             colors: [
                                               subjectColor,
-                                              subjectColor.withOpacity(0.7),
+                                              subjectColor.withValues(alpha: 0.7),
                                             ],
                                           ),
                                           borderRadius:
@@ -1128,7 +1123,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color: subjectColor
-                                                        .withOpacity(0.2),
+                                                        .withValues(alpha: 0.2),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             10),
@@ -1166,7 +1161,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                             if (isExpanded)
                               Container(
                                 decoration: BoxDecoration(
-                                  color: subjectColor.withOpacity(0.03),
+                                  color: subjectColor.withValues(alpha: 0.03),
                                   borderRadius: const BorderRadius.only(
                                     bottomLeft: Radius.circular(16),
                                     bottomRight: Radius.circular(16),
@@ -1187,7 +1182,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                         ),
                                         decoration: BoxDecoration(
                                           color: isSelected
-                                              ? subjectColor.withOpacity(0.1)
+                                              ? subjectColor.withValues(alpha: 0.1)
                                               : null,
                                           border: Border(
                                             top: BorderSide(
@@ -1209,7 +1204,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                                         colors: [
                                                           subjectColor,
                                                           subjectColor
-                                                              .withOpacity(0.7),
+                                                              .withValues(alpha: 0.7),
                                                         ],
                                                       )
                                                     : null,
@@ -1281,7 +1276,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, -4),
                     ),
@@ -1308,7 +1303,7 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: _selectedTopicIds.isNotEmpty ? 8 : 0,
-                      shadowColor: subjectColor.withOpacity(0.5),
+                      shadowColor: subjectColor.withValues(alpha: 0.5),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1358,7 +1353,7 @@ class ParticlePainter extends CustomPainter {
       final y = baseY + (animationValue * 50) % size.height;
 
       final opacity = (math.sin(animationValue * math.pi * 2 + i) + 1) / 2;
-      paint.color = Colors.blue.withOpacity(opacity * 0.15);
+      paint.color = Colors.blue.withValues(alpha: opacity * 0.15);
 
       canvas.drawCircle(
         Offset(x, y % size.height),

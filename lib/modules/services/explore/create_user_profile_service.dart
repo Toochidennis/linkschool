@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
@@ -20,10 +20,8 @@ class CreateUserProfileService {
       }
 
       final url = "$baseUrl/learning/profiles";
-      print("📡 creating profile → $url");
 
       final payload = profileData;
-      print("📦 Payload: $payload");
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -34,13 +32,9 @@ class CreateUserProfileService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to create profile");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
 
       } else {
-        print("✅ profile created successfully");
-        print("📦 Response: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
@@ -60,7 +54,6 @@ class CreateUserProfileService {
       final uri = Uri.parse("$baseUrl/learning/profiles").replace(queryParameters: {
         'user_id': userId,
       });
-      print("📡 fetching profiles → $uri");
 
       final response = await http.get(
         uri,
@@ -71,8 +64,6 @@ class CreateUserProfileService {
       );
 
       if (response.statusCode != 200) {
-        print("❌ Failed to fetch profiles");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
@@ -94,7 +85,6 @@ class CreateUserProfileService {
       }
 
       final url = "$baseUrl/learning/profiles/$profileId";
-      print("📡 Deleting profile → $url");
 
       final response = await http.delete(
         Uri.parse(url),
@@ -106,13 +96,9 @@ class CreateUserProfileService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
-        print("❌ Failed to delete profile");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
 
       } else {
-        print("✅ profile deleted successfully");
-        print("📦 Response: ${response.body}");
       }
 
     } catch (e) {
@@ -135,8 +121,6 @@ class CreateUserProfileService {
 
     final bodyJson = jsonEncode(profileData);
 
-    print("📡 updating profile → $url");
-    print("📦 Payload JSON: $bodyJson");
 
     final response = await http.put(
       Uri.parse(url),
@@ -148,8 +132,6 @@ class CreateUserProfileService {
       body: bodyJson,
     );
 
-    print("📨 Status: ${response.statusCode}");
-    print("📨 Response: ${response.body}");
 
     if (response.statusCode != 200) {
       throw Exception("Failed: ${response.body}");
@@ -163,4 +145,5 @@ class CreateUserProfileService {
 
 
 }
+
 

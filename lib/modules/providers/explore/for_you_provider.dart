@@ -27,10 +27,11 @@ class ForYouProvider with ChangeNotifier {
       _videos = _apiService.parseVideos(data);
       _books = _apiService.parseBooks(data);
     } catch (e) {
-      print('Error fetching data: $e');
+      // Intentionally ignored.
     }
 
     _isLoading = false;
     notifyListeners();
   }
 }
+

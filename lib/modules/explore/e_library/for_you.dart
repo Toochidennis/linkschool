@@ -121,7 +121,7 @@ class ForYouContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ForYouProvider>(
       builder: (context, forYouProvider, child) {
-        print('Is Loading: ${forYouProvider.isLoading}'); // Debug log
+ // Debug log
         return Skeletonizer(
           enabled: forYouProvider.isLoading,
           child: Column(
@@ -158,7 +158,7 @@ class ForYouContent extends StatelessWidget {
           color: AppColors.examCard,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 0),
             ),
@@ -311,7 +311,6 @@ class _books extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        print('Book title: ${book.title}');
         if (book.title.isNotEmpty) {
           Navigator.push(
             context,

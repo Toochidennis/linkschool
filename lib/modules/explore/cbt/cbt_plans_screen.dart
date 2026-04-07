@@ -87,13 +87,13 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                         left: -80,
                         bottom: 40,
                         child: _buildGlowCircle(
-                            160, Colors.white.withOpacity(0.08)),
+                            160, Colors.white.withValues(alpha: 0.08)),
                       ),
                       Positioned(
                         right: -40,
                         top: 120,
                         child: _buildGlowCircle(
-                            120, Colors.white.withOpacity(0.12)),
+                            120, Colors.white.withValues(alpha: 0.12)),
                       ),
                       if (provider.isLoading)
                         const Center(
@@ -165,7 +165,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                             ),
                                             elevation: 6,
                                             shadowColor:
-                                                Colors.black.withOpacity(0.2),
+                                                Colors.black.withValues(alpha: 0.2),
                                           ),
                                           child: _isStartingTrial
                                               ? const SizedBox(
@@ -229,7 +229,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                           ),
                                           elevation: 8,
                                           shadowColor:
-                                              Colors.black.withOpacity(0.25),
+                                              Colors.black.withValues(alpha: 0.25),
                                         ),
                                         child: Text(
                                           'Pay Now',
@@ -280,7 +280,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
           width: isActive ? 18 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.4),
+            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(12),
           ),
         );
@@ -432,7 +432,7 @@ class _PlanCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(26),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 16,
               offset: const Offset(0, 10),
             ),
@@ -445,7 +445,7 @@ class _PlanCard extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: accent.withOpacity(0.12),
+                color: accent.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 40, color: accent),
@@ -604,7 +604,7 @@ extension on _CbtPlansScreenState {
               message,
               style: AppTextStyles.normal400(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),

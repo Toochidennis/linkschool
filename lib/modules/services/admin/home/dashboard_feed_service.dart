@@ -48,7 +48,6 @@ class DashboardFeedService {
 
       return DashboardData.fromJson(data);
     } catch (e) {
-      print("Error fetching dashboard data: $e");
       throw Exception("Failed to fetch dashboard data: $e");
     }
   }
@@ -76,7 +75,6 @@ class DashboardFeedService {
         throw Exception("Failed to create feed: ${response.message}");
       }
     } catch (e) {
-      print("Error creating feed: $e");
       throw Exception("Failed to create feed: $e");
     }
   }
@@ -105,7 +103,6 @@ class DashboardFeedService {
         throw Exception("Failed to update feed: ${response.message}");
       }
     } catch (e) {
-      print("Error updating feed: $e");
       throw Exception("Failed to update feed: $e");
     }
   }
@@ -132,8 +129,8 @@ class DashboardFeedService {
         throw Exception("Failed to delete feed: ${response.message}");
       }
     } catch (e) {
-      print("Error deleting feed: $e");
       throw Exception("Failed to delete feed: $e");
     }
   }
 }
+

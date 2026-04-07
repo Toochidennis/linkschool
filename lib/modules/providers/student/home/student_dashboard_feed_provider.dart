@@ -7,7 +7,6 @@ class StudentDashboardFeedProvider with ChangeNotifier {
   final StudentDashboardFeedService _dashboardFeedService;
 
   StudentDashboardFeedProvider(this._dashboardFeedService) {
-    debugPrint("✅ DashboardFeedProvider created");
   }
 
   bool _isLoading = false;
@@ -43,7 +42,6 @@ class StudentDashboardFeedProvider with ChangeNotifier {
       _message = "Dashboard data loaded successfully";
     } catch (e) {
       _error = "Failed to load dashboard data: $e";
-      debugPrint("Dashboard fetch error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();

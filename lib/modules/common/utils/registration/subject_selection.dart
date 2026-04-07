@@ -62,8 +62,6 @@ class _SubjectSelectionState extends State<SubjectSelection> {
       });
     }
 
-    print(
-        'Initialized with ${_selectedCourses.length} pre-registered courses: $_selectedCourses');
   }
 
   @override

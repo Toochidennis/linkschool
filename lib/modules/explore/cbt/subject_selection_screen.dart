@@ -8,6 +8,7 @@ import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
@@ -36,7 +37,8 @@ class SubjectSelectionScreen extends StatefulWidget {
   State<SubjectSelectionScreen> createState() => _SubjectSelectionScreenState();
 }
 
-class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
+class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
+    with WidgetsBindingObserver {
   final _downloadService = CbtDownloadService();
 
   // Set of selected subject IDs
@@ -46,6 +48,13 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   final Map<String, DownloadState> _downloadStates = {};
   final Map<String, bool> _isDownloaded = {};
   bool _checkingDownloads = true;
+  bool _isNavigatingAway = false;
+  bool _shouldShowAdOnResume = false;
+  bool _pendingAdShow = false;
+  bool _allowAppOpenAds = false;
+
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
 
   List<SubjectModel> get _subjects {
     final provider = Provider.of<CBTProvider>(context, listen: false);
@@ -65,9 +74,33 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkDownloadedSubjects();
     });
+
+
+    _initAppOpenAdEligibility();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _shouldShowAdOnResume = true;
+      } else {
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      } else {
+      }
+
+      _isNavigatingAway = false;
+    }
   }
 
   Future<void> _checkDownloadedSubjects() async {
@@ -81,6 +114,93 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
       }
     }
     if (mounted) setState(() => _checkingDownloads = false);
+  }
+
+  Future<void> _initAppOpenAdEligibility() async {
+    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
+    if (!mounted) return;
+
+    setState(() {
+      _allowAppOpenAds = allowed;
+    });
+
+
+    if (_allowAppOpenAds) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _allowAppOpenAds) {
+          _loadAppOpenAd();
+        }
+      });
+    }
+  }
+
+  void _loadAppOpenAd() {
+    if (!_allowAppOpenAds) {
+      return;
+    }
+
+    AppOpenAd.load(
+      adUnitId: EnvConfig.cbtAdsOpenApiKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          _isAppOpenAdLoaded = true;
+          if (mounted) {
+            setState(() {});
+          }
+
+          if (_pendingAdShow) {
+            _showAppOpenAd();
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          _pendingAdShow = false;
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_allowAppOpenAds) {
+      return;
+    }
+
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) {
+      _pendingAdShow = true;
+      return;
+    }
+
+    _pendingAdShow = false;
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (AppOpenAd ad) {
+      },
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    _appOpenAd!.show();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
+    super.dispose();
   }
 
   Future<void> _downloadSubject(SubjectModel subject) async {
@@ -288,7 +408,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.arrow_back_rounded,
@@ -318,7 +438,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -361,7 +481,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration:  BoxDecoration(
-              color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+              color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.book_outlined,
@@ -450,7 +570,7 @@ class _SubjectDownloadCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -478,7 +598,7 @@ class _SubjectDownloadCard extends StatelessWidget {
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: accent.withOpacity(0.10),
+                          color: accent.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
@@ -832,7 +952,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
                   width: 36,
                   height: 36,
                   decoration:  BoxDecoration(
-                    color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.arrow_back_rounded,
@@ -932,7 +1052,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -968,7 +1088,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
               decoration: BoxDecoration(
                 color: ready
                     ?  AppColors.eLearningBtnColor1
-                    :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+                    :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Center(
@@ -1050,7 +1170,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1082,7 +1202,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                             width: 46,
                             height: 46,
                             decoration: BoxDecoration(
-                              color: accent.withOpacity(0.10),
+                              color: accent.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
@@ -1184,7 +1304,7 @@ class _ExamConfigSubjectCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 5),
                               decoration: BoxDecoration(
-                                color: accent.withOpacity(0.12),
+                                color: accent.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -1338,7 +1458,7 @@ class _YearPickerSheet extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Material(
                     color: isSelected
-                        ?  AppColors.eLearningBtnColor1.withOpacity(0.1)
+                        ?  AppColors.eLearningBtnColor1.withValues(alpha: 0.1)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
@@ -1371,7 +1491,7 @@ class _YearPickerSheet extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ?  AppColors.eLearningBtnColor1
-                                        .withOpacity(0.15)
+                                        .withValues(alpha: 0.15)
                                     : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -1449,7 +1569,7 @@ class _SummaryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color:  AppColors.eLearningBtnColor1.withOpacity(0.1),
+        color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -1499,7 +1619,7 @@ class _SettingDropdown<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color:  Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color:  AppColors.eLearningBtnColor1.withOpacity(0.3)),
+        border: Border.all(color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1579,7 +1699,7 @@ class _ContinueBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -1593,7 +1713,7 @@ class _ContinueBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: count > 0
                 ?  AppColors.eLearningBtnColor1
-                :  AppColors.eLearningBtnColor1.withOpacity(0.4),
+                :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(30),
           ),
           child: Center(

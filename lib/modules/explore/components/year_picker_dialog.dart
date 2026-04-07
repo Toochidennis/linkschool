@@ -244,11 +244,11 @@ class YearPickerDialog {
 //       onSubmit: (index) {
 //         final selectedYearModel = sortedYearModels[index];
         
-//         print("Selected year: ${selectedYearModel.year}");
-//         print("Exam ID: ${selectedYearModel.id}");
-//         print("Subject: $subject");
-//         print("ExamTypeId: $examTypeId");
-//         print("SubjectId: $subjectId");
+
+
+
+
+
         
 //         // Use a post frame callback to ensure the picker is fully dismissed
 //         WidgetsBinding.instance.addPostFrameCallback((_) {

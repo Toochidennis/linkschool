@@ -357,7 +357,7 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
                             vertical: 4.0,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.bgXplore3.withOpacity(0.2),
+                            color: AppColors.bgXplore3.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4.0),
                           ),
                           child: Text(

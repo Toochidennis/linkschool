@@ -15,11 +15,9 @@ class QuizService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     QuizPayload['_db'] = dbName;
-    print("Request Payload: $QuizPayload");
 
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
@@ -27,28 +25,21 @@ class QuizService {
         body: QuizPayload,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to add Test");
 
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Add Test: ${response.message}");
       } else {
-        print('Test added successfully.');
-        print('Status Code: ${response.statusCode}');
         SnackBar(
           content: Text('Test added successfully.'),
           backgroundColor: Colors.green,
         );
-        print(response.message);
       }
     } catch (e) {
-      print("Error adding test: $e");
       throw Exception("Failed to Add Test: $e");
     }
   }
@@ -63,11 +54,9 @@ class QuizService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     QuizPayload['_db'] = dbName;
-    print("Request Payload: $QuizPayload");
 
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
@@ -75,28 +64,21 @@ class QuizService {
         body: QuizPayload,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to update Test");
 
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Update Test: ${response.message}");
       } else {
-        print('Test updated successfully.');
-        print('Status Code: ${response.statusCode}');
         SnackBar(
           content: Text('Test updated successfully.'),
           backgroundColor: Colors.green,
         );
-        print(response.message);
       }
     } catch (e) {
-      print("Error updating test: $e");
       throw Exception("Failed to Update Test: $e");
     }
   }
@@ -111,7 +93,6 @@ class QuizService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     try {
@@ -120,29 +101,23 @@ class QuizService {
         body: dbName,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to delete");
 
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to delete: ${response.message}");
       } else {
-        print('Test added successfully.');
-        print('Status Code: ${response.statusCode}');
         SnackBar(
           content: Text('question deleted successfully.'),
           backgroundColor: Colors.green,
         );
-        print(response.message);
       }
     } catch (e) {
-      print("Error deleting questions: $e");
       throw Exception("Failed to delete question: $e");
     }
   }
 }
+

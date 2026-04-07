@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_leaderboard.dart';
 import 'package:linkschool/modules/model/explore/courses/course_model.dart';
@@ -72,7 +74,7 @@ class CourseContentScreen extends StatefulWidget {
 }
 
 class _CourseContentScreenState extends State<CourseContentScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   late final DiscussionProvider _discussionProvider;
   late final Stream<int> _countdownStream;
@@ -84,6 +86,11 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   int _localLessonsTaken = 0;
   bool _hasPaid = false;
   final Set<int> _completedLessonIds = {};
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
+  bool _pendingShowAppOpenAd = false;
+
   int _resolvedCohortCost() {
     final cost = widget.cohortCost ?? 0;
     return cost;
@@ -223,7 +230,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
             border: Border.all(color: const Color(0xFF0F172A)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -476,6 +483,7 @@ class _CourseContentScreenState extends State<CourseContentScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 3, vsync: this);
     _discussionProvider = DiscussionProvider(DiscussionService());
     _discussionProvider.loadDiscussions(cohortId: widget.cohortId);
@@ -490,6 +498,103 @@ class _CourseContentScreenState extends State<CourseContentScreen>
     ).asBroadcastStream();
     _cohortProvider = CohortProvider(CohortService());
     _loadCohortAndMaybeLock();
+    _loadAppOpenAd();
+  }
+
+  void _loadAppOpenAd() {
+    final request = const AdRequest();
+
+    AppOpenAd.load(
+      adUnitId: EnvConfig.programAdsOpenApiKey,
+      request: request,
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          } else {
+            _isAppOpenAdLoaded = true;
+          }
+
+          if (_pendingShowAppOpenAd) {
+            _pendingShowAppOpenAd = false;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _showAppOpenAd();
+              }
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          _appOpenAd = null;
+          _pendingShowAppOpenAd = false;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          } else {
+            _isAppOpenAdLoaded = false;
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (AppOpenAd ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        } else {
+          _isAppOpenAdLoaded = false;
+        }
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+        ad.dispose();
+        _appOpenAd = null;
+        if (mounted) {
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        } else {
+          _isAppOpenAdLoaded = false;
+        }
+        _loadAppOpenAd();
+      },
+    );
+
+    _appOpenAd!.show();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _shouldShowAdOnResume = false;
+        if (_isAppOpenAdLoaded && _appOpenAd != null) {
+          _showAppOpenAd();
+        } else {
+          _pendingShowAppOpenAd = true;
+          _loadAppOpenAd();
+        }
+      }
+    }
   }
 
   Future<void> _loadCompletionStatus() async {
@@ -498,10 +603,12 @@ class _CourseContentScreenState extends State<CourseContentScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     _discussionProvider.dispose();
     _startTimer?.cancel();
+    _appOpenAd?.dispose();
     super.dispose();
   }
 
@@ -667,8 +774,8 @@ Widget build(BuildContext context) {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.05),
-                          Colors.black.withOpacity(0.65),
+                          Colors.black.withValues(alpha: 0.05),
+                          Colors.black.withValues(alpha: 0.65),
                         ],
                       ),
                     ),
@@ -1102,10 +1209,10 @@ Widget build(BuildContext context) {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.4)),
+          border: Border.all(color: const Color(0xFFFFA500).withValues(alpha: 0.4)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFFA500).withOpacity(0.15),
+              color: const Color(0xFFFFA500).withValues(alpha: 0.15),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1280,12 +1387,12 @@ Widget build(BuildContext context) {
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFFFFCA28).withOpacity(0.4),
+                    color: const Color(0xFFFFCA28).withValues(alpha: 0.4),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFFCA28).withOpacity(0.15),
+                      color: const Color(0xFFFFCA28).withValues(alpha: 0.15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1470,12 +1577,12 @@ Widget build(BuildContext context) {
       color: card.bgLight,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: card.iconColor.withOpacity(0.15),
+        color: card.iconColor.withValues(alpha: 0.15),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
-          color: card.iconColor.withOpacity(0.08),
+          color: card.iconColor.withValues(alpha: 0.08),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -1561,7 +1668,7 @@ Text(
         border: Border.all(color: Colors.grey.shade100, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1736,7 +1843,7 @@ Row(
         children: [
           CircularProgressIndicator(
             value: (quizPct + assignmentPct) / 2,
-            backgroundColor: const Color(0xFF4F46E5).withOpacity(0.1),
+            backgroundColor: const Color(0xFF4F46E5).withValues(alpha: 0.1),
             valueColor: const AlwaysStoppedAnimation<Color>(
               Color(0xFF4F46E5),
             ),
@@ -1803,7 +1910,7 @@ Row(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: percent,
-            backgroundColor: color.withOpacity(0.12),
+            backgroundColor: color.withValues(alpha: 0.12),
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 6,
           ),

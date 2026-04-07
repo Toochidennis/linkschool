@@ -54,7 +54,6 @@ class MarkedQuizService {
 
       throw Exception("Failed to Fetch Marked assignment: ${response.message}");
     } catch (e) {
-      print("Error fetching Marked Quiz: $e");
       throw Exception("Failed to Fetch ma: $e");
     }
   }
@@ -64,3 +63,4 @@ class MarkedQuizService {
 //   // Implement the logic to delete a comment from the API or database
 // }
 }
+

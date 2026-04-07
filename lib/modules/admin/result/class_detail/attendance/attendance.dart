@@ -90,7 +90,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         dbName: dbName,
       );
     } catch (e) {
-      debugPrint('Error loading attendance: $e');
+      // Intentionally ignored.
     }
   }
 

@@ -209,7 +209,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -266,7 +266,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
               color: Colors.orange.shade400,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.orange.withOpacity(0.4),
+                  color: Colors.orange.withValues(alpha: 0.4),
                   blurRadius: 14,
                   offset: const Offset(0, 5),
                 )
@@ -357,7 +357,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
             /// --- DARK OVERLAY (optional for readability) ---
             Container(
-              color: Colors.blue.withOpacity(0.35),
+              color: Colors.blue.withValues(alpha: 0.35),
             ),
 
             /// --- CONTENT ---
@@ -438,7 +438,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -489,7 +489,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: missionColor.withOpacity(0.1),
+              color: missionColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -515,14 +515,14 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         gradient: LinearGradient(
           colors: [
             subjectData['color'] as Color,
-            (subjectData['color'] as Color).withOpacity(0.7),
+            (subjectData['color'] as Color).withValues(alpha: 0.7),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: (subjectData['color'] as Color).withOpacity(0.3),
+            color: (subjectData['color'] as Color).withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -539,7 +539,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -565,7 +565,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                         'Top performers this week',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -614,7 +614,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -643,7 +643,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                         // Avatar
                         CircleAvatar(
                           radius: 16,
-                          backgroundColor: Colors.white.withOpacity(0.3),
+                          backgroundColor: Colors.white.withValues(alpha: 0.3),
                           child: Text(
                             (leader['name'] as String)
                                 .split(' ')
@@ -675,7 +675,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -751,7 +751,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -826,7 +826,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -890,7 +890,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -1000,12 +1000,12 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                   gradient: LinearGradient(
                     colors: [
                       borderColor,
-                      borderColor.withOpacity(0.7),
+                      borderColor.withValues(alpha: 0.7),
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: borderColor.withOpacity(0.4),
+                      color: borderColor.withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),

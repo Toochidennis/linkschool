@@ -24,7 +24,7 @@ class ExploreButtonItem extends StatelessWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
         elevation: 4,
-        shadowColor: Colors.black.withOpacity(0.15),
+        shadowColor: Colors.black.withValues(alpha: 0.15),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
@@ -37,7 +37,7 @@ class ExploreButtonItem extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: SvgPicture.asset(

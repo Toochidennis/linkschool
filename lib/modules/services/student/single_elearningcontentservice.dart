@@ -30,7 +30,6 @@ class SingleElearningcontentservice {
       }
 
       _apiService.setAuthToken(token);
-      // print(getuserdata()['settings']);
       final response = await _apiService.get(
         endpoint: 'portal/elearning/contents/$contentid',
         queryParams: {
@@ -38,9 +37,7 @@ class SingleElearningcontentservice {
           //add student id and syllabus id
         },
       );
-print("API Response: ${response.rawData}");
       final data = response;
-      print("Dataaaa ${data.rawData?['response']}");
 
       return SingleElearningContentData.fromJson(data.rawData?['response']);
     } catch (e) {
@@ -49,3 +46,5 @@ print("API Response: ${response.rawData}");
     }
   }
 }
+
+

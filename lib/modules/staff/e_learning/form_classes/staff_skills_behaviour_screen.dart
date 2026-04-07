@@ -16,6 +16,8 @@ class StaffSkillsBehaviourScreen extends StatefulWidget {
   final String? term;
   final String? year;
   final String? db;
+  final String screenTitle;
+  final int contentType;
 
   const StaffSkillsBehaviourScreen({
     super.key,
@@ -24,6 +26,8 @@ class StaffSkillsBehaviourScreen extends StatefulWidget {
     this.term,
     this.year,
     this.db,
+    this.screenTitle = 'Skills and Behaviour',
+    this.contentType = 0,
   });
 
   @override
@@ -48,8 +52,6 @@ class _StaffSkillsBehaviourScreenState
     currentTerm = widget.term ?? SettingsService.getCurrentTerm().toString();
     currentDb = widget.db ?? SettingsService.getDatabaseName();
 
-    print(
-        'Skills Behaviour Screen - Year: $currentYear, Term: $currentTerm, DB: $currentDb');
 
     final skillsProvider =
         Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
@@ -59,6 +61,7 @@ class _StaffSkillsBehaviourScreenState
       term: currentTerm,
       year: currentYear,
       db: currentDb,
+      type: widget.contentType,
     );
   }
 
@@ -99,7 +102,7 @@ class _StaffSkillsBehaviourScreenState
         databaseName = response['_db']?.toString();
       });
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -119,7 +122,7 @@ class _StaffSkillsBehaviourScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Skills and Behaviour',
+          widget.screenTitle,
           style: AppTextStyles.normal600(
             fontSize: 18.0,
             color: AppColors.eLearningBtnColor1,
@@ -157,7 +160,7 @@ class _StaffSkillsBehaviourScreenState
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             margin: EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+              color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -224,6 +227,7 @@ class _StaffSkillsBehaviourScreenState
                             term: currentTerm,
                             year: currentYear,
                             db: currentDb,
+                            type: widget.contentType,
                           );
                         },
                         child: Text('Retry'),
@@ -270,9 +274,9 @@ class _StaffSkillsBehaviourScreenState
                       margin: EdgeInsets.all(16),
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -309,6 +313,7 @@ class _StaffSkillsBehaviourScreenState
       'year': currentYear,
       'term': currentTerm,
       '_db': currentDb,
+      'type': widget.contentType,
     };
 
     _controllers.forEach((studentIndex, skillControllers) {
@@ -352,6 +357,7 @@ class _StaffSkillsBehaviourScreenState
           term: currentTerm,
           year: currentYear,
           db: currentDb,
+          type: widget.contentType,
         );
       } else {
         success = await provider.createSkillsAndBehaviours(
@@ -361,6 +367,7 @@ class _StaffSkillsBehaviourScreenState
           term: currentTerm,
           year: currentYear,
           db: currentDb,
+          type: widget.contentType,
         );
       }
 

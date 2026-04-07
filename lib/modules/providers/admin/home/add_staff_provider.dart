@@ -38,10 +38,8 @@ class AddStaffProvider with ChangeNotifier {
 
     try {
       staffList = await _addStaffService.fetchAllStaff();
-      print("Fetched ${staffList.length} staff members");
     } catch (e) {
       error = "Failed to fetch staff: $e";
-      print("Error in provider: $e");
     } finally {
       isFetching = false;
       notifyListeners();
@@ -96,3 +94,4 @@ class AddStaffProvider with ChangeNotifier {
     }
   }
 }
+

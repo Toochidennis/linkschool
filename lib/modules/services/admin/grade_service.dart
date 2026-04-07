@@ -19,7 +19,6 @@ class GradeService {
 
     if (token != null) {
       _apiService.setAuthToken(token);
-      print('Token set: $token');
     }
 
     final response = await _apiService.get<List<Grade>>(
@@ -58,17 +57,14 @@ class GradeService {
       'grades': gradesList,
       '_db': 'aalmgzmy_linkskoo_practice',
     };
-    print('Request Body: $requestBody');
     final response = await _apiService.post<Map<String, dynamic>>(
       endpoint: 'portal/grades',
       body: requestBody,
     );
 
     if (!response.success) {
-      print('Failed to add grade: ${response.message}');
       throw Exception('Failed to add grade: ${response.message}');
     } else {
-      print('Grade added: ${response.message}');
     }
   }
 
@@ -82,14 +78,10 @@ class GradeService {
       body: requestBody,
     );
 
-    print('gradessssssssssssssssssssssss Id: $id');
-    print('Delete Response: $response');
 
     if (!response.success) {
-      print('Failed to delete grade with ID  ${response.message}');
       throw Exception('Failed to delete grade: ${response.message}');
     } else {
-      print('Grade with ID $id deleted successfully');
     }
   }
 
@@ -100,18 +92,14 @@ class GradeService {
       'remark': grade.remark!,
       '_db': 'aalmgzmy_linkskoo_practice',
     };
-    print('Request Body: $requestBody');
     final response = await _apiService.put<Map<String, dynamic>>(
       endpoint: 'portal/grades/${grade.id}',
       body: requestBody,
     );
-    print(response);
 
     if (!response.success) {
-      print('Failed to update grade: ${response.message}');
       throw Exception('Failed to update grade: ${response.message}');
     } else {
-      print('Grade updated successfully: ${response.message}');
     }
   }
 }
@@ -186,3 +174,4 @@ class GradeService {
 //     }
 //   }
 // }
+

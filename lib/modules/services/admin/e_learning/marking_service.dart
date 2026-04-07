@@ -31,7 +31,6 @@ class MarkingService {
     if (token == null) {
       throw Exception('No auth token found');
     }
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     final response = await _apiService.get<Map<String, dynamic>>(
@@ -81,7 +80,6 @@ class MarkingService {
     if (token == null) {
       throw Exception('No auth token found');
     }
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     final response = await _apiService.put<Map<String, dynamic>>(
@@ -128,7 +126,6 @@ class MarkingService {
     if (token == null) {
       throw Exception('No auth token found');
     }
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     final response = _apiService.put<Map<String, dynamic>>(
@@ -174,12 +171,7 @@ class MarkingService {
     if (token == null) {
       throw Exception('No auth token found');
     }
-    print("Set token: $token");
     _apiService.setAuthToken(token);
-    print('portal/elearning/assignment/$academicTerm');
-    print('portal/elearning/assignment/$academicYear');
-    print('portal/elearning/assignment/$itemId');
-    print('portal/elearning/assignment/');
     final response = await _apiService.get<Map<String, dynamic>>(
       endpoint: 'portal/elearning/quiz/$itemId/submissions',
       queryParams: {
@@ -226,7 +218,6 @@ class MarkingService {
     if (token == null) {
       throw Exception('No auth token found');
     }
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     final response = await _apiService.put<Map<String, dynamic>>(
@@ -273,7 +264,6 @@ class MarkingService {
     if (token == null) {
       throw Exception('No auth token found');
     }
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     final response = _apiService.put<Map<String, dynamic>>(
@@ -293,3 +283,4 @@ class MarkingService {
     );
   }
 }
+

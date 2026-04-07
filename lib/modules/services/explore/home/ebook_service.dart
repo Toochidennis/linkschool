@@ -11,15 +11,12 @@ class EbookService {
       );
 
       if (response.statusCode == 200) {
-        print("Ebooks fetched successfully");
-        print(response);
         // Remove the ['response'] accessor since the data is at the root level
         return response.rawData ?? {};
       }
 
       throw Exception("Failed to load ebooks: ${response.message}");
     } catch (e) {
-      print("Error fetching ebooks: $e");
       throw Exception("Failed to load ebooks: $e");
     }
   }
@@ -35,3 +32,4 @@ class EbookService {
     return List<String>.from(data['categories'] ?? []);
   }
 }
+

@@ -158,7 +158,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.eLearningBtnColor1.withOpacity(opacity),
+                        AppColors.eLearningBtnColor1.withValues(alpha: opacity),
                         AppColors.backgroundLight,
                       ],
                       begin: Alignment.topLeft,
@@ -223,7 +223,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
         gradient: LinearGradient(
           colors: [
             AppColors.eLearningBtnColor1,
-            AppColors.eLearningBtnColor1.withOpacity(0.8),
+            AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -231,7 +231,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+            color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -258,7 +258,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
             widget.sessionStats.subject,
             style: AppTextStyles.normal600(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
             textAlign: TextAlign.center,
           ),
@@ -267,7 +267,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
             'Completed on ${_formatDate(widget.sessionStats.sessionDate)}',
             style: AppTextStyles.normal400(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -287,7 +287,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -301,7 +301,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -427,7 +427,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -559,12 +559,12 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: accuracyColor.withOpacity(0.3),
+          color: accuracyColor.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -583,7 +583,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
                   gradient: LinearGradient(
                     colors: [
                       AppColors.eLearningBtnColor1,
-                      AppColors.eLearningBtnColor1.withOpacity(0.7),
+                      AppColors.eLearningBtnColor1.withValues(alpha: 0.7),
                     ],
                   ),
                   shape: BoxShape.circle,
@@ -638,7 +638,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: accuracyColor.withOpacity(0.1),
+                  color: accuracyColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -809,7 +809,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(

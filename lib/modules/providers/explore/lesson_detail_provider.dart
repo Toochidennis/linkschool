@@ -17,9 +17,6 @@ class LessonDetailProvider with ChangeNotifier {
     required int lessonId,
     required int profileId,
   }) async {
-    debugPrint('LessonDetailProvider: fetchLessonDetail called');
-    debugPrint('  - lessonId: $lessonId');
-    debugPrint('  - profileId: $profileId');
 
     _isLoading = true;
     _errorMessage = null;
@@ -27,20 +24,17 @@ class LessonDetailProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint('Calling service.fetchLessonDetail...');
       final response = await _service.fetchLessonDetail(
         lessonId: lessonId,
         profileId: profileId,
       );
 
-      debugPrint('Service returned success');
       _lessonDetailData = response.data;
       _isLoading = false;
       notifyListeners();
 
       return true;
     } catch (error) {
-      debugPrint('Provider caught error: $error');
       _errorMessage = error.toString();
       _isLoading = false;
       notifyListeners();

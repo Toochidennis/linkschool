@@ -59,7 +59,6 @@ class FeedsPaginationService {
 
       return allFeeds;
     } catch (e) {
-      print("Error fetching feeds: $e");
       throw Exception("Failed to fetch feeds: $e");
     }
   }
@@ -87,7 +86,6 @@ class FeedsPaginationService {
         throw Exception("Failed to create feed: ${response.message}");
       }
     } catch (e) {
-      print("Error creating feed: $e");
       throw Exception("Failed to create feed: $e");
     }
   }
@@ -116,7 +114,6 @@ class FeedsPaginationService {
         throw Exception("Failed to update feed: ${response.message}");
       }
     } catch (e) {
-      print("Error updating feed: $e");
       throw Exception("Failed to update feed: $e");
     }
   }
@@ -143,8 +140,8 @@ class FeedsPaginationService {
         throw Exception("Failed to delete feed: ${response.message}");
       }
     } catch (e) {
-      print("Error deleting feed: $e");
       throw Exception("Failed to delete feed: $e");
     }
   }
 }
+

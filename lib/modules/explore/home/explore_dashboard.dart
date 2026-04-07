@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/explore/courses/explore_courses.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_dashbord.dart';
-import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
+import 'package:linkschool/modules/explore/explore_profile/explore_profile_screen.dart';
 import 'package:linkschool/modules/explore/ai_chat/linkskool_ai_chat.dart';
 import '../../common/flat_bottom_navigation.dart';
 import 'explore_home.dart';

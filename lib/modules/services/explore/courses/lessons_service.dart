@@ -41,24 +41,17 @@ class LessonService {
        
       );
 
-      print("🛰️ Fetching lessons...");
-      print("➡️ Endpoint: $uri");
-      print("➡️ Headers: X-API-KEY: $apiKey");
 
       if (response.statusCode == 200) {
-        print("✅ Response received: ${response.body}");
 
         final decoded = json.decode(response.body);
-        print("🛠️ Decoded response: $decoded");
         return LessonsResponseModel.fromJson(decoded);
       } else {
-        print("❌ Failed to load lessons: ${response.statusCode}");
-        print("Body: ${response.body}");
         throw Exception("Failed to load lessons: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching lessons: $e");
       throw Exception("Error fetching lessons: $e");
     }
   }
 }
+

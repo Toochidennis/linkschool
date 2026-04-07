@@ -119,7 +119,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   color: Theme.of(context).cardColor,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -176,13 +176,13 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: AppColors.text10Light.withOpacity(0.3),
+                            color: AppColors.text10Light.withValues(alpha: 0.3),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: AppColors.text10Light.withOpacity(0.3),
+                            color: AppColors.text10Light.withValues(alpha: 0.3),
                           ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
@@ -219,7 +219,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                 });
                               },
                               selectedColor: AppColors.paymentBtnColor1,
-                              backgroundColor: Colors.grey.withOpacity(0.1),
+                              backgroundColor: Colors.grey.withValues(alpha: 0.1),
                               labelStyle: TextStyle(
                                 color: isSelected
                                     ? Colors.white
@@ -398,10 +398,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.1),
+                      color: iconColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: iconColor.withOpacity(0.3),
+                        color: iconColor.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -513,10 +513,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: iconColor.withOpacity(0.1),
+                          color: iconColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: iconColor.withOpacity(0.3),
+                            color: iconColor.withValues(alpha: 0.3),
                             width: 0.5,
                           ),
                         ),
@@ -543,10 +543,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.text10Light.withOpacity(0.05),
+                    color: AppColors.text10Light.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: AppColors.text10Light.withOpacity(0.1),
+                      color: AppColors.text10Light.withValues(alpha: 0.1),
                       width: 0.5,
                     ),
                   ),

@@ -29,7 +29,6 @@ class MarkedQuizProvider with ChangeNotifier {
         year: year,
       );
 
-      print("Quest $result");
       isLoading = false;
       notifyListeners();
       return result;
@@ -41,3 +40,4 @@ class MarkedQuizProvider with ChangeNotifier {
     }
   }
 }
+

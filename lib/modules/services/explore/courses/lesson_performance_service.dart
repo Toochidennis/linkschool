@@ -21,7 +21,6 @@ class LessonPerformanceService {
       final uri = Uri.parse(
         "$_baseUrl/$cohortId/profiles/$profileId/lesson-performance",
       );
-      print("📡 fetching lesson performance → $uri");
 
       final response = await http.get(
         uri,
@@ -32,16 +31,14 @@ class LessonPerformanceService {
       );
 
       if (response.statusCode != 200) {
-        print("❌ Failed to fetch lesson performance");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return LessonPerformanceResponseModel.fromJson(decoded);
     } catch (e) {
-      print("❌ Error fetching lesson performance: $e");
       throw Exception("Error fetching lesson performance: $e");
     }
   }
 }
+

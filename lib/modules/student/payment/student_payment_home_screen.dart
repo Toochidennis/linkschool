@@ -123,7 +123,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
             'Student'; // Adjust key based on your API response
       });
     } catch (e) {
-      debugPrint("Error fetching student name: $e");
+      // Intentionally ignored.
     }
   }
 
@@ -310,7 +310,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                               boxShadow: isEmptyState
                                   ? [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
+                                        color: Colors.black.withValues(alpha: 0.05),
                                         blurRadius: 10,
                                         offset: const Offset(0, 4),
                                       )

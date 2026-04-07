@@ -212,14 +212,14 @@ Widget _buildTopTab(List<School> schools) {
 
   return ListView(
     children: [
-      _TextIconRow(
+      _textIconRow(
         text: 'Top rated Schools',
         icon: Icons.arrow_forward,
       ),
       const SizedBox(height: 8),
       CarouselSlider(
         items: schools.take(5).map((school) {
-          return _SchoolCard(
+          return _schoolCard(
             context: context,
             school: school,
           );
@@ -234,7 +234,7 @@ Widget _buildTopTab(List<School> schools) {
         ),
       ),
       const SizedBox(height: 16),
-      _TextIconRow(
+      _textIconRow(
         text: 'You might also like',
         icon: Icons.arrow_forward,
       ),
@@ -252,7 +252,7 @@ Widget _buildTopTab(List<School> schools) {
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: _SearchItems(school: school, context: context),
+              child: _searchItems(school: school, context: context),
             ),
           );
         }).toList(),
@@ -265,14 +265,14 @@ Widget _buildTopTab(List<School> schools) {
         ),
       ),
       const SizedBox(height: 16),
-      _TextIconRow(
+      _textIconRow(
         text: 'Based on your recent searches',
         icon: Icons.arrow_forward,
       ),
       const SizedBox(height: 8),
       ...schools.take(3).map((school) => Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
-        child: _BasedOnSearches(context: context, school: school),
+        child: _basedOnSearches(context: context, school: school),
       )),
     ],
   );
@@ -326,7 +326,7 @@ Widget _buildTopTab(List<School> schools) {
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                child: _SearchItems(school: schools[index], context: context),
+                child: _searchItems(school: schools[index], context: context),
               ),
             );
           },
@@ -392,7 +392,7 @@ Widget _buildTopTab(List<School> schools) {
           ),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
-            child: _BasedOnSearches(context: context, school: schools[index]),
+            child: _basedOnSearches(context: context, school: schools[index]),
           ),
         );
       },
@@ -401,7 +401,7 @@ Widget _buildTopTab(List<School> schools) {
 }
 
 // Updated School Card with API data
-Widget _SchoolCard({
+Widget _schoolCard({
   required BuildContext context,
   required School school,
 }) {
@@ -437,14 +437,14 @@ Widget _SchoolCard({
             ),
           ),
           const SizedBox(height: 5),
-          _TopSchoolDescription(school: school),
+          _topSchoolDescription(school: school),
         ],
       ),
     ),
   );
 }
 
-Widget _TopSchoolDescription({required School school}) {
+Widget _topSchoolDescription({required School school}) {
   return Padding(
     padding: const EdgeInsets.all(8.0),
     child: Row(
@@ -528,7 +528,7 @@ Widget _TopSchoolDescription({required School school}) {
   );
 }
 
-Widget _BasedOnSearches({
+Widget _basedOnSearches({
   required BuildContext context,
   required School school,
 }) {
@@ -565,7 +565,7 @@ Widget _BasedOnSearches({
               ),
             ),
             const SizedBox(height: 5),
-            _TopSchoolDescription(school: school),
+            _topSchoolDescription(school: school),
           ],
         ),
       ),
@@ -573,7 +573,7 @@ Widget _BasedOnSearches({
   );
 }
 
-Widget _SearchItems({required School school, required BuildContext context}) {
+Widget _searchItems({required School school, required BuildContext context}) {
   return GestureDetector(
     onTap: () {
       Navigator.push(
@@ -662,7 +662,7 @@ Widget _SearchItems({required School school, required BuildContext context}) {
   );
 }
 
-Widget _TextIconRow({required String text, required IconData icon}) {
+Widget _textIconRow({required String text, required IconData icon}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     child: Row(

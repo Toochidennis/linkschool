@@ -58,7 +58,6 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
             levels.map((level) => Level.fromJson(level)).toList());
       }
     } catch (e) {
-      debugPrint('Initialization error: ${e.toString()}');
       // Error loading initial data, but removing toast as per requirement
     }
   }
@@ -179,7 +178,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
           // Loading overlay
           if (assessmentProvider.isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: const Center(
                 child: CircularProgressIndicator(),
               ),

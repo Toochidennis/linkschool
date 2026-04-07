@@ -15,7 +15,6 @@ class GameService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      print("🕹️ Fetching games from $_baseUrl...");
 
       final response = await http.get(
         Uri.parse("https://linkskool.net/api/v3/public/games"),
@@ -27,8 +26,6 @@ class GameService {
       );
 
       if (response.statusCode == 200) {
-        print("✅ Games fetched successfully!");
-        print("Response: ${response.body}");
 
         final decoded = json.decode(response.body);
 
@@ -44,13 +41,11 @@ class GameService {
 
         throw Exception("Unexpected response format: $decoded");
       } else {
-        print("❌ Failed to load games: ${response.statusCode}");
-        print("Response: ${response.body}");
         throw Exception("Failed to load games: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Error fetching games: $e");
       throw Exception("Error fetching games: $e");
     }
   }
 }
+

@@ -24,7 +24,6 @@ class QuizProvider extends ChangeNotifier {
       await _quizService.addTest(quizPayload);
       message = 'Test added successfully';
     } catch (e) {
-      print('Error adding test: $e');
       error = e.toString();
       message = 'Failed to add test: $error';
       rethrow;
@@ -44,7 +43,6 @@ class QuizProvider extends ChangeNotifier {
       await _quizService.updateTest(quizPayload);
       message = 'Test updated successfully';
     } catch (e) {
-      print('Error updating test: $e');
       error = e.toString();
       message = 'Failed to update test: $error';
       rethrow;
@@ -64,7 +62,6 @@ class QuizProvider extends ChangeNotifier {
       await _quizService.DeleteQuiz(id);
       message = 'quiz deleted successfully';
     } catch (e) {
-      print('Error deleting quiz: $e');
       error = e.toString();
       message = 'Failed to delete quiz: $error';
       rethrow;
@@ -74,3 +71,4 @@ class QuizProvider extends ChangeNotifier {
     }
   }
 }
+

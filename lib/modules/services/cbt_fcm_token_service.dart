@@ -21,9 +21,6 @@ class CbtFcmTokenService {
       final url = '$baseUrl/$userId/fcm-token';
       final body = {'fcm_token': fcmToken};
 
-      print("🛠️ [UPDATE FCM TOKEN] PUT $url");
-      print("➡️ Headers: X-API-KEY: $apiKey");
-      print("➡️ Body: ${json.encode(body)}");
      
 
       final response = await http.post(
@@ -36,18 +33,15 @@ class CbtFcmTokenService {
         body: json.encode(body),
       );
 
-      print("⬅️ Response status: ${response.statusCode}");
-      print("⬅️ Response body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       }
 
-      print("❌ Failed to update FCM token: ${response.statusCode}");
       return false;
     } catch (e) {
-      print("❌ Error updating FCM token: $e");
       return false;
     }
   }
 }
+

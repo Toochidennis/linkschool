@@ -166,16 +166,12 @@ void initState() {
               : int.tryParse(settings['term'].toString());
         });
 
-        debugPrint(
-            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
       } else {
-        debugPrint('⚠️ No stored user data found.');
         setState(() {
         
       });
       }
     } catch (e, stack) {
-      debugPrint(stack.toString());
       if (mounted) {
      //   CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
@@ -234,7 +230,7 @@ void initState() {
           borderRadius: BorderRadius.circular(12.0),
           boxShadow: [
             BoxShadow(
-              color: backgroundColor.withOpacity(0.3),
+              color: backgroundColor.withValues(alpha: 0.3),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -294,7 +290,7 @@ void initState() {
               border: Border.all(color: borderColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withOpacity(0.3),
+                  color: backgroundColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -363,10 +359,10 @@ void initState() {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.2)),
+        border: Border.all(color: AppColors.text2Light.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -563,7 +559,6 @@ void initState() {
         'files': <Map<String, dynamic>>[],
       };
 
-      debugPrint('Creating feed with payload: $payload');
 
       await provider.createFeed(payload);
 
@@ -582,8 +577,6 @@ void initState() {
         await provider.fetchDashboardData();
       }
     } catch (e, stackTrace) {
-      debugPrint('Error creating feed: $e');
-      debugPrint('Stack trace: $stackTrace');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -634,7 +627,7 @@ void initState() {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color:
-                                        AppColors.text2Light.withOpacity(0.1),
+                                        AppColors.text2Light.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
@@ -665,7 +658,7 @@ void initState() {
                                     icon: Icons.people_rounded,
                                     title: "Students",
                                     backgroundColor: AppColors.bookText1,
-                                    borderColor: AppColors.bookText1.withOpacity(0.3),
+                                    borderColor: AppColors.bookText1.withValues(alpha: 0.3),
                                     onTap: () {
                                       Navigator.push(
                                         context,
@@ -688,7 +681,7 @@ void initState() {
                                     title: "Staff",
                                     icon: Icons.school_rounded,
                                     backgroundColor: Colors.teal,
-                                    borderColor: Colors.teal.withOpacity(0.3),
+                                    borderColor: Colors.teal.withValues(alpha: 0.3),
                                     onTap: () {
                                       Navigator.push(
                                         context,
@@ -715,7 +708,7 @@ void initState() {
                                     title: "Classes",
                                     icon: Icons.class_rounded,
                                     backgroundColor: Colors.orangeAccent,
-                                    borderColor: Colors.orangeAccent.withOpacity(0.3),
+                                    borderColor: Colors.orangeAccent.withValues(alpha: 0.3),
                                     onTap: () {
                                       Navigator.push(
                                         context,
@@ -738,7 +731,7 @@ void initState() {
                                     title: "Levels",
                                     icon: Icons.layers_rounded,
                                     backgroundColor: Colors.purpleAccent,
-                                    borderColor: Colors.purpleAccent.withOpacity(0.3),
+                                    borderColor: Colors.purpleAccent.withValues(alpha: 0.3),
                                     onTap: () {
                                       Navigator.push(
                                         context,
@@ -772,7 +765,7 @@ void initState() {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color:
-                                  AppColors.text2Light.withOpacity(0.1),
+                                  AppColors.text2Light.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -860,7 +853,7 @@ void initState() {
                                       boxShadow: [
                                         BoxShadow(
                                           color: (item['color'] as Color)
-                                            .withOpacity(0.3),
+                                            .withValues(alpha: 0.3),
                                           spreadRadius: 1,
                                           blurRadius: 10,
                                           offset: const Offset(0, 2),
@@ -899,7 +892,7 @@ void initState() {
                                                   style: AppTextStyles
                                                     .normal400(
                                                       fontSize: 13,
-                                                      color: Colors.white.withOpacity(0.9),
+                                                      color: Colors.white.withValues(alpha: 0.9),
                                                     ),
                                                 ),
                                               ],
@@ -938,7 +931,7 @@ void initState() {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color:
-                                        AppColors.text2Light.withOpacity(0.1),
+                                        AppColors.text2Light.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
@@ -976,7 +969,7 @@ void initState() {
                                       boxShadow: [
                                         BoxShadow(
                                           color: AppColors.text2Light
-                                              .withOpacity(0.3),
+                                              .withValues(alpha: 0.3),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1194,7 +1187,7 @@ void initState() {
         'type': feed.type,
         'term': academicTerm, // Use the global academicTerm instead
       };
-      print('Updated Feed Data: $updatedFeed'); // Debug print
+ // Debug print
       await provider.updateFeed(updatedFeed, feed.id.toString());
 
       if (mounted) {
@@ -1205,7 +1198,6 @@ void initState() {
     } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to update feed: $e');
-        debugPrint('Error updating feed: ${feed.id}, Error: $e');
       }
     }
   }
@@ -1220,10 +1212,10 @@ void initState() {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
         border:
-            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+            Border.all(color: AppColors.text2Light.withValues(alpha: 0.3), width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

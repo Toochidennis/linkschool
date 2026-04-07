@@ -74,17 +74,12 @@ int calculateScore() {
     final selectedAnswer = selectedAnswers[i];
     final correctAnswer = quizzes[i].correct.order;
     
-    print('📊 Question $i: Selected=$selectedAnswer, Correct=$correctAnswer');
     
     if (selectedAnswer != null && selectedAnswer == correctAnswer) {
       score++;
-      print('✅ Correct! Score: $score');
     } else if (selectedAnswer != null) {
-      print('❌ Wrong. Selected option text: ${quizzes[i].options[selectedAnswer].text}');
-      print('   Correct option text: ${quizzes[i].correct.text}');
     }
   }
-  print('🎯 Final Score: $score/$totalQuestions');
   return score;
 }
 

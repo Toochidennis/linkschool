@@ -88,7 +88,6 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
         _isInitialized = true;
       });
     } catch (e) {
-      print('Error initializing chat history: $e');
       _startNewChat();
       setState(() {
         _isInitialized = true;
@@ -113,7 +112,6 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
       // Save after removing empty chats
       await _saveChatSessions();
     } catch (e) {
-      print('Error loading chat sessions: $e');
       _chatSessions = [];
     }
   }
@@ -129,7 +127,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
           jsonEncode(_chatSessions.map((s) => s.toJson()).toList());
       await _chatBox.put('sessions', sessionsJson);
     } catch (e) {
-      print('Error saving chat sessions: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -560,9 +558,9 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -882,7 +880,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: isActive
-                ? AppColors.eLearningBtnColor1.withOpacity(0.1)
+                ? AppColors.eLearningBtnColor1.withValues(alpha: 0.1)
                 : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -919,7 +917,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
           onPressed: () => _confirmDeleteSession(session),
         ),
         selected: isActive,
-        selectedTileColor: AppColors.eLearningBtnColor1.withOpacity(0.05),
+        selectedTileColor: AppColors.eLearningBtnColor1.withValues(alpha: 0.05),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -1003,7 +1001,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
               'Your AI study companion',
               style: AppTextStyles.normal400(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
           ],
@@ -1066,7 +1064,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
               Icon(
                 Icons.smart_toy_rounded,
                 size: 64,
-                color: AppColors.eLearningBtnColor1.withOpacity(0.5),
+                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(

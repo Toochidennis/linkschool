@@ -4,12 +4,10 @@ class FacebookAnalyticsService {
   static final FacebookAppEvents facebookAppEvents = FacebookAppEvents();
   
   static Future<void> initialize() async {
-    print('Facebook App Events initialized');
   }
   
   static Future<void> logAppLaunch() async {
     await facebookAppEvents.logEvent(name: 'app_launch');
-    print('Logged app launch event');
   }
   
   static Future<void> logCustomEvent(String eventName, 
@@ -18,7 +16,6 @@ class FacebookAnalyticsService {
       name: eventName,
       parameters: parameters,
     );
-    print('Logged custom event: $eventName');
   }
   
   static Future<void> logPurchase({
@@ -31,7 +28,6 @@ class FacebookAnalyticsService {
       currency: currency,
       parameters: parameters,
     );
-    print('Logged purchase event: $amount $currency');
   }
   
   static Future<void> setUserData({
@@ -51,6 +47,5 @@ class FacebookAnalyticsService {
   phone: phone,
 );
     
-    print('Set user data for Facebook');
   }
 }

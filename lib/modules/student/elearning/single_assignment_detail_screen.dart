@@ -83,12 +83,8 @@ class _SingleAssignmentDetailsScreenState
           academicTerm = settings['term'] as int?;
         });
       }
-      print('Creator ID: $creatorId');
-      print('Creator Name: $creatorName');
-      print('Academic Year: $academicYear');
-      print('Academic Term: $academicTerm');
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -399,14 +395,12 @@ class _SingleAssignmentDetailsScreenState
           };
 
       try {
-        print(" See o seee creator id $creatorId");
 //
         final commentProvider =
             Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
-          print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
           CustomToaster.toastSuccess(
               context, 'Success', 'Comment updated successfully');
@@ -448,7 +442,7 @@ class _SingleAssignmentDetailsScreenState
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(color: Colors.grey.withOpacity(0.5)),
+      child: Divider(color: Colors.grey.withValues(alpha: 0.5)),
     );
   }
 
@@ -543,13 +537,13 @@ class _SingleAssignmentDetailsScreenState
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12.0),
           border: Border.all(
-            color: _getFileColor(fileType).withOpacity(0.3),
+            color: _getFileColor(fileType).withValues(alpha: 0.3),
             width: 1.5,
           ),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 2),
@@ -567,7 +561,7 @@ class _SingleAssignmentDetailsScreenState
                     topLeft: Radius.circular(12.0),
                     topRight: Radius.circular(12.0),
                   ),
-                  color: _getFileColor(fileType).withOpacity(0.1),
+                  color: _getFileColor(fileType).withValues(alpha: 0.1),
                 ),
                 child: _buildPreviewContent(fileType, fileUrl, fileName),
               ),
@@ -816,7 +810,7 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
         }
       });
     } catch (e) {
-      print('Error initializing video: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -1046,7 +1040,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
       );
       if (mounted) setState(() => _thumbnail = thumb);
     } catch (e) {
-      debugPrint("Error generating video thumbnail: $e");
+      // Intentionally ignored.
     }
   }
 

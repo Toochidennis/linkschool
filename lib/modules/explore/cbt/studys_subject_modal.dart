@@ -197,14 +197,14 @@ class _StudySubjectSelectionModalState
     // final canTakeTest = await _subscriptionService.canTakeTest();
     // final remainingTests = await _subscriptionService.getRemainingFreeTests();
 
-    // print('\n📚 Study Module Access Check:');
-    // print('   - Backend says paid: $hasUserPaid');
-    // print('   - Local says can take test: $canTakeTest');
-    // print('   - Remaining free tests: $remainingTests');
+
+
+
+
 
     // // If backend confirms payment, allow access
     // if (hasUserPaid) {
-    //   print('   ✅ User has paid (verified from backend) - starting study');
+
     //   _proceedWithStudy();
     //   return;
     // }
@@ -215,7 +215,7 @@ class _StudySubjectSelectionModalState
     // if (!mounted) return;
 
     // if (!canTakeTest || trialExpired) {
-    //   print('   ❌ Study access denied - showing enforcement dialog');
+
     //   final allowProceed = await showDialog<bool>(
     //     context: context,
     //     barrierDismissible: true,
@@ -225,7 +225,7 @@ class _StudySubjectSelectionModalState
     //       amount: settings.amount,
     //       discountRate: settings.discountRate,
     //       onSubscribed: () async {
-    //         print('✅ User subscribed from Study module');
+
     //         await userProvider.refreshCurrentUser();
     //         if (mounted) {
     //           setState(() {});
@@ -249,7 +249,7 @@ class _StudySubjectSelectionModalState
     //     amount: settings.amount,
     //     discountRate: settings.discountRate,
     //     onSubscribed: () async {
-    //       print('✅ User subscribed from Study module');
+
     //       await userProvider.refreshCurrentUser();
     //       if (mounted) {
     //         setState(() {});
@@ -259,7 +259,7 @@ class _StudySubjectSelectionModalState
     // );
 
     // if (allowProceed == true) {
-    //   print('   ✅ User can access study (within free limit)');
+
       _proceedWithStudy();
     
   }
@@ -345,7 +345,7 @@ class _StudySubjectSelectionModalState
                     const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -472,7 +472,7 @@ class _StudySubjectSelectionModalState
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -529,7 +529,7 @@ class _StudySubjectSelectionModalState
         // Loading state
         if (topicsProvider.loading) {
           return Container(
-            color: subjectColor.withOpacity(0.05),
+            color: subjectColor.withValues(alpha: 0.05),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -552,7 +552,7 @@ class _StudySubjectSelectionModalState
         // Error state
         if (topicsProvider.error != null) {
           return Container(
-            color: subjectColor.withOpacity(0.05),
+            color: subjectColor.withValues(alpha: 0.05),
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -606,7 +606,7 @@ class _StudySubjectSelectionModalState
         var syllabuses = topicsProvider.topicsData?.data ?? [];
         if (syllabuses.isEmpty) {
           return Container(
-            color: subjectColor.withOpacity(0.05),
+            color: subjectColor.withValues(alpha: 0.05),
             child: Center(
               child: Text(
                 'No topics available',
@@ -634,7 +634,7 @@ class _StudySubjectSelectionModalState
         // Show empty state if no results after filtering
         if (syllabuses.isEmpty && _searchQuery.isNotEmpty) {
           return Container(
-            color: subjectColor.withOpacity(0.05),
+            color: subjectColor.withValues(alpha: 0.05),
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -668,7 +668,7 @@ class _StudySubjectSelectionModalState
 
         // Success - Display hierarchical syllabus/topics
         return Container(
-          color: subjectColor.withOpacity(0.05),
+          color: subjectColor.withValues(alpha: 0.05),
           child: Column(
             children: [
               Expanded(
@@ -687,7 +687,7 @@ class _StudySubjectSelectionModalState
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -715,7 +715,7 @@ class _StudySubjectSelectionModalState
                                           color: _areAllTopicsSelected(
                                                   syllabus.topics)
                                               ? subjectColor
-                                              : subjectColor.withOpacity(0.15),
+                                              : subjectColor.withValues(alpha: 0.15),
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -740,7 +740,7 @@ class _StudySubjectSelectionModalState
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: subjectColor.withOpacity(0.15),
+                                        color: subjectColor.withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
@@ -805,7 +805,7 @@ class _StudySubjectSelectionModalState
                           if (isExpanded)
                             Container(
                               decoration: BoxDecoration(
-                                color: subjectColor.withOpacity(0.03),
+                                color: subjectColor.withValues(alpha: 0.03),
                                 borderRadius: const BorderRadius.only(
                                   bottomLeft: Radius.circular(12),
                                   bottomRight: Radius.circular(12),
@@ -871,7 +871,7 @@ class _StudySubjectSelectionModalState
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, -2),
                     ),

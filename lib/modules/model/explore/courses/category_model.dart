@@ -1,10 +1,12 @@
-﻿import 'package:linkschool/modules/model/explore/courses/course_model.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 
 class CategoryModel {
   final int id;
   final String name;
   final String description;
   final String? imageUrl;
+  final String? slug;
   final List<CourseModel> courses;
 
   CategoryModel({
@@ -12,17 +14,20 @@ class CategoryModel {
     required this.name,
     required this.description,
     this.imageUrl,
+    this.slug,
     required this.courses,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     final int idVal = json['program_id'] ?? json['id'] ?? 0;
+    final slugValue = json['slug']?.toString();
 
     return CategoryModel(
       id: idVal,
       name: json['name'] ?? "",
       description: json['description'] ?? "",
       imageUrl: json['image_url'],
+      slug: slugValue,
       courses: (json['courses'] as List<dynamic>?)
               ?.map((item) => CourseModel.fromJson(item, programIdOverride: idVal))
               .toList() ??
@@ -36,6 +41,7 @@ class CategoryModel {
       'name': name,
       'description': description,
       'image_url': imageUrl,
+      'slug': slug,
       'courses': courses.map((course) => course.toJson()).toList(),
     };
   }

@@ -39,9 +39,6 @@ class CommentService {
         final meta =
             response.rawData?['response']['meta'] as Map<String, dynamic>;
         if (data.isNotEmpty) {
-          print(
-              "Comments fetched successfully: ${data.length} comments found.");
-          print("Meta data: $meta");
           return {
             'comments': data.map((json) => Comment.fromJson(json)).toList(),
             'meta': meta,
@@ -51,7 +48,6 @@ class CommentService {
 
       throw Exception("Failed to Fetch Comments: ${response.message}");
     } catch (e) {
-      print("Error fetching comments: $e");
       throw Exception("Failed to Fetch Comments: $e");
     }
   }
@@ -70,7 +66,6 @@ class CommentService {
     _apiService.setAuthToken(token);
 
     commentData['_db'] = dbName;
-    print("Request Payload: $commentData");
 
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
@@ -78,28 +73,21 @@ class CommentService {
         body: commentData,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to create comment");
 
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Create Comment: ${response.message}");
       } else {
-        print('Comment created successfully.');
-        print('Status Code: ${response.statusCode}');
         SnackBar(
           content: Text('Comment created successfully.'),
           backgroundColor: Colors.green,
         );
-        print(response.message);
       }
     } catch (e) {
-      print("Error creating comment: $e");
       throw Exception("Failed to Create Comment: $e");
     }
   }
@@ -124,13 +112,10 @@ class CommentService {
       );
 
       if (response.success) {
-        print('Comment updated successfully.');
       } else {
-        print('Failed to update comment: ${response.message}');
         throw Exception("Failed to Update Comment: ${response.message}");
       }
     } catch (e) {
-      print("Error updating comment: $e");
       throw Exception("Failed to Update Comment: $e");
     }
   }
@@ -155,14 +140,12 @@ class CommentService {
           });
 
       if (response.success) {
-        print('Comment Deleted successfully.');
       } else {
-        print('Failed to delete comment: ${response.message}');
         throw Exception("Failed to delete Comment: ${response.message}");
       }
     } catch (e) {
-      print("Error delete comment: $e");
       throw Exception("Failed to delete Comment: $e");
     }
   }
 }
+

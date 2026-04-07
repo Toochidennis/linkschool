@@ -21,9 +21,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: AppSettingsScreen(),
-    );
+    return const AppSettingsScreen();
   }
 }
 
@@ -31,17 +29,13 @@ class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
 
   @override
-  _AppSettingsScreenState createState() => _AppSettingsScreenState();
+  State<AppSettingsScreen> createState() => _AppSettingsScreenState();
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late AnimationController _bounceController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _bounceAnimation;
 
   final FirebaseAuthService _authService = FirebaseAuthService();
 
@@ -53,48 +47,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-    );
-
-    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
-    );
-
     // Add mounted checks
     _fadeController.forward();
-
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) _slideController.forward();
-    });
-
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _bounceController.forward();
-    });
-
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
-    _slideController.dispose();
-    _bounceController.dispose();
     super.dispose();
   }
 
@@ -123,12 +87,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       );
 
       if (signedIn == true) {
+        if (!mounted) return;
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
         if (cbtUserProvider.currentUser == null) {
           await cbtUserProvider.initialize();
         }
         await cbtUserProvider.refreshCurrentUser();
+        if (!mounted) return;
         final updatedUser = cbtUserProvider.currentUser;
 
         if (updatedUser != null) {
@@ -141,7 +107,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
               await cbtUserProvider.replaceProfiles(profiles);
             }
           } catch (e) {
-            debugPrint("Failed to fetch profiles after sign-in: $e");
+            // Intentionally ignored.
           }
         }
 
@@ -202,20 +168,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     if (confirm == true) {
       try {
         // Clear app-specific user data FIRST before Firebase signout
+        if (!mounted) return;
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
 
         // Clear provider state and persisted CBT user data
         await cbtUserProvider.logout();
-        print('✅ CbtUserProvider logout completed');
 
         // Clear commonly used auth/shared keys
         await _clearAllUserSharedPrefs();
-        print('✅ SharedPreferences cleared');
 
         // Sign out from Firebase LAST
         await _authService.signOut();
-        print('✅ Firebase signout completed');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -226,7 +190,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
           );
         }
       } catch (e) {
-        print('❌ Error during logout: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -258,9 +221,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       }
 
       // Optionally clear any other known flags
-      print('✅ Cleared user-related SharedPreferences keys');
     } catch (e) {
-      print('❌ Error clearing SharedPreferences on logout: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -279,44 +241,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     required Widget child,
     required int index,
   }) {
-    // Calculate interval with proper bounds
-    final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
-    final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
-
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: _slideController,
-              curve: Interval(
-                intervalStart,
-                intervalEnd,
-                curve: Curves.elasticOut,
-              ),
-            )),
-            // Add ScaleTransition to make the bounce visible using elastic curve
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                CurvedAnimation(
-                  parent: _bounceController,
-                  curve: Interval(
-                    intervalStart,
-                    intervalEnd,
-                    curve: Curves.elasticOut,
-                  ),
-                ),
-              ),
-              child: child,
-            ),
-          ),
-        );
-      },
+    return FadeTransition(
+      opacity: _fadeAnimation,
       child: child,
     );
   }
@@ -526,8 +452,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
         boxShadow: [
           BoxShadow(
             color: settings.isDarkMode
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -541,7 +467,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
               // Profile Picture
               CircleAvatar(
                 radius: 40,
-                backgroundColor: AppColors.text2Light.withOpacity(0.2),
+                backgroundColor: AppColors.text2Light.withValues(alpha: 0.2),
                 backgroundImage: (user.profilePicture != null &&
                         user.profilePicture!.trim().isNotEmpty)
                     ? NetworkImage(user.profilePicture!)
@@ -634,13 +560,13 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                 gradient: LinearGradient(
                   colors: [
                     AppColors.eLearningBtnColor1,
-                    AppColors.eLearningBtnColor1.withOpacity(0.8),
+                    AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -712,8 +638,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
         boxShadow: [
           BoxShadow(
             color: settings.isDarkMode
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: Offset(0, 2),
@@ -737,7 +663,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.text2Light.withOpacity(0.1),
+          color: AppColors.text2Light.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
@@ -1226,8 +1152,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //         boxShadow: [
 //           BoxShadow(
 //             color: settings.isDarkMode 
-//                 ? Colors.black.withOpacity(0.3) 
-//                 : Colors.grey.withOpacity(0.1),
+//                 ? Colors.black.withValues(alpha: 0.3) 
+//                 : Colors.grey.withValues(alpha: 0.1),
 //             spreadRadius: 1,
 //             blurRadius: 10,
 //             offset: const Offset(0, 2),
@@ -1241,7 +1167,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //             height: 50,
 //             child: CircleAvatar(
 //               radius: 40,
-//               backgroundColor: AppColors.text2Light.withOpacity(0.2),
+//               backgroundColor: AppColors.text2Light.withValues(alpha: 0.2),
 //               backgroundImage: user.photoURL != null 
 //                   ? NetworkImage(user.photoURL!) 
 //                   : null,
@@ -1336,7 +1262,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //         borderRadius: BorderRadius.circular(16),
 //         boxShadow: [
 //           BoxShadow(
-//             color: settings.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+//             color: settings.isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
 //             spreadRadius: 1,
 //             blurRadius: 10,
 //             offset: Offset(0, 2),
@@ -1360,7 +1286,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //       leading: Container(
 //         padding: const EdgeInsets.all(8),
 //         decoration: BoxDecoration(
-//           color: AppColors.text2Light.withOpacity(0.1),
+//           color: AppColors.text2Light.withValues(alpha: 0.1),
 //           borderRadius: BorderRadius.circular(8),
 //         ),
 //         child: Icon(

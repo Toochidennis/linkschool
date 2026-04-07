@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
-import 'package:linkschool/database/cbt_db-helper.dart';
+import 'package:linkschool/database/cbt_db_helper.dart';
 
 
 class ExamService {
@@ -21,15 +21,13 @@ class ExamService {
         randomizeQuestions: randomizeQuestions,
       );
       if (localData != null) {
-        print('✅ Loaded exam from local DB (examId: $examType)');
         return localData;
       }
     } catch (e) {
-      print('⚠️ Local DB read failed, falling back to network: $e');
+      // Intentionally ignored.
     }
 
     // ── 2. Fallback to network ─────────────────────────────────────
-    print('🌐 No local data found, fetching from network...');
     return await _fetchFromNetwork(examType: examType, limit: limit);
   }
 
@@ -57,7 +55,6 @@ class ExamService {
     );
 
     if (examRows.isEmpty) {
-      print('ℹ️ Exam $examId not found in local DB');
       return null;
     }
 
@@ -73,11 +70,9 @@ class ExamService {
     );
 
     if (questionRows.isEmpty) {
-      print('ℹ️ No questions found in local DB for exam $examId');
       return null;
     }
 
-    print('📦 Found ${questionRows.length} questions in local DB for exam $examId');
 
     // ── Load options for all questions in one query ────────────────
     final questionIds = questionRows.map((q) => q['id']).toList();
@@ -229,7 +224,6 @@ class ExamService {
       if (limit != null) {
         url += '?limit=$limit';
       }
-      print('🌐 Making request to: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -240,7 +234,6 @@ class ExamService {
         },
       );
 
-      print('📡 Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseBody = json.decode(response.body);
@@ -249,7 +242,6 @@ class ExamService {
         throw Exception('Failed to load exam data: ${response.statusCode}');
       }
     } catch (e) {
-      print('💥 Network error: $e');
       throw Exception('Error fetching exam data: $e');
     }
   }
@@ -287,8 +279,6 @@ class ExamService {
 //       if (limit != null) {
 //         url += "?limit=$limit";
 //       }
-//       print('🌐 Making request to: $url');
-//       print('🔢 Question limit: ${limit ?? "All"}');
 
 //       final response = await http.get(
 //         Uri.parse(url),
@@ -299,21 +289,18 @@ class ExamService {
 //         },
 //       );
 
-//       print('📡 Response status: ${response.statusCode}');
 
 //       if (response.statusCode == 200) {
 //         final responseBody = json.decode(response.body);
-//         print('📊 Response body type: ${responseBody.runtimeType}');
-//         print('📊 Response body type: $responseBody');
 
 //         return responseBody;
 //       } else {
-//         print('🚨 API Error: ${response.statusCode} - ${response.body}');
 //         throw Exception('Failed to load exam data: ${response.statusCode}');
 //       }
 //     } catch (e) {
-//       print('💥 Service error: $e');
 //       throw Exception('Error fetching exam data: $e');
 //     }
 //   }
 // }
+
+

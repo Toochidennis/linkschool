@@ -24,6 +24,7 @@ class StartChallenge extends StatefulWidget {
   final ChallengeModel? challenge;
   final int? challengeId;
   final List<String>? examIds;
+  final List<String>? courseIds;
   final List<String>? subjectNames;
   final List<String>? years;
   final int? totalDurationInSeconds;
@@ -33,6 +34,7 @@ class StartChallenge extends StatefulWidget {
     super.key,
     this.challenge,
     this.examIds,
+    this.courseIds,
     this.subjectNames,
     this.years,
     this.totalDurationInSeconds = 3600,
@@ -62,6 +64,7 @@ class _StartChallengeState extends State<StartChallenge>
   Map<String, List<QuestionModel>> allQuestions = {};
   Map<String, String> subjectNames = {};
   Map<String, String> subjectYears = {};
+  Map<String, int> subjectQuestionLimits = {};
 
   // Answer popup handling
   bool _showAnswerPopup = false;
@@ -102,17 +105,25 @@ class _StartChallengeState extends State<StartChallenge>
     _startTimer();
 
     // Initialize subject mappings for multi-subject
-    if (widget.examIds != null &&
+    final subjectIds = widget.courseIds ?? widget.examIds;
+
+    if (subjectIds != null &&
         widget.subjectNames != null &&
         widget.years != null) {
-      for (int i = 0; i < widget.examIds!.length; i++) {
-        subjectNames[widget.examIds![i]] = widget.subjectNames![i];
-        subjectYears[widget.examIds![i]] = widget.years![i];
+      for (int i = 0; i < subjectIds.length; i++) {
+        subjectNames[subjectIds[i]] = widget.subjectNames![i];
+        subjectYears[subjectIds[i]] = widget.years![i];
       }
     }
 
-    if (widget.examIds == null || widget.examIds!.isEmpty) {
-      print('❌ ERROR: No exam IDs provided!');
+    if (widget.challenge?.subjects != null &&
+        widget.challenge!.subjects!.isNotEmpty) {
+      for (final subject in widget.challenge!.subjects!) {
+        subjectQuestionLimits[subject.subjectId] = subject.questionCount;
+      }
+    }
+
+    if (subjectIds == null || subjectIds.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -146,26 +157,31 @@ class _StartChallengeState extends State<StartChallenge>
   }
 
   Future<void> _loadQuestions() async {
-    if (widget.examIds == null ||
-        widget.examIds!.isEmpty ||
-        currentExamIndex >= widget.examIds!.length) {
+    final subjectIds = widget.courseIds ?? widget.examIds;
+
+    if (subjectIds == null ||
+        subjectIds.isEmpty ||
+        currentExamIndex >= subjectIds.length) {
       return;
     }
 
-    final currentExamId = widget.examIds![currentExamIndex];
+    final currentExamId = subjectIds[currentExamIndex];
+    final questionLimitForSubject =
+        subjectQuestionLimits[currentExamId] ?? widget.questionLimit;
 
-    try {
-      if (widget.isPreview) {
-        // PREVIEW MODE → Use ChallengeProvider + ExamProvider (random questions)
-        final challengeProvider = context.read<ChallengeProvider>();
+      try {
+        if (widget.isPreview) {
+          // PREVIEW MODE → Use ChallengeProvider + ExamProvider (random questions)
+          final challengeProvider = context.read<ChallengeProvider>();
 
-        // Use examType from first subject or fallback
-        final examType = widget.subjectNames?[currentExamIndex] ?? 'default';
+          // Use the selected exam ID for the preview request.
+          // Subject names are only for display, not for the endpoint path.
+          final examType = currentExamId;
 
-        await challengeProvider.previewChallengeExam(
-          examType,
-          limit: widget.questionLimit,
-        );
+          await challengeProvider.previewChallengeExam(
+            examType,
+            limit: questionLimitForSubject,
+          );
 
         // Manually set questions into ChallengeQuestionProvider (to reuse UI)
         // final questionProvider = context.read<ChallengeQuestionProvider>();
@@ -176,9 +192,9 @@ class _StartChallengeState extends State<StartChallenge>
         final realChallengeId = widget.challengeId ?? 0;
 
         await provider.fetchChallengeQuestions(
-          examId: int.parse(currentExamId),
+          courseId: int.parse(currentExamId),
           challengeId: realChallengeId,
-          limit: widget.questionLimit,
+          limit: questionLimitForSubject,
         );
       }
 
@@ -190,7 +206,6 @@ class _StartChallengeState extends State<StartChallenge>
         }
       }
     } catch (e) {
-      print("Load error: $e");
       if (mounted) {
         setState(() {});
         if (Navigator.canPop(context)) Navigator.of(context).pop();
@@ -228,16 +243,12 @@ class _StartChallengeState extends State<StartChallenge>
   }
 
   void _loadNextExam() {
-    if (currentExamIndex < widget.examIds!.length - 1) {
+    final subjectIds = widget.courseIds ?? widget.examIds;
+
+    if (subjectIds != null && currentExamIndex < subjectIds.length - 1) {
       setState(() {
         currentExamIndex++;
       });
-      print('\n📚 Loading Next Exam:');
-      print('   Subject: ${widget.subjectNames![currentExamIndex]}');
-      print('   Exam ID: ${widget.examIds![currentExamIndex]}');
-      print('   Progress: ${currentExamIndex + 1}/${widget.examIds!.length}');
-      print('   Remaining Time: ${_remainingSeconds! ~/ 60} minutes');
-      print('─' * 50);
 
       _showNextSubjectCountdown();
     } else {
@@ -256,34 +267,24 @@ class _StartChallengeState extends State<StartChallenge>
     provider.selectAnswer(currentIdx, optionIndex);
     _scaleController.forward(from: 0);
 
-    // Check if answer is correct - FIX: Parse the order as int
-    final correctAnswerOrderStr =
-        provider.questions[currentIdx].correctAnswer?['order'];
-    int? correctAnswerOrder;
+    final question = provider.questions[currentIdx];
+    final options = question.getOptions();
+    final correctOptionIndex = question.getCorrectAnswerIndex();
+    final selectedOptionText =
+        optionIndex >= 0 && optionIndex < options.length ? options[optionIndex] : '';
 
-    // Handle both String and int types
-    if (correctAnswerOrderStr is String) {
-      correctAnswerOrder = int.tryParse(correctAnswerOrderStr);
-    } else if (correctAnswerOrderStr is int) {
-      correctAnswerOrder = correctAnswerOrderStr;
-    }
+    final isCorrect = correctOptionIndex != null && optionIndex == correctOptionIndex;
 
-    // Compare with +1 offset since optionIndex is 0-based but order is 1-based
-    final isCorrect =
-        correctAnswerOrder != null && (optionIndex + 1) == correctAnswerOrder;
-
-    // Get correct answer text for display
+    // Prefer the resolved option text, but fall back to the API-provided text.
     String correctAnswerText = '';
-    if (correctAnswerOrder != null) {
-      final correctOptionIndex = correctAnswerOrder - 1; // Convert to 0-based
-      final options = provider.questions[currentIdx].getOptions();
-      if (correctOptionIndex >= 0 && correctOptionIndex < options.length) {
-        correctAnswerText = options[correctOptionIndex];
-      }
+    if (correctOptionIndex != null &&
+        correctOptionIndex >= 0 &&
+        correctOptionIndex < options.length) {
+      correctAnswerText = options[correctOptionIndex];
+    } else {
+      correctAnswerText = question.correctAnswer?['text']?.toString() ?? '';
     }
 
-    print(
-        'Answer Selected: ${isCorrect ? "Correct" : "Wrong"} (Selected index: $optionIndex, Order: ${optionIndex + 1}, Correct Order: $correctAnswerOrder)');
 
     setState(() {
       _isCurrentAnswerCorrect = isCorrect;
@@ -298,22 +299,24 @@ class _StartChallengeState extends State<StartChallenge>
       _playWrongSound();
     }
   }
+  
 
   void _playCorrectSound() async {
     try {
       await _correctSoundPlayer.stop();
       await _correctSoundPlayer.play(AssetSource('sounds/correct.wav'));
     } catch (e) {
-      print('Error playing correct sound: $e');
+      // Intentionally ignored.
     }
   }
 
   void _playWrongSound() async {
     try {
       await _wrongSoundPlayer.stop();
-      await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
+       await _wrongSoundPlayer.play(AssetSource('sounds/wrong.mp3.mpeg'));
+      //await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
     } catch (e) {
-      print('Error playing wrong sound: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -342,18 +345,10 @@ class _StartChallengeState extends State<StartChallenge>
 
   void _completeCurrentExam(ChallengeQuestionProvider provider) {
     // Save answers and questions for current exam
-    final currentExamId = widget.examIds![currentExamIndex];
+    final currentExamId = (widget.courseIds ?? widget.examIds)![currentExamIndex];
     allAnswers[currentExamId] = Map<int, int>.from(provider.userAnswers);
     allQuestions[currentExamId] = List<QuestionModel>.from(provider.questions);
 
-    print('\n✅ Exam Completed:');
-    print('   Subject: ${widget.subjectNames![currentExamIndex]}');
-    print('   Questions: ${provider.questions.length}');
-    print('   Questions Answered: ${provider.userAnswers.length}');
-    print('   Remaining Time: ${_remainingSeconds! ~/ 60} minutes');
-    print('   Saved Questions: ${allQuestions[currentExamId]?.length ?? 0}');
-    print('   Saved Answers: ${allAnswers[currentExamId]?.length ?? 0}');
-    print('─' * 50);
 
     // Reset provider for next exam
     provider.reset();
@@ -381,10 +376,9 @@ class _StartChallengeState extends State<StartChallenge>
 
       for (int i = 0; i < questions.length; i++) {
         if (answers.containsKey(i)) {
-          // Extract the order from the correctAnswer object
-          final correctAnswerOrder = questions[i].correctAnswer?['order'];
+          final correctAnswerOrder = questions[i].getCorrectAnswerIndex();
 
-          if (answers[i] == correctAnswerOrder) {
+          if (correctAnswerOrder != null && answers[i] == correctAnswerOrder) {
             totalScore += 10;
             totalCorrect++;
           }
@@ -411,9 +405,6 @@ class _StartChallengeState extends State<StartChallenge>
   }
 
   void _showFinalResults() {
-    print('\n🎉 All Exams Completed!');
-    print('   Total Subjects Completed: ${widget.examIds!.length}');
-    print('   Total Answers Recorded: ${allAnswers.length}');
 
     int totalQuestions = 0;
     int totalAnswered = 0;
@@ -423,14 +414,10 @@ class _StartChallengeState extends State<StartChallenge>
       final questions = allQuestions[examId] ?? [];
       totalQuestions += questions.length;
       totalAnswered += answers.length;
-      final index = widget.examIds!.indexOf(examId);
+      final index = (widget.courseIds ?? widget.examIds)!.indexOf(examId);
       if (index >= 0) {
-        print(
-            '   ${widget.subjectNames![index]}: ${answers.length}/${questions.length} answered');
       }
     }
-    print('   Total: $totalAnswered/$totalQuestions answered');
-    print('─' * 50);
 
     _submitQuiz();
   }
@@ -438,7 +425,8 @@ class _StartChallengeState extends State<StartChallenge>
   int _calculateScore(ChallengeQuestionProvider p) {
     int score = 0;
     for (int i = 0; i < p.questions.length; i++) {
-      if (p.userAnswers[i] == p.questions[i].correctAnswer) score += 10;
+      final correctIndex = p.questions[i].getCorrectAnswerIndex();
+      if (correctIndex != null && p.userAnswers[i] == correctIndex) score += 10;
     }
     return score;
   }
@@ -446,7 +434,8 @@ class _StartChallengeState extends State<StartChallenge>
   int _calculateCorrectAnswers(ChallengeQuestionProvider p) {
     int correct = 0;
     for (int i = 0; i < p.questions.length; i++) {
-      if (p.userAnswers[i] == p.questions[i].correctAnswer) correct++;
+      final correctIndex = p.questions[i].getCorrectAnswerIndex();
+      if (correctIndex != null && p.userAnswers[i] == correctIndex) correct++;
     }
     return correct;
   }
@@ -588,7 +577,7 @@ class _StartChallengeState extends State<StartChallenge>
               // Answer Popup Overlay
               if (_showAnswerPopup)
                 Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   child: Center(
                     child: _AnswerPopup(
                       isCorrect: _isCurrentAnswerCorrect,
@@ -744,7 +733,7 @@ class _StartChallengeState extends State<StartChallenge>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -759,7 +748,7 @@ class _StartChallengeState extends State<StartChallenge>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.15),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -1025,7 +1014,7 @@ class _StartChallengeState extends State<StartChallenge>
             gradient: isSelected
                 ? LinearGradient(colors: [
                     AppColors.eLearningBtnColor1,
-                    AppColors.eLearningBtnColor1.withOpacity(0.8)
+                    AppColors.eLearningBtnColor1.withValues(alpha: 0.8)
                   ])
                 : null,
             color: isSelected ? null : Colors.white,
@@ -1036,13 +1025,13 @@ class _StartChallengeState extends State<StartChallenge>
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                        color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: Offset(0, 4))
                   ]
                 : [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.04), blurRadius: 6)
+                        color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)
                   ],
           ),
           child: Row(
@@ -1475,7 +1464,7 @@ class _ResultDialogState extends State<_ResultDialog>
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 30,
                 offset: Offset(0, 15),
                 spreadRadius: 5,
@@ -1626,7 +1615,7 @@ class _ResultDialogState extends State<_ResultDialog>
                             : isGood
                                 ? Colors.green
                                 : Colors.blue)
-                        .withOpacity(0.5),
+                        .withValues(alpha: 0.5),
                     blurRadius: 25,
                     spreadRadius: 5,
                     offset: Offset(0, 8),
@@ -1669,7 +1658,7 @@ class _ResultDialogState extends State<_ResultDialog>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: Offset(0, 8),
           ),
@@ -1796,7 +1785,7 @@ class _ResultDialogState extends State<_ResultDialog>
         Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 24),
@@ -1841,7 +1830,7 @@ class _ResultDialogState extends State<_ResultDialog>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.blue.shade400.withOpacity(0.4),
+                color: Colors.blue.shade400.withValues(alpha: 0.4),
                 blurRadius: 15,
                 offset: Offset(0, 8),
               ),
@@ -1862,7 +1851,7 @@ class _ResultDialogState extends State<_ResultDialog>
                           builder: (_) => WillPopScope(
                             onWillPop: () async => false,
                             child: Material(
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                               child: Center(
                                 child: Container(
                                   margin: EdgeInsets.symmetric(horizontal: 40),
@@ -1872,7 +1861,7 @@ class _ResultDialogState extends State<_ResultDialog>
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
+                                        color: Colors.black.withValues(alpha: 0.2),
                                         blurRadius: 20,
                                         offset: Offset(0, 10),
                                       ),
@@ -1917,7 +1906,7 @@ class _ResultDialogState extends State<_ResultDialog>
                             await leaderboardProvider.submitChallengeResult(
                           challengeId: widget.challengeId!,
                           userId: user.id ?? 0,
-                          username: user.name ??"",
+                          username: user.displayName,
                           score: widget.score,
                           correctAnswers: widget.correctAnswers,
                           totalQuestions: widget.totalQuestions,
@@ -2069,7 +2058,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2077,7 +2066,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2090,7 +2079,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2119,7 +2108,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontFamily: 'Urbanist',
               ),
             ),
@@ -2134,7 +2123,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2165,7 +2154,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -2251,7 +2240,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2259,7 +2248,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2272,7 +2261,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2316,7 +2305,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2347,7 +2336,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -2384,7 +2373,7 @@ class ConfettiPainter extends CustomPainter {
       final y = (progress * size.height * 1.5) - (i * 15 % 100);
 
       if (y > -20 && y < size.height + 20) {
-        paint.color = colors[i % colors.length].withOpacity(0.7);
+        paint.color = colors[i % colors.length].withValues(alpha: 0.7);
         canvas.drawCircle(
           Offset(x, y),
           3 + (i % 3),
@@ -2592,7 +2581,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
                   boxShadow: [
                     BoxShadow(
                       color: (widget.isCorrect ? Colors.green : Colors.red)
-                          .withOpacity(0.4),
+                          .withValues(alpha: 0.4),
                       blurRadius: 30,
                       spreadRadius: 8,
                     ),
@@ -2643,11 +2632,11 @@ class _AnswerPopupState extends State<_AnswerPopup>
                         child: Container(
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 8,
                                 offset: Offset(0, 2),
                               ),
@@ -2729,7 +2718,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
                       boxShadow: [
                         BoxShadow(
                           color: (widget.isCorrect ? Colors.green : Colors.red)
-                              .withOpacity(0.5),
+                              .withValues(alpha: 0.5),
                           blurRadius: 25,
                           offset: Offset(0, 10),
                         ),
@@ -2800,7 +2789,7 @@ class _AnswerPopupState extends State<_AnswerPopup>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.amber.withOpacity(0.5),
+                color: Colors.amber.withValues(alpha: 0.5),
                 blurRadius: 15,
                 offset: Offset(0, 5),
               ),
@@ -2939,7 +2928,7 @@ class _ConfettiPainter extends CustomPainter {
       final rotation = (progress * 4 * math.pi + i * 0.5);
 
       if (y > -30 && y < size.height + 30) {
-        paint.color = colors[i % colors.length].withOpacity(0.8);
+        paint.color = colors[i % colors.length].withValues(alpha: 0.8);
 
         canvas.save();
         canvas.translate(x, y);
@@ -3001,7 +2990,7 @@ class _ParticleBurstPainter extends CustomPainter {
       final x = centerX + math.cos(angle) * distance;
       final y = centerY + math.sin(angle) * distance;
 
-      paint.color = colors[i % colors.length].withOpacity(1 - progress);
+      paint.color = colors[i % colors.length].withValues(alpha: 1 - progress);
 
       final size = 6 * (1 - progress);
       canvas.drawCircle(Offset(x, y), size, paint);
@@ -3022,7 +3011,7 @@ class _FloatingStarsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..style = PaintingStyle.fill
-      ..color = Colors.amber.withOpacity(0.8 * (1 - progress));
+      ..color = Colors.amber.withValues(alpha: 0.8 * (1 - progress));
 
     // Draw floating stars around the popup
     for (int i = 0; i < 8; i++) {

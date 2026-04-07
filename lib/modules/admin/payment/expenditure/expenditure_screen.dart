@@ -186,9 +186,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
         if (_filterParams['filters']?.isNotEmpty == true)
           'filters': _filterParams['filters'],
       };
-      print('Expenditure Payload: $payload');
       final response = await _expenditureService.generateReport(payload);
-      print('Expenditure Response: ${response.data}');
       if (response.success && response.data != null) {
         setState(() {
           _expenditureData = response.data;
@@ -1018,16 +1016,14 @@ class _FilterOverlayState extends State<FilterOverlay> {
         }
       }
     }
-    print('Initial selectedFilters: $selectedFilters');
   }
 
   @override
   Widget build(BuildContext context) {
-    print('Building FilterOverlay, selectedCustomType: $selectedCustomType');
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Container(
-        color: Colors.black54.withOpacity(0.5),
+        color: Colors.black54.withValues(alpha: 0.5),
         child: GestureDetector(
           onTap: () {},
           child: Container(
@@ -1154,7 +1150,6 @@ class _FilterOverlayState extends State<FilterOverlay> {
   }
 
   Widget _buildDateRangeTab() {
-    print('Building DateRangeTab, selectedCustomType: $selectedCustomType');
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
@@ -1172,7 +1167,6 @@ class _FilterOverlayState extends State<FilterOverlay> {
                       onTap: () {
                         setState(() {
                           selectedCustomType = option;
-                          print('Selected custom type: $selectedCustomType');
                         });
                       },
                       child: Container(
@@ -1203,14 +1197,12 @@ class _FilterOverlayState extends State<FilterOverlay> {
               _buildDatePicker('From', fromDate, (date) {
                 setState(() {
                   fromDate = date;
-                  print('From date updated: $fromDate');
                 });
               }),
               const SizedBox(height: 10),
               _buildDatePicker('To', toDate, (date) {
                 setState(() {
                   toDate = date;
-                  print('To date updated: $toDate');
                 });
               }),
             ],
@@ -1287,7 +1279,6 @@ class _FilterOverlayState extends State<FilterOverlay> {
             onTap: () {
               setState(() {
                 selectedGrouping = isSelected ? '' : option;
-                print('Selected grouping: $selectedGrouping');
               });
             },
             child: Container(
@@ -1384,7 +1375,6 @@ class _FilterOverlayState extends State<FilterOverlay> {
             setState(() {
               final key = option.toLowerCase();
               selectedFilters[key] = selectedValues;
-              print('Updated selectedFilters for $key: $selectedValues');
             });
           },
         );
@@ -1448,14 +1438,10 @@ class _FilterOverlayState extends State<FilterOverlay> {
                             } else {
                               selectedValues.add(value);
                             }
-                            print(
-                                'Selected values in bottom sheet: $selectedValues');
                           });
                           setState(() {
                             selectedFilters[key] =
                                 List<dynamic>.from(selectedValues);
-                            print(
-                                'Updated selectedFilters in parent: $selectedFilters');
                           });
                         },
                         child: Container(
@@ -1468,7 +1454,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.2),
+                                color: Colors.grey.withValues(alpha: 0.2),
                                 spreadRadius: 1,
                                 blurRadius: 3,
                                 offset: const Offset(0, 1),
@@ -1509,7 +1495,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       elevation: 2,
-                      shadowColor: Colors.grey.withOpacity(0.5),
+                      shadowColor: Colors.grey.withValues(alpha: 0.5),
                     ),
                     child: const Text(
                       'Apply',
@@ -1552,7 +1538,6 @@ class _FilterOverlayState extends State<FilterOverlay> {
       }
     }
 
-    print('Generating report with params: $params');
     widget.onGenerate(params);
     Navigator.pop(context);
   }

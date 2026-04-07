@@ -16,8 +16,8 @@ class StaffSelectTopicScreen extends StatefulWidget {
   final List<Map<String, dynamic>>? classes;
   final String? levelId;
   final int? syllabusId;
-  final courseId;
-  final courseName;
+  final dynamic courseId;
+  final dynamic courseName;
 
   const StaffSelectTopicScreen(
       {super.key,
@@ -46,11 +46,9 @@ class _SelectTopicScreenState extends State<StaffSelectTopicScreen> {
     onTopicCreated = widget.onTopicCreated;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.syllabusId != null && widget.syllabusId! > 0) {
-        print('Fetching topics with syllabusId: ${widget.syllabusId}');
         Provider.of<TopicProvider>(context, listen: false)
             .fetchTopic(syllabusId: widget.syllabusId!);
       } else {
-        print('Invalid syllabusId: ${widget.syllabusId}, skipping fetch');
       }
     });
   }
@@ -266,10 +264,10 @@ class TopicItem extends StatelessWidget {
 //     onTopicCreated = widget.onTopicCreated;
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
 //      if (widget.syllabusId != null && widget.syllabusId! > 0) {
-//       print('Fetching topics with syllabusId: ${widget.syllabusId}');
+
 //       Provider.of<TopicProvider>(context, listen: false).fetchTopic(syllabusId: widget.syllabusId!);
 //     } else {
-//       print('Invalid syllabusId: ${widget.syllabusId}, skipping fetch');
+
 //     }
 //     });
 //   }

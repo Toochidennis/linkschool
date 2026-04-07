@@ -15,7 +15,6 @@ class DeleteQuestionService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     try {
@@ -25,18 +24,13 @@ class DeleteQuestionService {
             '_db': dbName,
           });
       if (!response.success) {
-        print("Failed to delete Question content");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception(
             "Failed to Delete  Question Content: ${response.message}");
       } else {
-        print(' Question content deleted successfully.');
-        print('Status Code: ${response.statusCode}');
-        print('Message: ${response.message}');
       }
     } catch (e) {
-      print("Error deleting  Question content: $e");
       throw Exception("Failed to Delete  Question Content: $e");
     }
   }
 }
+

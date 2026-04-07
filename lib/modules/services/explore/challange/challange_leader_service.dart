@@ -20,6 +20,7 @@ class LeaderboardService {
   }) async {
     try {
       final apiKey = EnvConfig.apiKey;
+      final resolvedUsername = username.trim().isNotEmpty ? username.trim() : 'User';
 
       if (apiKey.isEmpty) {
         throw Exception("API KEY not found");
@@ -30,7 +31,7 @@ class LeaderboardService {
       final payload = {
         "challenge_id": challengeId,
         "user_id": userId,
-        "username": username,
+        "username": resolvedUsername,
         "score": score.toString(),
         "correct_answers": correctAnswers,
         "total_questions": totalQuestions,
@@ -39,8 +40,6 @@ class LeaderboardService {
         "platform": platform,
       };
 
-      print("📡 Submitting Challenge Result → $url");
-      print("📦 Payload: $payload");
 
       final response = await http.post(
         Uri.parse(url),
@@ -52,8 +51,6 @@ class LeaderboardService {
         body: json.encode(payload),
       );
 
-      print("📥 Response Status: ${response.statusCode}");
-      print("📥 Response Body: ${response.body}");
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception("Failed to submit result: ${response.body}");
@@ -62,7 +59,6 @@ class LeaderboardService {
       final decoded = json.decode(response.body);
       return decoded;
     } catch (e) {
-      print("❌ Error submitting challenge result: $e");
       throw Exception("Error submitting challenge result: $e");
     }
   }
@@ -77,7 +73,6 @@ class LeaderboardService {
       }
 
       final url = "$_baseUrl/cbt/challenges/leaderboard/$challengeId";
-      print("📡 Fetching Leaderboard → $url");
 
       final response = await http.get(
         Uri.parse(url),
@@ -98,3 +93,4 @@ class LeaderboardService {
     }
   }
 }
+

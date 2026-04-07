@@ -27,7 +27,7 @@ class AdminAssignmentScreen extends StatefulWidget {
   final String? courseName;
   final String? levelId;
   final int? syllabusId;
-  final syllabusClasses;
+  final dynamic syllabusClasses;
   final int? itemId;
   final bool editMode;
   final Assignment? assignmentToEdit;
@@ -84,7 +84,6 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       _descriptionController.text = assignment.description;
       _marks = '${assignment.marks} marks';
       _marksController.text = assignment.marks.toString();
-      print("markssssssssssssss ${assignment.marks}");
       _endDate = assignment.dueDate;
       _selectedTopic = assignment.topic;
       _selectedTopicId = int.tryParse(assignment.topicId ?? "");
@@ -124,7 +123,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -262,7 +261,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: _buildAttachmentsSection(),
                     ),
-                    Divider(color: Colors.grey.withOpacity(0.5)),
+                    Divider(color: Colors.grey.withValues(alpha: 0.5)),
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: _buildGroupRow(
@@ -324,7 +323,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
               Container(
                 padding: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  color: AppColors.backgroundLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
@@ -377,7 +376,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Divider(color: Colors.grey.withOpacity(0.5)),
+        Divider(color: Colors.grey.withValues(alpha: 0.5)),
         const SizedBox(height: 8.0),
       ],
     );
@@ -744,7 +743,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
                 CustomOutlineButton(
                   onPressed: () => Navigator.of(context).pop(),
                   text: 'Cancel',
-                  borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+                  borderColor: AppColors.eLearningBtnColor3.withValues(alpha: 0.4),
                   textColor: AppColors.eLearningBtnColor3,
                 ),
                 CustomSaveElevatedButton(
@@ -785,7 +784,6 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      print('Error picking file: $e');
       CustomToaster.toastError(context, 'Error', 'Failed to pick file: $e');
     }
   }
@@ -955,19 +953,14 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
 
       if (widget.editMode && widget.assignmentToEdit != null) {
         final id = widget.assignmentToEdit?.id ?? widget.itemId;
-        print('Updating Assignment Data:');
-        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
         await assignmentProvider.UpDateAssignment(assignmentPayload, id!);
       } else {
-        print('Creating Assignment Data:');
-        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
         await assignmentProvider.addAssignment(assignmentPayload);
       }
 
       widget.onSave(assignmentPayload);
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error saving assignment: $e');
       CustomToaster.toastError(
           context, 'Error', 'Failed to save assignment: $e');
     } finally {
