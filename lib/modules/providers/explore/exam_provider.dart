@@ -128,6 +128,27 @@ class ExamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void restoreExamState({
+    required ExamModel? restoredExamInfo,
+    required List<QuestionModel> restoredQuestions,
+    required int restoredCurrentQuestionIndex,
+    required Map<int, int> restoredUserAnswers,
+  }) {
+    examInfo = restoredExamInfo;
+    questions = List<QuestionModel>.from(restoredQuestions);
+    if (questions.isEmpty) {
+      currentQuestionIndex = 0;
+    } else {
+      currentQuestionIndex = restoredCurrentQuestionIndex
+          .clamp(0, questions.length - 1)
+          .toInt();
+    }
+    userAnswers = Map<int, int>.from(restoredUserAnswers);
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
+  }
+
   void nextQuestion() {
     if (currentQuestionIndex < questions.length - 1) {
       currentQuestionIndex++;

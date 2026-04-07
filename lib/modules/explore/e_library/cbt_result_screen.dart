@@ -58,6 +58,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   bool _isHandlingBackNavigation = false;
   late PageController _pageController;
   int _currentSubjectIndex = 0;
+  Future<void>? _saveResultFuture;
 
   // Cache for AI-generated explanations (keyed by question index and subject)
   final Map<String, String> _explanationCache = {};
@@ -69,7 +70,8 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     _loadQuestionListVisibility();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _saveTestResult();
+      context.read<CBTProvider>().clearActiveSession();
+      _saveResultFuture = _saveTestResult();
       _checkSubscriptionStatus();
     });
   }
@@ -77,16 +79,24 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   Future<void> _navigateBackFromResults() async {
     if (_isHandlingBackNavigation || !mounted) return;
     _isHandlingBackNavigation = true;
-    context.read<CBTProvider>().refreshStats();
+    final cbtProvider = context.read<CBTProvider>();
+
+    if (_saveResultFuture != null) {
+      await _saveResultFuture;
+      if (!mounted) return;
+    }
+
+    await cbtProvider.refreshStats();
+    if (!mounted) return;
 
     try {
-      if (widget.calledFrom == 'multi-subject') {
-        await AdManager.instance.showIfEligible(
-          context: context,
-          trigger: AdTrigger.resultNavigation,
-        );
-        if (!mounted) return;
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.resultNavigation,
+      );
+      if (!mounted) return;
 
+      if (widget.calledFrom == 'multi-subject') {
         var popsRemaining = 2;
         Navigator.of(context).popUntil((route) {
           if (popsRemaining > 0) {
@@ -202,6 +212,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     }
 
     try {
+      final cbtProvider = context.read<CBTProvider>();
       // Check if this is a multi-subject test
       if (widget.allSubjectsData != null &&
           widget.allSubjectsData!.isNotEmpty) {
@@ -250,6 +261,8 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
         await _historyService.saveTestResult(historyModel);
       }
 
+      await cbtProvider.refreshStats();
+      if (!mounted) return;
       setState(() {
         _isSaved = true;
       });

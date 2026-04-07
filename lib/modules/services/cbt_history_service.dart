@@ -22,10 +22,9 @@ class CbtHistoryService {
       });
 
       if (existingIndex != -1) {
-        // Update existing test (keep the better score)
-        if (history.percentage > historyList[existingIndex].percentage) {
-          historyList[existingIndex] = history;
-        }
+        // Always replace with the latest attempt so dashboard/history reflect
+        // the most recent test the user actually took.
+        historyList[existingIndex] = history;
       } else {
         // Add new result
         historyList.add(history);

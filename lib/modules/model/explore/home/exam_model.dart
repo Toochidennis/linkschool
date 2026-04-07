@@ -31,6 +31,22 @@ class ExamModel {
     );
   }
 
+  Map<String, dynamic> toStorageJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'course_name': courseName,
+      'course_id': courseId,
+      'body': body,
+      'url': url,
+    };
+  }
+
+  factory ExamModel.fromStorageJson(Map<String, dynamic> json) {
+    return ExamModel.fromJson(json);
+  }
+
   // Helper method to safely convert any type to String
   static String _safeToString(dynamic value) {
     if (value == null) return '';
@@ -129,6 +145,44 @@ class QuestionModel {
         correctAnswer: null,
       );
     }
+  }
+
+  Map<String, dynamic> toStorageJson() {
+    return {
+      'id': id,
+      'parent': parent,
+      'content': content,
+      'title': title,
+      'type': type,
+      'answer': answer,
+      'correct': correct,
+      'question_image': questionImage,
+      'instruction': instruction,
+      'passage': passage,
+      'options': options,
+      'correctAnswer': correctAnswer,
+    };
+  }
+
+  factory QuestionModel.fromStorageJson(Map<String, dynamic> json) {
+    return QuestionModel(
+      id: json['id']?.toString() ?? '',
+      parent: json['parent']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      answer: json['answer']?.toString() ?? '',
+      correct: json['correct']?.toString() ?? '',
+      questionImage: json['question_image']?.toString() ?? '',
+      instruction: json['instruction']?.toString() ?? '',
+      passage: json['passage']?.toString() ?? '',
+      options: (json['options'] as List<dynamic>?)
+          ?.map((option) => Map<String, dynamic>.from(option as Map))
+          .toList(),
+      correctAnswer: json['correctAnswer'] is Map
+          ? Map<String, dynamic>.from(json['correctAnswer'] as Map)
+          : null,
+    );
   }
 
   List<String> getOptions() {

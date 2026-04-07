@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:linkschool/config/env_config.dart';
 
 import '../../model/explore/home/subject_model2.dart';

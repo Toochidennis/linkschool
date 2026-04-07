@@ -6,6 +6,7 @@ import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart
 import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
 import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/explore/cbt/all_test_history_screen.dart';
@@ -318,7 +319,8 @@ class _CBTDashboardState extends State<CBTDashboard>
 
   @override
   void didPopNext() {
-    // No auto plans prompt on return; only show on card tap.
+    if (!mounted) return;
+    context.read<CBTProvider>().refreshStats();
   }
 
   Widget _buildAnimatedCard({
@@ -612,8 +614,8 @@ class _CBTDashboardState extends State<CBTDashboard>
       ]);
     }
 
-    // Add resume test banner only if there are incomplete tests
-    if (provider.incompleteTest != null) {
+    // Add resume test banner when there is a live saved session or incomplete test
+    if (provider.activeSession != null || provider.incompleteTest != null) {
       slivers.addAll([
         SliverToBoxAdapter(child: _buildResumeTestBanner()),
         const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
@@ -1164,11 +1166,19 @@ class _CBTDashboardState extends State<CBTDashboard>
   Widget _buildResumeTestBanner() {
     return Consumer<CBTProvider>(
       builder: (context, provider, child) {
+        final activeSession = provider.activeSession;
         final incompleteTest = provider.incompleteTest;
 
-        if (incompleteTest == null) {
+        if (activeSession == null && incompleteTest == null) {
           return const SizedBox.shrink();
         }
+
+        final subjectLabel = activeSession != null
+            ? '${activeSession.subject ?? 'CBT Test'} (${activeSession.year ?? DateTime.now().year})'
+            : '${incompleteTest!.subject} (${incompleteTest.year})';
+        final progressLabel = activeSession != null
+            ? '${activeSession.progressPercentage.toStringAsFixed(0)}% completed'
+            : '${incompleteTest!.percentage.toStringAsFixed(0)}% completed';
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1219,7 +1229,7 @@ class _CBTDashboardState extends State<CBTDashboard>
                     ),
                     const SizedBox(height: 4.0),
                     Text(
-                      '${incompleteTest.subject} (${incompleteTest.year})',
+                      subjectLabel,
                       style: AppTextStyles.normal500(
                         fontSize: 14.0,
                         color: Colors.white.withValues(alpha: 0.9),
@@ -1227,7 +1237,7 @@ class _CBTDashboardState extends State<CBTDashboard>
                     ),
                     const SizedBox(height: 4.0),
                     Text(
-                      '${incompleteTest.percentage.toStringAsFixed(0)}% completed',
+                      progressLabel,
                       style: AppTextStyles.normal400(
                         fontSize: 12.0,
                         color: Colors.white.withValues(alpha: 0.8),
@@ -1237,7 +1247,9 @@ class _CBTDashboardState extends State<CBTDashboard>
                 ),
               ),
               GestureDetector(
-                onTap: () => _handleResumeTest(incompleteTest, provider),
+                onTap: () => activeSession != null
+                    ? _handleSavedSessionResume(activeSession, provider)
+                    : _handleResumeTest(incompleteTest!, provider),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16.0,
@@ -1272,6 +1284,30 @@ class _CBTDashboardState extends State<CBTDashboard>
         );
       },
     );
+  }
+
+  Future<void> _handleSavedSessionResume(
+    CbtActiveSessionModel session,
+    CBTProvider provider,
+  ) async {
+    final canProceed = await _checkSubscriptionBeforeTest();
+    if (!canProceed || !mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TestScreen(
+          examTypeId: session.examTypeId,
+          subjectId: session.subjectId,
+          subject: session.subject,
+          year: session.year,
+          calledFrom: 'dashboard',
+          totalDurationInSeconds: session.totalDurationInSeconds,
+          questionLimit: session.questionLimit,
+          resumeSession: session,
+        ),
+      ),
+    ).then((_) => provider.refreshStats());
   }
 
   Future<void> _handleResumeTest(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
 import '../../model/explore/home/cbt_board_model.dart' as cbt_board_model;
 import '../../model/explore/home/subject_model.dart';
 import '../../model/explore/cbt_history_model.dart';
+import '../../services/cbt_active_session_service.dart';
 import '../../services/explore/cbt_service.dart';
 import '../../services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/network/connectivity_service.dart';
@@ -10,6 +12,8 @@ import 'package:linkschool/modules/services/network/connectivity_service.dart';
 class CBTProvider extends ChangeNotifier {
   final CBTService _cbtService;
   final CbtHistoryService _historyService = CbtHistoryService();
+  final CbtActiveSessionService _activeSessionService =
+      CbtActiveSessionService();
   List<cbt_board_model.CBTBoardModel> _boards = [];
   cbt_board_model.CBTBoardModel? _selectedBoard;
   bool _isLoading = false;
@@ -20,6 +24,7 @@ class CBTProvider extends ChangeNotifier {
   int _successCount = 0;
   double _averageScore = 0.0;
   List<CbtHistoryModel> _recentHistory = [];
+  CbtActiveSessionModel? _activeSession;
 
   CBTProvider(this._cbtService);
 
@@ -33,6 +38,7 @@ class CBTProvider extends ChangeNotifier {
   int get successCount => _successCount;
   double get averageScore => _averageScore;
   List<CbtHistoryModel> get recentHistory => _recentHistory;
+  CbtActiveSessionModel? get activeSession => _activeSession;
 
   // Get the most recent incomplete test
   CbtHistoryModel? get incompleteTest {
@@ -125,6 +131,7 @@ class CBTProvider extends ChangeNotifier {
       _successCount = stats['successCount'] ?? 0;
       _averageScore = stats['averageScore'] ?? 0.0;
       _recentHistory = stats['recentHistory'] ?? [];
+      _activeSession = await _activeSessionService.getActiveSession();
 
       final allIncompleteTests =
           stats['allIncompleteTests'] as List<CbtHistoryModel>? ?? [];
@@ -146,6 +153,18 @@ class CBTProvider extends ChangeNotifier {
   // Refresh statistics — UNCHANGED
   Future<void> refreshStats() async {
     await loadDashboardStats();
+  }
+
+  Future<void> saveActiveSession(CbtActiveSessionModel session) async {
+    await _activeSessionService.saveSession(session);
+    _activeSession = session;
+    notifyListeners();
+  }
+
+  Future<void> clearActiveSession() async {
+    await _activeSessionService.clearActiveSession();
+    _activeSession = null;
+    notifyListeners();
   }
 
   // selectBoard — UNCHANGED

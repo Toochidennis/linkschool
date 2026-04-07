@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/timer_widget.dart';
+import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
@@ -11,6 +12,7 @@ import 'package:linkschool/modules/explore/e_library/backward_slash_clipper.dart
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
+import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -33,6 +35,7 @@ class TestScreen extends StatefulWidget {
   final Map<String, Map<int, int>>? allAnswers;
   final Map<String, List<QuestionModel>>? allQuestions;
   final bool preferTrialLabel;
+  final CbtActiveSessionModel? resumeSession;
 
   const TestScreen({
     super.key,
@@ -50,6 +53,7 @@ class TestScreen extends StatefulWidget {
     this.allAnswers,
     this.allQuestions,
     this.preferTrialLabel = false,
+    this.resumeSession,
   });
 
   @override
@@ -57,7 +61,7 @@ class TestScreen extends StatefulWidget {
 }
 
 class _TestScreenState extends State<TestScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late double opacity;
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
@@ -71,6 +75,10 @@ class _TestScreenState extends State<TestScreen>
       -1; // Track which question's instruction/passage was shown
   bool _isCountdownActive = false;
   bool _isSubmittingResult = false;
+  bool _isRestoringSession = false;
+  bool _hasLoadedInitialSession = false;
+  bool _shouldShowAdOnResume = false;
+  int? _lastPersistedRemainingSeconds;
 
   // Animation controller for bouncing arrow
   late AnimationController _bounceController;
@@ -79,8 +87,11 @@ class _TestScreenState extends State<TestScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     remainingSeconds = widget.totalDurationInSeconds;
+    _isRestoringSession = widget.resumeSession != null;
     AdManager.instance.preload();
+    AdManager.instance.warmUpPracticeAds(context);
     _loadAdMode();
 
     // Initialize bounce animation for Read More arrow
@@ -96,12 +107,20 @@ class _TestScreenState extends State<TestScreen>
     );
     _bounceController.repeat(reverse: true);
 
-    // Increment test count when test starts (only for single subject or first exam in multi-subject)
-    if (widget.calledFrom != 'multi-subject' || widget.currentExamIndex == 0) {
+    // Increment test count only for a brand-new session.
+    if (!_isRestoringSession &&
+        (widget.calledFrom != 'multi-subject' || widget.currentExamIndex == 0)) {
       _subscriptionService.incrementTestCount();
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      if (widget.resumeSession != null) {
+        await _restoreSavedSession(widget.resumeSession!);
+        return;
+      }
+
       // Show countdown dialog before fetching data (only for single subject or first exam in multi-subject)
       if (widget.calledFrom != 'multi-subject' ||
           widget.currentExamIndex == 0) {
@@ -109,21 +128,128 @@ class _TestScreenState extends State<TestScreen>
       } else {
         // For subsequent exams in multi-subject, fetch directly
         final provider = Provider.of<ExamProvider>(context, listen: false);
-        provider.fetchExamData(
-          widget.examTypeId,
-          limit: widget.questionLimit,
-          randomizeQuestions: true,
-        );
-        if (widget.totalDurationInSeconds != null) {}
+        provider
+            .fetchExamData(
+              widget.examTypeId,
+              limit: widget.questionLimit,
+              randomizeQuestions: true,
+            )
+            .then((_) => _saveActiveSession(provider, force: true));
       }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _textController.dispose();
     _bounceController.dispose();
     super.dispose();
+  }
+
+  bool get _shouldPersistSession =>
+      widget.onExamComplete == null && widget.calledFrom != 'multi-subject';
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused &&
+        !AdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAdOnResume = true;
+      final provider = Provider.of<ExamProvider>(context, listen: false);
+      _saveActiveSession(provider, force: true);
+    } else if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _shouldShowAdOnResume = false;
+      AdManager.instance.showAppOpenIfEligible(context: context);
+    }
+  }
+
+  Future<void> _restoreSavedSession(CbtActiveSessionModel session) async {
+    if (session.questions.isEmpty) {
+      _isRestoringSession = false;
+      _showLoadingCountdown();
+      return;
+    }
+
+    final provider = Provider.of<ExamProvider>(context, listen: false);
+    provider.restoreExamState(
+      restoredExamInfo: session.examInfo,
+      restoredQuestions: session.questions,
+      restoredCurrentQuestionIndex: session.currentQuestionIndex,
+      restoredUserAnswers: session.userAnswers,
+    );
+    _attemptedQuestionIndexes
+      ..clear()
+      ..addAll(session.attemptedQuestionIndexes);
+    _lastGateAtAttemptCount = session.lastGateAtAttemptCount;
+    _adsGatePending = session.adsGatePending;
+    remainingSeconds = session.remainingSeconds;
+
+    if (!mounted) return;
+    setState(() {
+      _isContinueWithAds = session.isContinueWithAds;
+      _isCountdownActive = false;
+      _hasLoadedInitialSession = true;
+      _lastPersistedRemainingSeconds = session.remainingSeconds;
+    });
+  }
+
+  Future<void> _saveActiveSession(
+    ExamProvider provider, {
+    bool force = false,
+  }) async {
+    if (!_shouldPersistSession ||
+        _isSubmittingResult ||
+        provider.questions.isEmpty ||
+        !mounted) {
+      return;
+    }
+
+    final currentRemaining = remainingSeconds ??
+        widget.totalDurationInSeconds ??
+        provider.questions.length * 60;
+    if (!force &&
+        _lastPersistedRemainingSeconds != null &&
+        currentRemaining == _lastPersistedRemainingSeconds) {
+      return;
+    }
+
+    final session = CbtActiveSessionModel(
+      examTypeId: widget.examTypeId,
+      subjectId: widget.subjectId,
+      subject: widget.subject ?? provider.examInfo?.courseName,
+      year: widget.year,
+      calledFrom: widget.calledFrom,
+      totalDurationInSeconds: widget.totalDurationInSeconds,
+      questionLimit: widget.questionLimit,
+      remainingSeconds: currentRemaining,
+      currentQuestionIndex: provider.currentQuestionIndex,
+      userAnswers: Map<int, int>.from(provider.userAnswers),
+      attemptedQuestionIndexes: Set<int>.from(_attemptedQuestionIndexes),
+      lastGateAtAttemptCount: _lastGateAtAttemptCount,
+      adsGatePending: _adsGatePending,
+      isContinueWithAds: _isContinueWithAds,
+      updatedAt: DateTime.now(),
+      examInfo: provider.examInfo,
+      questions: List<QuestionModel>.from(provider.questions),
+    );
+
+    final cbtProvider = context.read<CBTProvider>();
+    await cbtProvider.saveActiveSession(session);
+    _lastPersistedRemainingSeconds = currentRemaining;
+    if (!_hasLoadedInitialSession && mounted) {
+      setState(() {
+        _hasLoadedInitialSession = true;
+      });
+    }
+  }
+
+  Future<void> _clearActiveSession() async {
+    _lastPersistedRemainingSeconds = null;
+    _hasLoadedInitialSession = false;
+    if (!mounted) return;
+    await context.read<CBTProvider>().clearActiveSession();
   }
 
   Future<bool> _isContinueWithAdsActive() async {
@@ -250,6 +376,7 @@ class _TestScreenState extends State<TestScreen>
     final questionIndex = provider.currentQuestionIndex;
     final wasAttempted = _attemptedQuestionIndexes.contains(questionIndex);
     provider.selectAnswer(questionIndex, index);
+    await _saveActiveSession(provider, force: true);
     if (wasAttempted) {}
   }
 
@@ -287,11 +414,13 @@ class _TestScreenState extends State<TestScreen>
 
     // Start fetching data immediately when countdown begins
     final provider = Provider.of<ExamProvider>(context, listen: false);
-    provider.fetchExamData(
-      widget.examTypeId,
-      limit: widget.questionLimit,
-      randomizeQuestions: true,
-    );
+    provider
+        .fetchExamData(
+          widget.examTypeId,
+          limit: widget.questionLimit,
+          randomizeQuestions: true,
+        )
+        .then((_) => _saveActiveSession(provider, force: true));
     if (widget.totalDurationInSeconds != null) {}
   }
 
@@ -390,6 +519,9 @@ class _TestScreenState extends State<TestScreen>
       _isSubmittingResult = true;
     });
 
+    await _clearActiveSession();
+    if (!mounted) return;
+
     await AdManager.instance.showIfEligible(
       context: context,
       trigger: AdTrigger.resultNavigation,
@@ -433,7 +565,11 @@ class _TestScreenState extends State<TestScreen>
     return AppBar(
       backgroundColor: AppColors.eLearningBtnColor1,
       leading: IconButton(
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () async {
+          await _saveActiveSession(examProvider, force: true);
+          if (!mounted) return;
+          Navigator.of(this.context).pop();
+        },
         icon: Image.asset(
           'assets/icons/arrow_back.png',
           color: AppColors.backgroundLight,
@@ -483,6 +619,9 @@ class _TestScreenState extends State<TestScreen>
                   _submitQuiz(examProvider, isFullyCompleted: false),
               onTick: (remaining) {
                 remainingSeconds = remaining;
+                if (remaining % 5 == 0) {
+                  _saveActiveSession(examProvider);
+                }
               },
             ),
           ),
@@ -734,8 +873,9 @@ class _TestScreenState extends State<TestScreen>
                                         extensionContext.attributes;
                                     final src = attributes['src'] ?? '';
 
-                                    if (src.isEmpty)
+                                    if (src.isEmpty) {
                                       return const SizedBox.shrink();
+                                    }
 
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -1592,7 +1732,10 @@ class _TestScreenState extends State<TestScreen>
           Expanded(
             child: OutlinedButton(
               onPressed: provider.currentQuestionIndex > 0
-                  ? () => provider.previousQuestion()
+                  ? () async {
+                      provider.previousQuestion();
+                      await _saveActiveSession(provider, force: true);
+                    }
                   : null,
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.white),
@@ -1632,6 +1775,7 @@ class _TestScreenState extends State<TestScreen>
                           await _registerAttemptAndGate(provider);
                       if (!canContinue) return;
                       provider.nextQuestion();
+                      await _saveActiveSession(provider, force: true);
                     }
                   : (widget.onExamComplete != null && !isLastSubject)
                       ? () async {
