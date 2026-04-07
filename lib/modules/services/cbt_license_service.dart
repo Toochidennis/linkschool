@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/model/cbt_license_activation_model.dart';
@@ -55,6 +56,10 @@ class CbtLicenseService {
   static const String _licenseSourceKey = 'cbt_license_source';
   static const String _licenseReasonKey = 'cbt_license_reason';
   static const int _statusCacheMinutes = 30;
+
+  void _log(String message) {
+    debugPrint('[CbtLicenseService] $message');
+  }
 
   Future<CbtLicenseActivationModel> activateLicense({
     required int userId,
@@ -134,12 +139,21 @@ class CbtLicenseService {
       if (!forceRefresh) {
         final cached = await _getCachedLicenseStatusDetails(userId);
         if (cached != null) {
+          _log(
+            'Using cached license status for userId=$userId '
+            'active=${cached.active}, source=${cached.source}, '
+            'reason=${cached.reason}, expiresAt=${cached.expiresAt}',
+          );
           return cached;
         }
       }
 
       final uri = Uri.parse(statusUrl).replace(
         queryParameters: {'user_id': userId.toString()},
+      );
+      _log(
+        'Requesting license status from server: '
+        'userId=$userId, forceRefresh=$forceRefresh, url=$uri',
       );
       final response = await http.get(
         uri,
@@ -149,12 +163,21 @@ class CbtLicenseService {
           'X-API-KEY': apiKey,
         },
       );
+      _log(
+        'License status response: '
+        'userId=$userId, statusCode=${response.statusCode}, body=${response.body}',
+      );
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         if (decoded['success'] == true && decoded['data'] != null) {
           final data = decoded['data'] as Map<String, dynamic>;
           final status = _statusFromPayload(data);
+          _log(
+            'Parsed license status: '
+            'userId=$userId, active=${status.active}, source=${status.source}, '
+            'reason=${status.reason}, expiresAt=${status.expiresAt}',
+          );
           await _setCachedLicenseStatus(
             status,
             userId,

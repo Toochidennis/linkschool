@@ -422,7 +422,9 @@ class _CBTDashboardState extends State<CBTDashboard>
         Provider.of<CbtUserProvider>(context, listen: false);
     final canShowPlans = await _ensureSignedInForPlans();
     if (!canShowPlans) return;
+    await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
     if (cbtUserProvider.hasPaid == true) return;
+    if (cbtUserProvider.isOnFreeTrial) return;
     if (_isShowingEntryPrompt) return;
     _isShowingEntryPrompt = true;
 
@@ -486,6 +488,15 @@ class _CBTDashboardState extends State<CBTDashboard>
   }
 
   Future<bool> _showPlansAndReturn() async {
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.currentUser?.id != null) {
+      await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+    }
+    if (cbtUserProvider.hasPaid || cbtUserProvider.isOnFreeTrial) {
+      return true;
+    }
+
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
     );
@@ -495,8 +506,6 @@ class _CBTDashboardState extends State<CBTDashboard>
     }
     if (result != true) return false;
 
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
     final userId = cbtUserProvider.currentUser?.id;
     if (userId == null) return false;
 

@@ -9,6 +9,12 @@ import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:provider/provider.dart';
 
+enum _TrialActionState {
+  startTrial,
+  continueWithAds,
+  hidden,
+}
+
 class CbtPlansScreen extends StatefulWidget {
   final bool showTrialButton;
   final bool preferTrialLabel;
@@ -28,8 +34,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   bool _didLoad = false;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
-  bool _forceContinueWithAds = false;
-  bool _trialStarted = false;
+  _TrialActionState _trialActionState = _TrialActionState.startTrial;
 
   @override
   void didChangeDependencies() {
@@ -57,6 +62,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         child: Consumer<CbtPlanProvider>(
           builder: (context, provider, child) {
             final plans = provider.plans;
+            final showTrialAction = widget.showTrialButton &&
+                _trialActionState != _TrialActionState.hidden;
             return Column(
               children: [
                 Padding(
@@ -147,7 +154,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                   const EdgeInsets.symmetric(horizontal: 24),
                               child: Row(
                                 children: [
-                                  if (widget.showTrialButton)
+                                  if (showTrialAction)
                                     Expanded(
                                       child: SizedBox(
                                         height: 54,
@@ -190,7 +197,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                         ),
                                       ),
                                     ),
-                                  if (widget.showTrialButton)
+                                  if (showTrialAction)
                                     const SizedBox(width: 12),
                                   Expanded(
                                     child: SizedBox(
@@ -292,25 +299,27 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     try {
       final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
       final user = userProvider.currentUser;
-
-      bool trialStarted = false;
-      bool forceContinue = false;
+      var actionState = _resolveTrialActionState(
+        hasValidLicense: userProvider.hasValidLicense,
+        hasPaid: userProvider.hasPaid,
+        licenseSource: userProvider.licenseSource,
+        licenseReason: userProvider.licenseReason,
+      );
 
       if (user?.id != null) {
-        // Check expiry date from license cache
-        final expiresAt = await CbtLicenseService().getCachedLicenseExpiresAt();
-        if (expiresAt != null) {
-          trialStarted = true;
-          // If expired, force "Continue with Ads"
-          forceContinue = DateTime.now().isAfter(expiresAt);
-        }
+        await userProvider.syncLicenseStatus(forceRefresh: true);
+        actionState = _resolveTrialActionState(
+          hasValidLicense: userProvider.hasValidLicense,
+          hasPaid: userProvider.hasPaid,
+          licenseSource: userProvider.licenseSource,
+          licenseReason: userProvider.licenseReason,
+        );
       }
 
       if (mounted) {
         setState(() {
           _isLoadingTrial = false;
-          _trialStarted = trialStarted;
-          _forceContinueWithAds = forceContinue;
+          _trialActionState = actionState;
         });
       }
     } catch (_) {
@@ -320,8 +329,29 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     }
   }
 
+  _TrialActionState _resolveTrialActionState({
+    required bool hasValidLicense,
+    required bool hasPaid,
+    required String? licenseSource,
+    required String? licenseReason,
+  }) {
+    if (hasPaid || licenseSource == 'payment') {
+      return _TrialActionState.hidden;
+    }
+
+    if (hasValidLicense && licenseSource == 'trial') {
+      return _TrialActionState.continueWithAds;
+    }
+
+    if (licenseReason == 'trial_expired' || licenseReason == 'expired') {
+      return _TrialActionState.continueWithAds;
+    }
+
+    return _TrialActionState.startTrial;
+  }
+
   String _trialLabel() {
-    if (_trialStarted || _forceContinueWithAds) {
+    if (_trialActionState == _TrialActionState.continueWithAds) {
       return 'Continue with Ads';
     }
     // Use selected plan's freeTrialDays, not global remaining
@@ -346,8 +376,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       return;
     }
 
-    // ✅ Use _trialStarted or _forceContinueWithAds, NOT _remainingDays
-    final isContinueWithAds = _trialStarted || _forceContinueWithAds;
+    final isContinueWithAds =
+        _trialActionState == _TrialActionState.continueWithAds;
 
     setState(() => _isStartingTrial = true);
     try {

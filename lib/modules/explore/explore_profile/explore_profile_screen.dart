@@ -231,6 +231,22 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
   // Add this method to handle the payment flow
   Future<void> _handleSubscribeNow() async {
     if (!mounted) return;
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+    if (!mounted) return;
+
+    if (cbtUserProvider.isOnFreeTrial) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Your free trial is active. Plans will be available after it expires.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final didProceed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
     );
@@ -443,10 +459,15 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     if (user == null) return const SizedBox.shrink();
 
     final hasValidLicense = subscriptionStatus['hasValidLicense'] == true;
+    final hasPaid = subscriptionStatus['hasPaid'] == true;
     final licenseSource = subscriptionStatus['licenseSource']?.toString();
+    final licenseReason = subscriptionStatus['licenseReason']?.toString();
     final isFreeTrial = hasValidLicense && licenseSource == 'trial';
+    final isExpiredTrial =
+        !hasValidLicense && !hasPaid && licenseReason == 'trial_expired';
     final timeLeft = _buildLicenseExpiryText(subscriptionStatus);
-    final shouldHighlightExpiry = isFreeTrial && timeLeft.isNotEmpty;
+    final shouldHighlightExpiry =
+        (isFreeTrial || isExpiredTrial) && timeLeft.isNotEmpty;
     final surfaceColor = settings.isDarkMode ? Colors.grey[850]! : Colors.white;
     final subtleBorderColor = settings.isDarkMode
         ? Colors.white.withValues(alpha: 0.08)
@@ -542,17 +563,21 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
               settings: settings,
               text: timeLeft,
               icon: shouldHighlightExpiry
-                  ? Icons.local_fire_department_outlined
+                  ? (isExpiredTrial
+                      ? Icons.warning_amber_rounded
+                      : Icons.local_fire_department_outlined)
                   : Icons.schedule_outlined,
               color: shouldHighlightExpiry
-                  ? const Color(0xFFD97706)
+                  ? (isExpiredTrial
+                      ? const Color(0xFFB91C1C)
+                      : const Color(0xFFD97706))
                   : AppColors.text2Light,
               emphasize: shouldHighlightExpiry,
             ),
           ],
 
-          // Payment Button (only show if not subscribed)
-          if (subscriptionStatus['hasPaid'] != true) ...[
+          // Payment Button (only show when the user has no active CBT access)
+          if (subscriptionStatus['hasValidLicense'] != true) ...[
             const SizedBox(height: 16),
             Container(
               width: double.infinity,
@@ -661,18 +686,28 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 
   String _buildLicenseExpiryText(Map<String, dynamic> subscriptionStatus) {
     final hasValidLicense = subscriptionStatus['hasValidLicense'] == true;
-    if (!hasValidLicense) return '';
-
-    final rawExpiresAt = subscriptionStatus['licenseExpiresAt']?.toString();
-    if (rawExpiresAt == null || rawExpiresAt.isEmpty) return '';
-
-    final expiresAt = _parseLicenseDate(rawExpiresAt);
-    if (expiresAt == null) return '';
-
-    final formattedDate = _formatDate(expiresAt);
+    final hasPaid = subscriptionStatus['hasPaid'] == true;
+    final licenseReason = subscriptionStatus['licenseReason']?.toString();
     final licenseSource = subscriptionStatus['licenseSource']?.toString();
 
+    final rawExpiresAt = subscriptionStatus['licenseExpiresAt']?.toString();
+    final expiresAt = (rawExpiresAt == null || rawExpiresAt.isEmpty)
+        ? null
+        : _parseLicenseDate(rawExpiresAt);
+    final formattedDate = expiresAt == null ? null : _formatDate(expiresAt);
+
+    if (!hasValidLicense) {
+      if (!hasPaid && licenseReason == 'trial_expired') {
+        if (formattedDate != null) {
+          return 'Free trial expired on $formattedDate';
+        }
+        return 'Your free trial has expired';
+      }
+      return '';
+    }
+
     if (licenseSource == 'trial') {
+      if (expiresAt == null) return '';
       final daysLeft = _daysLeftUntil(expiresAt);
       if (daysLeft <= 0) {
         return 'Free trial ends today';
@@ -681,8 +716,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       return 'Free trial ends in $daysLeft $dayLabel';
     }
     if (licenseSource == 'payment') {
+      if (formattedDate == null) return '';
       return 'Subscription expires $formattedDate';
     }
+    if (formattedDate == null) return '';
     return 'Access expires $formattedDate';
   }
 
