@@ -11,6 +11,7 @@ import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -54,6 +55,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   final _subscriptionService = CbtSubscriptionService();
   bool _isSaved = false;
   bool _showUnansweredQuestions = true;
+  bool _isHandlingBackNavigation = false;
   late PageController _pageController;
   int _currentSubjectIndex = 0;
 
@@ -72,19 +74,44 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     });
   }
 
-  void _navigateBackFromResults() {
+  Future<void> _navigateBackFromResults() async {
+    if (_isHandlingBackNavigation || !mounted) return;
+    _isHandlingBackNavigation = true;
     context.read<CBTProvider>().refreshStats();
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-      return;
-    }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const CBTDashboard(),
-        settings: const RouteSettings(name: '/cbt_dashboard'),
-      ),
-    );
+    try {
+      if (widget.calledFrom == 'multi-subject') {
+        await AdManager.instance.showIfEligible(
+          context: context,
+          trigger: AdTrigger.resultNavigation,
+        );
+        if (!mounted) return;
+
+        var popsRemaining = 2;
+        Navigator.of(context).popUntil((route) {
+          if (popsRemaining > 0) {
+            popsRemaining--;
+            return false;
+          }
+          return true;
+        });
+        return;
+      }
+
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+        return;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const CBTDashboard(),
+          settings: const RouteSettings(name: '/cbt_dashboard'),
+        ),
+      );
+    } finally {
+      _isHandlingBackNavigation = false;
+    }
   }
 
   @override
@@ -106,12 +133,10 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   Future<void> _checkSubscriptionStatus() async {
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
-    final testCount = await _subscriptionService.getTestCount();
     final hasPaid = cbtUserProvider.hasPaid;
     final remainingDays = await _subscriptionService.getRemainingFreeTests();
     final trialExpired = await _subscriptionService.isTrialExpired();
     final canTakeTest = await _subscriptionService.canTakeTest();
-
 
     if (!mounted) return;
 
@@ -291,16 +316,17 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     final bool isMultiSubject =
         widget.allSubjectsData != null && widget.allSubjectsData!.isNotEmpty;
 
-    return WillPopScope(
-      onWillPop: () async {
-        _navigateBackFromResults();
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _navigateBackFromResults();
       },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            onPressed: () {
-              _navigateBackFromResults();
+            onPressed: () async {
+              await _navigateBackFromResults();
             },
             icon: Image.asset(
               'assets/icons/arrow_back.png',
@@ -331,8 +357,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
         ),
         body: Container(
           decoration: Constants.customBoxDecoration(context),
-          child:
-              isMultiSubject ? _buildMultiSubjectView() : _buildSingleSubjectView(),
+          child: isMultiSubject
+              ? _buildMultiSubjectView()
+              : _buildSingleSubjectView(),
         ),
       ),
     );
@@ -342,180 +369,211 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     final questionIndexes =
         _visibleQuestionIndexes(widget.questions, widget.userAnswers);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.examType,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color.fromARGB(255, 74, 72, 72),
-            ),
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _buildSingleSubjectHeader(),
           ),
-          Text(
-            ' ${widget.subject}',
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Color.fromARGB(255, 115, 114, 114),
-            ),
-          ),
-          Text(
-            widget.year.toString(),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildScoreCard(widget.questions, widget.userAnswers),
-          const SizedBox(height: 16),
-          // Dynamic question list
-          ...questionIndexes.map((index) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildQuestionCard(
-                  index, widget.questions, widget.userAnswers),
-            );
-          }),
-        ],
-      ),
+        ),
+        _buildQuestionSliver(
+          questionIndexes: questionIndexes,
+          questions: widget.questions,
+          userAnswers: widget.userAnswers,
+          topPadding: 16,
+          bottomPadding: 16,
+        ),
+      ],
     );
   }
 
   Widget _buildMultiSubjectView() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Swipeable score cards
-          SizedBox(
-            height: 380,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: widget.allSubjectsData!.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentSubjectIndex = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                final subjectData = widget.allSubjectsData![index];
-                final questions =
-                    subjectData['questions'] as List<QuestionModel>;
-                final userAnswers = subjectData['userAnswers'] as Map<int, int>;
-                final subject = subjectData['subject'] as String;
-                final year = subjectData['year'] as int;
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  subject,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.normal600(
-                                    fontSize: 18,
-                                    color: AppColors.text3Light,
-                                  ),
-                                ),
-                                Text(
-                                  'Year: $year',
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 14,
-                                    color: AppColors.text7Light,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Page indicator
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.eLearningBtnColor1,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${index + 1} / ${widget.allSubjectsData!.length}',
-                              style: AppTextStyles.normal600(
-                                fontSize: 12,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: _buildScoreCard(questions, userAnswers),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          // Swipe indicator
-          if (widget.allSubjectsData!.length > 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.swipe, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Swipe to see other subjects',
-                    style: AppTextStyles.normal500(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 16),
-          // Question details for current subject
-          _buildQuestionsListForSubject(_currentSubjectIndex),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuestionsListForSubject(int subjectIndex) {
-    final subjectData = widget.allSubjectsData![subjectIndex];
+    final subjectData = widget.allSubjectsData![_currentSubjectIndex];
     final questions = subjectData['questions'] as List<QuestionModel>;
     final userAnswers = subjectData['userAnswers'] as Map<int, int>;
     final questionIndexes = _visibleQuestionIndexes(questions, userAnswers);
 
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _buildMultiSubjectHeader(),
+          ),
+        ),
+        _buildQuestionSliver(
+          questionIndexes: questionIndexes,
+          questions: questions,
+          userAnswers: userAnswers,
+          topPadding: 16,
+          bottomPadding: 16,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSingleSubjectHeader() {
     return Column(
-      children: questionIndexes
-          .map(
-            (index) => Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildQuestionCard(index, questions, userAnswers),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.examType,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color.fromARGB(255, 74, 72, 72),
+          ),
+        ),
+        Text(
+          ' ${widget.subject}',
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color.fromARGB(255, 115, 114, 114),
+          ),
+        ),
+        Text(
+          widget.year.toString(),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildScoreCard(widget.questions, widget.userAnswers),
+      ],
+    );
+  }
+
+  Widget _buildMultiSubjectHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 380,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.allSubjectsData!.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentSubjectIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final subjectData = widget.allSubjectsData![index];
+              final questions = subjectData['questions'] as List<QuestionModel>;
+              final userAnswers = subjectData['userAnswers'] as Map<int, int>;
+              final subject = subjectData['subject'] as String;
+              final year = subjectData['year'] as int;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                subject,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.normal600(
+                                  fontSize: 18,
+                                  color: AppColors.text3Light,
+                                ),
+                              ),
+                              Text(
+                                'Year: $year',
+                                style: AppTextStyles.normal500(
+                                  fontSize: 14,
+                                  color: AppColors.text7Light,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.eLearningBtnColor1,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${index + 1} / ${widget.allSubjectsData!.length}',
+                            style: AppTextStyles.normal600(
+                              fontSize: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: _buildScoreCard(questions, userAnswers),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        if (widget.allSubjectsData!.length > 1)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.swipe, size: 16, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text(
+                  'Swipe to see other subjects',
+                  style: AppTextStyles.normal500(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
             ),
-          )
-          .toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildQuestionSliver({
+    required List<int> questionIndexes,
+    required List<QuestionModel> questions,
+    required Map<int, int> userAnswers,
+    double topPadding = 0,
+    double bottomPadding = 0,
+  }) {
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
+      sliver: SliverList.builder(
+        itemCount: questionIndexes.length,
+        itemBuilder: (context, listIndex) {
+          final questionIndex = questionIndexes[listIndex];
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: listIndex == questionIndexes.length - 1 ? 0 : 16,
+            ),
+            child: _buildQuestionCard(questionIndex, questions, userAnswers),
+          );
+        },
+      ),
     );
   }
 
@@ -707,10 +765,12 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                      color:
+                          AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
+                        color:
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -920,7 +980,8 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: optionColor?.withValues(alpha: 0.1) ?? Colors.grey.shade50,
+                  color: optionColor?.withValues(alpha: 0.1) ??
+                      Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: optionColor ?? Colors.grey.shade300,
@@ -1791,7 +1852,8 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
                         decoration: BoxDecoration(
                           color: widget.isCorrect
                               ? AppColors.attCheckColor2.withValues(alpha: 0.1)
-                              : AppColors.eLearningRedBtnColor.withValues(alpha: 0.1),
+                              : AppColors.eLearningRedBtnColor
+                                  .withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -1849,7 +1911,8 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
                     decoration: BoxDecoration(
                       color: widget.isCorrect
                           ? AppColors.attCheckColor2.withValues(alpha: 0.1)
-                          : AppColors.eLearningRedBtnColor.withValues(alpha: 0.1),
+                          : AppColors.eLearningRedBtnColor
+                              .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: widget.isCorrect
@@ -1921,8 +1984,8 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                            color: AppColors.eLearningBtnColor1
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

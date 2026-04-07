@@ -1,0 +1,30 @@
+LinkSkool – Smart Learning, Simplified
+
+LinkSkool is a modern digital learning platform designed to make education accessible, structured, and engaging for students and schools. It brings learning, assessments, and academic resources together in one simple app.
+
+Whether you’re studying, practicing for exams, or accessing school content, LinkSkool keeps everything connected and easy to use.
+
+Key Features
+
+📚 Structured Learning Content
+Access lessons, videos, and learning materials organized by subjects and courses.
+
+📝 CBT & Practice Exams
+Prepare with computer-based tests, timed assessments, and practice questions designed to improve performance.
+
+📅 Exam Schedules & Updates
+Stay informed with exam schedules, academic updates, and important announcements.
+
+📊 Results & Performance Tracking
+View results, track progress, and monitor academic performance over time.
+
+🌐 Online & Offline Support
+Learn anytime. LinkSkool supports offline access with seamless syncing when you’re back online.
+
+🔐 Secure & Reliable
+Built with security and data integrity in mind to protect users and academic records.
+
+Who LinkSkool Is For
+Students preparing for exams and assessments
+Schools managing digital learning and CBT
+Learners who want structured, guided education on the go

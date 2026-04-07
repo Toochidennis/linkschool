@@ -24,7 +24,7 @@ import 'dart:io' show Platform, Directory, File;
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:open_filex/open_filex.dart';
+
 import 'dart:convert';
 import '../../providers/explore/assignment_submission_provider.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -5543,12 +5543,9 @@ if (_hasAttendance) ...[
                   key: const ValueKey('assignment_empty_banner'),
                   adUnitId: EnvConfig.programBannersAdsKey,
                   size: AdSize.mediumRectangle,
+                  isMinor: true,
                 ),
               ),
-              
-            
-              
-              
             ],
           ),
         ),
@@ -6148,6 +6145,7 @@ Widget _buildReviewsTab() {
                     key: const ValueKey('quiz_empty_banner'),
                     adUnitId: EnvConfig.programBannersAdsKey,
                     size: AdSize.mediumRectangle,
+                    isMinor: true,
                   ),
                 ),
               ),
@@ -7318,6 +7316,7 @@ class _CourseBannerAd extends StatefulWidget {
     super.key,
     required this.adUnitId,
     required this.size,
+    required this.isMinor,
   });
 
   @override

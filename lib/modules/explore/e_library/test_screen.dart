@@ -58,7 +58,6 @@ class TestScreen extends StatefulWidget {
 
 class _TestScreenState extends State<TestScreen>
     with SingleTickerProviderStateMixin {
-      
   late double opacity;
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
@@ -71,11 +70,12 @@ class _TestScreenState extends State<TestScreen>
   final int _lastDisplayedQuestionIndex =
       -1; // Track which question's instruction/passage was shown
   bool _isCountdownActive = false;
+  bool _isSubmittingResult = false;
 
   // Animation controller for bouncing arrow
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
-final TimerController _timerController = TimerController();
+  final TimerController _timerController = TimerController();
   @override
   void initState() {
     super.initState();
@@ -114,8 +114,7 @@ final TimerController _timerController = TimerController();
           limit: widget.questionLimit,
           randomizeQuestions: true,
         );
-        if (widget.totalDurationInSeconds != null) {
-        }
+        if (widget.totalDurationInSeconds != null) {}
       }
     });
   }
@@ -145,36 +144,10 @@ final TimerController _timerController = TimerController();
 
   Future<void> _goToResultsFromGate() async {
     final provider = Provider.of<ExamProvider>(context, listen: false);
-    await AdManager.instance.showIfEligible(
-      context: context,
-      trigger: AdTrigger.resultNavigation,
+    await _submitAndNavigateToResults(
+      provider: provider,
+      isFullyCompleted: false,
     );
-
-    if (widget.onExamComplete != null && !widget.isLastInMultiSubject) {
-      _proceedToNextExam(provider);
-    } else if (widget.onExamComplete != null && widget.isLastInMultiSubject) {
-      widget.onExamComplete!(
-        provider.userAnswers,
-        remainingSeconds ?? 0,
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CbtResultScreen(
-            questions: provider.questions,
-            userAnswers: provider.userAnswers,
-            subject:
-                widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
-            year: widget.year ?? DateTime.now().year,
-            examType: provider.examInfo?.title ?? 'Test',
-            examId: widget.examTypeId,
-            calledFrom: widget.calledFrom,
-            isFullyCompleted: false,
-          ),
-        ),
-      );
-    }
   }
 
   Future<bool> _maybeShowAdsGate({required int attemptedCount}) async {
@@ -184,7 +157,7 @@ final TimerController _timerController = TimerController();
       _adsGatePending = false;
       return true;
     }
-    
+
     // Debug logging
     _timerController.pause();
     _isShowingAdsGate = true;
@@ -200,7 +173,8 @@ final TimerController _timerController = TimerController();
           child: CbtContinueAdsDialog(
             onWatchAds: () async {
               await _subscriptionService.setAdMode('continue_with_ads');
-              final rewarded = await AdManager.instance.showRewardedForPaywall();
+              final rewarded =
+                  await AdManager.instance.showRewardedForPaywall();
               if (!rewarded) return false;
               _adsGatePending = false;
               _lastGateAtAttemptCount = attemptedCount;
@@ -262,8 +236,7 @@ final TimerController _timerController = TimerController();
     }
 
     final attemptedCount = _attemptedQuestionIndexes.length;
-    final justHitThreshold =
-        !wasAttempted && attemptedCount % 10 == 0;
+    final justHitThreshold = !wasAttempted && attemptedCount % 10 == 0;
     if (_adsGatePending) {
       return _maybeShowAdsGate(attemptedCount: attemptedCount);
     }
@@ -277,8 +250,7 @@ final TimerController _timerController = TimerController();
     final questionIndex = provider.currentQuestionIndex;
     final wasAttempted = _attemptedQuestionIndexes.contains(questionIndex);
     provider.selectAnswer(questionIndex, index);
-    if (wasAttempted) {
-    }
+    if (wasAttempted) {}
   }
 
   void _showLoadingCountdown() {
@@ -320,8 +292,7 @@ final TimerController _timerController = TimerController();
       limit: widget.questionLimit,
       randomizeQuestions: true,
     );
-    if (widget.totalDurationInSeconds != null) {
-    }
+    if (widget.totalDurationInSeconds != null) {}
   }
 
   // Dialog only shows when Read More button is clicked - no auto-show
@@ -340,20 +311,120 @@ final TimerController _timerController = TimerController();
         return Scaffold(
           backgroundColor: AppColors.eLearningBtnColor1,
           appBar: _buildAppBar(context, examProvider, isLandscape),
-          body: examProvider.isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-              : examProvider.questions.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No Questions Available',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: examProvider.isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                    : examProvider.questions.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No Questions Available',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 18),
+                            ),
+                          )
+                        : _buildBody(examProvider, isLandscape),
+              ),
+              if (_isSubmittingResult)
+                Positioned.fill(
+                  child: AbsorbPointer(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      alignment: Alignment.center,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 18,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(
+                              color: AppColors.eLearningBtnColor1,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Submitting your test...',
+                              style: AppTextStyles.normal700(
+                                fontSize: 16,
+                                color: AppColors.text3Light,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Preparing your result summary.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.normal500(
+                                fontSize: 13,
+                                color: AppColors.text7Light,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    )
-                  : _buildBody(examProvider, isLandscape),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Future<void> _submitAndNavigateToResults({
+    required ExamProvider provider,
+    required bool isFullyCompleted,
+  }) async {
+    if (_isSubmittingResult) return;
+
+    setState(() {
+      _isSubmittingResult = true;
+    });
+
+    await AdManager.instance.showIfEligible(
+      context: context,
+      trigger: AdTrigger.resultNavigation,
+    );
+
+    if (!mounted) return;
+
+    if (widget.onExamComplete != null && !widget.isLastInMultiSubject) {
+      _proceedToNextExam(provider);
+      return;
+    }
+
+    if (widget.onExamComplete != null && widget.isLastInMultiSubject) {
+      widget.onExamComplete!(
+        provider.userAnswers,
+        remainingSeconds ?? 0,
+      );
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CbtResultScreen(
+          questions: provider.questions,
+          userAnswers: provider.userAnswers,
+          subject:
+              widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
+          year: widget.year ?? DateTime.now().year,
+          examType: provider.examInfo?.title ?? 'Test',
+          examId: widget.examTypeId,
+          calledFrom: widget.calledFrom,
+          isFullyCompleted: isFullyCompleted,
+        ),
+      ),
     );
   }
 
@@ -637,41 +708,45 @@ final TimerController _timerController = TimerController();
                         children: [
                           Expanded(
                             child: Html(
-  data: question.content.isNotEmpty
-      ? question.content[0].toUpperCase() +
-          question.content.substring(1)
-      : 'Question',
-  style: {
-    "body": Style(
-      fontSize: FontSize(18),
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-      lineHeight: LineHeight(1.6),
-      fontWeight: FontWeight.w600,
-      color: AppColors.text3Light,
-    ),
-    "img": Style(
-      width: Width.auto(),
-      padding: HtmlPaddings.only(left: 4, right: 4),
-    ),
-  },
-  extensions: [
-    TagExtension(
-      tagsToExtend: {"img"},
-      builder: (extensionContext) {
-        final attributes = extensionContext.attributes;
-        final src = attributes['src'] ?? '';
-        
-        if (src.isEmpty) return const SizedBox.shrink();
-        
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          child: _getImageWidget(src, height: 30), // Adjust height here
-        );
-      },
-    ),
-  ],
-),
+                              data: question.content.isNotEmpty
+                                  ? question.content[0].toUpperCase() +
+                                      question.content.substring(1)
+                                  : 'Question',
+                              style: {
+                                "body": Style(
+                                  fontSize: FontSize(18),
+                                  margin: Margins.zero,
+                                  padding: HtmlPaddings.zero,
+                                  lineHeight: LineHeight(1.6),
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text3Light,
+                                ),
+                                "img": Style(
+                                  width: Width.auto(),
+                                  padding: HtmlPaddings.only(left: 4, right: 4),
+                                ),
+                              },
+                              extensions: [
+                                TagExtension(
+                                  tagsToExtend: {"img"},
+                                  builder: (extensionContext) {
+                                    final attributes =
+                                        extensionContext.attributes;
+                                    final src = attributes['src'] ?? '';
+
+                                    if (src.isEmpty)
+                                      return const SizedBox.shrink();
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 2),
+                                      child: _getImageWidget(src,
+                                          height: 30), // Adjust height here
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -1217,7 +1292,8 @@ final TimerController _timerController = TimerController();
 
   Widget _getImageWidget(String url, {double? width, double? height}) {
     if (url.isEmpty) {
-      return Container(width: width, height: height, color: Colors.grey.shade200);
+      return Container(
+          width: width, height: height, color: Colors.grey.shade200);
     }
 
     // ── 1. Base64 inline image ─────────────────────────────────────
@@ -1229,11 +1305,12 @@ final TimerController _timerController = TimerController();
           width: width,
           height: height,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              Container(width: width, height: height, color: Colors.grey.shade200),
+          errorBuilder: (_, __, ___) => Container(
+              width: width, height: height, color: Colors.grey.shade200),
         );
       } catch (e) {
-        return Container(width: width, height: height, color: Colors.grey.shade200);
+        return Container(
+            width: width, height: height, color: Colors.grey.shade200);
       }
     }
 
@@ -1246,8 +1323,8 @@ final TimerController _timerController = TimerController();
         width: width,
         height: height,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            Container(width: width, height: height, color: Colors.grey.shade200),
+        errorBuilder: (_, __, ___) => Container(
+            width: width, height: height, color: Colors.grey.shade200),
       );
     }
 
@@ -1911,45 +1988,10 @@ final TimerController _timerController = TimerController();
                         child: ElevatedButton(
                           onPressed: () async {
                             Navigator.of(context).pop();
-
-                            await AdManager.instance.showIfEligible(
-                              context: context,
-                              trigger: AdTrigger.resultNavigation,
+                            await _submitAndNavigateToResults(
+                              provider: provider,
+                              isFullyCompleted: isFullyCompleted,
                             );
-
-                            // After dialog closes, handle the navigation based on context
-                            if (widget.onExamComplete != null &&
-                                !widget.isLastInMultiSubject) {
-                              // Multi-subject mode (not last): proceed to next subject
-                              _proceedToNextExam(provider);
-                            } else if (widget.onExamComplete != null &&
-                                widget.isLastInMultiSubject) {
-                              // Multi-subject mode (last subject): call callback for final submission
-                              widget.onExamComplete!(
-                                provider.userAnswers,
-                                remainingSeconds ?? 0,
-                              );
-                            } else {
-                              // Single subject mode: navigate to result screen
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CbtResultScreen(
-                                    questions: provider.questions,
-                                    userAnswers: provider.userAnswers,
-                                    subject: widget.subject ??
-                                        provider.examInfo?.courseName ??
-                                        'CBT Test',
-                                    year: widget.year ?? DateTime.now().year,
-                                    examType:
-                                        provider.examInfo?.title ?? 'Test',
-                                    examId: widget.examTypeId,
-                                    calledFrom: widget.calledFrom,
-                                    isFullyCompleted: isFullyCompleted,
-                                  ),
-                                ),
-                              );
-                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.eLearningBtnColor1,
@@ -2352,7 +2394,6 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
   }
 }
 
-
 // // ignore_for_file: deprecated_member_use
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
@@ -2371,9 +2412,9 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //   final String? subject;
 //   final int? year;
 //   final String calledFrom; // Track where screen is called from
-  
+
 //   const TestScreen({
-//     super.key, 
+//     super.key,
 //     required this.examTypeId,
 //     this.subjectId,
 //     this.subject,
@@ -2398,7 +2439,6 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //       final provider = Provider.of<ExamProvider>(context, listen: false);
 //       provider.fetchExamData(widget.examTypeId);
 
-
 //     });
 //   }
 
@@ -2412,7 +2452,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //   Widget build(BuildContext context) {
 //     final Brightness brightness = Theme.of(context).brightness;
 //     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
 //     return Consumer<ExamProvider>(
 //       builder: (context, examProvider, child) {
 //         return Scaffold(
@@ -2456,14 +2496,14 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //                     color: Colors.white,
 //                   ),
 //                 ) :
-          
+
 //           examProvider.questions.isEmpty
 //               ? const Center(
 //                   child:Text(
 //                     'No Questions Available',
 //                     style: TextStyle(color: Colors.white, fontSize: 18),
 //                   ),
-//                 )  
+//                 )
 //               : Padding(
 //                   padding: const EdgeInsets.symmetric( horizontal: 16.0),
 //                   child: Column(
@@ -2495,7 +2535,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //     return Container(
 //       width: 400,
-      
+
 //       padding: const EdgeInsets.all(8),
 //       decoration: BoxDecoration(
 //         color: AppColors.eLearningContColor1,
@@ -2518,7 +2558,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           // Text overlay inside progress bar
 //           Center(
 //             child: Positioned(
-              
+
 //               child: Text(
 //                 '$answeredQuestions of $total Completed',
 //                 style: const TextStyle(
@@ -2536,7 +2576,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //   Widget _buildQuestionCard(ExamProvider provider) {
 //     final question = provider.currentQuestion;
-    
+
 //     if (question == null) {
 //       return SingleChildScrollView(
 //         child: Container(
@@ -2615,7 +2655,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //                     ],
 //                   ),
 //                 ),
-                
+
 //                 // Top-left curved badge with backward slash shape
 //                 Positioned(
 //                   top: -26,
@@ -2649,7 +2689,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //             ),
 //           ),
 //           const SizedBox(height: 16),
-          
+
 //           // Options/Input Card
 //           _buildOptionsOrInputCard(provider, question),
 //         ],
@@ -2659,7 +2699,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //   Widget _buildOptionsOrInputCard(ExamProvider provider, QuestionModel question) {
 //     final options = question.getOptions();
-    
+
 //     return Container(
 //       width: 400,
 //       padding: const EdgeInsets.symmetric( vertical: 16.0),
@@ -2674,7 +2714,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           ),
 //         ],
 //       ),
-//       child: options.isEmpty 
+//       child: options.isEmpty
 //           ? _buildTextInput(provider)
 //           : _buildOptions(provider, question),
 //     );
@@ -2805,7 +2845,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //   Widget _buildNavigationButtons(ExamProvider provider) {
 //     bool isLastQuestion = provider.currentQuestionIndex == provider.questions.length - 1;
-    
+
 //     return Row(
 //       children: [
 //         // Previous Button
@@ -2824,12 +2864,12 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           ),
 //         ),
 //         const SizedBox(width: 12),
-        
+
 //         // Submit Button (Center)
 //         Expanded(
 //           child: ElevatedButton(
 //             onPressed: () => _submitQuiz(
-//               provider, 
+//               provider,
 //               isFullyCompleted: isLastQuestion, // Completed if on last question, incomplete otherwise
 //             ),
 //             style: ElevatedButton.styleFrom(
@@ -2845,11 +2885,11 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           ),
 //         ),
 //         const SizedBox(width: 12),
-        
+
 //         // Next Button
 //         Expanded(
 //           child: OutlinedButton(
-//             onPressed: !isLastQuestion 
+//             onPressed: !isLastQuestion
 //                 ? () => provider.nextQuestion()
 //                 : null,
 //             style: OutlinedButton.styleFrom(
@@ -2887,7 +2927,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           TextButton(
 //             onPressed: () {
 //               Navigator.of(context).pop(); // Close dialog
-              
+
 //               // Navigate to result screen
 
 //               Navigator.pushReplacement(

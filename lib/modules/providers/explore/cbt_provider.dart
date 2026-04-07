@@ -61,11 +61,8 @@ class CBTProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final isOnline = await ConnectivityService.isOnline();
-
-      // ✅ CBTService handles DB-first logic:
-      // — If SQLite has data → returns instantly, no network
-      // — If SQLite is empty → fetches from network, saves to DB
+      // Read DB-backed boards first. The service only touches network when the
+      // local SQLite cache is empty or explicitly bypassed.
       _boards = await _cbtService.fetchCBTBoards();
 
       if (_boards.isNotEmpty) {
@@ -83,16 +80,13 @@ class CBTProvider extends ChangeNotifier {
       // Load dashboard statistics
       await loadDashboardStats();
 
-      if (!isOnline && _boards.isNotEmpty) {
-        _error = 'You are offline. Showing saved CBT dashboard.';
+      if (_boards.isEmpty) {
+        final isOnline = await ConnectivityService.isOnline();
+        _error = isOnline
+            ? 'No CBT data available yet. Please try again.'
+            : 'No internet connection. Connect and try again.';
       }
-
-      if (!isOnline && _boards.isEmpty) {
-        _error = 'No internet connection. Connect and try again.';
-      }
-
     } catch (e) {
-
       // Last resort — try forcing network even if we thought we were offline
       try {
         _boards = await _cbtService.fetchCBTBoards(forceNetwork: true);
@@ -142,7 +136,6 @@ class CBTProvider extends ChangeNotifier {
           return seen.add(key);
         }).toList();
       }
-
 
       notifyListeners();
     } catch (e) {
@@ -199,7 +192,10 @@ class CBTProvider extends ChangeNotifier {
       AppColors.cbtCardColor5,
     ];
 
-    return _selectedBoard!.subjects.map((subject) {
+    final subjects = List<SubjectModel>.from(_selectedBoard!.subjects);
+
+    for (var i = 0; i < subjects.length; i++) {
+      final subject = subjects[i];
       if (subjectIcons.containsKey(subject.name.toUpperCase())) {
         subject.subjectIcon = subjectIcons[subject.name.toUpperCase()];
       } else {
@@ -207,10 +203,28 @@ class CBTProvider extends ChangeNotifier {
         subject.subjectIcon = fallbackIcons[hash % fallbackIcons.length];
       }
 
-      subject.cardColor =
-          colors[_selectedBoard!.subjects.indexOf(subject) % colors.length];
-      return subject;
-    }).toList();
+      subject.cardColor = colors[i % colors.length];
+    }
+
+    subjects.sort((a, b) {
+      final priorityCompare =
+          _subjectPriority(a.name).compareTo(_subjectPriority(b.name));
+      if (priorityCompare != 0) return priorityCompare;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+
+    return subjects;
+  }
+
+  int _subjectPriority(String subjectName) {
+    final normalized = subjectName.trim().toUpperCase();
+    if (normalized == 'ENGLISH LANGUAGE' || normalized == 'ENGLISH') {
+      return 0;
+    }
+    if (normalized == 'MATHEMATICS' || normalized == 'GENERAL MATHEMATICS') {
+      return 1;
+    }
+    return 10;
   }
 
   // getYearsForSubject — UNCHANGED
@@ -237,7 +251,6 @@ class CBTProvider extends ChangeNotifier {
       (subject) => subject.name == subjectName,
       orElse: () => SubjectModel(id: '', name: subjectName, years: []),
     );
-
 
     final yearModel = subject.years?.firstWhere(
       (y) => y.year == year,
@@ -275,4 +288,3 @@ class CBTProvider extends ChangeNotifier {
     return subject.cardColor ?? AppColors.cbtCardColor1;
   }
 }
-

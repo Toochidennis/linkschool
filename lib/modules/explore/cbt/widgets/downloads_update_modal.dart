@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
@@ -49,11 +47,6 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     return provider.currentBoardSubjects;
   }
 
-  String get _boardName {
-    final provider = Provider.of<CBTProvider>(context, listen: false);
-    return provider.selectedBoard?.shortName ?? 'Subjects';
-  }
-
   String get _examTypeId {
     final provider = Provider.of<CBTProvider>(context, listen: false);
     return provider.selectedBoard?.id ?? '0';
@@ -68,16 +61,18 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
   }
 
   Future<void> _checkDownloadedSubjects() async {
-    for (final subject in _subjects) {
-      final downloaded = await _downloadService.isSubjectDownloaded(
-        examTypeId: _examTypeId,
-        courseId: subject.id,
-      );
-      if (mounted) {
-        setState(() => _isDownloaded[subject.id] = downloaded);
+    final downloadedIds = await _downloadService.getDownloadedCourseIds(
+      examTypeId: _examTypeId,
+      courseIds: _subjects.map((subject) => subject.id),
+    );
+    if (!mounted) return;
+
+    setState(() {
+      for (final subject in _subjects) {
+        _isDownloaded[subject.id] = downloadedIds.contains(subject.id);
       }
-    }
-    if (mounted) setState(() => _checkingDownloads = false);
+      _checkingDownloads = false;
+    });
   }
 
   Future<void> _downloadSubject(SubjectModel subject) async {
@@ -109,11 +104,12 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
               progress: 1.0,
             );
             _isDownloaded[subject.id] = true;
+            _selectedSubjectIds.add(subject.id);
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${_sentenceCase(subject.name)} downloaded!'),
-              backgroundColor:  AppColors.eLearningBtnColor1,
+              backgroundColor: AppColors.eLearningBtnColor1,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
@@ -164,9 +160,8 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     }
 
     // Build ordered list of selected subjects
-    final selected = allSubjects
-        .where((s) => _selectedSubjectIds.contains(s.id))
-        .toList();
+    final selected =
+        allSubjects.where((s) => _selectedSubjectIds.contains(s.id)).toList();
 
     Navigator.push(
       context,
@@ -185,9 +180,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           final subjects = provider.currentBoardSubjects;
           final boardName =
               provider.selectedBoard?.shortName ?? 'Subject Selection';
-          final sortedSubjects = List<SubjectModel>.from(subjects)
-            ..sort((a, b) =>
-                _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
+          final sortedSubjects = List<SubjectModel>.from(subjects);
 
           return Column(
             children: [
@@ -214,7 +207,6 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                           ),
                         ),
                       ),
-                      
                     ],
                   ),
                 ),
@@ -227,15 +219,13 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 120),
                         itemCount: sortedSubjects.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 10),
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final subject = sortedSubjects[index];
                           return _SubjectDownloadCard(
                             subject: subject,
                             downloadState: _downloadStates[subject.id],
-                            isDownloaded:
-                                _isDownloaded[subject.id] ?? false,
+                            isDownloaded: _isDownloaded[subject.id] ?? false,
                             isCheckingDownload: _checkingDownloads,
                             isSelected:
                                 _selectedSubjectIds.contains(subject.id),
@@ -264,90 +254,90 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     );
   }
 
-Widget _buildHeader(String boardName) {
-  return Container(
-    color: Colors.white,
-    padding: EdgeInsets.only(
-      top: MediaQuery.of(context).padding.top + 8,
-      left: 8,
-      right: 16,
-      bottom: 14,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back_rounded,
-                    color: AppColors.eLearningBtnColor1, size: 20),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                '${_sentenceCase(boardName.split(' ').first)} Subject Selection',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.eLearningBtnColor1,
-                  fontFamily: 'Urbanist',
-                ),
-              ),
-            ),
-            // ── Update button ──────────────────────────────────────
-            GestureDetector(
-              onTap: () => showUpdateSubjectsModal(
-                context,
-                _subjects,
-                _examTypeId,
-              ),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.system_update_alt_rounded,
-                  color: AppColors.eLearningBtnColor1,
-                  size: 18,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const Padding(
-          padding: EdgeInsets.only(left: 16, top: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader(String boardName) {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 8,
+        right: 16,
+        bottom: 14,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(
-                'STEP 1 OF 2',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.eLearningBtnColor1,
-                  letterSpacing: 1.2,
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_back_rounded,
+                      color: AppColors.eLearningBtnColor1, size: 20),
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  '${_sentenceCase(boardName.split(' ').first)} Subject Selection',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.eLearningBtnColor1,
+                    fontFamily: 'Urbanist',
+                  ),
+                ),
+              ),
+              // ── Update button ──────────────────────────────────────
+              GestureDetector(
+                onTap: () => showUpdateSubjectsModal(
+                  context,
+                  _subjects,
+                  _examTypeId,
+                ),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.system_update_alt_rounded,
+                    color: AppColors.eLearningBtnColor1,
+                    size: 18,
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const Padding(
+            padding: EdgeInsets.only(left: 16, top: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'STEP 1 OF 2',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.eLearningBtnColor1,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                SizedBox(height: 2),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildEmptyState() {
     return Center(
@@ -356,7 +346,7 @@ Widget _buildHeader(String boardName) {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration:  BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
@@ -365,8 +355,7 @@ Widget _buildHeader(String boardName) {
           ),
           const SizedBox(height: 20),
           const Text('No subjects available',
-              style:
-                  TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Text('Please go back and select a board',
               style: TextStyle(color: Colors.grey.shade500)),
@@ -435,9 +424,7 @@ class _SubjectDownloadCard extends StatelessWidget {
           color: const Color(0xFFFCFCFD),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF0F766E)
-                : Colors.grey.shade200,
+            color: isSelected ? const Color(0xFF0F766E) : Colors.grey.shade200,
             width: isSelected ? 1.4 : 1,
           ),
           boxShadow: [
@@ -511,8 +498,11 @@ class _SubjectDownloadCard extends StatelessWidget {
                             else if (isDownloaded)
                               Row(
                                 children: [
-                                  Icon(Icons.wifi_off_rounded,
-                                      size: 13, color: Color(0xFF0F766E),),
+                                  Icon(
+                                    Icons.wifi_off_rounded,
+                                    size: 13,
+                                    color: Color(0xFF0F766E),
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Available offline',
@@ -588,8 +578,9 @@ class _SubjectDownloadCard extends StatelessWidget {
                                     : Colors.grey.shade400,
                                 width: 2,
                               ),
-                              color:
-                                  isSelected ? Color(0xFF0F766E) : Colors.transparent,
+                              color: isSelected
+                                  ? Color(0xFF0F766E)
+                                  : Colors.transparent,
                             ),
                             child: isSelected
                                 ? const Icon(Icons.check,
@@ -607,8 +598,7 @@ class _SubjectDownloadCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.grey.shade50,
                               borderRadius: BorderRadius.circular(8),
-                              border:
-                                  Border.all(color: Colors.grey.shade300),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
                             child: const Icon(
                               Icons.download_rounded,
@@ -702,12 +692,14 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
       return;
     }
 
-    final examIds =
-        widget.selectedSubjects.map((s) => _yearSelections[s.id]!.examId).toList();
+    final examIds = widget.selectedSubjects
+        .map((s) => _yearSelections[s.id]!.examId)
+        .toList();
     final subjectNames =
         widget.selectedSubjects.map((s) => _sentenceCase(s.name)).toList();
-    final years =
-        widget.selectedSubjects.map((s) => _yearSelections[s.id]!.year).toList();
+    final years = widget.selectedSubjects
+        .map((s) => _yearSelections[s.id]!.year)
+        .toList();
     final totalSeconds = timeInMinutes * 60 * widget.selectedSubjects.length;
 
     Navigator.push(
@@ -727,7 +719,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           // ── Header ──────────────────────────────────────────────
@@ -803,7 +795,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
                 icon: Container(
                   width: 36,
                   height: 36,
-                  decoration:  BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
@@ -883,7 +875,7 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
               onChanged: (v) => setState(() => questionLimit = v),
             ),
           ),
-             const SizedBox(width: 5),
+          const SizedBox(width: 5),
         ],
       ),
     );
@@ -925,7 +917,8 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
                       icon: Icons.timer_outlined, label: '${total}min total'),
                   const SizedBox(width: 10),
                   _SummaryChip(
-                      icon: Icons.quiz_outlined, label: '$questionLimit Qs each'),
+                      icon: Icons.quiz_outlined,
+                      label: '$questionLimit Qs each'),
                 ],
               ),
             ),
@@ -936,15 +929,13 @@ class _ExamConfigScreenState extends State<ExamConfigScreen> {
               height: 54,
               decoration: BoxDecoration(
                 color: ready
-                    ?  AppColors.eLearningBtnColor1
-                    :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
+                    ? AppColors.eLearningBtnColor1
+                    : AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Center(
                 child: Text(
-                  ready
-                      ? 'START TEST'
-                      : 'Pick a year for each subject',
+                  ready ? 'START TEST' : 'Pick a year for each subject',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -1281,8 +1272,8 @@ class _YearPickerSheet extends StatelessWidget {
                       color: Colors.grey.shade100,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close,
-                        size: 18, color: Colors.grey),
+                    child:
+                        const Icon(Icons.close, size: 18, color: Colors.grey),
                   ),
                 ),
               ],
@@ -1300,8 +1291,7 @@ class _YearPickerSheet extends StatelessWidget {
             ),
             child: ListView.builder(
               shrinkWrap: true,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: years.length,
               itemBuilder: (context, index) {
                 final year = years[index];
@@ -1313,7 +1303,7 @@ class _YearPickerSheet extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Material(
                     color: isSelected
-                        ?  AppColors.eLearningBtnColor1.withValues(alpha: 0.1)
+                        ? AppColors.eLearningBtnColor1.withValues(alpha: 0.1)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
@@ -1333,7 +1323,7 @@ class _YearPickerSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
-                                ?  AppColors.eLearningBtnColor1
+                                ? AppColors.eLearningBtnColor1
                                 : Colors.grey.shade200,
                             width: isSelected ? 1.5 : 1,
                           ),
@@ -1345,7 +1335,7 @@ class _YearPickerSheet extends StatelessWidget {
                               height: 36,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ?  AppColors.eLearningBtnColor1
+                                    ? AppColors.eLearningBtnColor1
                                         .withValues(alpha: 0.15)
                                     : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(8),
@@ -1355,7 +1345,7 @@ class _YearPickerSheet extends StatelessWidget {
                                   Icons.calendar_month_rounded,
                                   size: 18,
                                   color: isSelected
-                                      ?  AppColors.eLearningBtnColor1
+                                      ? AppColors.eLearningBtnColor1
                                       : Colors.grey.shade500,
                                 ),
                               ),
@@ -1373,7 +1363,7 @@ class _YearPickerSheet extends StatelessWidget {
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: isSelected
-                                          ?  AppColors.eLearningBtnColor1
+                                          ? AppColors.eLearningBtnColor1
                                           : const Color(0xFF333333),
                                     ),
                                   ),
@@ -1424,13 +1414,13 @@ class _SummaryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color:  AppColors.eLearningBtnColor1),
+          Icon(icon, size: 13, color: AppColors.eLearningBtnColor1),
           const SizedBox(width: 5),
           Text(
             label,
@@ -1472,13 +1462,14 @@ class _SettingDropdown<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color:  Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color:  AppColors.eLearningBtnColor1.withValues(alpha: 0.3)),
+        border: Border.all(
+            color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color:  AppColors.eLearningBtnColor1),
+          Icon(icon, size: 16, color: AppColors.eLearningBtnColor1),
           const SizedBox(width: 6),
           Text(
             label,
@@ -1498,7 +1489,7 @@ class _SettingDropdown<T> extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color:Colors.black,
+                color: Colors.black,
               ),
               items: items
                   .map((item) => DropdownMenuItem<T>(
@@ -1563,12 +1554,12 @@ class _ContinueBar extends StatelessWidget {
       child: GestureDetector(
         onTap: count > 0 ? onTap : null,
         child: AnimatedContainer(
-          duration:  Duration(milliseconds: 200),
+          duration: Duration(milliseconds: 200),
           height: 54,
           decoration: BoxDecoration(
             color: count > 0
-                ?  AppColors.eLearningBtnColor1
-                :  AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
+                ? AppColors.eLearningBtnColor1
+                : AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(30),
           ),
           child: Center(
@@ -1642,12 +1633,14 @@ class _UpdateSubjectsSheetState extends State<_UpdateSubjectsSheet> {
 
   Future<void> _loadDownloadedSubjects() async {
     _downloadedSubjects.clear();
+    final downloadedIds = await _downloadService.getDownloadedCourseIds(
+      examTypeId: widget.examTypeId,
+      courseIds: widget.subjects.map((subject) => subject.id),
+    );
     for (final subject in widget.subjects) {
-      final downloaded = await _downloadService.isSubjectDownloaded(
-        examTypeId: widget.examTypeId,
-        courseId: subject.id,
-      );
-      if (downloaded) _downloadedSubjects.add(subject);
+      if (downloadedIds.contains(subject.id)) {
+        _downloadedSubjects.add(subject);
+      }
     }
     if (!mounted) return;
     setState(() => _loadingDownloaded = false);
@@ -1778,8 +1771,8 @@ class _UpdateSubjectsSheetState extends State<_UpdateSubjectsSheet> {
                       color: Colors.grey.shade100,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close,
-                        size: 18, color: Colors.grey),
+                    child:
+                        const Icon(Icons.close, size: 18, color: Colors.grey),
                   ),
                 ),
               ],
@@ -1805,102 +1798,104 @@ class _UpdateSubjectsSheetState extends State<_UpdateSubjectsSheet> {
                     ),
                   )
                 : _downloadedSubjects.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Text(
-                        'No downloaded subjects yet',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    itemCount: _downloadedSubjects.length,
-                    itemBuilder: (context, index) {
-                      final subject = _downloadedSubjects[index];
-                      final downloadState = _downloadStates[subject.id];
-                      final isDownloading =
-                          downloadState?.isDownloading ?? false;
-                      final progress = downloadState?.progress ?? 0.0;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.grey.shade200,
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Text(
+                            'No downloaded subjects yet',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade500,
                             ),
-                            color: Colors.grey.shade50,
-                          ),
-                          child: Row(
-                            children: [
-                              
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _sentenceCase(subject.name),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF0F172A),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      isDownloading
-                                          ? 'Updating... ${(progress * 100).toStringAsFixed(0)}%'
-                                          : 'Your downloaded version',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              InkWell(
-                                borderRadius: BorderRadius.circular(18),
-                                onTap: isDownloading
-                                    ? null
-                                    : () => _refreshSubject(subject),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(6),
-                                  child: isDownloading
-                                      ? SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            value:
-                                                progress > 0 ? progress : null,
-                                            strokeWidth: 2.2,
-                                            color: AppColors.eLearningBtnColor1,
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.refresh_rounded,
-                                          size: 18,
-                                          color: AppColors.eLearningBtnColor1,
-                                        ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        itemCount: _downloadedSubjects.length,
+                        itemBuilder: (context, index) {
+                          final subject = _downloadedSubjects[index];
+                          final downloadState = _downloadStates[subject.id];
+                          final isDownloading =
+                              downloadState?.isDownloading ?? false;
+                          final progress = downloadState?.progress ?? 0.0;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                ),
+                                color: Colors.grey.shade50,
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _sentenceCase(subject.name),
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          isDownloading
+                                              ? 'Updating... ${(progress * 100).toStringAsFixed(0)}%'
+                                              : 'Your downloaded version',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(18),
+                                    onTap: isDownloading
+                                        ? null
+                                        : () => _refreshSubject(subject),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: isDownloading
+                                          ? SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                value: progress > 0
+                                                    ? progress
+                                                    : null,
+                                                strokeWidth: 2.2,
+                                                color: AppColors
+                                                    .eLearningBtnColor1,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.refresh_rounded,
+                                              size: 18,
+                                              color:
+                                                  AppColors.eLearningBtnColor1,
+                                            ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -1929,8 +1924,7 @@ class MultiSubjectTestScreen extends StatefulWidget {
   });
 
   @override
-  State<MultiSubjectTestScreen> createState() =>
-      _MultiSubjectTestScreenState();
+  State<MultiSubjectTestScreen> createState() => _MultiSubjectTestScreenState();
 }
 
 class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
@@ -1943,10 +1937,6 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
   Map<String, String> subjectYears = {};
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
-  bool _allowAppOpenAds = false;
-
-  AppOpenAd? _appOpenAd;
-  bool _isAppOpenAdLoaded = false;
 
   @override
   void initState() {
@@ -1957,74 +1947,25 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
       subjectNames[widget.examIds[i]] = widget.subjects[i];
       subjectYears[widget.examIds[i]] = widget.years[i];
     }
-    _initAppOpenAdEligibility();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted && _allowAppOpenAds) _loadAppOpenAd();
-    });
-  }
-
-  Future<void> _initAppOpenAdEligibility() async {
-    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
-    if (!mounted) return;
-    setState(() {
-      _allowAppOpenAds = allowed;
-    });
+    AdManager.instance.warmUpPracticeAds(context);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused && !_isNavigatingAway) {
+    if (state == AppLifecycleState.paused &&
+        !_isNavigatingAway &&
+        !AdManager.instance.isPresentingFullscreenAd) {
       _shouldShowAdOnResume = true;
     } else if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
-      if (_allowAppOpenAds) {
-        _showAppOpenAd();
-      }
       _shouldShowAdOnResume = false;
+      AdManager.instance.showAppOpenIfEligible(context: context);
     }
-  }
-
-  void _loadAppOpenAd() {
-    if (!_allowAppOpenAds) return;
-    AppOpenAd.load(
-      adUnitId: EnvConfig.cbtAdsOpenApiKey,
-      request: const AdRequest(),
-      adLoadCallback: AppOpenAdLoadCallback(
-        onAdLoaded: (ad) {
-          _appOpenAd = ad;
-          if (mounted) setState(() => _isAppOpenAdLoaded = true);
-        },
-        onAdFailedToLoad: (_) {
-          if (mounted) setState(() => _isAppOpenAdLoaded = false);
-        },
-      ),
-    );
-  }
-
-  void _showAppOpenAd() {
-    if (!_allowAppOpenAds) return;
-    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
-    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        ad.dispose();
-        _appOpenAd = null;
-        _isAppOpenAdLoaded = false;
-        _loadAppOpenAd();
-      },
-      onAdFailedToShowFullScreenContent: (ad, _) {
-        ad.dispose();
-        _appOpenAd = null;
-        _isAppOpenAdLoaded = false;
-        _loadAppOpenAd();
-      },
-    );
-    _appOpenAd!.show();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _appOpenAd?.dispose();
     super.dispose();
   }
 
@@ -2050,15 +1991,16 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
           examId: widget.examIds[0],
           calledFrom: 'multi-subject',
           isFullyCompleted: true,
-          allSubjectsData: widget.examIds.map((examId) => {
-                'questions': allQuestions[examId] ?? [],
-                'userAnswers': allAnswers[examId] ?? {},
-                'subject': subjectNames[examId] ?? '',
-                'year':
-                    int.tryParse(subjectYears[examId] ?? '') ??
+          allSubjectsData: widget.examIds
+              .map((examId) => {
+                    'questions': allQuestions[examId] ?? [],
+                    'userAnswers': allAnswers[examId] ?? {},
+                    'subject': subjectNames[examId] ?? '',
+                    'year': int.tryParse(subjectYears[examId] ?? '') ??
                         DateTime.now().year,
-                'examId': examId,
-              }).toList(),
+                    'examId': examId,
+                  })
+              .toList(),
         ),
       ),
     );
@@ -2086,6 +2028,12 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen>
         allQuestions[currentExamId] =
             List<QuestionModel>.from(provider.questions);
         remainingSeconds = remainingTime;
+
+        if (currentExamIndex == widget.examIds.length - 1) {
+          _showFinalResults();
+          return;
+        }
+
         provider.reset();
         _loadNextExam();
       },

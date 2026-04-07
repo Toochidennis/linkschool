@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
@@ -47,13 +45,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   bool _isInitialCountdownComplete = false;
   bool _isContinueWithAds = false;
   bool _isShowingAdsGate = false;
-  bool _allowAppOpenAds = false;
-
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
-
-  AppOpenAd? _appOpenAd;
-  bool _isAppOpenAdLoaded = false;
 
   // Animation controller for bouncing arrow in Read More
   late AnimationController _bounceController;
@@ -63,9 +56,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    AdManager.instance.preload();
+    AdManager.instance.warmUpPracticeAds(context);
     _loadAdMode();
-    _initAppOpenAdEligibility();
 
     // Initialize bounce animation for Read More arrow
     _bounceController = AnimationController(
@@ -84,26 +76,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInitialLoadingCountdown();
     });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted && _allowAppOpenAds) {
-        _loadAppOpenAd();
-      }
-    });
-  }
-
-  Future<void> _initAppOpenAdEligibility() async {
-    final allowed = await AdManager.instance.shouldShowCbtOpenAds(context);
-    if (!mounted) return;
-    setState(() {
-      _allowAppOpenAds = allowed;
-    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _appOpenAd?.dispose();
     _bounceController.dispose();
     super.dispose();
   }
@@ -117,57 +94,10 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         _shouldShowAdOnResume = true;
       }
     } else if (state == AppLifecycleState.resumed) {
-      if (_shouldShowAdOnResume && _allowAppOpenAds) {
-        _showAppOpenAd();
+      if (_shouldShowAdOnResume) {
         _shouldShowAdOnResume = false;
+        AdManager.instance.showAppOpenIfEligible(context: context);
       }
-    }
-  }
-
-  void _loadAppOpenAd() {
-    if (!_allowAppOpenAds) return;
-    AppOpenAd.load(
-      adUnitId: EnvConfig.cbtAdsOpenApiKey,
-      request: const AdRequest(),
-      adLoadCallback: AppOpenAdLoadCallback(
-        onAdLoaded: (AppOpenAd ad) {
-          _appOpenAd = ad;
-          if (mounted) {
-            setState(() {
-              _isAppOpenAdLoaded = true;
-            });
-          }
-        },
-        onAdFailedToLoad: (LoadAdError error) {
-          if (mounted) {
-            setState(() {
-              _isAppOpenAdLoaded = false;
-            });
-          }
-        },
-      ),
-    );
-  }
-
-  void _showAppOpenAd() {
-    if (!_allowAppOpenAds) return;
-    if (_isAppOpenAdLoaded && _appOpenAd != null) {
-      _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (AppOpenAd ad) {
-          ad.dispose();
-          _appOpenAd = null;
-          _isAppOpenAdLoaded = false;
-          _loadAppOpenAd();
-        },
-        onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
-          ad.dispose();
-          _appOpenAd = null;
-          _isAppOpenAdLoaded = false;
-          _loadAppOpenAd();
-        },
-      );
-
-      _appOpenAd!.show();
     }
   }
 
@@ -316,7 +246,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           child: CbtContinueAdsDialog(
             onWatchAds: () async {
               await _subscriptionService.setAdMode('continue_with_ads');
-              final rewarded = await AdManager.instance.showRewardedForPaywall();
+              final rewarded =
+                  await AdManager.instance.showRewardedForPaywall();
               if (!rewarded) return false;
               if (!mounted) return false;
               setState(() {
@@ -1129,8 +1060,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                            color: AppColors.eLearningBtnColor1
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -1653,10 +1584,12 @@ class _ExplanationModalState extends State<ExplanationModal> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.eLearningBtnColor1.withValues(alpha: 0.05),
+                      color:
+                          AppColors.eLearningBtnColor1.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.2),
+                        color:
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.2),
                       ),
                     ),
                     child: Column(
@@ -1746,7 +1679,6 @@ class _ExplanationModalState extends State<ExplanationModal> {
                                   padding: HtmlPaddings.only(left: 4, right: 4),
                                 ),
                               },
-
                               extensions: [
                                 TagExtension(
                                   tagsToExtend: {"img"},
@@ -1803,10 +1735,7 @@ class _ExplanationModalState extends State<ExplanationModal> {
                                     padding:
                                         HtmlPaddings.only(left: 4, right: 4),
                                   ),
-                                  
                                 },
-
-
                                 extensions: [
                                   TagExtension(
                                     tagsToExtend: {"img"},

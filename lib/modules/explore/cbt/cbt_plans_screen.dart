@@ -26,7 +26,6 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.86);
   int _currentIndex = 0;
   bool _didLoad = false;
-  final int _remainingDays = 0;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
   bool _forceContinueWithAds = false;
@@ -164,8 +163,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                                   BorderRadius.circular(8),
                                             ),
                                             elevation: 6,
-                                            shadowColor:
-                                                Colors.black.withValues(alpha: 0.2),
+                                            shadowColor: Colors.black
+                                                .withValues(alpha: 0.2),
                                           ),
                                           child: _isStartingTrial
                                               ? const SizedBox(
@@ -214,13 +213,12 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                             ),
                                           );
 
-                                          if (!mounted || result != true) {
+                                          if (!context.mounted ||
+                                              result != true) {
                                             return;
                                           }
 
-                                          if (result == true) {
-                                            Navigator.of(context).pop(true);
-                                          }
+                                          Navigator.of(context).pop(true);
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.barColor3,
@@ -229,8 +227,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                                 BorderRadius.circular(8),
                                           ),
                                           elevation: 8,
-                                          shadowColor:
-                                              Colors.black.withValues(alpha: 0.25),
+                                          shadowColor: Colors.black
+                                              .withValues(alpha: 0.25),
                                         ),
                                         child: Text(
                                           'Pay Now',
@@ -281,7 +279,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
           width: isActive ? 18 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.4),
+            color:
+                isActive ? Colors.white : Colors.white.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(12),
           ),
         );
@@ -352,6 +351,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
 
     setState(() => _isStartingTrial = true);
     try {
+      final userProvider = context.read<CbtUserProvider>();
       if (isContinueWithAds) {
         await CbtSubscriptionService().setAdMode('continue_with_ads');
         if (mounted) {
@@ -386,6 +386,9 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         );
         return;
       }
+
+      await userProvider.syncLicenseStatus(forceRefresh: true);
+      await userProvider.syncSubscriptionService();
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {

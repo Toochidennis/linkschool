@@ -1,0 +1,18 @@
+{
+  "API_KEY": "__SET_ME__",
+  "API_BASE_URL": "https://linkskool.net/api/v3",
+  "_googleadsApiKey": "__SET_ME__",
+  "_googlebanneradsApiKey": "__SET_ME__",
+  "_googlecbtopenadskey": "__SET_ME__",
+  "_googleprogramopenadskey": "__SET_ME__",
+  "_googlenewsopenadskey": "__SET_ME__",
+  "_googleCbtInterstitialAdsApiKey": "__SET_ME__",
+  "_newsinterstitialadsApiKey": "__SET_ME__",
+  "programrewardsAdsKey": "__SET_ME__",
+  "programbannersAdsKey": "__SET_ME__",
+  "_programinterstitialadsApiKey": "__SET_ME__",
+  "_newsnativeadsApiKey": "__SET_ME__",
+  "DEEP_SEEK_API_KEY": "__SET_ME__",
+  "DEEP_SEEK_URL": "https://api.deepseek.com/v1/chat/completions",
+  "PAYSTACK_SECRET_KEY": "__BACKEND_ONLY_DO_NOT_SHIP_IN_APP__"
+}

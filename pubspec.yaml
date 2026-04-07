@@ -2,7 +2,7 @@ name: linkschool
 description: "Learning Management System"
 publish_to: 'none' 
 
-version: 1.6.7+60
+version: 1.6.9+62
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.10+1
-  curved_nav_bar: ^0.0.2 
+  curved_nav_bar: ^0.0.2
   flutter_rating_bar: ^4.0.1
   carousel_slider: ^5.1.1
   flip_card: ^0.7.0

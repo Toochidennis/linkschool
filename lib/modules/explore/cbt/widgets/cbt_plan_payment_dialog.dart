@@ -822,7 +822,10 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     }
 
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    await userProvider.refreshCurrentUser();
+    await userProvider.refreshCurrentUser(
+      forceNetwork: true,
+      forceLicenseRefresh: true,
+    );
 
     if (!mounted) return;
 

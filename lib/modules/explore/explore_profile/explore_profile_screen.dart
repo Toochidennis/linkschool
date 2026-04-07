@@ -93,7 +93,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
         if (cbtUserProvider.currentUser == null) {
           await cbtUserProvider.initialize();
         }
-        await cbtUserProvider.refreshCurrentUser();
         if (!mounted) return;
         final updatedUser = cbtUserProvider.currentUser;
 
@@ -101,10 +100,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
           try {
             final profileProvider =
                 Provider.of<CreateUserProfileProvider>(context, listen: false);
-            final profiles = await profileProvider
-                .fetchUserProfiles(updatedUser.id.toString());
-            if (profiles.isNotEmpty) {
-              await cbtUserProvider.replaceProfiles(profiles);
+            if (updatedUser.profiles.isEmpty) {
+              final profiles = await profileProvider
+                  .fetchUserProfiles(updatedUser.id.toString());
+              if (profiles.isNotEmpty) {
+                await cbtUserProvider.replaceProfiles(profiles);
+              }
             }
           } catch (e) {
             // Intentionally ignored.
@@ -113,7 +114,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 
         if (!mounted) return;
 
-        final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+        final profiles =
+            cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
         CbtUserProfile? activeProfile =
             profiles.isNotEmpty ? profiles.first : null;
 
@@ -277,7 +279,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                         padding: const EdgeInsets.all(12.0),
                         child: Row(
                           children: [
-                            const Icon(Icons.info_outline, color: Colors.orange),
+                            const Icon(Icons.info_outline,
+                                color: Colors.orange),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -299,8 +302,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                 if (isSignedIn)
                   _buildAnimatedCard(
                     index: 1,
-                    child:
-                        _buildProfileHeader(settings, subscriptionStatus, cbtUser),
+                    child: _buildProfileHeader(
+                        settings, subscriptionStatus, cbtUser),
                   ),
                 if (isSignedIn) const SizedBox(height: 24),
 
@@ -412,7 +415,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                             title: 'Logout',
                             subtitle: 'Sign out of your account',
                             settings: settings,
-                            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                            trailing:
+                                Icon(Icons.chevron_right, color: Colors.grey),
                             onTap: _handleLogout,
                           ),
                         ], settings),
@@ -438,51 +442,73 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
   ) {
     if (user == null) return const SizedBox.shrink();
 
-    // Show static subscription expiry message if user has paid
-    String timeLeft = '';
-    if (subscriptionStatus['hasPaid'] == true) {
-      timeLeft = 'Subscription expires in 1 year';
-    }
+    final hasValidLicense = subscriptionStatus['hasValidLicense'] == true;
+    final licenseSource = subscriptionStatus['licenseSource']?.toString();
+    final isFreeTrial = hasValidLicense && licenseSource == 'trial';
+    final timeLeft = _buildLicenseExpiryText(subscriptionStatus);
+    final shouldHighlightExpiry = isFreeTrial && timeLeft.isNotEmpty;
+    final surfaceColor = settings.isDarkMode ? Colors.grey[850]! : Colors.white;
+    final subtleBorderColor = settings.isDarkMode
+        ? Colors.white.withValues(alpha: 0.08)
+        : AppColors.textFieldBorderLight.withValues(alpha: 0.55);
+    final secondaryTextColor =
+        settings.isDarkMode ? Colors.grey[300]! : Colors.grey[600]!;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: settings.isDarkMode ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: subtleBorderColor),
         boxShadow: [
           BoxShadow(
             color: settings.isDarkMode
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+                ? Colors.black.withValues(alpha: 0.22)
+                : Colors.grey.withValues(alpha: 0.08),
+            spreadRadius: 0,
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Profile Picture
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.text2Light.withValues(alpha: 0.2),
-                backgroundImage: (user.profilePicture != null &&
-                        user.profilePicture!.trim().isNotEmpty)
-                    ? NetworkImage(user.profilePicture!)
-                    : null,
-                child: (user.profilePicture == null ||
-                        user.profilePicture!.trim().isEmpty)
-                    ? Icon(
-                        Icons.person,
-                        size: 40,
-                        color: AppColors.text2Light,
-                      )
-                    : null,
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.text2Light.withValues(alpha: 0.18),
+                      AppColors.secondaryLight.withValues(alpha: 0.12),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Colors.transparent,
+                  backgroundImage: (user.profilePicture != null &&
+                          user.profilePicture!.trim().isNotEmpty)
+                      ? NetworkImage(user.profilePicture!)
+                      : null,
+                  child: (user.profilePicture == null ||
+                          user.profilePicture!.trim().isEmpty)
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: 34,
+                          color: AppColors.text2Light,
+                        )
+                      : null,
+                ),
               ),
-              const SizedBox(width: 16),
-              // User Info
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -501,61 +527,36 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                       user.email,
                       style: AppTextStyles.normal400(
                         fontSize: 14,
-                        color: settings.isDarkMode
-                            ? Colors.grey[300]!
-                            : Colors.grey[600]!,
+                        color: secondaryTextColor,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          subscriptionStatus['hasPaid'] == true
-                              ? Icons.verified
-                              : Icons.warning,
-                          color: subscriptionStatus['hasPaid'] == true
-                              ? Colors.green
-                              : Colors.orange,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          subscriptionStatus['hasPaid'] == true
-                              ? 'Subscribed'
-                              : 'Not Subscribed',
-                          style: AppTextStyles.normal500(
-                            fontSize: 14,
-                            color: subscriptionStatus['hasPaid'] == true
-                                ? Colors.green
-                                : Colors.orange,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (timeLeft.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          timeLeft,
-                          style: AppTextStyles.normal400(
-                            fontSize: 13,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
             ],
           ),
+          if (timeLeft.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _buildExpiryCallout(
+              settings: settings,
+              text: timeLeft,
+              icon: shouldHighlightExpiry
+                  ? Icons.local_fire_department_outlined
+                  : Icons.schedule_outlined,
+              color: shouldHighlightExpiry
+                  ? const Color(0xFFD97706)
+                  : AppColors.text2Light,
+              emphasize: shouldHighlightExpiry,
+            ),
+          ],
 
           // Payment Button (only show if not subscribed)
           if (subscriptionStatus['hasPaid'] != true) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Container(
               width: double.infinity,
-              height: 40,
+              height: 44,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -615,6 +616,105 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     final combined = ('$first $last').trim();
     if (combined.isNotEmpty) return combined;
     return 'User';
+  }
+
+  Widget _buildExpiryCallout({
+    required AppSettingsProvider settings,
+    required String text,
+    required IconData icon,
+    required Color color,
+    required bool emphasize,
+  }) {
+    final backgroundColor = settings.isDarkMode
+        ? color.withValues(alpha: emphasize ? 0.18 : 0.12)
+        : color.withValues(alpha: emphasize ? 0.14 : 0.08);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: emphasize
+                  ? AppTextStyles.normal700(
+                      fontSize: 14,
+                      color: color,
+                    )
+                  : AppTextStyles.normal500(
+                      fontSize: 13,
+                      color: color,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _buildLicenseExpiryText(Map<String, dynamic> subscriptionStatus) {
+    final hasValidLicense = subscriptionStatus['hasValidLicense'] == true;
+    if (!hasValidLicense) return '';
+
+    final rawExpiresAt = subscriptionStatus['licenseExpiresAt']?.toString();
+    if (rawExpiresAt == null || rawExpiresAt.isEmpty) return '';
+
+    final expiresAt = _parseLicenseDate(rawExpiresAt);
+    if (expiresAt == null) return '';
+
+    final formattedDate = _formatDate(expiresAt);
+    final licenseSource = subscriptionStatus['licenseSource']?.toString();
+
+    if (licenseSource == 'trial') {
+      final daysLeft = _daysLeftUntil(expiresAt);
+      if (daysLeft <= 0) {
+        return 'Free trial ends today';
+      }
+      final dayLabel = daysLeft == 1 ? 'day' : 'days';
+      return 'Free trial ends in $daysLeft $dayLabel';
+    }
+    if (licenseSource == 'payment') {
+      return 'Subscription expires $formattedDate';
+    }
+    return 'Access expires $formattedDate';
+  }
+
+  DateTime? _parseLicenseDate(String value) {
+    final normalized =
+        value.contains(' ') ? value.replaceFirst(' ', 'T') : value;
+    return DateTime.tryParse(normalized);
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  int _daysLeftUntil(DateTime expiry) {
+    final now = DateTime.now();
+    final difference = expiry.difference(now);
+    if (difference.isNegative) return 0;
+    return difference.inHours <= 24 ? 1 : (difference.inHours / 24).ceil();
   }
 
   Widget _buildSectionHeader(String title, AppSettingsProvider settings) {
@@ -923,7 +1023,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //   @override
 //   Widget build(BuildContext context) {
 //     final settings = Provider.of<AppSettingsProvider>(context);
-    
+
 //     final cbtUserProvider = Provider.of<CbtUserProvider>(context);
 //     final subscriptionStatus = cbtUserProvider.subscriptionStatus;
 //     return MediaQuery(
@@ -964,7 +1064,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //                 // Profile Header Section
 //                 if (_isSignedIn) _buildProfileHeader(settings, subscriptionStatus),
 //                 if (_isSignedIn) const SizedBox(height: 24),
-              
+
 //               // App Preferences Section
 //               _buildSectionHeader('App Preferences', settings),
 //               const SizedBox(height: 12),
@@ -1001,7 +1101,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //                 //   onTap: () => _showTextSizeDialog(),
 //                 // ),
 //               ], settings),
-
 
 //               const SizedBox(height: 24),
 
@@ -1044,7 +1143,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //               //     ),
 //               //   ),
 //               //   _buildDivider(),
-              
+
 //               // ], settings),
 
 //               // const SizedBox(height: 24),
@@ -1151,8 +1250,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //         borderRadius: BorderRadius.circular(16),
 //         boxShadow: [
 //           BoxShadow(
-//             color: settings.isDarkMode 
-//                 ? Colors.black.withValues(alpha: 0.3) 
+//             color: settings.isDarkMode
+//                 ? Colors.black.withValues(alpha: 0.3)
 //                 : Colors.grey.withValues(alpha: 0.1),
 //             spreadRadius: 1,
 //             blurRadius: 10,
@@ -1168,10 +1267,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //             child: CircleAvatar(
 //               radius: 40,
 //               backgroundColor: AppColors.text2Light.withValues(alpha: 0.2),
-//               backgroundImage: user.photoURL != null 
-//                   ? NetworkImage(user.photoURL!) 
+//               backgroundImage: user.photoURL != null
+//                   ? NetworkImage(user.photoURL!)
 //                   : null,
-//               child: user.photoURL == null 
+//               child: user.photoURL == null
 //                   ? Icon(
 //                       Icons.person,
 //                       size: 40,
@@ -1198,8 +1297,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //                   user.email ?? '',
 //                   style: AppTextStyles.normal400(
 //                     fontSize: 14,
-//                     color: settings.isDarkMode 
-//                         ? Colors.grey[300]! 
+//                     color: settings.isDarkMode
+//                         ? Colors.grey[300]!
 //                         : Colors.grey[600]!,
 //                   ),
 //                   overflow: TextOverflow.ellipsis,
@@ -1255,7 +1354,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 
 //   Widget _buildSettingsCard(List<Widget> children, AppSettingsProvider settings) {
 //     final cardColor = settings.isDarkMode ? Colors.grey[800] : Colors.white;
-    
+
 //     return Container(
 //       decoration: BoxDecoration(
 //         color: cardColor,

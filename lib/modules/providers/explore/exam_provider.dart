@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/services/explore/exam_service.dart';
@@ -29,7 +27,6 @@ class ExamProvider extends ChangeNotifier {
       _isLoading = true;
       _error = null;
       notifyListeners();
-
 
       final data = await _examService.fetchExamData(
         examType: examType,
@@ -75,7 +72,6 @@ class ExamProvider extends ChangeNotifier {
               }
             }
           }
-          
 
           questions = flatQuestions
               .whereType<Map>()
@@ -89,14 +85,14 @@ class ExamProvider extends ChangeNotifier {
               .whereType<QuestionModel>()
               .toList();
 
-          if (randomizeQuestions && questions.length > 1) {
-            questions.shuffle(Random());
+          if (randomizeQuestions &&
+              questions.length > 1 &&
+              data['source'] != 'local_db') {
+            questions.shuffle();
           }
-
 
           // Debug: Print first question details
-          if (questions.isNotEmpty) {
-          }
+          if (questions.isNotEmpty) {}
 
           // Reset navigation state
           currentQuestionIndex = 0;
@@ -163,4 +159,3 @@ class ExamProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-

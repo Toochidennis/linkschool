@@ -117,8 +117,8 @@ class CbtDownloadService {
           await file.delete();
         }
       } catch (_) {
-      // Intentionally ignored.
-    }
+        // Intentionally ignored.
+      }
     }
   }
 
@@ -144,8 +144,8 @@ class CbtDownloadService {
       });
 
       final streamedResponse = await request.send().timeout(
-        const Duration(minutes: 5),
-      );
+            const Duration(minutes: 5),
+          );
 
       if (streamedResponse.statusCode != 200) {
         throw Exception('HTTP ${streamedResponse.statusCode}');
@@ -184,8 +184,8 @@ class CbtDownloadService {
       await extractDir.create(recursive: true);
 
       final inputStream = InputFileStream(zipFile.path);
-   final archive = ZipDecoder().decodeBytes(await zipFile.readAsBytes());
-    await  extractArchiveToDisk(archive, extractDir.path);
+      final archive = ZipDecoder().decodeBytes(await zipFile.readAsBytes());
+      await extractArchiveToDisk(archive, extractDir.path);
       inputStream.close();
 
       onProgress(0.85);
@@ -339,7 +339,7 @@ class CbtDownloadService {
 
       // ── Insert exams ───────────────────────────────────────────────
       for (final exam in exams) {
-       final examId = _toInt(exam['id']);
+        final examId = _toInt(exam['id']);
         final year = int.tryParse(exam['year'].toString()) ?? 0;
 
         final List<dynamic> questionIds =
@@ -410,12 +410,10 @@ class CbtDownloadService {
             final isCorrect = optionText == correctText ? 1 : 0;
 
             String? optImageId;
-            final optFiles =
-                option['option_files'] as List<dynamic>? ?? [];
+            final optFiles = option['option_files'] as List<dynamic>? ?? [];
             if (optFiles.isNotEmpty) {
               optImageId = optFiles[0]['file_name']?.toString();
-              if (optImageId != null &&
-                  !imagePathMap.containsKey(optImageId)) {
+              if (optImageId != null && !imagePathMap.containsKey(optImageId)) {
                 optImageId = null;
               }
             }
@@ -438,12 +436,12 @@ class CbtDownloadService {
   }
 
   int _toInt(dynamic value) {
-  if (value == null) return 0;
-  if (value is int) return value;
-  if (value is double) return value.toInt();
-  if (value is String) return int.tryParse(value) ?? 0;
-  return 0;
-}
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
 
   // ─────────────────────────────────────────────────────────────────
   // Check if a subject is already downloaded
@@ -462,6 +460,29 @@ class CbtDownloadService {
     return result.isNotEmpty;
   }
 
+  Future<Set<String>> getDownloadedCourseIds({
+    required String examTypeId,
+    required Iterable<String> courseIds,
+  }) async {
+    final normalizedIds = courseIds
+        .map((id) => int.tryParse(id))
+        .whereType<int>()
+        .toList(growable: false);
+    if (normalizedIds.isEmpty) return <String>{};
+
+    final db = await _db.database;
+    final placeholders = List.filled(normalizedIds.length, '?').join(',');
+    final rows = await db.rawQuery(
+      'SELECT DISTINCT course_id FROM exams WHERE exam_type_id = ? AND course_id IN ($placeholders)',
+      [int.parse(examTypeId), ...normalizedIds],
+    );
+
+    return rows
+        .map((row) => row['course_id']?.toString())
+        .whereType<String>()
+        .toSet();
+  }
+
   String _orderToLabel(int order) {
     const labels = ['A', 'B', 'C', 'D', 'E'];
     if (order <= 0) return 'A';
@@ -475,7 +496,6 @@ class CbtDownloadService {
       yield items.sublist(i, end);
     }
   }
-
 }
 
 // Simple value object — no DB or file logic
@@ -484,4 +504,3 @@ class _ImageMeta {
   final String mimeType;
   const _ImageMeta({required this.localPath, required this.mimeType});
 }
-
