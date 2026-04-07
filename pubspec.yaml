@@ -1,5 +1,5 @@
 name: linkschool
-description: "School Management System"
+description: "Learning Management System"
 publish_to: 'none' 
 version: 1.6.1+54
 environment:
