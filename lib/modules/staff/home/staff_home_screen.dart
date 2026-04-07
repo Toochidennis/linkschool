@@ -178,7 +178,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
         });
       } else {
       }
-    } catch (e, stack) {
+    } catch (e) {
       if (mounted) {
         //CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }

@@ -6,7 +6,6 @@ import 'package:linkschool/modules/common/utils/registration/subject_selection.d
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:hive/hive.dart';
-import 'dart:convert';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 
 class CourseRegistrationService {

@@ -40,7 +40,7 @@ class StaffOverviewService {
       }
 
       return DashboardResponse.fromJson(response.data!);
-    } catch (e, stack) {
+    } catch (e) {
       rethrow;
     }
   }

@@ -18,7 +18,6 @@ import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
 
 // import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class CbtResultScreen extends StatefulWidget {
   final List<QuestionModel> questions;

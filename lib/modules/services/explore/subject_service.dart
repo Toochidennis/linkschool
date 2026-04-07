@@ -47,7 +47,7 @@ class SubjectService {
         throw Exception(
             'Failed to load subjects: ${response.statusCode} ${response.reasonPhrase}');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Error fetching subjects: $e');
     }
   }
@@ -85,7 +85,7 @@ class SubjectService {
         throw Exception(
             'Failed to load levels: ${response.statusCode} ${response.reasonPhrase}');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Error fetching levels: $e');
     }
   }
@@ -117,7 +117,7 @@ class SubjectService {
         throw Exception(
             'Failed to load dashboard data: ${response.statusCode} ${response.reasonPhrase}');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Error fetching dashboard data: $e');
     }
   }

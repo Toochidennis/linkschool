@@ -79,7 +79,7 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
 
       } else {
       }
-    } catch (e, stack) {
+    } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }

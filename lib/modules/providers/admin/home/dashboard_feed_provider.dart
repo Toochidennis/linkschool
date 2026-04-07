@@ -6,8 +6,7 @@ import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
 class DashboardFeedProvider with ChangeNotifier {
   final DashboardFeedService _dashboardFeedService;
 
-  DashboardFeedProvider(this._dashboardFeedService) {
-  }
+  DashboardFeedProvider(this._dashboardFeedService);
 
   bool _isLoading = false;
   String? _message;

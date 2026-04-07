@@ -69,7 +69,7 @@ class ChallengeModel {
       required String? examId,
       required int questionCount,
     }) {
-      final key = '${subjectId}__${subjectName}';
+      final key = '${subjectId}__$subjectName';
       final group = groupedSubjects.putIfAbsent(
         key,
         () => <String, dynamic>{

@@ -46,7 +46,7 @@ class LessonAttendanceService {
           'Server error: ${response.statusCode} - ${response.body}',
         );
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }

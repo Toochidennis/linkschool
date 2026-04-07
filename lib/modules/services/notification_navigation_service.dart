@@ -14,7 +14,6 @@ import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
 import 'package:linkschool/modules/services/explore/courses/discussion_service.dart';
-import 'package:linkschool/routes/app_navigation_flow.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 

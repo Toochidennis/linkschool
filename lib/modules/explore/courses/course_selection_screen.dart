@@ -661,7 +661,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
       return decoded
           .whereType<Map>()
           .map((profile) => CbtUserProfile.fromJson(
-                Map<String, dynamic>.from(profile as Map),
+                Map<String, dynamic>.from(profile),
               ))
           .toList();
     } catch (_) {

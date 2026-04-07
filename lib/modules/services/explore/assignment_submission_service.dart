@@ -91,7 +91,7 @@ class AssignmentSubmissionService {
               "Server error: ${response.statusCode} - ${response.body}");
         }
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow; // ✅ Rethrow to let provider handle it
     }
   }

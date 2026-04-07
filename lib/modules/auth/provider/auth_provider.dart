@@ -234,7 +234,7 @@ class AuthProvider with ChangeNotifier {
       _loginSource = LoginSource.none;
       _settings = null;
       notifyListeners();
-    } catch (e, stackTrace) {
+    } catch (e) {
       await _clearCorruptedSession();
     }
   }
@@ -358,7 +358,7 @@ class AuthProvider with ChangeNotifier {
 
 
         notifyListeners();
-      } catch (e, stackTrace) {
+      } catch (e) {
         await _clearCorruptedSession();
       }
     } else {

@@ -7318,7 +7318,6 @@ class _CourseBannerAd extends StatefulWidget {
     super.key,
     required this.adUnitId,
     required this.size,
-    this.isMinor = false,
   });
 
   @override

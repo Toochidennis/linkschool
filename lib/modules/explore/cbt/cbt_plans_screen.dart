@@ -214,8 +214,9 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                             ),
                                           );
 
-                                          if (!mounted || result != true)
+                                          if (!mounted || result != true) {
                                             return;
+                                          }
 
                                           if (result == true) {
                                             Navigator.of(context).pop(true);

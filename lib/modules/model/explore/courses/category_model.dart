@@ -1,5 +1,4 @@
-﻿import 'package:flutter/material.dart';
-import 'package:linkschool/modules/model/explore/courses/course_model.dart';
+﻿import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 
 class CategoryModel {
   final int id;

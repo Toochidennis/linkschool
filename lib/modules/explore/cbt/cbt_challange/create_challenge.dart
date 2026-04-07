@@ -1773,7 +1773,7 @@ Widget _buildSubjectReviewSection() {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Container(
+                child: SizedBox(
                   height: 48,
                   child: Material(
                     color: Colors.transparent,

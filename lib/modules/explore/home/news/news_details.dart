@@ -661,7 +661,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 ),
                 Expanded(
                   child: _buildHtmlContent(
-                          extensionContext.innerHtml!,
+                          extensionContext.innerHtml,
                           depth: depth + 1, // increment depth for nested
                         ),
                 ),

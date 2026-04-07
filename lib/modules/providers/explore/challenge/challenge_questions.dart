@@ -91,7 +91,7 @@ class ChallengeQuestionProvider extends ChangeNotifier {
               // Ensure all keys are strings and normalize the data
               final normalizedQuestion = _normalizeQuestionData(Map<String, dynamic>.from(q));
               return QuestionModel.fromJson(normalizedQuestion);
-            } catch (e, stackTrace) {
+            } catch (e) {
               return null;
             }
           })
@@ -105,7 +105,7 @@ class ChallengeQuestionProvider extends ChangeNotifier {
 
       currentQuestionIndex = 0;
       userAnswers.clear();
-    } catch (e, stackTrace) {
+    } catch (e) {
       _error = "Failed To Load Challenge Questions: $e";
       questions = [];
     } finally {

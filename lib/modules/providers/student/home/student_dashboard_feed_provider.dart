@@ -6,8 +6,7 @@ import 'package:linkschool/modules/services/student/home/student_dashboard_feed_
 class StudentDashboardFeedProvider with ChangeNotifier {
   final StudentDashboardFeedService _dashboardFeedService;
 
-  StudentDashboardFeedProvider(this._dashboardFeedService) {
-  }
+  StudentDashboardFeedProvider(this._dashboardFeedService);
 
   bool _isLoading = false;
   String? _message;

@@ -44,7 +44,7 @@ class FirebaseAuthService {
       
       await markSignupAsShown();
       return userCredential;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       rethrow;
     } catch (e) {
       rethrow;
@@ -63,7 +63,7 @@ class FirebaseAuthService {
       );
       await markSignupAsShown();
       return credential;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       rethrow;
     } catch (e) {
       rethrow;
@@ -88,7 +88,7 @@ class FirebaseAuthService {
 
       await markSignupAsShown();
       return credential;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       rethrow;
     } catch (e) {
       rethrow;

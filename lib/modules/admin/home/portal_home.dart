@@ -171,7 +171,7 @@ void initState() {
         
       });
       }
-    } catch (e, stack) {
+    } catch (e) {
       if (mounted) {
      //   CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
@@ -576,7 +576,7 @@ void initState() {
         // Refresh the feed list
         await provider.fetchDashboardData();
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

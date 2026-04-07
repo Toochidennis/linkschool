@@ -1207,7 +1207,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           'preview_duration', currentQuestion.duration.inSeconds.toString());
       await prefs.setBool('is_edit_mode', widget.editMode);
 
-    } catch (e, stackTrace) {
+    } catch (e) {
       CustomToaster.toastError(
           context, "Error", "Failed to save questions for preview: $e");
       return;

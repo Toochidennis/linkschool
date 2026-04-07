@@ -6,8 +6,7 @@ import 'package:linkschool/modules/services/staff/staff_dashboard_service.dart';
 class StaffDashboardProvider with ChangeNotifier {
   final StaffDashboardService _staffDashboardService;
 
-  StaffDashboardProvider(this._staffDashboardService) {
-  }
+  StaffDashboardProvider(this._staffDashboardService);
 
   bool _isLoading = false;
   String? _message;

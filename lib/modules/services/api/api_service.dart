@@ -70,8 +70,7 @@ class ApiService {
 
   ApiService({String? baseUrl, String? apiKey})
       : baseUrl = baseUrl ?? EnvConfig.apiBaseUrl,
-        apiKey = apiKey ?? EnvConfig.apiKey {
-  }
+        apiKey = apiKey ?? EnvConfig.apiKey;
 
   void setAuthToken(String token) {
     _defaultHeaders['Authorization'] = 'Bearer $token';

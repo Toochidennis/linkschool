@@ -47,7 +47,7 @@ class LessonDetailService {
           );
         }
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }

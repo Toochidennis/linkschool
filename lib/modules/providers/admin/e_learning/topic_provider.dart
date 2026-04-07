@@ -23,7 +23,7 @@ class TopicProvider extends ChangeNotifier {
     try {
       _topics = await topicService.FetchTopic(syllabusId: syllabusId);
       _error = '';
-    } catch (e, stackTrace) {
+    } catch (e) {
       _error = e.toString();
       _topics = [];
     } finally {

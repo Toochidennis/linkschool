@@ -175,7 +175,7 @@ class _ExploreCoursesSeeAllScreenState
     return Consumer<ProgramCoursesProvider>(
       builder: (context, provider, _) {
         final displayCourses = provider.courses;
-        final title = provider.program?.name?.isNotEmpty == true
+        final title = provider.program?.name.isNotEmpty == true
             ? provider.program!.name
             : widget.categoryName;
 

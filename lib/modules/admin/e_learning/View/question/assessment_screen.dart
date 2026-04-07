@@ -136,7 +136,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           userAnswers = [];
         });
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
 
       // Set empty state to prevent crashes
       setState(() {

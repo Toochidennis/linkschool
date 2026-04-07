@@ -80,7 +80,7 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
         errorMessage = null;
       });
 
-    } catch (e, stackTrace) {
+    } catch (e) {
       setState(() {
         isLoading = false;
         errorMessage = 'Error fetching quiz: $e';

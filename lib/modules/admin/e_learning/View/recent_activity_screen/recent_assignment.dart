@@ -132,7 +132,7 @@ class _RecentAssignmentState extends State<RecentAssignment>
         isLoading = false;
         errorMessage = null;
       });
-    } catch (e, stackTrace) {
+    } catch (e) {
       setState(() {
         isLoading = false;
         errorMessage = 'Error fetching assignment: $e';

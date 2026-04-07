@@ -64,7 +64,7 @@ class TopicService {
 
       final topics = response.data ?? [];
       return topics;
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow; // Re-throw to let the provider handle it
     }
   }
@@ -136,7 +136,7 @@ class TopicService {
         throw Exception('Failed to create topic: ${response.message}');
       } else {
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -209,7 +209,7 @@ class TopicService {
         throw Exception('Failed to create topic: ${response.message}');
       } else {
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }
