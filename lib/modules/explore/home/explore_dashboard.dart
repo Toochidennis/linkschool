@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/explore/courses/explore_courses.dart';
-import 'package:linkschool/modules/explore/e_library/e_library_dashbord.dart';
+import 'package:linkschool/modules/explore/e_library/E_library_dashbord.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profile_screen.dart';
 import 'package:linkschool/modules/explore/ai_chat/linkskool_ai_chat.dart';
 import '../../common/flat_bottom_navigation.dart';
@@ -83,27 +83,27 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     return [
       NavigationItem(
         iconPath: 'assets/icons/home.svg',
-          activeIconPath: 'assets/icons/fill_home.svg',
+        activeIconPath: 'assets/icons/fill_home.svg',
         label: 'Home',
       ),
       // admission.svg
       NavigationItem(
         iconPath: 'assets/icons/laptop-binary.svg',
         activeIconPath: 'assets/icons/laptop-binary_fill.svg',
-         iconWidth: 24.0,
+        iconWidth: 24.0,
         label: 'Programs',
       ),
       NavigationItem(
         iconPath: 'assets/icons/portal.svg',
         iconWidth: 24.0,
         iconHeight: 25.0,
-    
+
         color: const Color(0xFF1E3A8A), // Blue color for portal
         label: 'Portal',
       ),
       NavigationItem(
         iconPath: 'assets/icons/diary-bookmark-down.svg',
-          activeIconPath: 'assets/icons/diary-bookmark-down_fill.svg',
+        activeIconPath: 'assets/icons/diary-bookmark-down_fill.svg',
         label: 'E-library',
         iconWidth: 24.0,
         iconHeight: 25.0,
@@ -129,8 +129,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
-        
-       actions: [
+        actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: TextButton.icon(

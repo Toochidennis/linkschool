@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:linkschool/modules/model/Login/schools_model.dart';
+import 'package:linkschool/modules/model/login/schools_model.dart';
 import 'package:linkschool/config/env_config.dart';
 
 class SchoolService {
@@ -24,9 +24,7 @@ class SchoolService {
         },
       );
 
-
       if (response.statusCode == 200) {
-
         final decoded = json.decode(response.body);
 
         if (decoded is List) {
@@ -48,4 +46,3 @@ class SchoolService {
     }
   }
 }
-
