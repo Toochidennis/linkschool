@@ -3,8 +3,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_study_screen.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
-import 'package:linkschool/modules/services/cbt_subscription_service.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
@@ -38,9 +36,6 @@ class _StudySubjectSelectionModalState
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-
-  final _subscriptionService = CbtSubscriptionService();
-  final _authService = FirebaseAuthService();
 
   @override
   void dispose() {
@@ -189,79 +184,7 @@ class _StudySubjectSelectionModalState
   }
 
   Future<void> _onContinue() async {
-    // if (_selectedTopicIds.isEmpty) return;
-
-    // // ⚡ Study Module: Check subscription with free trial tracking
-    // final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    // final hasUserPaid = userProvider.hasPaid;
-    // final canTakeTest = await _subscriptionService.canTakeTest();
-    // final remainingTests = await _subscriptionService.getRemainingFreeTests();
-
-
-
-
-
-
-    // // If backend confirms payment, allow access
-    // if (hasUserPaid) {
-
-    //   _proceedWithStudy();
-    //   return;
-    // }
-
-    // // If not paid, show prompt (hard if trial expired)
-    // final trialExpired = await _subscriptionService.isTrialExpired();
-    // final settings = await CbtSettingsHelper.getSettings();
-    // if (!mounted) return;
-
-    // if (!canTakeTest || trialExpired) {
-
-    //   final allowProceed = await showDialog<bool>(
-    //     context: context,
-    //     barrierDismissible: true,
-    //     builder: (context) => SubscriptionEnforcementDialog(
-    //       isHardBlock: true,
-    //       remainingTests: remainingTests,
-    //       amount: settings.amount,
-    //       discountRate: settings.discountRate,
-    //       onSubscribed: () async {
-
-    //         await userProvider.refreshCurrentUser();
-    //         if (mounted) {
-    //           setState(() {});
-    //         }
-    //       },
-    //     ),
-    //   );
-    //   if (allowProceed == true) {
-    //     _proceedWithStudy();
-    //   }
-    //   return;
-    // }
-
-    // // Within trial: show soft prompt and allow proceed
-    // final allowProceed = await showDialog<bool>(
-    //   context: context,
-    //   barrierDismissible: true,
-    //   builder: (context) => SubscriptionEnforcementDialog(
-    //     isHardBlock: false,
-    //     remainingTests: remainingTests,
-    //     amount: settings.amount,
-    //     discountRate: settings.discountRate,
-    //     onSubscribed: () async {
-
-    //       await userProvider.refreshCurrentUser();
-    //       if (mounted) {
-    //         setState(() {});
-    //       }
-    //     },
-    //   ),
-    // );
-
-    // if (allowProceed == true) {
-
-      _proceedWithStudy();
-    
+    _proceedWithStudy();
   }
 
   void _proceedWithStudy() {
@@ -715,7 +638,8 @@ class _StudySubjectSelectionModalState
                                           color: _areAllTopicsSelected(
                                                   syllabus.topics)
                                               ? subjectColor
-                                              : subjectColor.withValues(alpha: 0.15),
+                                              : subjectColor.withValues(
+                                                  alpha: 0.15),
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -740,7 +664,8 @@ class _StudySubjectSelectionModalState
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: subjectColor.withValues(alpha: 0.15),
+                                        color: subjectColor.withValues(
+                                            alpha: 0.15),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
@@ -903,4 +828,3 @@ class _StudySubjectSelectionModalState
     );
   }
 }
-

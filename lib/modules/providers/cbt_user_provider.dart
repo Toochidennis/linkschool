@@ -585,52 +585,6 @@ class CbtUserProvider with ChangeNotifier {
   }
 
   // =========================================================================
-  // ?? UPDATE USER AFTER PAYMENT (PUT + Fetch + Persist)
-  // =========================================================================
-  Future<void> updateUserAfterPayment({required String reference}) async {
-    if (_currentUser == null) {
-      throw ('No current user to update');
-    }
-
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      // Step 1: Make PUT request to update user
-      final updatedUser = await _userService.updateUser(_currentUser!.copyWith(
-        subscribed: 1,
-        reference: reference,
-      ));
-
-      // Step 2: Update current user
-      _currentUser = updatedUser;
-
-      // Step 3: Save to SharedPreferences
-      await _saveUserToPreferences(updatedUser);
-
-      // Step 4: Save payment reference and trigger notifier
-      await _savePaymentReference(reference);
-
-      // ? Step 5: Mark as paid in subscription service
-      final subscriptionService = CbtSubscriptionService();
-      await subscriptionService.markAsPaid(_currentUser!.email);
-
-      // ? Step 6: Refresh license-driven entitlement, then sync local payment mirror
-      await syncLicenseStatus(forceRefresh: true);
-      await syncSubscriptionService();
-      await _syncDeviceTokenIfNeeded();
-      _startTokenRefreshListener();
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      throw (' $e');
-    }
-  }
-
-  // =========================================================================
   // ?? Phone check moved to UI
   // The modal prompting for phone/profile updates is now shown from UI
   // components (`CBTDashboard` and `ExploreCourses`). A convenience getter
@@ -1102,60 +1056,6 @@ class CbtUserProvider with ChangeNotifier {
 //       _errorMessage = 'Failed to update subscription: $e';
 //       _log('? Error updating subscription: $e');
 //       notifyListeners();
-//     } finally {
-//       _setLoading(false);
-//     }
-//   }
-
-//   /// Update user after successful payment with payment reference
-//   Future<void> updateUserAfterPayment({
-//     required String reference,
-//   }) async {
-//     _log('?? Updating user after payment with reference: $reference');
-//     _setLoading(true);
-//     _errorMessage = null;
-
-//     try {
-//       final firebaseUser = _authService.getCurrentUser();
-
-//       if (firebaseUser == null) {
-//         throw Exception('No Firebase user found. Please sign in first.');
-//       }
-
-//       final email = firebaseUser.email ?? '';
-//       final name = firebaseUser.displayName ?? '';
-//       final profilePicture = firebaseUser.photoURL ?? '';
-
-//       _log('?? Updating user: $email');
-//       _log('?? Payment reference: $reference');
-
-//       // Make PUT request to update user with payment reference
-//       final updatedUser = await _userService.updateUserAfterPayment(
-//         email: email,
-//         name: name,
-//         profilePicture: profilePicture,
-//         reference: reference,
-//       );
-
-//       _currentUser = updatedUser;
-//       await _cacheUserData(updatedUser);
-
-//       // Save payment reference to SharedPreferences
-//       final prefs = await SharedPreferences.getInstance();
-//       await prefs.setString(_keyPaymentReference, reference);
-
-//       // Update the notifier to trigger dialog dismissal
-//       paymentReferenceNotifier.value = reference;
-
-//       _log('? User updated successfully after payment');
-//       _log('?? User: ${updatedUser.name}, Subscribed: ${updatedUser.subscribed}, Reference: $reference');
-
-//       notifyListeners();
-//     } catch (e) {
-//       _errorMessage = 'Failed to update user after payment: $e';
-//       _log('? Error updating user after payment: $e');
-//       notifyListeners();
-//       rethrow;
 //     } finally {
 //       _setLoading(false);
 //     }

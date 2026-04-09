@@ -3,11 +3,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_instruction.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
-import 'package:linkschool/modules/services/cbt_subscription_service.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
-import 'package:linkschool/modules/providers/cbt_user_provider.dart';
-// import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
-import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
@@ -44,9 +39,6 @@ class _GameSubjectModalState extends State<GameSubjectModal>
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-
-  final _subscriptionService = CbtSubscriptionService();
-  final _authService = FirebaseAuthService();
 
   @override
   void initState() {
@@ -233,51 +225,6 @@ class _GameSubjectModalState extends State<GameSubjectModal>
 
   Future<void> _onContinue() async {
     if (_selectedTopicIds.isEmpty) return;
-
-    // ⚡ Gamify Module: Check subscription with free trial tracking
-    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    final hasUserPaid = userProvider.hasPaid;
-    final canTakeTest = await _subscriptionService.canTakeTest();
-    final remainingTests = await _subscriptionService.getRemainingFreeTests();
-
-
-    // If backend confirms payment, allow access
-    if (hasUserPaid) {
-      _proceedWithGame();
-      return;
-    }
-
-    // If not paid, show prompt (hard if trial expired)
-    final trialExpired = await _subscriptionService.isTrialExpired();
-    final settings = await CbtSettingsHelper.getSettings();
-    if (!mounted) return;
-
-    // if (!canTakeTest || trialExpired) {
-
-    //   final allowProceed = await showDialog<bool>(
-    //     context: context,
-    //     barrierDismissible: true,
-    //     builder: (context) => SubscriptionEnforcementDialog(
-    //       isHardBlock: true,
-    //       remainingTests: remainingTests,
-    //       amount: settings.amount,
-    //       discountRate: settings.discountRate,
-    //       onSubscribed: () async {
-
-    //         await userProvider.refreshCurrentUser();
-    //         if (mounted) {
-    //           setState(() {});
-    //         }
-    //       },
-    //     ),
-    //   );
-    //   if (allowProceed == true) {
-    //     _proceedWithGame();
-    //   }
-    //   return;
-    // }
-
-    // Legacy subscription dialog disabled. Plans screen now handles CBT paywall.
     _proceedWithGame();
   }
 
@@ -484,7 +431,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                             gradient: LinearGradient(
                               colors: [
                                 _colorForId(_selectedSubject!),
-                                _colorForId(_selectedSubject!).withValues(alpha: 0.7),
+                                _colorForId(_selectedSubject!)
+                                    .withValues(alpha: 0.7),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(20),
@@ -919,7 +867,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                 decoration: BoxDecoration(
                   color: subjectColor.withValues(alpha: 0.1),
                   border: Border(
-                    bottom: BorderSide(color: subjectColor.withValues(alpha: 0.2)),
+                    bottom:
+                        BorderSide(color: subjectColor.withValues(alpha: 0.2)),
                   ),
                 ),
                 child: Row(
@@ -1026,8 +975,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                                     ]
                                                   : [
                                                       subjectColor,
-                                                      subjectColor
-                                                          .withValues(alpha: 0.7)
+                                                      subjectColor.withValues(
+                                                          alpha: 0.7)
                                                     ],
                                             ),
                                             borderRadius:
@@ -1066,7 +1015,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                           gradient: LinearGradient(
                                             colors: [
                                               subjectColor,
-                                              subjectColor.withValues(alpha: 0.7),
+                                              subjectColor.withValues(
+                                                  alpha: 0.7),
                                             ],
                                           ),
                                           borderRadius:
@@ -1182,7 +1132,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                         ),
                                         decoration: BoxDecoration(
                                           color: isSelected
-                                              ? subjectColor.withValues(alpha: 0.1)
+                                              ? subjectColor.withValues(
+                                                  alpha: 0.1)
                                               : null,
                                           border: Border(
                                             top: BorderSide(
@@ -1204,7 +1155,8 @@ class _GameSubjectModalState extends State<GameSubjectModal>
                                                         colors: [
                                                           subjectColor,
                                                           subjectColor
-                                                              .withValues(alpha: 0.7),
+                                                              .withValues(
+                                                                  alpha: 0.7),
                                                         ],
                                                       )
                                                     : null,
@@ -1366,4 +1318,3 @@ class ParticlePainter extends CustomPainter {
   @override
   bool shouldRepaint(ParticlePainter oldDelegate) => true;
 }
-

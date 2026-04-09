@@ -386,39 +386,6 @@ class _CBTDashboardState extends State<CBTDashboard>
     }
   }
 
-  // Future<void> _maybeShowEntryPaymentPrompt() async {
-  //   final cbtUserProvider =
-  //       Provider.of<CbtUserProvider>(context, listen: false);
-  //   if (cbtUserProvider.hasPaid == true) return;
-
-  //   if (_isShowingEntryPrompt) return;
-  //   _isShowingEntryPrompt = true;
-
-  //   final settings = await CbtSettingsHelper.getSettings();
-  //   final remainingDays = await _subscriptionService.getRemainingFreeTests();
-  //   final trialExpired = await _subscriptionService.isTrialExpired();
-  //   if (!mounted) return;
-
-  //   await showDialog(
-  //     context: context,
-  //     barrierDismissible: true,
-  //     builder: (context) => SubscriptionEnforcementDialog(
-  //       isHardBlock: trialExpired,
-  //       remainingTests: remainingDays,
-  //       amount: settings.amount,
-  //       discountRate: settings.discountRate,
-  //       onSubscribed: () {
-  //         if (mounted) {
-  //           setState(() {
-  //             _cachedCanTakeTest = true;
-  //           });
-  //         }
-  //       },
-  //     ),
-  //   );
-  //   _isShowingEntryPrompt = false;
-  // }
-
   Future<void> _maybeShowEntryPlans() async {
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);

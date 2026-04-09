@@ -26,7 +26,6 @@ class CbtUserService {
       );
 
       if (response.statusCode == 200) {
-
         final decoded = json.decode(response.body);
 
         if (decoded['success'] == true && decoded['data'] != null) {
@@ -63,7 +62,6 @@ class CbtUserService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-
         final decoded = json.decode(response.body);
 
         if (decoded['success'] == true && decoded['data'] != null) {
@@ -105,7 +103,6 @@ class CbtUserService {
         'phone': phone,
       };
 
-
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -145,7 +142,6 @@ class CbtUserService {
         'email': email,
         'password': password,
       };
-
 
       final response = await http.post(
         Uri.parse(url),
@@ -194,7 +190,6 @@ class CbtUserService {
         body: json.encode(body),
       );
 
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
         if (decoded['success'] == true && decoded['data'] != null) {
@@ -219,7 +214,6 @@ class CbtUserService {
     String? reference,
   }) async {
     try {
-
       final existingUser = await fetchUserByEmail(email);
 
       if (existingUser != null) {
@@ -240,100 +234,6 @@ class CbtUserService {
     }
   }
 
-  Future<CbtUserModel> updateUserAfterPayment({
-    required String email,
-    required String name,
-    required String profilePicture,
-    required String reference,
-  }) async {
-    try {
-      if (apiKey.isEmpty) {
-        throw Exception("❌ API key not found in .env file");
-      }
-
-      final existingUser = await fetchUserByEmail(email);
-
-      if (existingUser == null) {
-        throw Exception("User not found. Cannot update payment reference.");
-      }
-
-      final updatedUser = existingUser.copyWith(
-        name: name,
-        profilePicture: profilePicture,
-        subscribed: 1,
-        reference: reference,
-      );
-      return await updateUser(updatedUser);
-    } catch (e) {
-      throw Exception("Error updating user after payment: $e");
-    }
-  }
-
-  /// Handles payment success flow: wait, fetch user (with retries), update, verify.
-  Future<CbtUserModel?> processPaymentSuccessAndVerifyUser({
-    required String email,
-    required String name,
-    required String profilePicture,
-    required String reference,
-    int maxFetchAttempts = 3,
-  }) async {
-    await Future.delayed(const Duration(seconds: 1));
-
-    CbtUserModel? user;
-    int attempt = 0;
-    while (attempt < maxFetchAttempts) {
-      try {
-        user = await fetchUserByEmail(email);
-        if (user != null) {
-          break;
-        } else {
-        }
-      } catch (e) {
-      // Intentionally ignored.
-    }
-      attempt++;
-      await Future.delayed(const Duration(milliseconds: 500));
-    }
-
-    if (user == null) {
-      return null;
-    }
-
-    final updatedUser = user.copyWith(
-      name: name,
-      profilePicture: profilePicture,
-      subscribed: 1,
-      reference: reference,
-    );
-
-    try {
-      await updateUserAfterPayment(
-        email: email,
-        name: name,
-        profilePicture: profilePicture,
-        reference: reference,
-      );
-    } catch (e) {
-      return null;
-    }
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    CbtUserModel? verifiedUser;
-    try {
-      verifiedUser = await fetchUserByEmail(email);
-      if (verifiedUser != null && verifiedUser.reference == reference) {
-        return verifiedUser;
-      } else {
-        return verifiedUser;
-      }
-    } catch (e) {
-      return null;
-    }
-  }
-
-
-  // update user details 
- // Future<
+  // update user details
+  // Future<
 }
-
