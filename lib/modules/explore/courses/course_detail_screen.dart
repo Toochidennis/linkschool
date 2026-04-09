@@ -107,7 +107,6 @@ class CourseDetailScreen extends StatefulWidget {
   final int? lessonIndex;
   final void Function(int lessonId)? onLessonCompleted;
 
-
   const CourseDetailScreen({
     super.key,
     required this.courseTitle,
@@ -140,8 +139,8 @@ enum _RewardAction {
 }
 
 class _CourseDetailScreenState extends State<CourseDetailScreen>
-    with SingleTickerProviderStateMixin,WidgetsBindingObserver  {
-      static const platform = MethodChannel('com.linkskool.app/downloads');
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static const platform = MethodChannel('com.linkskool.app/downloads');
   late final LessonDetailProvider _lessonDetailProvider;
   final LessonAttendanceProvider _lessonAttendanceProvider =
       LessonAttendanceProvider();
@@ -193,17 +192,17 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isMinor = false;
   bool _isNavigatingAway = false;
   bool _hasAttendance = false;
-bool _shouldShowAdOnResume = false;
+  bool _shouldShowAdOnResume = false;
   String? _lastMetaSignature;
 
   AppOpenAd? _appOpenAd;
-bool _isAppOpenAdLoaded = false;
+  bool _isAppOpenAdLoaded = false;
 
-DateTime? _lastPauseTime;
+  DateTime? _lastPauseTime;
 
   String? _assignmentSubmissionType; // Store the submission type
-final TextEditingController _linkController = TextEditingController();
-final TextEditingController _textController = TextEditingController();
+  final TextEditingController _linkController = TextEditingController();
+  final TextEditingController _textController = TextEditingController();
   // Interstitial Ad
   InterstitialAd? _interstitialAd;
   bool _isInterstitialAdLoaded = false;
@@ -220,34 +219,35 @@ final TextEditingController _textController = TextEditingController();
   bool get _shouldShowCertificate =>
       _isFinalLesson && certificateUrl?.isNotEmpty == true;
 // Check if user has submitted assignment
-bool get _hasSubmittedAssignment {
-  final submission = _submission;
-  if (submission == null) return false;
+  bool get _hasSubmittedAssignment {
+    final submission = _submission;
+    if (submission == null) return false;
 
-  final assignment = submission.assignment;
-  final hasAssignment = assignment != null &&
-      (assignment is String
-          ? assignment.trim().isNotEmpty
-          : assignment is List
-              ? assignment.isNotEmpty
-              : assignment is Map
-                  ? assignment.isNotEmpty
-                  : true);
-  final hasLink = submission.linkUrl?.trim().isNotEmpty == true;
-  final hasText = submission.textContent?.trim().isNotEmpty == true;
+    final assignment = submission.assignment;
+    final hasAssignment = assignment != null &&
+        (assignment is String
+            ? assignment.trim().isNotEmpty
+            : assignment is List
+                ? assignment.isNotEmpty
+                : assignment is Map
+                    ? assignment.isNotEmpty
+                    : true);
+    final hasLink = submission.linkUrl?.trim().isNotEmpty == true;
+    final hasText = submission.textContent?.trim().isNotEmpty == true;
 
-  return hasAssignment || hasLink || hasText;
-}
+    return hasAssignment || hasLink || hasText;
+  }
 
 // Get the submitted assignment URL
-String? get _submittedAssignmentUrl {
-  final submission = _submission;
-  if (submission == null) return null;
-  final assignmentFile = submission.assignmentFile;
-  if (assignmentFile == null) return null;
-  final value = assignmentFile.toString().trim();
-  return value.isEmpty ? null : value;
-}
+  String? get _submittedAssignmentUrl {
+    final submission = _submission;
+    if (submission == null) return null;
+    final assignmentFile = submission.assignmentFile;
+    if (assignmentFile == null) return null;
+    final value = assignmentFile.toString().trim();
+    return value.isEmpty ? null : value;
+  }
+
   String? get _effectiveSessionStart =>
       liveSessionStartTime?.isNotEmpty == true ? liveSessionStartTime : null;
   String? get _effectiveSessionEnd =>
@@ -255,7 +255,6 @@ String? get _submittedAssignmentUrl {
   String? get _effectiveAssignmentUrl =>
       assignmentUrl?.isNotEmpty == true ? assignmentUrl : widget.assignmentUrl;
   String? get _effectiveAssignmentDescription =>
-
       assignmentDescription?.isNotEmpty == true
           ? assignmentDescription
           : widget.assignmentDescription;
@@ -298,6 +297,7 @@ String? get _submittedAssignmentUrl {
     }
     unawaited(_silentRefreshLessonDetail());
   }
+
   String _formattedAssignmentDeadline() {
     final raw = assignmentDueDate;
     if (raw == null || raw.trim().isEmpty) {
@@ -381,7 +381,7 @@ String? get _submittedAssignmentUrl {
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.6,
-            color:Colors.black,
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 6),
@@ -417,45 +417,46 @@ String? get _submittedAssignmentUrl {
   }
 
   Widget _buildCompactCountdownItem(String label, String value) {
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text(
-        label,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: Colors.black,
-        ),
-      ),
-      const SizedBox(height: 3),
-      Container(
-        width: 44,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white30),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          value,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
           style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
           ),
         ),
-      ),
-    ],
-  );
-}
-       bool _isInitializing = false;
-       bool _hasAppliedLessonData = false;
+        const SizedBox(height: 3),
+        Container(
+          width: 44,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.white30),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-RewardedAd? _rewardedAd;
-bool _isRewardedAdLoaded = false;
-bool _isRewardedAdLoading = false;
+  bool _isInitializing = false;
+  bool _hasAppliedLessonData = false;
+
+  RewardedAd? _rewardedAd;
+  bool _isRewardedAdLoaded = false;
+  bool _isRewardedAdLoading = false;
   bool _quizUnlocked = false;
   bool _assignmentResubmitUnlocked = false;
   String? _quizRetryMessage;
@@ -467,9 +468,6 @@ bool _isRewardedAdLoading = false;
     return emailRegex.hasMatch(email);
   }
 
-
- 
-
   // Assignment submission state
   bool _isAssignmentSubmitted = false;
   String? _lastInitializedUrl;
@@ -478,84 +476,78 @@ bool _isRewardedAdLoading = false;
   final List<Map<String, dynamic>> _courseVideos = [];
 
   @override
-void initState() {
-  super.initState();
-  _lessonDetailProvider = LessonDetailProvider();
-  _tabController = TabController(length: 3, vsync: this);
-  _countdownStream = Stream<int>.periodic(
-    const Duration(seconds: 1),
-    (i) => i,
-  ).asBroadcastStream();
-  _loadSubmissionStatus();
-  _loadActiveProfile();
+  void initState() {
+    super.initState();
+    _lessonDetailProvider = LessonDetailProvider();
+    _tabController = TabController(length: 3, vsync: this);
+    _countdownStream = Stream<int>.periodic(
+      const Duration(seconds: 1),
+      (i) => i,
+    ).asBroadcastStream();
+    _loadSubmissionStatus();
+    _loadActiveProfile();
 
-  WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
 
-
-  if (widget.courseTitle.isNotEmpty ||
-      widget.courseDescription.isNotEmpty ||
-      widget.videoUrl?.isNotEmpty == true) {
-    _seedContentFromWidget();
-  }
-
-
-  
-  // Only seed widget data, don't initialize video yet
-  if (widget.courseTitle.isNotEmpty ||
-      widget.courseDescription.isNotEmpty ||
-      widget.videoUrl?.isNotEmpty == true) {
-    _seedContentFromWidget();
-  }
-  
-  if (_courseVideos.isNotEmpty) {
-    _loadCompletionStatus();
-    _loadPendingAssignmentData();
-    _loadQuizData();
-  }
-  
-  // Check if we have video URL from widget
-  final initialVideoUrl = _effectiveVideoUrl;
-  if (initialVideoUrl != null && initialVideoUrl.isNotEmpty) {
-    _hasVideo = true;
-  }
-  
-  // DON'T initialize video here - wait for lesson data
-  
-  // Initialize interstitial ad
-  _loadInterstitialAd();
-  // Preload rewarded ad early so it's ready when user taps
-  _loadRewardedAd();
-   Future.delayed(const Duration(seconds: 2), () {
-    if (mounted) {
-      _loadAppOpenAd();
+    if (widget.courseTitle.isNotEmpty ||
+        widget.courseDescription.isNotEmpty ||
+        widget.videoUrl?.isNotEmpty == true) {
+      _seedContentFromWidget();
     }
-  });
-}
 
+    // Only seed widget data, don't initialize video yet
+    if (widget.courseTitle.isNotEmpty ||
+        widget.courseDescription.isNotEmpty ||
+        widget.videoUrl?.isNotEmpty == true) {
+      _seedContentFromWidget();
+    }
 
-@override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-  super.didChangeAppLifecycleState(state);
-  
-  if (state == AppLifecycleState.paused) {
-    // Only mark for ad if not navigating away
-    if (!_isNavigatingAway) {
-      _lastPauseTime = DateTime.now();
-      _shouldShowAdOnResume = true;
-    } else {
+    if (_courseVideos.isNotEmpty) {
+      _loadCompletionStatus();
+      _loadPendingAssignmentData();
+      _loadQuizData();
     }
-  } else if (state == AppLifecycleState.resumed) {
-    // Only show ad if it was a real background event
-    if (_shouldShowAdOnResume) {
-      _showAppOpenAd();
-      _shouldShowAdOnResume = false;
-    } else {
+
+    // Check if we have video URL from widget
+    final initialVideoUrl = _effectiveVideoUrl;
+    if (initialVideoUrl != null && initialVideoUrl.isNotEmpty) {
+      _hasVideo = true;
     }
-    
-    // Reset navigation flag
-    _isNavigatingAway = false;
+
+    // DON'T initialize video here - wait for lesson data
+
+    // Initialize interstitial ad
+    _loadInterstitialAd();
+    // Preload rewarded ad early so it's ready when user taps
+    _loadRewardedAd();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _loadAppOpenAd();
+      }
+    });
   }
-}
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      // Only mark for ad if not navigating away
+      if (!_isNavigatingAway) {
+        _lastPauseTime = DateTime.now();
+        _shouldShowAdOnResume = true;
+      } else {}
+    } else if (state == AppLifecycleState.resumed) {
+      // Only show ad if it was a real background event
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      } else {}
+
+      // Reset navigation flag
+      _isNavigatingAway = false;
+    }
+  }
 
   void _seedContentFromWidget() {
     final initialUrl = widget.videoUrl ?? '';
@@ -572,9 +564,7 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
       });
   }
 
-
-  // calculate age range for ads 
-  
+  // calculate age range for ads
 
   int? _computeAgeFromBirthDate(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
@@ -596,15 +586,14 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
           dob = f.parseStrict(trimmed);
           break;
         } catch (_) {
-      // Intentionally ignored.
-    }
+          // Intentionally ignored.
+        }
       }
     }
     if (dob == null) return null;
     final now = DateTime.now();
     int age = now.year - dob.year;
-    final hadBirthdayThisYear =
-        (now.month > dob.month) ||
+    final hadBirthdayThisYear = (now.month > dob.month) ||
         (now.month == dob.month && now.day >= dob.day);
     if (!hadBirthdayThisYear) age -= 1;
     return age < 0 ? null : age;
@@ -625,334 +614,327 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
   }
 
   void _loadAppOpenAd() {
-  // Don't load if user is a minor
-  // if (_isMinor == true) return;
-  
-  final AdRequest request;
-  if (_isMinor == true) {
-    request = AdRequest(nonPersonalizedAds: true);
-  } else {
-    request = AdRequest();
-  }
+    // Don't load if user is a minor
+    // if (_isMinor == true) return;
 
-  AppOpenAd.load(
-    adUnitId: EnvConfig.programAdsOpenApiKey,
-    request: request,
-  
-    adLoadCallback: AppOpenAdLoadCallback(
-      onAdLoaded: (AppOpenAd ad) {
-        _appOpenAd = ad;
-        if (mounted) {
-          setState(() {
-            _isAppOpenAdLoaded = true;
-          });
-        }
-      },
-      onAdFailedToLoad: (LoadAdError error) {
-        if (mounted) {
-          setState(() {
-            _isAppOpenAdLoaded = false;
-          });
-        }
-      },
-    ),
-   
-  );
-}
+    final AdRequest request;
+    if (_isMinor == true) {
+      request = AdRequest(nonPersonalizedAds: true);
+    } else {
+      request = AdRequest();
+    }
 
-
-
-
-void _showAppOpenAd() {
-  // Check if enough time has passed since last ad
-  // if (_lastAppOpenAdTime != null) {
-  //   final timeSinceLastAd = DateTime.now().difference(_lastAppOpenAdTime!);
-  //   if (timeSinceLastAd < _minTimeBetweenAds) {
-
-  //     return;
-  //   }
-  // }
-
-  
-
-  if (_isAppOpenAdLoaded && _appOpenAd != null) {
-    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdShowedFullScreenContent: (AppOpenAd ad) {
-      },
-      onAdDismissedFullScreenContent: (AppOpenAd ad) {
-        ad.dispose();
-        _appOpenAd = null;
-        _isAppOpenAdLoaded = false;
-    
-        // Reload for next time
-        _loadAppOpenAd();
-      },
-      onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
-        ad.dispose();
-        _appOpenAd = null;
-        _isAppOpenAdLoaded = false;
-        // Reload for next time
-        _loadAppOpenAd();
-      },
+    AppOpenAd.load(
+      adUnitId: EnvConfig.programAdsOpenApiKey,
+      request: request,
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (AppOpenAd ad) {
+          _appOpenAd = ad;
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isAppOpenAdLoaded = false;
+            });
+          }
+        },
+      ),
     );
-    
-    _appOpenAd!.show();
-  } else {
-  }
-}
-
-void _loadRewardedAd() {
-  if (_isRewardedAdLoaded || _isRewardedAdLoading) {
-    return;
-  }
-  _isRewardedAdLoading = true;
-  final AdRequest request;
-  if (_isMinor == true) {
-    request = AdRequest(nonPersonalizedAds: true);
-  } else {
-    request = AdRequest();
   }
 
-  RewardedAd.load(
-    adUnitId: EnvConfig.programRewardsAdsKey,
-    request: request,
-    rewardedAdLoadCallback: RewardedAdLoadCallback(
-      onAdLoaded: (RewardedAd ad) {
-        _rewardedAd = ad;
-        if (mounted) {
-          setState(() {
-            _isRewardedAdLoaded = true;
+  void _showAppOpenAd() {
+    // Check if enough time has passed since last ad
+    // if (_lastAppOpenAdTime != null) {
+    //   final timeSinceLastAd = DateTime.now().difference(_lastAppOpenAdTime!);
+    //   if (timeSinceLastAd < _minTimeBetweenAds) {
+
+    //     return;
+    //   }
+    // }
+
+    if (_isAppOpenAdLoaded && _appOpenAd != null) {
+      _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (AppOpenAd ad) {},
+        onAdDismissedFullScreenContent: (AppOpenAd ad) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+
+          // Reload for next time
+          _loadAppOpenAd();
+        },
+        onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
+          ad.dispose();
+          _appOpenAd = null;
+          _isAppOpenAdLoaded = false;
+          // Reload for next time
+          _loadAppOpenAd();
+        },
+      );
+
+      _appOpenAd!.show();
+    } else {}
+  }
+
+  void _loadRewardedAd() {
+    if (_isRewardedAdLoaded || _isRewardedAdLoading) {
+      return;
+    }
+    _isRewardedAdLoading = true;
+    final AdRequest request;
+    if (_isMinor == true) {
+      request = AdRequest(nonPersonalizedAds: true);
+    } else {
+      request = AdRequest();
+    }
+
+    RewardedAd.load(
+      adUnitId: EnvConfig.programRewardsAdsKey,
+      request: request,
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          _rewardedAd = ad;
+          if (mounted) {
+            setState(() {
+              _isRewardedAdLoaded = true;
+              _isRewardedAdLoading = false;
+            });
+          } else {
             _isRewardedAdLoading = false;
-          });
-        } else {
-          _isRewardedAdLoading = false;
-        }
-      },
-      onAdFailedToLoad: (LoadAdError error) {
-        if (mounted) {
-          setState(() {
-            _isRewardedAdLoaded = false;
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          if (mounted) {
+            setState(() {
+              _isRewardedAdLoaded = false;
+              _isRewardedAdLoading = false;
+            });
+          } else {
             _isRewardedAdLoading = false;
-          });
-        } else {
-          _isRewardedAdLoading = false;
-        }
-      },
-    ),
-  );
-}
-
-void _showRewardedAdAndUnlock(_RewardAction action) {
-  if (_isRewardedAdLoaded && _rewardedAd != null) {
-    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdShowedFullScreenContent: (RewardedAd ad) {
-      },
-      onAdDismissedFullScreenContent: (RewardedAd ad) {
-        ad.dispose();
-        _rewardedAd = null;
-        _isRewardedAdLoaded = false;
-        // Reload for next time
-        _loadRewardedAd();
-      },
-      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-        ad.dispose();
-        _rewardedAd = null;
-        _isRewardedAdLoaded = false;
-        // Reload for next time
-        _loadRewardedAd();
-      },
+          }
+        },
+      ),
     );
+  }
 
-    _rewardedAd!.show(
-      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        if (action == _RewardAction.quizRetake) {
-          // Unlock the quiz
+  void _showRewardedAdAndUnlock(_RewardAction action) {
+    if (_isRewardedAdLoaded && _rewardedAd != null) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (RewardedAd ad) {},
+        onAdDismissedFullScreenContent: (RewardedAd ad) {
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedAdLoaded = false;
+          // Reload for next time
+          _loadRewardedAd();
+        },
+        onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedAdLoaded = false;
+          // Reload for next time
+          _loadRewardedAd();
+        },
+      );
+
+      _rewardedAd!.show(
+        onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+          if (action == _RewardAction.quizRetake) {
+            // Unlock the quiz
+            setState(() {
+              _quizUnlocked = true;
+            });
+
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Quiz unlocked! You can now retake the quiz.'),
+                backgroundColor: Color(0xFF4CAF50),
+                duration: Duration(seconds: 3),
+              ),
+            );
+
+            // Navigate to quiz after a short delay
+            Future.delayed(const Duration(seconds: 1), () {
+              _navigateToQuiz();
+            });
+            return;
+          }
+
+          // Unlock assignment resubmission
           setState(() {
-            _quizUnlocked = true;
+            _assignmentResubmitUnlocked = true;
           });
 
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Quiz unlocked! You can now retake the quiz.'),
+              content: Text(
+                  'Resubmission unlocked! You can now update your assignment.'),
               backgroundColor: Color(0xFF4CAF50),
               duration: Duration(seconds: 3),
             ),
           );
 
-          // Navigate to quiz after a short delay
           Future.delayed(const Duration(seconds: 1), () {
-            _navigateToQuiz();
+            if (mounted) {
+              _openSubmitAssignmentPage(context);
+            }
           });
-          return;
-        }
-
-        // Unlock assignment resubmission
-        setState(() {
-          _assignmentResubmitUnlocked = true;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Resubmission unlocked! You can now update your assignment.'),
-            backgroundColor: Color(0xFF4CAF50),
-            duration: Duration(seconds: 3),
-          ),
-        );
-
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            _openSubmitAssignmentPage(context);
-          }
-        });
-      },
-    );
-  } else {
-    // Ad not loaded, show error
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ad not ready yet. Please try again.'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-    // Try to load the ad
-    _loadRewardedAd();
+        },
+      );
+    } else {
+      // Ad not loaded, show error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ad not ready yet. Please try again.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      // Try to load the ad
+      _loadRewardedAd();
+    }
   }
-}
 
-void _showUnlockRewardDialog(_RewardAction action) {
-  int retrySeconds = 0;
-  String? retryMessage;
-  Timer? retryTimer;
+  void _showUnlockRewardDialog(_RewardAction action) {
+    int retrySeconds = 0;
+    String? retryMessage;
+    Timer? retryTimer;
 
-  void startRetryCountdown(StateSetter setDialogState) {
-    retryTimer?.cancel();
-    retrySeconds = 10;
-    retryMessage = 'Ad not ready yet. Please retry in $retrySeconds seconds.';
-    setDialogState(() {});
-
-    retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (retrySeconds <= 1) {
-        timer.cancel();
-        retrySeconds = 0;
-        retryMessage = null;
-        setDialogState(() {});
-        return;
-      }
-      retrySeconds -= 1;
+    void startRetryCountdown(StateSetter setDialogState) {
+      retryTimer?.cancel();
+      retrySeconds = 10;
       retryMessage = 'Ad not ready yet. Please retry in $retrySeconds seconds.';
       setDialogState(() {});
-    });
-  }
 
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          final title = action == _RewardAction.quizRetake
-              ? 'Quiz Locked'
-              : 'Resubmission Locked';
-          final message = action == _RewardAction.quizRetake
-              ? 'This feature is locked. Please watch a short ad to unlock quiz retake.'
-              : 'This feature is locked. Please watch a short ad to unlock assignment resubmission.';
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.99,
+      retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (retrySeconds <= 1) {
+          timer.cancel();
+          retrySeconds = 0;
+          retryMessage = null;
+          setDialogState(() {});
+          return;
+        }
+        retrySeconds -= 1;
+        retryMessage =
+            'Ad not ready yet. Please retry in $retrySeconds seconds.';
+        setDialogState(() {});
+      });
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final title = action == _RewardAction.quizRetake
+                ? 'Quiz Locked'
+                : 'Resubmission Locked';
+            final message = action == _RewardAction.quizRetake
+                ? 'This feature is locked. Please watch a short ad to unlock quiz retake.'
+                : 'This feature is locked. Please watch a short ad to unlock assignment resubmission.';
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.black87),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        tooltip: 'Close',
-                      ),
-                    ),
-                    // Lock Icon
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFA500).withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.lock_outline,
-                        size: 40,
-                        color: Color(0xFFFFA500),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Title
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Message
-                    Text(
-                      message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.black87,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    // Info box
-                    if (retryMessage != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3E0),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFFFFB74D).withValues(alpha: 0.3),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.99,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.black87),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          tooltip: 'Close',
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: Color(0xFFFF9800),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              retryMessage!,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade800,
-                              ),
+                      // Lock Icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFA500).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.lock_outline,
+                          size: 40,
+                          color: Color(0xFFFFA500),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Title
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Message
+                      Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Info box
+                      if (retryMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3E0),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFFFB74D)
+                                  .withValues(alpha: 0.3),
                             ),
                           ),
-                        ],
-                      ),
-                    ),],
-                    
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline,
+                                color: Color(0xFFFF9800),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  retryMessage!,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       // const SizedBox(height: 12),
                       // Text(
                       //   retryMessage!,
@@ -963,144 +945,137 @@ void _showUnlockRewardDialog(_RewardAction action) {
                       //     color: Color(0xFFEF5350),
                       //   ),
                       // ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Buttons
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: retrySeconds > 0
-                            ? null
-                            : () {
-                                if (!_isRewardedAdLoaded || _rewardedAd == null) {
-                                  setState(() {
-                                    _quizRetryMessage =
-                                        'Ad not ready yet. Please retry to unlock.';
-                                  });
-                                  startRetryCountdown(setDialogState);
-                                  _loadRewardedAd();
-                                  return;
-                                }
 
-                                setState(() {
-                                  _quizRetryMessage = null;
-                                });
-                                Navigator.pop(context);
-                                _showRewardedAdAndUnlock(action);
-                              },
-                        icon: const Icon(Icons.play_circle_outline, size: 20),
-                        label: Text(
-                          retrySeconds > 0 ? 'Retry in ${retrySeconds}s' : 'Watch Ad To Unlock',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                      const SizedBox(height: 24),
+
+                      // Buttons
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: retrySeconds > 0
+                              ? null
+                              : () {
+                                  if (!_isRewardedAdLoaded ||
+                                      _rewardedAd == null) {
+                                    setState(() {
+                                      _quizRetryMessage =
+                                          'Ad not ready yet. Please retry to unlock.';
+                                    });
+                                    startRetryCountdown(setDialogState);
+                                    _loadRewardedAd();
+                                    return;
+                                  }
+
+                                  setState(() {
+                                    _quizRetryMessage = null;
+                                  });
+                                  Navigator.pop(context);
+                                  _showRewardedAdAndUnlock(action);
+                                },
+                          icon: const Icon(Icons.play_circle_outline, size: 20),
+                          label: Text(
+                            retrySeconds > 0
+                                ? 'Retry in ${retrySeconds}s'
+                                : 'Watch Ad To Unlock',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFA500),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFA500),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
                           ),
-                          elevation: 0,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
-      );
-    },
-  ).then((_) {
-    retryTimer?.cancel();
-  });
-}
+            );
+          },
+        );
+      },
+    ).then((_) {
+      retryTimer?.cancel();
+    });
+  }
 
-Future<void> _navigateToQuiz() async {
-  // Mark that we're navigating away
-  setState(() {
-    _isNavigatingAway = true;
-  });
-  
-  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-  final user = cbtUserProvider.currentUser;
-  final activeProfile = _activeProfile ??
-      user?.profiles.firstWhere(
-        (p) => true,
-        orElse: () => CbtUserProfile(
-          id: 0,
-          firstName: 'User',
-          lastName: '',
-          avatar: null,
+  Future<void> _navigateToQuiz() async {
+    // Mark that we're navigating away
+    setState(() {
+      _isNavigatingAway = true;
+    });
+
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    final user = cbtUserProvider.currentUser;
+    final activeProfile = _activeProfile ??
+        user?.profiles.firstWhere(
+          (p) => true,
+          orElse: () => CbtUserProfile(
+            id: 0,
+            firstName: 'User',
+            lastName: '',
+            avatar: null,
+          ),
+        );
+    final userName =
+        activeProfile != null ? _profileName(activeProfile) : 'User';
+    final userEmail = user?.email ?? '';
+    final userPhone = user?.phone ?? '';
+    final profileId =
+        activeProfile?.id?.toString() ?? widget.profileId?.toString() ?? '0';
+    final currentVideo = _courseVideos[_selectedVideoIndex];
+    final videoTitle = currentVideo['title'] as String;
+
+    final result = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizScreen(
+          courseTitle: widget.courseTitle,
+          lessonTitle: videoTitle,
+          lessonId: widget.lessonId!,
+          cohortId: widget.cohortId,
+          profileId: profileId,
+          userName: userName,
+          userEmail: userEmail,
+          userPhone: userPhone,
         ),
-      );
-  final userName = activeProfile != null ? _profileName(activeProfile) : 'User';
-  final userEmail = user?.email ?? '';
-  final userPhone = user?.phone ?? '';
-  final profileId = activeProfile?.id?.toString() ??
-      widget.profileId?.toString() ??
-      '0';
-  final currentVideo = _courseVideos[_selectedVideoIndex];
-  final videoTitle = currentVideo['title'] as String;
-
-  final result = await Navigator.push<int>(
-    context,
-    MaterialPageRoute(
-      builder: (context) => QuizScreen(
-        courseTitle: widget.courseTitle,
-        lessonTitle: videoTitle,
-        lessonId: widget.lessonId!,
-        cohortId: widget.cohortId,
-        profileId: profileId,
-        userName: userName,
-        userEmail: userEmail,
-        userPhone: userPhone,
       ),
-    ),
-  );
+    );
 
-  // Reset navigation flag when returning
-  setState(() {
-    _isNavigatingAway = false;
-  });
+    // Reset navigation flag when returning
+    setState(() {
+      _isNavigatingAway = false;
+    });
 
-  // Reload quiz data when returning from quiz
-  await _loadQuizData();
+    // Reload quiz data when returning from quiz
+    await _loadQuizData();
 
-  // Reset unlock status
-  setState(() {
-    _quizUnlocked = false;
-  });
-}
-
-  
+    // Reset unlock status
+    setState(() {
+      _quizUnlocked = false;
+    });
+  }
 
   void _loadInterstitialAd() {
-    
     // if user is minor add non-personalized ads
     final AdRequest request;
-     if (_isMinor == true) {
-    request = AdRequest(nonPersonalizedAds: true);
+    if (_isMinor == true) {
+      request = AdRequest(nonPersonalizedAds: true);
+    } else {
+      request = AdRequest();
+    }
 
-  } else {
-
-    request = AdRequest();
-   
-  }
-  
-  
- 
-  
- 
-   
     InterstitialAd.load(
       adUnitId: EnvConfig.programInterstitialAdsApiKey,
-      request:request,
+      request: request,
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {
           _interstitialAd = ad;
@@ -1193,42 +1168,42 @@ Future<void> _navigateToQuiz() async {
       widget.lessons != null && widget.lessonIndex != null;
 
   void _navigateToLesson(int targetIndex) {
-  if (!_hasLessonNavigation) return;
-  final lessons = widget.lessons!;
-  if (targetIndex < 0 || targetIndex >= lessons.length) return;
-  final lesson = lessons[targetIndex];
-  
-  // Mark that we're navigating away
-  setState(() {
-    _isNavigatingAway = true;
-  });
-  
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (context) => CourseDetailScreen(
-        courseTitle: lesson.title,
-        courseName: widget.courseName,
-        courseId: widget.courseId,
-        courseDescription: lesson.description,
-        provider: widget.provider,
-        videoUrl: lesson.videoUrl,
-        assignmentUrl: null,
-        assignmentDescription: null,
-        materialUrl: null,
-        zoomUrl: null,
-        recordedUrl: null,
-        classDate: null,
-        cohortId: widget.cohortId,
-        profileId: widget.profileId,
-        lessonId: lesson.id,
-        lessons: lessons,
-        lessonIndex: targetIndex,
-        onLessonCompleted: widget.onLessonCompleted,
+    if (!_hasLessonNavigation) return;
+    final lessons = widget.lessons!;
+    if (targetIndex < 0 || targetIndex >= lessons.length) return;
+    final lesson = lessons[targetIndex];
+
+    // Mark that we're navigating away
+    setState(() {
+      _isNavigatingAway = true;
+    });
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CourseDetailScreen(
+          courseTitle: lesson.title,
+          courseName: widget.courseName,
+          courseId: widget.courseId,
+          courseDescription: lesson.description,
+          provider: widget.provider,
+          videoUrl: lesson.videoUrl,
+          assignmentUrl: null,
+          assignmentDescription: null,
+          materialUrl: null,
+          zoomUrl: null,
+          recordedUrl: null,
+          classDate: null,
+          cohortId: widget.cohortId,
+          profileId: widget.profileId,
+          lessonId: lesson.id,
+          lessons: lessons,
+          lessonIndex: targetIndex,
+          onLessonCompleted: widget.onLessonCompleted,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _completeLesson() {
     final lessonId = widget.lessonId;
@@ -1271,7 +1246,8 @@ Future<void> _navigateToQuiz() async {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: hasPrev ? () => _navigateToLesson(currentIndex - 1) : null,
+                onPressed:
+                    hasPrev ? () => _navigateToLesson(currentIndex - 1) : null,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   side: BorderSide(color: Colors.grey.shade300),
@@ -1299,7 +1275,8 @@ Future<void> _navigateToQuiz() async {
             const SizedBox(width: 12),
             Expanded(
               child: OutlinedButton(
-                onPressed: hasNext ? () => _navigateToLesson(currentIndex + 1) : null,
+                onPressed:
+                    hasNext ? () => _navigateToLesson(currentIndex + 1) : null,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   side: BorderSide(color: Colors.grey.shade300),
@@ -1317,82 +1294,81 @@ Future<void> _navigateToQuiz() async {
   }
 
   void _applyLessonData(Lesson lesson, {Submission? submission}) {
-  final resolvedVideoUrl =
-      lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
-  final metaSignature = _buildLessonMetaSignature(lesson, submission);
-  
-  
-  // Prevent applying the same lesson data twice
-  if (_hasAppliedLessonData && _lastMetaSignature == metaSignature) {
-    return;
-  }
-  
-  setState(() {
-    _dataLoaded = true;
-    _hasAppliedLessonData = true;
-    courseTitle = lesson.title;
-    courseDescription = lesson.description;
-    videoUrl = resolvedVideoUrl;
-    assignmentUrl = lesson.assignmentUrl;
-    assignmentDescription = lesson.assignmentInstructions;
-    materialUrl = lesson.materialUrl;
-    certificateUrl = lesson.certificateUrl;
-    assignmentDueDate = lesson.assignmentDueDate;
-    _submission = submission;
-    _assignmentSubmissionType = lesson.assignmentSubmissionType; // ADD THIS LINE
-    _hasAttendance = lesson.hasAttendance;
-    zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
-        ? lesson.liveSessionInfo!.url
-        : widget.zoomUrl;
-    recordedUrl = lesson.recordedVideoUrl;
-    classDate = lesson.lessonDate;
-    liveSessionStartTime = lesson.liveSessionInfo?.startTime;
-    liveSessionEndTime = lesson.liveSessionInfo?.endTime;
-    _hasVideo = resolvedVideoUrl.isNotEmpty;
-    _lessonHasQuiz = lesson.hasQuiz;
-    _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
-    _isFinalLesson = lesson.isFinalLesson;
-    _quizTaken = false;
-    _quizScore = 0;
-    _courseVideos
-      ..clear()
-      ..add({
-        'title': lesson.title,
-        'description': lesson.description,
-        'url': resolvedVideoUrl,
-        'type': _hasVideo ? 'video' : 'reading',
-        'duration': '',
-        'content': lesson.description,
-        'isCompleted': false,
-      });
-    _selectedVideoIndex = 0;
-    _lastMetaSignature = metaSignature;
-    
-    // Pre-fill controllers if submission exists
-    if (submission != null) {
-      if (submission.linkUrl != null) {
-        _linkController.text = submission.linkUrl!;
-      }
-      if (submission.textContent != null) {
-        _textController.text = submission.textContent!;
-      }
-    }
-  });
+    final resolvedVideoUrl =
+        lesson.videoUrl.isNotEmpty ? lesson.videoUrl : lesson.recordedVideoUrl;
+    final metaSignature = _buildLessonMetaSignature(lesson, submission);
 
-  // NOW initialize video after lesson data is applied
-  if (_hasVideo && resolvedVideoUrl.isNotEmpty) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_isInitializing) {
-        _initializeVideo(resolvedVideoUrl);
+    // Prevent applying the same lesson data twice
+    if (_hasAppliedLessonData && _lastMetaSignature == metaSignature) {
+      return;
+    }
+
+    setState(() {
+      _dataLoaded = true;
+      _hasAppliedLessonData = true;
+      courseTitle = lesson.title;
+      courseDescription = lesson.description;
+      videoUrl = resolvedVideoUrl;
+      assignmentUrl = lesson.assignmentUrl;
+      assignmentDescription = lesson.assignmentInstructions;
+      materialUrl = lesson.materialUrl;
+      certificateUrl = lesson.certificateUrl;
+      assignmentDueDate = lesson.assignmentDueDate;
+      _submission = submission;
+      _assignmentSubmissionType =
+          lesson.assignmentSubmissionType; // ADD THIS LINE
+      _hasAttendance = lesson.hasAttendance;
+      zoomUrl = lesson.liveSessionInfo?.url?.isNotEmpty == true
+          ? lesson.liveSessionInfo!.url
+          : widget.zoomUrl;
+      recordedUrl = lesson.recordedVideoUrl;
+      classDate = lesson.lessonDate;
+      liveSessionStartTime = lesson.liveSessionInfo?.startTime;
+      liveSessionEndTime = lesson.liveSessionInfo?.endTime;
+      _hasVideo = resolvedVideoUrl.isNotEmpty;
+      _lessonHasQuiz = lesson.hasQuiz;
+      _lessonHasAssignment = (lesson.assignmentUrl?.isNotEmpty ?? false);
+      _isFinalLesson = lesson.isFinalLesson;
+      _quizTaken = false;
+      _quizScore = 0;
+      _courseVideos
+        ..clear()
+        ..add({
+          'title': lesson.title,
+          'description': lesson.description,
+          'url': resolvedVideoUrl,
+          'type': _hasVideo ? 'video' : 'reading',
+          'duration': '',
+          'content': lesson.description,
+          'isCompleted': false,
+        });
+      _selectedVideoIndex = 0;
+      _lastMetaSignature = metaSignature;
+
+      // Pre-fill controllers if submission exists
+      if (submission != null) {
+        if (submission.linkUrl != null) {
+          _linkController.text = submission.linkUrl!;
+        }
+        if (submission.textContent != null) {
+          _textController.text = submission.textContent!;
+        }
       }
     });
-  }
-  
-  _loadCompletionStatus();
-  _loadPendingAssignmentData();
-  _loadQuizData();
-}
 
+    // NOW initialize video after lesson data is applied
+    if (_hasVideo && resolvedVideoUrl.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isInitializing) {
+          _initializeVideo(resolvedVideoUrl);
+        }
+      });
+    }
+
+    _loadCompletionStatus();
+    _loadPendingAssignmentData();
+    _loadQuizData();
+  }
 
   Future<void> _loadCompletionStatus() async {
     final prefs = await SharedPreferences.getInstance();
@@ -1587,7 +1563,8 @@ Future<void> _navigateToQuiz() async {
       await prefs.remove('active_profile_dob');
       // Clear provider persisted values as well
       if (mounted) {
-        Provider.of<ExploreCourseProvider>(context, listen: false).clearPersistedProfile();
+        Provider.of<ExploreCourseProvider>(context, listen: false)
+            .clearPersistedProfile();
       }
     }
   }
@@ -1603,7 +1580,8 @@ Future<void> _navigateToQuiz() async {
       final prefs = await SharedPreferences.getInstance();
       final savedProfileId = prefs.getInt('active_profile_id');
       if (savedProfileId != null) {
-        final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+        final cbtUserProvider =
+            Provider.of<CbtUserProvider>(context, listen: false);
         final profiles = cbtUserProvider.currentUser?.profiles ?? [];
         if (profiles.isNotEmpty) {
           final profile = profiles.firstWhere(
@@ -1699,7 +1677,7 @@ Future<void> _navigateToQuiz() async {
     final name = "$first $last".trim();
     if (name.isNotEmpty) return name;
     if (profile.id != null) return "Profile ${profile.id}";
-   
+
     return 'Profile';
   }
 
@@ -1710,7 +1688,8 @@ Future<void> _navigateToQuiz() async {
     return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
   }
 
-  Widget _avatarWidget({String? imageUrl, required String name, double radius = 20}) {
+  Widget _avatarWidget(
+      {String? imageUrl, required String name, double radius = 20}) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return CircleAvatar(
         radius: radius,
@@ -1733,8 +1712,10 @@ Future<void> _navigateToQuiz() async {
     );
   }
 
-  void _showAccountSwitcherDialog(BuildContext context, dynamic user, {Function(CbtUserProfile)? onProfileSelected}) {
-    final profiles = (user?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
+  void _showAccountSwitcherDialog(BuildContext context, dynamic user,
+      {Function(CbtUserProfile)? onProfileSelected}) {
+    final profiles =
+        (user?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
     final activeProfileId = _activeProfile?.id;
     showDialog(
       context: context,
@@ -1776,7 +1757,8 @@ Future<void> _navigateToQuiz() async {
                             setState(() {
                               _activeProfile = profile;
                             });
-                            _saveActiveProfileId(profile.id, birthDate: profile.birthDate);
+                            _saveActiveProfileId(profile.id,
+                                birthDate: profile.birthDate);
                             _applyAgeGate(profile.birthDate);
                             onProfileSelected?.call(profile);
                           },
@@ -1797,19 +1779,21 @@ Future<void> _navigateToQuiz() async {
                         MaterialPageRoute(
                           builder: (context) => CreateUserProfileScreen(
                             userId: user.id.toString(),
-
                           ),
                         ),
                       );
                       // If profile was created successfully, refresh user data
                       if (result == true && mounted) {
                         // Refresh user list if needed and select the newly created profile
-                        final updatedUser = Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+                        final updatedUser =
+                            Provider.of<CbtUserProvider>(context, listen: false)
+                                .currentUser;
                         final profiles = (updatedUser?.profiles ?? []);
                         setState(() {
                           if (profiles.isNotEmpty) {
                             _activeProfile = profiles.last;
-                            _saveActiveProfileId(_activeProfile?.id, birthDate: _activeProfile?.birthDate);
+                            _saveActiveProfileId(_activeProfile?.id,
+                                birthDate: _activeProfile?.birthDate);
                             _applyAgeGate(_activeProfile?.birthDate);
                             onProfileSelected?.call(_activeProfile!);
                           } else {
@@ -1950,7 +1934,8 @@ Future<void> _navigateToQuiz() async {
       return uri.pathSegments.isNotEmpty ? uri.pathSegments.last : null;
     }
 
-    if (uri.host.contains('youtube.com') || uri.host.contains('m.youtube.com')) {
+    if (uri.host.contains('youtube.com') ||
+        uri.host.contains('m.youtube.com')) {
       final vParam = uri.queryParameters['v'];
       if (vParam != null && vParam.isNotEmpty) return vParam;
       final segments = uri.pathSegments;
@@ -1966,156 +1951,160 @@ Future<void> _navigateToQuiz() async {
   }
 
   /// Check if URL is a YouTube video
-/// Check if URL is a YouTube video
-bool isYouTubeUrl(String url) {
-  if (url.isEmpty) return false;
-  
-  final sanitized = url.replaceAll(r'\/', '/').trim().toLowerCase();
-  
-  // Check for YouTube domain patterns
-  if (sanitized.contains('youtube.com') || 
-      sanitized.contains('youtu.be') ||
-      sanitized.contains('m.youtube.com') ||
-      sanitized.contains('youtube.com/shorts/') ||
-      sanitized.contains('youtube.com/live/') ||
-      sanitized.contains('youtube.com/embed/')) {
-    return true;
+  /// Check if URL is a YouTube video
+  bool isYouTubeUrl(String url) {
+    if (url.isEmpty) return false;
+
+    final sanitized = url.replaceAll(r'\/', '/').trim().toLowerCase();
+
+    // Check for YouTube domain patterns
+    if (sanitized.contains('youtube.com') ||
+        sanitized.contains('youtu.be') ||
+        sanitized.contains('m.youtube.com') ||
+        sanitized.contains('youtube.com/shorts/') ||
+        sanitized.contains('youtube.com/live/') ||
+        sanitized.contains('youtube.com/embed/')) {
+      return true;
+    }
+
+    // Check if it's just a YouTube ID (11 characters)
+    if (sanitized.length == 11 &&
+        RegExp(r'^[a-za-z0-9_-]{11}$').hasMatch(sanitized)) {
+      return true;
+    }
+
+    return false;
   }
-  
-  // Check if it's just a YouTube ID (11 characters)
-  if (sanitized.length == 11 && 
-      RegExp(r'^[a-za-z0-9_-]{11}$').hasMatch(sanitized)) {
-    return true;
-  }
-  
-  return false;
-}
 
   /// Determine the live session status based on start/end time and recorded URL.
   /// Priority: Check live session first, then fallback to recorded URL.
-Map<String, dynamic> _getZoomStatus() {
-  final hasRecordedUrl =
-      _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
-  final hasLiveUrl =
-      _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
+  Map<String, dynamic> _getZoomStatus() {
+    final hasRecordedUrl =
+        _effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty;
+    final hasLiveUrl =
+        _effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty;
 
-  // If neither URL exists, return unavailable
-  if (!hasRecordedUrl && !hasLiveUrl) {
+    // If neither URL exists, return unavailable
+    if (!hasRecordedUrl && !hasLiveUrl) {
+      return {
+        'status': 'unavailable',
+        'message': 'No live class or recording available for this lesson.',
+        'buttonText': '',
+        'url': null,
+      };
+    }
+
+    // PRIORITY 1: Check zoom URL with date logic FIRST
+    if (hasLiveUrl) {
+      // If no time provided, assume session is available
+      if (_effectiveSessionStart == null || _effectiveSessionStart!.isEmpty) {
+        return {
+          'status': 'available',
+          'message': 'Live session link is available.',
+          'buttonText': 'Join Youtube Live Stream',
+          'url': _effectiveZoomUrl,
+        };
+      }
+
+      try {
+        final classDateTime = DateTime.parse(_effectiveSessionStart!);
+        final now = DateTime.now();
+
+        final DateTime classEndTime;
+        if (_effectiveSessionEnd != null && _effectiveSessionEnd!.isNotEmpty) {
+          classEndTime = DateTime.parse(_effectiveSessionEnd!);
+        } else {
+          // Assuming class duration is 3 hours (fallback)
+          classEndTime = classDateTime.add(const Duration(hours: 3));
+        }
+
+        // Session hasn't started yet
+        if (now.isBefore(classDateTime)) {
+          final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
+          final dateStr = formatter.format(classDateTime);
+
+          // Calculate time until class starts
+          final difference = classDateTime.difference(now);
+          String timeUntil = '';
+          if (difference.inDays > 0) {
+            timeUntil =
+                ' (in ${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'})';
+          } else if (difference.inHours > 0) {
+            timeUntil =
+                ' (in ${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'})';
+          } else if (difference.inMinutes > 0) {
+            timeUntil =
+                ' (in ${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'})';
+          }
+
+          return {
+            'status': 'scheduled',
+            'message': 'Live session scheduled for $dateStr$timeUntil',
+            'buttonText': 'Join Zoom Live Class',
+            'url': _effectiveZoomUrl,
+            'classDate': classDateTime,
+          };
+        }
+
+        // Session is ongoing
+        if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
+          return {
+            'status': 'ongoing',
+            'message': 'Live session is in progress! Join now to participate.',
+            'buttonText': 'Join Zoom Live Class',
+            'url': _effectiveZoomUrl,
+          };
+        }
+
+        // Session has ended - check if recorded video is available
+        if (hasRecordedUrl) {
+          return {
+            'status': 'recorded',
+            'message':
+                'Live session has ended. Watch the recorded session at your convenience.',
+            'buttonText': 'Watch Recorded Class',
+            'url': _effectiveRecordedUrl,
+          };
+        }
+
+        // Session has ended but no recorded video yet
+        return {
+          'status': 'pending',
+          'message':
+              'Live session has ended. The recorded session will be available soon. Check back later.',
+          'buttonText': 'Recording Pending',
+          'url': null,
+        };
+      } catch (e) {
+        // If time parsing fails but we have a live URL, make it available
+        return {
+          'status': 'available',
+          'message': 'Live session link is available.',
+          'buttonText': 'Join Youtube Live Stream',
+          'url': _effectiveZoomUrl,
+        };
+      }
+    }
+
+    // PRIORITY 2: If only recorded URL exists (no live URL), show it
+    if (hasRecordedUrl) {
+      return {
+        'status': 'recorded',
+        'message':
+            'This lesson is available as a recorded class. Watch it anytime.',
+        'buttonText': 'Watch Recorded Class',
+        'url': _effectiveRecordedUrl,
+      };
+    }
+
+    // Fallback (should never reach here)
     return {
       'status': 'unavailable',
-      'message': 'No live class or recording available for this lesson.',
+      'message': 'No content available for this lesson at the moment.',
       'buttonText': '',
       'url': null,
     };
   }
-
-  // PRIORITY 1: Check zoom URL with date logic FIRST
-  if (hasLiveUrl) {
-    // If no time provided, assume session is available
-    if (_effectiveSessionStart == null || _effectiveSessionStart!.isEmpty) {
-      return {
-        'status': 'available',
-        'message': 'Live session link is available.',
-        'buttonText': 'Join Youtube Live Stream',
-        'url': _effectiveZoomUrl,
-      };
-    }
-
-    try {
-      final classDateTime = DateTime.parse(_effectiveSessionStart!);
-      final now = DateTime.now();
-
-      final DateTime classEndTime;
-      if (_effectiveSessionEnd != null && _effectiveSessionEnd!.isNotEmpty) {
-        classEndTime = DateTime.parse(_effectiveSessionEnd!);
-      } else {
-        // Assuming class duration is 3 hours (fallback)
-        classEndTime = classDateTime.add(const Duration(hours: 3));
-      }
-
-      // Session hasn't started yet
-      if (now.isBefore(classDateTime)) {
-        final formatter = DateFormat('EEEE, MMMM d \'at\' h:mm a');
-        final dateStr = formatter.format(classDateTime);
-        
-        // Calculate time until class starts
-        final difference = classDateTime.difference(now);
-        String timeUntil = '';
-        if (difference.inDays > 0) {
-          timeUntil = ' (in ${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'})';
-        } else if (difference.inHours > 0) {
-          timeUntil = ' (in ${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'})';
-        } else if (difference.inMinutes > 0) {
-          timeUntil = ' (in ${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'})';
-        }
-        
-        return {
-          'status': 'scheduled',
-          'message': 'Live session scheduled for $dateStr$timeUntil',
-          'buttonText': 'Join Zoom Live Class',
-          'url': _effectiveZoomUrl,
-          'classDate': classDateTime,
-        };
-      }
-
-      // Session is ongoing
-      if (now.isAfter(classDateTime) && now.isBefore(classEndTime)) {
-        return {
-          'status': 'ongoing',
-          'message': 'Live session is in progress! Join now to participate.',
-          'buttonText': 'Join Zoom Live Class',
-          'url': _effectiveZoomUrl,
-        };
-      }
-
-      // Session has ended - check if recorded video is available
-      if (hasRecordedUrl) {
-        return {
-          'status': 'recorded',
-          'message':
-              'Live session has ended. Watch the recorded session at your convenience.',
-          'buttonText': 'Watch Recorded Class',
-          'url': _effectiveRecordedUrl,
-        };
-      }
-
-      // Session has ended but no recorded video yet
-      return {
-        'status': 'pending',
-        'message':
-            'Live session has ended. The recorded session will be available soon. Check back later.',
-        'buttonText': 'Recording Pending',
-        'url': null,
-      };
-    } catch (e) {
-      // If time parsing fails but we have a live URL, make it available
-      return {
-        'status': 'available',
-        'message': 'Live session link is available.',
-        'buttonText': 'Join Youtube Live Stream',
-        'url': _effectiveZoomUrl,
-      };
-    }
-  }
-
-  // PRIORITY 2: If only recorded URL exists (no live URL), show it
-  if (hasRecordedUrl) {
-    return {
-      'status': 'recorded',
-      'message': 'This lesson is available as a recorded class. Watch it anytime.',
-      'buttonText': 'Watch Recorded Class',
-      'url': _effectiveRecordedUrl,
-    };
-  }
-
-  // Fallback (should never reach here)
-  return {
-    'status': 'unavailable',
-    'message': 'No content available for this lesson at the moment.',
-    'buttonText': '',
-    'url': null,
-  };
-}
 
   /// Launch URL in browser
   Future<void> _launchUrl(String url) async {
@@ -2145,225 +2134,216 @@ Map<String, dynamic> _getZoomStatus() {
     }
   }
 
-Future<void> _initializeVideo(String url) async {
-  // Guard 1: Prevent multiple simultaneous initializations
-  if (_isInitializing) {
-    return;
-  }
-  
-  // Guard 2: Don't re-initialize the same video
-  if (_lastInitializedUrl == url && _isVideoInitialized) {
-    return;
-  }
-  
-  _isInitializing = true;
-  
-  
-  try {
-    // Store old controllers
-    final oldYoutubeController = _youtubeController;
-    final oldVideoController = _videoController;
-    final oldChewieController = _chewieController;
-    
-    
-    if (mounted) {
-      setState(() {
-        _youtubeController = null;
-        _videoController = null;
-        _chewieController = null;
-        _isVideoInitialized = false;
-        _isYoutubeVideo = false;
-        _videoError = null;
-      });
-    }
-    
-    // Wait for frame to render
-    await Future.delayed(const Duration(milliseconds: 100));
-    
-    // Now dispose old controllers safely
-    if (oldYoutubeController != null) {
-      try {
-        oldYoutubeController.dispose();
-      } catch (e) {
-      // Intentionally ignored.
-    }
-    }
-    if (oldChewieController != null) {
-      try {
-        oldChewieController.dispose();
-      } catch (e) {
-      // Intentionally ignored.
-    }
-    }
-    if (oldVideoController != null) {
-      try {
-        await oldVideoController.dispose();
-      } catch (e) {
-      // Intentionally ignored.
-    }
+  Future<void> _initializeVideo(String url) async {
+    // Guard 1: Prevent multiple simultaneous initializations
+    if (_isInitializing) {
+      return;
     }
 
-    // Wait for disposal to complete
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    final sanitized = url.replaceAll(r'\/', '/').trim();
-    
-    // Check if it's a YouTube video
-    if (isYouTubeUrl(sanitized)) {
-      await _initializeYouTubePlayer(sanitized);
-    } else {
-      await _initializeDirectVideoPlayer(sanitized);
-    }
-    
-    // Mark URL as initialized
-    _lastInitializedUrl = url;
-    
-  } catch (e) {
-    if (mounted) {
-      setState(() {
-        _isVideoInitialized = true;
-        _isYoutubeVideo = false;
-        _videoError = 'Failed to load video: ${e.toString()}';
-      });
-    }
-  } finally {
-    _isInitializing = false;
-  }
-}
-
-Future<void> _initializeYouTubePlayer(String url) async {
-  try {
-    final videoId = extractYouTubeId(url);
-
-    if (videoId == null || videoId.isEmpty) {
-      throw Exception('Could not extract YouTube video ID from: $url');
+    // Guard 2: Don't re-initialize the same video
+    if (_lastInitializedUrl == url && _isVideoInitialized) {
+      return;
     }
 
-    if (videoId.length != 11) {
-      throw Exception('Invalid YouTube video ID length: $videoId');
-    }
+    _isInitializing = true;
 
-    // Create new controller
-    final controller = YoutubePlayerController(
-      initialVideoId: videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: false,
-        mute: false,
-        enableCaption: true,
-        controlsVisibleAtStart: true,
-        hideControls: false,
-      ),
-    );
+    try {
+      // Store old controllers
+      final oldYoutubeController = _youtubeController;
+      final oldVideoController = _videoController;
+      final oldChewieController = _chewieController;
 
-    // Add error listener
-    controller.addListener(() {
-      if (controller.value.hasError == true) {
-        if (mounted) {
-          setState(() {
-            _videoError = 'YouTube error: ${controller.value.metaData}';
-          });
+      if (mounted) {
+        setState(() {
+          _youtubeController = null;
+          _videoController = null;
+          _chewieController = null;
+          _isVideoInitialized = false;
+          _isYoutubeVideo = false;
+          _videoError = null;
+        });
+      }
+
+      // Wait for frame to render
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Now dispose old controllers safely
+      if (oldYoutubeController != null) {
+        try {
+          oldYoutubeController.dispose();
+        } catch (e) {
+          // Intentionally ignored.
         }
       }
-    });
+      if (oldChewieController != null) {
+        try {
+          oldChewieController.dispose();
+        } catch (e) {
+          // Intentionally ignored.
+        }
+      }
+      if (oldVideoController != null) {
+        try {
+          await oldVideoController.dispose();
+        } catch (e) {
+          // Intentionally ignored.
+        }
+      }
 
-    // Set everything in one setState
-    if (mounted) {
-      setState(() {
-        _youtubeController = controller;
-        _isYoutubeVideo = true;
-        _isVideoInitialized = true;
-        _videoError = null;
-      });
+      // Wait for disposal to complete
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      final sanitized = url.replaceAll(r'\/', '/').trim();
+
+      // Check if it's a YouTube video
+      if (isYouTubeUrl(sanitized)) {
+        await _initializeYouTubePlayer(sanitized);
+      } else {
+        await _initializeDirectVideoPlayer(sanitized);
+      }
+
+      // Mark URL as initialized
+      _lastInitializedUrl = url;
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = true;
+          _isYoutubeVideo = false;
+          _videoError = 'Failed to load video: ${e.toString()}';
+        });
+      }
+    } finally {
+      _isInitializing = false;
     }
-    
-    
-  } catch (e) {
-    if (mounted) {
-      setState(() {
-        _isVideoInitialized = true;
-        _isYoutubeVideo = false;
-        _videoError = 'Failed to initialize YouTube player: $e';
-      });
-    }
-    throw Exception('Failed to initialize YouTube player: $e');
   }
-}
 
+  Future<void> _initializeYouTubePlayer(String url) async {
+    try {
+      final videoId = extractYouTubeId(url);
 
-Future<void> _initializeDirectVideoPlayer(String url) async {
-  try {
-    
-    if (url.contains('youtube') || url.contains('youtu.be')) {
-      throw Exception('This appears to be a YouTube URL. Please check your YouTube detection logic.');
+      if (videoId == null || videoId.isEmpty) {
+        throw Exception('Could not extract YouTube video ID from: $url');
+      }
+
+      if (videoId.length != 11) {
+        throw Exception('Invalid YouTube video ID length: $videoId');
+      }
+
+      // Create new controller
+      final controller = YoutubePlayerController(
+        initialVideoId: videoId,
+        flags: const YoutubePlayerFlags(
+          autoPlay: false,
+          mute: false,
+          enableCaption: true,
+          controlsVisibleAtStart: true,
+          hideControls: false,
+        ),
+      );
+
+      // Add error listener
+      controller.addListener(() {
+        if (controller.value.hasError == true) {
+          if (mounted) {
+            setState(() {
+              _videoError = 'YouTube error: ${controller.value.metaData}';
+            });
+          }
+        }
+      });
+
+      // Set everything in one setState
+      if (mounted) {
+        setState(() {
+          _youtubeController = controller;
+          _isYoutubeVideo = true;
+          _isVideoInitialized = true;
+          _videoError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = true;
+          _isYoutubeVideo = false;
+          _videoError = 'Failed to initialize YouTube player: $e';
+        });
+      }
+      throw Exception('Failed to initialize YouTube player: $e');
     }
-    
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
-    await _videoController!.initialize();
-    await _videoController!.pause();
+  }
 
-    _chewieController = ChewieController(
-      videoPlayerController: _videoController!,
-      autoPlay: true,
-      looping: false,
-      aspectRatio: 16 / 9,
-      allowFullScreen: true,
-      fullScreenByDefault: false,
-      deviceOrientationsOnEnterFullScreen: const [
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ],
-      deviceOrientationsAfterFullScreen: const [
-        DeviceOrientation.portraitUp,
-      ],
-      systemOverlaysAfterFullScreen: SystemUiOverlay.values,
-      placeholder: Container(
-        color: Colors.black,
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF6366F1),
+  Future<void> _initializeDirectVideoPlayer(String url) async {
+    try {
+      if (url.contains('youtube') || url.contains('youtu.be')) {
+        throw Exception(
+            'This appears to be a YouTube URL. Please check your YouTube detection logic.');
+      }
+
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+      await _videoController!.initialize();
+      await _videoController!.pause();
+
+      _chewieController = ChewieController(
+        videoPlayerController: _videoController!,
+        autoPlay: true,
+        looping: false,
+        aspectRatio: 16 / 9,
+        allowFullScreen: true,
+        fullScreenByDefault: false,
+        deviceOrientationsOnEnterFullScreen: const [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ],
+        deviceOrientationsAfterFullScreen: const [
+          DeviceOrientation.portraitUp,
+        ],
+        systemOverlaysAfterFullScreen: SystemUiOverlay.values,
+        placeholder: Container(
+          color: Colors.black,
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF6366F1),
+            ),
           ),
         ),
-      ),
-      errorBuilder: (context, errorMessage) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white, size: 48),
-              const SizedBox(height: 16),
-              const Text(
-                'Error loading video',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                errorMessage,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        );
-      },
-      materialProgressColors: ChewieProgressColors(
-        playedColor: const Color(0xFF6366F1),
-        handleColor: const Color(0xFF6366F1),
-        backgroundColor: Colors.grey,
-        bufferedColor: Colors.grey.withValues(alpha: 0.5),
-      ),
-    );
+        errorBuilder: (context, errorMessage) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 48),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error loading video',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  errorMessage,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        },
+        materialProgressColors: ChewieProgressColors(
+          playedColor: const Color(0xFF6366F1),
+          handleColor: const Color(0xFF6366F1),
+          backgroundColor: Colors.grey,
+          bufferedColor: Colors.grey.withValues(alpha: 0.5),
+        ),
+      );
 
-    setState(() {
-      _isYoutubeVideo = false;
-      _isVideoInitialized = true;
-    });
-    
-    
-  } catch (e) {
-    throw Exception('Failed to initialize video: $e');
+      setState(() {
+        _isYoutubeVideo = false;
+        _isVideoInitialized = true;
+      });
+    } catch (e) {
+      throw Exception('Failed to initialize video: $e');
+    }
   }
-}
-
 
   void _hideControlsAfterDelay() {
     Future.delayed(const Duration(seconds: 3), () {
@@ -2566,1050 +2546,1392 @@ Future<void> _initializeDirectVideoPlayer(String url) async {
         : '$minutes:$seconds';
   }
 
- @override
-void dispose() {
-  WidgetsBinding.instance.removeObserver(this);
-  
-  // Dispose app open ad
-  _appOpenAd?.dispose();
-  _videoController?.dispose();
-  _chewieController?.dispose();
-  _youtubeController?.dispose();
-  _interstitialAd?.dispose();
-  _tabController.dispose();
-  
-  // Dispose text controllers
-  _linkController.dispose();
-  _textController.dispose();
-  _lessonDetailProvider.dispose();
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
 
-  // Ensure system UI is restored when leaving this screen
-  SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.manual,
-    overlays: SystemUiOverlay.values,
-  );
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
+    // Dispose app open ad
+    _appOpenAd?.dispose();
+    _videoController?.dispose();
+    _chewieController?.dispose();
+    _youtubeController?.dispose();
+    _interstitialAd?.dispose();
+    _tabController.dispose();
 
-  super.dispose();
-}
+    // Dispose text controllers
+    _linkController.dispose();
+    _textController.dispose();
+    _lessonDetailProvider.dispose();
 
-Future<void> _handleBackButton() async {
-  final currentOrientation = MediaQuery.of(context).orientation;
-
-  if (currentOrientation == Orientation.landscape) {
-    // In landscape: rotate to portrait, don't pop
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-    await SystemChrome.setEnabledSystemUIMode(
+    // Ensure system UI is restored when leaving this screen
+    SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
     );
-  } else {
-    // In portrait: mark navigation and show interstitial ad then pop the screen
-    setState(() {
-      _isNavigatingAway = true;
-    });
-    _showInterstitialAdAndNavigateBack();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    super.dispose();
   }
-}
+
+  Future<void> _handleBackButton() async {
+    final currentOrientation = MediaQuery.of(context).orientation;
+
+    if (currentOrientation == Orientation.landscape) {
+      // In landscape: rotate to portrait, don't pop
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
+    } else {
+      // In portrait: mark navigation and show interstitial ad then pop the screen
+      setState(() {
+        _isNavigatingAway = true;
+      });
+      _showInterstitialAdAndNavigateBack();
+    }
+  }
 
   Future<void> _openSubmitAssignmentPage(BuildContext context) async {
-  // Get active profile
-  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-  final user = cbtUserProvider.currentUser;
-  CbtUserProfile? modalActiveProfile = _activeProfile ?? 
-      user?.profiles.firstWhere((p) => true, 
-        orElse: () => CbtUserProfile(id: 0, firstName: 'User', lastName: '', avatar: null));
-  
-  String? selectedFileName;
-  String? selectedFilePath;
-  String? selectedFileBase64;
-  String? linkError;
-  bool isPickingFile = false;
-  final FocusNode linkFocusNode = FocusNode();
-  
-  // Get the submission type
-  final submissionType = _assignmentSubmissionType ?? 'upload';
-  final isPastDue = _isAssignmentPastDue();
-  _loadInterstitialAd();
+    // Get active profile
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    final user = cbtUserProvider.currentUser;
+    CbtUserProfile? modalActiveProfile = _activeProfile ??
+        user?.profiles.firstWhere((p) => true,
+            orElse: () => CbtUserProfile(
+                id: 0, firstName: 'User', lastName: '', avatar: null));
 
-  await Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (context) {
-        return WillPopScope(
-          onWillPop: () async {
-            if (mounted) {
-              setState(() {
-                _isNavigatingAway = true;
-              });
-            }
-            _showInterstitialAdAndPop(context);
-            return false;
-          },
-          child: Scaffold(
-            backgroundColor: const Color(0xFFFAFAFA),
-            appBar: AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                onPressed: () {
-                  if (mounted) {
-                    setState(() {
-                      _isNavigatingAway = true;
-                    });
-                  }
-                  _showInterstitialAdAndPop(context);
-                },
-              ),
-              title: const Text(
-                'Submit Assignment',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+    String? selectedFileName;
+    String? selectedFilePath;
+    String? selectedFileBase64;
+    String? linkError;
+    bool isPickingFile = false;
+    final FocusNode linkFocusNode = FocusNode();
+
+    // Get the submission type
+    final submissionType = _assignmentSubmissionType ?? 'upload';
+    final isPastDue = _isAssignmentPastDue();
+    _loadInterstitialAd();
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return WillPopScope(
+            onWillPop: () async {
+              if (mounted) {
+                setState(() {
+                  _isNavigatingAway = true;
+                });
+              }
+              _showInterstitialAdAndPop(context);
+              return false;
+            },
+            child: Scaffold(
+              backgroundColor: const Color(0xFFFAFAFA),
+              appBar: AppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                  onPressed: () {
+                    if (mounted) {
+                      setState(() {
+                        _isNavigatingAway = true;
+                      });
+                    }
+                    _showInterstitialAdAndPop(context);
+                  },
+                ),
+                title: const Text(
+                  'Submit Assignment',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            body: SafeArea(
-              child: StatefulBuilder(
-                builder: (BuildContext context, StateSetter setModalState) {
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 500),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Profile Section
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.04),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              'Submitting as:',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: Color(0xFF6B7280),
-                                              ),
-                                            ),
-                                            TextButton.icon(
-                                              onPressed: () {
-                                                _showAccountSwitcherDialog(context, user, 
-                                                  onProfileSelected: (profile) {
-                                                    setModalState(() {
-                                                      modalActiveProfile = profile;
-                                                    });
-                                                  });
-                                              },
-                                              icon: const Icon(Icons.swap_horiz, size: 18),
-                                              label: const Text('Change'),
-                                              style: TextButton.styleFrom(
-                                                foregroundColor: const Color(0xFF6366F1),
-                                                textStyle: const TextStyle(
+              body: SafeArea(
+                child: StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setModalState) {
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(20),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 500),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Profile Section
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.04),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                'Submitting as:',
+                                                style: TextStyle(
                                                   fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color(0xFF6B7280),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _buildProfileItem(
-                                          name: _profileName(modalActiveProfile!),
-                                          email: user?.email ?? '',
-                                          phone: user?.phone ?? '',
-                                          imageUrl: modalActiveProfile!.avatar,
-                                          isSelected: true,
-                                          onTap: () {},
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  
-                                  // Submission Content Section
-                                  Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.04),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Dynamic submission fields based on type
-                                        if (submissionType == 'upload') ...[
-                                          Builder(
-                                            builder: (context) {
-                                              Future<void> pickFile() async {
-                                                if (isPickingFile) return;
-                                                setModalState(() {
-                                                  isPickingFile = true;
-                                                });
-                                                if (mounted) {
-                                                  setState(() {
-                                                    _isNavigatingAway = true;
+                                              TextButton.icon(
+                                                onPressed: () {
+                                                  _showAccountSwitcherDialog(
+                                                      context, user,
+                                                      onProfileSelected:
+                                                          (profile) {
+                                                    setModalState(() {
+                                                      modalActiveProfile =
+                                                          profile;
+                                                    });
                                                   });
-                                                }
-                                                try {
-                                                  FilePickerResult? result =
-                                                      await FilePicker.platform.pickFiles(
-                                                    type: FileType.custom,
-                                                    allowedExtensions: ['pdf'],
-                                                  );
-                                                  if (result != null) {
-                                                    final filePath = result.files.single.path;
-                                                    final fileName = result.files.single.name;
-                                                    final ext =
-                                                        fileName.split('.').last.toLowerCase();
-                                                    if (filePath != null) {
-                                                      if (ext != 'pdf') {
-                                                        setModalState(() {
-                                                          selectedFileName = null;
-                                                          pdfError = 'Only PDF files are allowed.';
-                                                        });
-                                                        return;
-                                                      }
-                                                      // Check file size (limit to 1MB)
-                                                      final file = File(filePath);
-                                                      final fileSize = await file.length();
-                                                      if (fileSize > 1024 * 1024) {
-                                                        setModalState(() {
-                                                          selectedFileName = null;
-                                                          pdfError = 'PDF file must not exceed 1MB.';
-                                                        });
-                                                        return;
-                                                      }
-                                                      // Show loading indicator while encoding
-                                                      setModalState(() {
-                                                        selectedFileName = 'Encoding file...';
-                                                        pdfError = null;
-                                                      });
-                                                      // Read file bytes
-                                                      final bytes = await file.readAsBytes();
-                                                      // Encode to base64
-                                                      final base64String =
-                                                          await compute(_encodeToBase64, bytes);
-                                                      setModalState(() {
-                                                        selectedFileName = fileName;
-                                                        selectedFilePath = filePath;
-                                                        selectedFileBase64 = base64String;
-                                                        pdfError = null;
-                                                      });
-                                                    }
-                                                  }
-                                                } catch (e) {
+                                                },
+                                                icon: const Icon(
+                                                    Icons.swap_horiz,
+                                                    size: 18),
+                                                label: const Text('Change'),
+                                                style: TextButton.styleFrom(
+                                                  foregroundColor:
+                                                      const Color(0xFF6366F1),
+                                                  textStyle: const TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          _buildProfileItem(
+                                            name: _profileName(
+                                                modalActiveProfile!),
+                                            email: user?.email ?? '',
+                                            phone: user?.phone ?? '',
+                                            imageUrl:
+                                                modalActiveProfile!.avatar,
+                                            isSelected: true,
+                                            onTap: () {},
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Submission Content Section
+                                    Container(
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.04),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Dynamic submission fields based on type
+                                          if (submissionType == 'upload') ...[
+                                            Builder(
+                                              builder: (context) {
+                                                Future<void> pickFile() async {
+                                                  if (isPickingFile) return;
                                                   setModalState(() {
-                                                    selectedFileName = null;
-                                                  });
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Error picking file: $e'),
-                                                      backgroundColor: Colors.red,
-                                                    ),
-                                                  );
-                                                } finally {
-                                                  setModalState(() {
-                                                    isPickingFile = false;
+                                                    isPickingFile = true;
                                                   });
                                                   if (mounted) {
                                                     setState(() {
-                                                      _isNavigatingAway = false;
+                                                      _isNavigatingAway = true;
                                                     });
                                                   }
+                                                  try {
+                                                    const blockedVideoExtensions =
+                                                        <String>{
+                                                      'mp4',
+                                                      'mov',
+                                                      'avi',
+                                                      'mkv',
+                                                      'wmv',
+                                                      'flv',
+                                                      'webm',
+                                                      'm4v',
+                                                      '3gp',
+                                                      'mpeg',
+                                                      'mpg',
+                                                    };
+                                                    FilePickerResult? result =
+                                                        await FilePicker
+                                                            .platform
+                                                            .pickFiles(
+                                                      type: FileType.any,
+                                                    );
+                                                    if (result != null) {
+                                                      final filePath = result
+                                                          .files.single.path;
+                                                      final fileName = result
+                                                          .files.single.name;
+                                                      final ext = (result
+                                                                  .files
+                                                                  .single
+                                                                  .extension ??
+                                                              (fileName
+                                                                      .contains(
+                                                                          '.')
+                                                                  ? fileName
+                                                                      .split(
+                                                                          '.')
+                                                                      .last
+                                                                  : ''))
+                                                          .toLowerCase();
+                                                      if (filePath != null) {
+                                                        if (blockedVideoExtensions
+                                                            .contains(ext)) {
+                                                          setModalState(() {
+                                                            selectedFileName =
+                                                                null;
+                                                            pdfError =
+                                                                'Video files are not allowed.';
+                                                          });
+                                                          return;
+                                                        }
+                                                        // Check file size (limit to 10MB)
+                                                        final file =
+                                                            File(filePath);
+                                                        final fileSize =
+                                                            await file.length();
+                                                        if (fileSize >
+                                                            10 * 1024 * 1024) {
+                                                          setModalState(() {
+                                                            selectedFileName =
+                                                                null;
+                                                            pdfError =
+                                                                'File must not exceed 10MB.';
+                                                          });
+                                                          return;
+                                                        }
+                                                        // Show loading indicator while encoding
+                                                        setModalState(() {
+                                                          selectedFileName =
+                                                              'Encoding file...';
+                                                          pdfError = null;
+                                                        });
+                                                        // Read file bytes
+                                                        final bytes = await file
+                                                            .readAsBytes();
+                                                        // Encode to base64
+                                                        final base64String =
+                                                            await compute(
+                                                                _encodeToBase64,
+                                                                bytes);
+                                                        setModalState(() {
+                                                          selectedFileName =
+                                                              fileName;
+                                                          selectedFilePath =
+                                                              filePath;
+                                                          selectedFileBase64 =
+                                                              base64String;
+                                                          pdfError = null;
+                                                        });
+                                                      }
+                                                    }
+                                                  } catch (e) {
+                                                    setModalState(() {
+                                                      selectedFileName = null;
+                                                    });
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'Error picking file: $e'),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  } finally {
+                                                    setModalState(() {
+                                                      isPickingFile = false;
+                                                    });
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _isNavigatingAway =
+                                                            false;
+                                                      });
+                                                    }
+                                                  }
                                                 }
-                                              }
 
-                                              return Column(
-                                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                                children: [
-                                                  CustomPaint(
-                                                    painter: _DashedRRectPainter(
-                                                      color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                                                      strokeWidth: 2,
-                                                      dashLength: 8,
-                                                      gapLength: 6,
-                                                      radius: 16,
-                                                    ),
-                                                    child: Container(
-                                                      padding: const EdgeInsets.symmetric(
-                                                        vertical: 32,
-                                                        horizontal: 24,
+                                                return Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .stretch,
+                                                  children: [
+                                                    CustomPaint(
+                                                      painter:
+                                                          _DashedRRectPainter(
+                                                        color: const Color(
+                                                                0xFF6366F1)
+                                                            .withValues(
+                                                                alpha: 0.3),
+                                                        strokeWidth: 2,
+                                                        dashLength: 8,
+                                                        gapLength: 6,
+                                                        radius: 16,
                                                       ),
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFF6366F1).withValues(alpha: 0.02),
-                                                        borderRadius: BorderRadius.circular(16),
-                                                      ),
-                                                      child: Column(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        children: [
-                                                          Container(
-                                                            padding: const EdgeInsets.all(16),
-                                                            decoration: BoxDecoration(
-                                                              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                                              shape: BoxShape.circle,
-                                                            ),
-                                                            child: const Icon(
-                                                              Icons.cloud_upload_outlined,
-                                                              size: 40,
-                                                              color: Color(0xFF6366F1),
-                                                            ),
-                                                          ),
-                                                          const SizedBox(height: 16),
-                                                          const Text(
-                                                            'Drag & Drop your file here',
-                                                            textAlign: TextAlign.center,
-                                                            style: TextStyle(
-                                                              fontSize: 16,
-                                                              fontWeight: FontWeight.w600,
-                                                              color: Color(0xFF1A1A2E),
-                                                            ),
-                                                          ),
-                                                          const SizedBox(height: 8),
-                                                          Text(
-                                                            'or',
-                                                            style: TextStyle(
-                                                              fontSize: 13,
-                                                              color: Colors.grey.shade500,
-                                                            ),
-                                                          ),
-                                                          const SizedBox(height: 12),
-                                                          SizedBox(
-                                                            width: double.infinity,
-                                                            child: ElevatedButton.icon(
-                                                              onPressed: isPickingFile ? null : pickFile,
-                                                              icon: const Icon(Icons.folder_open, size: 20),
-                                                              label: const Text('Browse File'),
-                                                              style: ElevatedButton.styleFrom(
-                                                                backgroundColor: const Color(0xFF6366F1),
-                                                                foregroundColor: Colors.white,
-                                                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                                                elevation: 0,
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius: BorderRadius.circular(12),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          const SizedBox(height: 12),
-                                                          Text(
-                                                            '1 file only • PDF • max 1MB',
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: Colors.grey.shade500,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (selectedFileName != null) ...[
-                                                    const SizedBox(height: 16),
-                                                    Container(
-                                                      padding: const EdgeInsets.all(16),
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFF6366F1).withValues(alpha: 0.05),
-                                                        borderRadius: BorderRadius.circular(12),
-                                                        border: Border.all(
-                                                          color: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                                                        ),
-                                                      ),
-                                                      child: Row(
-                                                        children: [
-                                                          Container(
-                                                            padding: const EdgeInsets.all(8),
-                                                            decoration: BoxDecoration(
-                                                              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                                              borderRadius: BorderRadius.circular(8),
-                                                            ),
-                                                            child: const Icon(
-                                                              Icons.picture_as_pdf,
-                                                              color: Color(0xFF6366F1),
-                                                              size: 20,
-                                                            ),
-                                                          ),
-                                                          const SizedBox(width: 12),
-                                                          Expanded(
-                                                            child: Text(
-                                                              selectedFileName!,
-                                                              style: const TextStyle(
-                                                                fontSize: 14,
-                                                                fontWeight: FontWeight.w500,
-                                                              ),
-                                                              overflow: TextOverflow.ellipsis,
-                                                            ),
-                                                          ),
-                                                          IconButton(
-                                                            icon: const Icon(Icons.close, size: 20),
-                                                            onPressed: () {
-                                                              setModalState(() {
-                                                                selectedFileName = null;
-                                                                selectedFilePath = null;
-                                                                selectedFileBase64 = null;
-                                                              });
-                                                            },
-                                                            color: Colors.grey.shade600,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                  if (pdfError != null)
-                                                    Padding(
-                                                      padding: const EdgeInsets.only(top: 12),
                                                       child: Container(
-                                                        padding: const EdgeInsets.all(12),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.red.withValues(alpha: 0.05),
-                                                          borderRadius: BorderRadius.circular(8),
-                                                          border: Border.all(
-                                                            color: Colors.red.withValues(alpha: 0.2),
-                                                          ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          vertical: 32,
+                                                          horizontal: 24,
                                                         ),
-                                                        child: Row(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: const Color(
+                                                                  0xFF6366F1)
+                                                              .withValues(
+                                                                  alpha: 0.02),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(16),
+                                                        ),
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
                                                           children: [
-                                                            Icon(
-                                                              Icons.error_outline,
-                                                              color: Colors.red.shade700,
-                                                              size: 18,
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(16),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: const Color(
+                                                                        0xFF6366F1)
+                                                                    .withValues(
+                                                                        alpha:
+                                                                            0.1),
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
+                                                              child: const Icon(
+                                                                Icons
+                                                                    .cloud_upload_outlined,
+                                                                size: 40,
+                                                                color: Color(
+                                                                    0xFF6366F1),
+                                                              ),
                                                             ),
-                                                            const SizedBox(width: 8),
-                                                            Expanded(
-                                                              child: Text(
-                                                                pdfError!,
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 13,
+                                                            const SizedBox(
+                                                                height: 16),
+                                                            const Text(
+                                                              'Drag & Drop your file here',
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Color(
+                                                                    0xFF1A1A2E),
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 8),
+                                                            Text(
+                                                              'or',
+                                                              style: TextStyle(
+                                                                fontSize: 13,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade500,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 12),
+                                                            SizedBox(
+                                                              width: double
+                                                                  .infinity,
+                                                              child:
+                                                                  ElevatedButton
+                                                                      .icon(
+                                                                onPressed:
+                                                                    isPickingFile
+                                                                        ? null
+                                                                        : pickFile,
+                                                                icon: const Icon(
+                                                                    Icons
+                                                                        .folder_open,
+                                                                    size: 20),
+                                                                label: const Text(
+                                                                    'Browse File'),
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  backgroundColor:
+                                                                      const Color(
+                                                                          0xFF6366F1),
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  padding: const EdgeInsets
+                                                                      .symmetric(
+                                                                      vertical:
+                                                                          14),
+                                                                  elevation: 0,
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            12),
+                                                                  ),
                                                                 ),
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 12),
+                                                            Text(
+                                                              '1 file only • any type except video • max 10MB',
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade500,
                                                               ),
                                                             ),
                                                           ],
                                                         ),
                                                       ),
                                                     ),
-                                                ],
-                                              );
-                                            },
-                                          ),
-                                        ] else if (submissionType == 'link' || submissionType == 'url') ...[
-                                          if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty) ...[
-                                            const SizedBox(height: 12),
-                                            Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey.shade50,
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: Colors.grey.shade200,
-                                                ),
-                                              ),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
+                                                    if (selectedFileName !=
+                                                        null) ...[
+                                                      const SizedBox(
+                                                          height: 16),
                                                       Container(
-                                                        width: 28,
-                                                        height: 28,
-                                                        decoration: BoxDecoration(
-                                                          color: const Color(0xFF1F2937),
-                                                          borderRadius: BorderRadius.circular(6),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(16),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: const Color(
+                                                                  0xFF6366F1)
+                                                              .withValues(
+                                                                  alpha: 0.05),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
+                                                          border: Border.all(
+                                                            color: const Color(
+                                                                    0xFF6366F1)
+                                                                .withValues(
+                                                                    alpha: 0.2),
+                                                          ),
                                                         ),
-                                                        child: const Icon(
-                                                          Icons.list_alt,
-                                                          color: Colors.white,
-                                                          size: 16,
+                                                        child: Row(
+                                                          children: [
+                                                            Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: const Color(
+                                                                        0xFF6366F1)
+                                                                    .withValues(
+                                                                        alpha:
+                                                                            0.1),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8),
+                                                              ),
+                                                              child: const Icon(
+                                                                Icons
+                                                                    .insert_drive_file,
+                                                                color: Color(
+                                                                    0xFF6366F1),
+                                                                size: 20,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 12),
+                                                            Expanded(
+                                                              child: Text(
+                                                                selectedFileName!,
+                                                                style:
+                                                                    const TextStyle(
+                                                                  fontSize: 14,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                ),
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                            ),
+                                                            IconButton(
+                                                              icon: const Icon(
+                                                                  Icons.close,
+                                                                  size: 20),
+                                                              onPressed: () {
+                                                                setModalState(
+                                                                    () {
+                                                                  selectedFileName =
+                                                                      null;
+                                                                  selectedFilePath =
+                                                                      null;
+                                                                  selectedFileBase64 =
+                                                                      null;
+                                                                });
+                                                              },
+                                                              color: Colors.grey
+                                                                  .shade600,
+                                                            ),
+                                                          ],
                                                         ),
                                                       ),
-                                                      const SizedBox(width: 8),
+                                                    ],
+                                                    if (pdfError != null)
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(top: 12),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(12),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.red
+                                                                .withValues(
+                                                                    alpha:
+                                                                        0.05),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                            border: Border.all(
+                                                              color: Colors.red
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.2),
+                                                            ),
+                                                          ),
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(
+                                                                Icons
+                                                                    .error_outline,
+                                                                color: Colors
+                                                                    .red
+                                                                    .shade700,
+                                                                size: 18,
+                                                              ),
+                                                              const SizedBox(
+                                                                  width: 8),
+                                                              Expanded(
+                                                                child: Text(
+                                                                  pdfError!,
+                                                                  style:
+                                                                      TextStyle(
+                                                                    color: Colors
+                                                                        .red
+                                                                        .shade700,
+                                                                    fontSize:
+                                                                        13,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                          ] else if (submissionType == 'link' ||
+                                              submissionType == 'url') ...[
+                                            if ((_effectiveAssignmentDescription ??
+                                                    '')
+                                                .trim()
+                                                .isNotEmpty) ...[
+                                              const SizedBox(height: 12),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: Colors.grey.shade200,
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Container(
+                                                          width: 28,
+                                                          height: 28,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: const Color(
+                                                                0xFF1F2937),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        6),
+                                                          ),
+                                                          child: const Icon(
+                                                            Icons.list_alt,
+                                                            color: Colors.white,
+                                                            size: 16,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        const Text(
+                                                          'Assignment Instructions',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: Color(
+                                                                0xFF111827),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    Html(
+                                                      data:
+                                                          _effectiveAssignmentDescription,
+                                                      style: {
+                                                        "body": Style(
+                                                          fontSize:
+                                                              FontSize(14),
+                                                          color: Colors.black87,
+                                                          lineHeight:
+                                                              LineHeight(1.4),
+                                                          margin: Margins.zero,
+                                                          padding:
+                                                              HtmlPaddings.zero,
+                                                        ),
+                                                        "p": Style(
+                                                          margin: Margins(
+                                                              bottom:
+                                                                  Margin(6)),
+                                                        ),
+                                                        "ul": Style(
+                                                          margin: Margins(
+                                                              bottom:
+                                                                  Margin(6)),
+                                                          padding: HtmlPaddings(
+                                                              left: HtmlPadding(
+                                                                  18)),
+                                                        ),
+                                                        "ol": Style(
+                                                          margin: Margins(
+                                                              bottom:
+                                                                  Margin(6)),
+                                                          padding: HtmlPaddings(
+                                                              left: HtmlPadding(
+                                                                  18)),
+                                                        ),
+                                                        "li": Style(
+                                                          margin: Margins(
+                                                              bottom:
+                                                                  Margin(2)),
+                                                          padding:
+                                                              HtmlPaddings.zero,
+                                                        ),
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                            // URL/Link input field
+                                            TextField(
+                                              controller: _linkController,
+                                              focusNode: linkFocusNode,
+                                              autofocus: true,
+                                              decoration: InputDecoration(
+                                                labelText:
+                                                    'Assignment Link/URL',
+                                                hintText:
+                                                    'Enter the link to your assignment',
+                                                prefixIcon:
+                                                    const Icon(Icons.link),
+                                                errorText: linkError,
+                                                filled: true,
+                                                fillColor: Colors.grey.shade50,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade300),
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade300),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: const BorderSide(
+                                                    color: Color(0xFF6366F1),
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                              ),
+                                              keyboardType: TextInputType.url,
+                                              textInputAction:
+                                                  TextInputAction.done,
+                                              onChanged: (_) {
+                                                if (linkError != null) {
+                                                  setModalState(() {
+                                                    linkError = null;
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                          ] else if (submissionType ==
+                                              'text') ...[
+                                            // Text input field
+                                            TextField(
+                                              controller: _textController,
+                                              decoration: InputDecoration(
+                                                labelText: 'Assignment Text',
+                                                hintText:
+                                                    'Type your assignment here',
+                                                alignLabelWithHint: true,
+                                                filled: true,
+                                                fillColor: Colors.grey.shade50,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade300),
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade300),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: const BorderSide(
+                                                    color: Color(0xFF6366F1),
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                              ),
+                                              maxLines: 8,
+                                              keyboardType:
+                                                  TextInputType.multiline,
+                                            ),
+                                          ],
+
+                                          const SizedBox(height: 16),
+
+                                          // Info text
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF6366F1)
+                                                  .withValues(alpha: 0.05),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Icon(
+                                                  Icons.info_outline,
+                                                  size: 18,
+                                                  color:
+                                                      const Color(0xFF6366F1),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Text(
+                                                    submissionType == 'upload'
+                                                        ? 'Upload your assignment file (any type except video, max 10MB).'
+                                                        : submissionType ==
+                                                                    'link' ||
+                                                                submissionType ==
+                                                                    'url'
+                                                            ? 'Provide a link to your assignment (e.g., Google Drive, Dropbox).'
+                                                            : 'Type your assignment directly in the text field above.',
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      color: Color(0xFF6B7280),
+                                                      height: 1.5,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Bottom Submit Button (Fixed)
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, -2),
+                              ),
+                            ],
+                          ),
+                          child: SafeArea(
+                            top: false,
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isPastDue
+                                    ? null
+                                    : () async {
+                                        // Get selected profile data
+                                        final name =
+                                            _profileName(modalActiveProfile!);
+                                        final phone = user?.phone ?? '';
+                                        final email = user?.email;
+
+                                        // Validate based on submission type
+                                        if (submissionType == 'upload') {
+                                          if (selectedFileName == null ||
+                                              selectedFileBase64 == null) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                    'Please upload your assignment file'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                        } else if (submissionType == 'link' ||
+                                            submissionType == 'url') {
+                                          if (_linkController.text
+                                              .trim()
+                                              .isEmpty) {
+                                            setModalState(() {
+                                              linkError =
+                                                  'Please enter the assignment link';
+                                            });
+                                            return;
+                                          }
+                                          // Basic URL validation
+                                          if (!_linkController.text
+                                              .trim()
+                                              .startsWith('http')) {
+                                            setModalState(() {
+                                              linkError =
+                                                  'Please enter a valid URL (starting with http:// or https://)';
+                                            });
+                                            return;
+                                          }
+                                          final isReachable =
+                                              await _verifyLinkReachable(
+                                            _linkController.text,
+                                          );
+                                          if (!isReachable) {
+                                            setModalState(() {
+                                              linkError =
+                                                  'The link could not be reached';
+                                            });
+                                            return;
+                                          }
+                                        } else if (submissionType == 'text') {
+                                          if (_textController.text
+                                              .trim()
+                                              .isEmpty) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                    'Please enter your assignment text'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                        }
+
+                                        // Store the navigator context before showing dialog
+                                        final navigatorContext =
+                                            Navigator.of(context).context;
+
+                                        // Show loading dialog
+                                        showDialog(
+                                          context: navigatorContext,
+                                          barrierDismissible: false,
+                                          builder:
+                                              (BuildContext dialogContext) {
+                                            return PopScope(
+                                              canPop: false,
+                                              child: Dialog(
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                elevation: 0,
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(32),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      const CircularProgressIndicator(
+                                                        color:
+                                                            Color(0xFF6366F1),
+                                                        strokeWidth: 3,
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 24),
                                                       const Text(
-                                                        'Assignment Instructions',
+                                                        'Submitting Assignment...',
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors.black87,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Text(
+                                                        'Please wait while we submit your work',
+                                                        textAlign:
+                                                            TextAlign.center,
                                                         style: TextStyle(
                                                           fontSize: 14,
-                                                          fontWeight: FontWeight.w700,
-                                                          color: Color(0xFF111827),
+                                                          color: Colors
+                                                              .grey.shade600,
                                                         ),
                                                       ),
                                                     ],
                                                   ),
-                                                  const SizedBox(height: 8),
-                                                  Html(
-                                                    data: _effectiveAssignmentDescription,
-                                                    style: {
-                                                      "body": Style(
-                                                        fontSize: FontSize(14),
-                                                        color: Colors.black87,
-                                                        lineHeight: LineHeight(1.4),
-                                                        margin: Margins.zero,
-                                                        padding: HtmlPaddings.zero,
-                                                      ),
-                                                      "p": Style(
-                                                        margin: Margins(bottom: Margin(6)),
-                                                      ),
-                                                      "ul": Style(
-                                                        margin: Margins(bottom: Margin(6)),
-                                                        padding: HtmlPaddings(left: HtmlPadding(18)),
-                                                      ),
-                                                      "ol": Style(
-                                                        margin: Margins(bottom: Margin(6)),
-                                                        padding: HtmlPaddings(left: HtmlPadding(18)),
-                                                      ),
-                                                      "li": Style(
-                                                        margin: Margins(bottom: Margin(2)),
-                                                        padding: HtmlPaddings.zero,
-                                                      ),
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                          // URL/Link input field
-                                          TextField(
-                                            controller: _linkController,
-                                            focusNode: linkFocusNode,
-                                            autofocus: true,
-                                            decoration: InputDecoration(
-                                              labelText: 'Assignment Link/URL',
-                                              hintText: 'Enter the link to your assignment',
-                                              prefixIcon: const Icon(Icons.link),
-                                              errorText: linkError,
-                                              filled: true,
-                                              fillColor: Colors.grey.shade50,
-                                              border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: const BorderSide(
-                                                  color: Color(0xFF6366F1),
-                                                  width: 2,
                                                 ),
                                               ),
-                                            ),
-                                            keyboardType: TextInputType.url,
-                                            textInputAction: TextInputAction.done,
-                                            onChanged: (_) {
-                                              if (linkError != null) {
-                                                setModalState(() {
-                                                  linkError = null;
-                                                });
+                                            );
+                                          },
+                                        );
+
+                                        // Submit assignment using provider
+                                        try {
+                                          final provider =
+                                              AssignmentSubmissionProvider();
+
+                                          // Use 0 as score if quiz not taken
+                                          final quizScoreToSubmit =
+                                              _quizTaken ? _quizScore : 0;
+
+                                          // Prepare submission data based on type
+                                          Map<String, dynamic> submissionData =
+                                              {
+                                            'name': name,
+                                            'email': email ?? '',
+                                            'phone': phone ?? '',
+                                            'quiz_score':
+                                                quizScoreToSubmit.toString(),
+                                            'lesson_id':
+                                                widget.lessonId.toString(),
+                                            'cohort_id': widget.cohortId,
+                                            'profile_id':
+                                                widget.profileId.toString(),
+                                            'submission_type': submissionType,
+                                          };
+
+                                          if (submissionType == 'upload') {
+                                            submissionData['assignments'] = [
+                                              {
+                                                'file_name': selectedFileName!,
+                                                'type': 'pdf',
+                                                'file': selectedFileBase64!,
                                               }
-                                            },
-                                          ),
-                                          
-                                        ] else if (submissionType == 'text') ...[
-                                          // Text input field
-                                          TextField(
-                                            controller: _textController,
-                                            decoration: InputDecoration(
-                                              labelText: 'Assignment Text',
-                                              hintText: 'Type your assignment here',
-                                              alignLabelWithHint: true,
-                                              filled: true,
-                                              fillColor: Colors.grey.shade50,
-                                              border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: const BorderSide(
-                                                  color: Color(0xFF6366F1),
-                                                  width: 2,
-                                                ),
-                                              ),
-                                            ),
-                                            maxLines: 8,
-                                            keyboardType: TextInputType.multiline,
-                                          ),
-                                        ],
-                                        
-                                        const SizedBox(height: 16),
-                                        
-                                        // Info text
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF6366F1).withValues(alpha: 0.05),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Icon(
-                                                Icons.info_outline,
-                                                size: 18,
-                                                color: const Color(0xFF6366F1),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: Text(
-                                                  submissionType == 'upload'
-                                                      ? 'Upload your assignment as a PDF file (max 1MB).'
-                                                      : submissionType == 'link' || submissionType == 'url'
-                                                          ? 'Provide a link to your assignment (e.g., Google Drive, Dropbox).'
-                                                          : 'Type your assignment directly in the text field above.',
-                                                  style: const TextStyle(
-                                                    fontSize: 13,
-                                                    color: Color(0xFF6B7280),
-                                                    height: 1.5,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Bottom Submit Button (Fixed)
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, -2),
-                            ),
-                          ],
-                        ),
-                        child: SafeArea(
-                          top: false,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: isPastDue
-                                  ? null
-                                  : () async {
-                                // Get selected profile data
-                                final name = _profileName(modalActiveProfile!);
-                                final phone = user?.phone ?? '';
-                                final email = user?.email;
-                                
-                                // Validate based on submission type
-                                if (submissionType == 'upload') {
-                                  if (selectedFileName == null ||
-                                      selectedFileBase64 == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'Please upload your assignment file'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                } else if (submissionType == 'link' || 
-                                           submissionType == 'url') {
-                                  if (_linkController.text.trim().isEmpty) {
-                                    setModalState(() {
-                                      linkError =
-                                          'Please enter the assignment link';
-                                    });
-                                    return;
-                                  }
-                                  // Basic URL validation
-                                  if (!_linkController.text.trim().startsWith('http')) {
-                                    setModalState(() {
-                                      linkError =
-                                          'Please enter a valid URL (starting with http:// or https://)';
-                                    });
-                                    return;
-                                  }
-                                  final isReachable = await _verifyLinkReachable(
-                                    _linkController.text,
-                                  );
-                                  if (!isReachable) {
-                                    setModalState(() {
-                                      linkError =
-                                     'The link could not be reached';
-                                    });
-                                    return;
-                                  }
-                                } else if (submissionType == 'text') {
-                                  if (_textController.text.trim().isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'Please enter your assignment text'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                }
+                                            ];
+                                          } else if (submissionType == 'link' ||
+                                              submissionType == 'url') {
+                                            submissionData['link_url'] =
+                                                _linkController.text.trim();
+                                          } else if (submissionType == 'text') {
+                                            submissionData['text_content'] =
+                                                _textController.text.trim();
+                                          }
 
-                                // Store the navigator context before showing dialog
-                                final navigatorContext =
-                                    Navigator.of(context).context;
+                                          // Debug: print final payload per submission type
+                                          try {
+                                            final payloadJson =
+                                                jsonEncode(submissionData);
+                                          } catch (e) {
+                                            // Intentionally ignored.
+                                          }
 
-                                // Show loading dialog
-                                showDialog(
-                                  context: navigatorContext,
-                                  barrierDismissible: false,
-                                  builder: (BuildContext dialogContext) {
-                                    return PopScope(
-                                      canPop: false,
-                                      child: Dialog(
-                                        backgroundColor: Colors.transparent,
-                                        elevation: 0,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(32),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const CircularProgressIndicator(
-                                                color: Color(0xFF6366F1),
-                                                strokeWidth: 3,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const Text(
-                                                'Submitting Assignment...',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                'Please wait while we submit your work',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey.shade600,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-
-                                // Submit assignment using provider
-                                try {
-                                  final provider =
-                                      AssignmentSubmissionProvider();
-
-                                  // Use 0 as score if quiz not taken
-                                  final quizScoreToSubmit =
-                                      _quizTaken ? _quizScore : 0;
-
-                                  // Prepare submission data based on type
-                                  Map<String, dynamic> submissionData = {
-                                    'name': name,
-                                    'email': email ?? '',
-                                    'phone': phone ?? '',
-                                    'quiz_score': quizScoreToSubmit.toString(),
-                                    'lesson_id': widget.lessonId.toString(),
-                                    'cohort_id': widget.cohortId,
-                                    'profile_id': widget.profileId.toString(),
-                                    'submission_type': submissionType,
-                                  };
-
-                                  if (submissionType == 'upload') {
-                                    submissionData['assignments'] = [
-                                      {
-                                        'file_name': selectedFileName!,
-                                        'type': 'pdf',
-                                        'file': selectedFileBase64!,
-                                      }
-                                    ];
-                                  } else if (submissionType == 'link' || 
-                                             submissionType == 'url') {
-                                    submissionData['link_url'] = 
-                                        _linkController.text.trim();
-                                  } else if (submissionType == 'text') {
-                                    submissionData['text_content'] = 
-                                        _textController.text.trim();
-                                  }
-
-                                  // Debug: print final payload per submission type
-                                  try {
-                                    final payloadJson = jsonEncode(submissionData);
-                                  } catch (e) {
-      // Intentionally ignored.
-    }
-
-                                  final success = await provider.submitAssignment(
-                                    name: submissionData['name'],
-                                    email: submissionData['email'],
-                                    phone: submissionData['phone'],
-                                    quizScore: submissionData['quiz_score'],
-                                    lessonId: submissionData['lesson_id'],
-                                    cohortId: submissionData['cohort_id'],
-                                    profileId: submissionData['profile_id'],
-                                    submissionType: submissionData['submission_type'],
-                                    assignments: submissionData['assignments'],
-                                    linkUrl: submissionData['link_url'],
-                                    textContent: submissionData['text_content'],
-                                  );
-
-                                  // Close loading dialog
-                                  if (navigatorContext.mounted) {
-                                    Navigator.of(navigatorContext,
-                                            rootNavigator: true)
-                                        .pop();
-                                  }
-
-                                  if (success) {
-                                    // Save submission status
-                                    await _saveSubmissionStatus();
-                                    await _clearPendingAssignmentData();
-                                    
-                                    // Clear controllers
-                                    _linkController.clear();
-                                    _textController.clear();
-
-                                    unawaited(_silentRefreshLessonDetail());
-
-                                    // Show success message
-                                    if (navigatorContext.mounted) {
-                                      showDialog(
-                                        context: navigatorContext,
-                                        barrierDismissible: false,
-                                        builder: (BuildContext successContext) {
-                                          return Dialog(
-                                            backgroundColor: Colors.transparent,
-                                            elevation: 0,
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius: BorderRadius.circular(24),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black.withValues(alpha: 0.1),
-                                                    blurRadius: 40,
-                                                    offset: const Offset(0, 10),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  // Success Icon
-                                                  Container(
-                                                    width: 80,
-                                                    height: 80,
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.check_circle_rounded,
-                                                      color: Color(0xFF10B981),
-                                                      size: 48,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 20),
-
-                                                  // Title
-                                                  const Text(
-                                                    'Success!',
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                      fontSize: 24,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Color(0xFF1A1A2E),
-                                                      letterSpacing: -0.5,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-
-                                                  // Message
-                                                  const Text(
-                                                    'Your assignment has been submitted successfully and is pending review.',
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                      fontSize: 15,
-                                                      color: Color(0xFF6B7280),
-                                                      height: 1.6,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 28),
-
-                                                  // Button
-                                                  SizedBox(
-                                                    width: double.infinity,
-                                                    child: ElevatedButton(
-                                                      onPressed: () {
-                                                        Navigator.of(successContext).pop();
-                                                        if (mounted) {
-                                                          setState(() {
-                                                            _isNavigatingAway = true;
-                                                          });
-                                                        }
-                                                        Future.delayed(const Duration(milliseconds: 100), () {
-                                                          _showInterstitialAdAndPop(navigatorContext);
-                                                        });
-                                                      },
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: const Color(0xFF6366F1),
-                                                        foregroundColor: Colors.white,
-                                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                                        elevation: 0,
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(12),
-                                                        ),
-                                                      ),
-                                                      child: const Text(
-                                                        'OK',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight: FontWeight.w600,
-                                                          letterSpacing: 0.5,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
+                                          final success =
+                                              await provider.submitAssignment(
+                                            name: submissionData['name'],
+                                            email: submissionData['email'],
+                                            phone: submissionData['phone'],
+                                            quizScore:
+                                                submissionData['quiz_score'],
+                                            lessonId:
+                                                submissionData['lesson_id'],
+                                            cohortId:
+                                                submissionData['cohort_id'],
+                                            profileId:
+                                                submissionData['profile_id'],
+                                            submissionType: submissionData[
+                                                'submission_type'],
+                                            assignments:
+                                                submissionData['assignments'],
+                                            linkUrl: submissionData['link_url'],
+                                            textContent:
+                                                submissionData['text_content'],
                                           );
-                                        },
-                                      );
-                                    }
-                                  } else {
-                                    // Show error message
-                                    if (navigatorContext.mounted) {
-                                      ScaffoldMessenger.of(navigatorContext)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            provider.errorMessage ??
-                                                'Failed to submit assignment',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                          duration: const Duration(seconds: 5),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                } catch (e) {
-                                  // Close loading dialog
-                                  if (navigatorContext.mounted) {
-                                    Navigator.of(navigatorContext,
-                                            rootNavigator: true)
-                                        .pop();
-                                  }
 
-                                  // Show error message
-                                  if (navigatorContext.mounted) {
-                                    ScaffoldMessenger.of(navigatorContext)
-                                        .showSnackBar(
-                                      SnackBar(
-                                        content: Text('Error: $e'),
-                                        backgroundColor: Colors.red,
-                                        duration: const Duration(seconds: 5),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isPastDue
-                                    ? Colors.grey.shade400
-                                    : const Color(0xFF6366F1),
-                                disabledBackgroundColor: Colors.grey.shade400,
-                                disabledForegroundColor: Colors.white,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                          // Close loading dialog
+                                          if (navigatorContext.mounted) {
+                                            Navigator.of(navigatorContext,
+                                                    rootNavigator: true)
+                                                .pop();
+                                          }
+
+                                          if (success) {
+                                            // Save submission status
+                                            await _saveSubmissionStatus();
+                                            await _clearPendingAssignmentData();
+
+                                            // Clear controllers
+                                            _linkController.clear();
+                                            _textController.clear();
+
+                                            unawaited(
+                                                _silentRefreshLessonDetail());
+
+                                            // Show success message
+                                            if (navigatorContext.mounted) {
+                                              showDialog(
+                                                context: navigatorContext,
+                                                barrierDismissible: false,
+                                                builder: (BuildContext
+                                                    successContext) {
+                                                  return Dialog(
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                    elevation: 0,
+                                                    child: Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 32,
+                                                          horizontal: 24),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(24),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withValues(
+                                                                    alpha: 0.1),
+                                                            blurRadius: 40,
+                                                            offset:
+                                                                const Offset(
+                                                                    0, 10),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          // Success Icon
+                                                          Container(
+                                                            width: 80,
+                                                            height: 80,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: const Color(
+                                                                      0xFF10B981)
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.1),
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons
+                                                                  .check_circle_rounded,
+                                                              color: Color(
+                                                                  0xFF10B981),
+                                                              size: 48,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 20),
+
+                                                          // Title
+                                                          const Text(
+                                                            'Success!',
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            style: TextStyle(
+                                                              fontSize: 24,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: Color(
+                                                                  0xFF1A1A2E),
+                                                              letterSpacing:
+                                                                  -0.5,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 12),
+
+                                                          // Message
+                                                          const Text(
+                                                            'Your assignment has been submitted successfully and is pending review.',
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            style: TextStyle(
+                                                              fontSize: 15,
+                                                              color: Color(
+                                                                  0xFF6B7280),
+                                                              height: 1.6,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 28),
+
+                                                          // Button
+                                                          SizedBox(
+                                                            width:
+                                                                double.infinity,
+                                                            child:
+                                                                ElevatedButton(
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                        successContext)
+                                                                    .pop();
+                                                                if (mounted) {
+                                                                  setState(() {
+                                                                    _isNavigatingAway =
+                                                                        true;
+                                                                  });
+                                                                }
+                                                                Future.delayed(
+                                                                    const Duration(
+                                                                        milliseconds:
+                                                                            100),
+                                                                    () {
+                                                                  _showInterstitialAdAndPop(
+                                                                      navigatorContext);
+                                                                });
+                                                              },
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    const Color(
+                                                                        0xFF6366F1),
+                                                                foregroundColor:
+                                                                    Colors
+                                                                        .white,
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .symmetric(
+                                                                        vertical:
+                                                                            12),
+                                                                elevation: 0,
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                ),
+                                                              ),
+                                                              child: const Text(
+                                                                'OK',
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  letterSpacing:
+                                                                      0.5,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            }
+                                          } else {
+                                            // Show error message
+                                            if (navigatorContext.mounted) {
+                                              ScaffoldMessenger.of(
+                                                      navigatorContext)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    provider.errorMessage ??
+                                                        'Failed to submit assignment',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                  duration: const Duration(
+                                                      seconds: 5),
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        } catch (e) {
+                                          // Close loading dialog
+                                          if (navigatorContext.mounted) {
+                                            Navigator.of(navigatorContext,
+                                                    rootNavigator: true)
+                                                .pop();
+                                          }
+
+                                          // Show error message
+                                          if (navigatorContext.mounted) {
+                                            ScaffoldMessenger.of(
+                                                    navigatorContext)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text('Error: $e'),
+                                                backgroundColor: Colors.red,
+                                                duration:
+                                                    const Duration(seconds: 5),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isPastDue
+                                      ? Colors.grey.shade400
+                                      : const Color(0xFF6366F1),
+                                  disabledBackgroundColor: Colors.grey.shade400,
+                                  disabledForegroundColor: Colors.white,
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                 ),
-                              ),
-                              child: const Text(
-                                'Submit Assignment',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.3,
+                                child: const Text(
+                                  'Submit Assignment',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        );
-      },
-    ),
-  );
+          );
+        },
+      ),
+    );
 
-  if (mounted) {
-    setState(() {
-      _assignmentResubmitUnlocked = false;
-    });
+    if (mounted) {
+      setState(() {
+        _assignmentResubmitUnlocked = false;
+      });
+    }
   }
-}
-
-
 
   Widget _buildProfileItem({
     required String name,
@@ -3729,9 +4051,8 @@ Future<void> _handleBackButton() async {
     }
 
     try {
-      final headResponse = await http
-          .head(uri)
-          .timeout(const Duration(seconds: 8));
+      final headResponse =
+          await http.head(uri).timeout(const Duration(seconds: 8));
       if (headResponse.statusCode >= 200 && headResponse.statusCode < 400) {
         return true;
       }
@@ -3740,9 +4061,8 @@ Future<void> _handleBackButton() async {
     }
 
     try {
-      final getResponse = await http
-          .get(uri)
-          .timeout(const Duration(seconds: 8));
+      final getResponse =
+          await http.get(uri).timeout(const Duration(seconds: 8));
       return getResponse.statusCode >= 200 && getResponse.statusCode < 400;
     } catch (_) {
       return false;
@@ -3750,582 +4070,581 @@ Future<void> _handleBackButton() async {
   }
 
   String _getFileNameFromUrl(String url) {
-  try {
-    // Remove query parameters if any
-    final uri = Uri.parse(url);
-    final pathSegments = uri.pathSegments;
-    
-    if (pathSegments.isNotEmpty) {
-      // Get the last segment (filename)
-      String filename = pathSegments.last;
-      
-      // Decode URL encoding (e.g., %20 -> space)
-      filename = Uri.decodeComponent(filename);
-      
-      // If no extension, add .pdf
-      if (!filename.toLowerCase().endsWith('.pdf')) {
-        filename = '$filename.pdf';
+    try {
+      // Remove query parameters if any
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments;
+
+      if (pathSegments.isNotEmpty) {
+        // Get the last segment (filename)
+        String filename = pathSegments.last;
+
+        // Decode URL encoding (e.g., %20 -> space)
+        filename = Uri.decodeComponent(filename);
+
+        // If no extension, add .pdf
+        if (!filename.toLowerCase().endsWith('.pdf')) {
+          filename = '$filename.pdf';
+        }
+
+        return filename;
       }
-      
-      return filename;
-    }
-  } catch (e) {
+    } catch (e) {
       // Intentionally ignored.
     }
-  
-  // Fallback to timestamp-based name
-  return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
-}
 
+    // Fallback to timestamp-based name
+    return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+  }
 
 // In _previewAssignment
-Future<void> _previewAssignment(String assignmentUrl) async {
-  setState(() {
-    _isNavigatingAway = true;
-  });
-  
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => _AssignmentPreviewScreen(
-        assignmentUrl: assignmentUrl,
-        assignmentTitle: 'Assignment',
+  Future<void> _previewAssignment(String assignmentUrl) async {
+    setState(() {
+      _isNavigatingAway = true;
+    });
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _AssignmentPreviewScreen(
+          assignmentUrl: assignmentUrl,
+          assignmentTitle: 'Assignment',
+        ),
       ),
-    ),
-  );
-  
-  setState(() {
-    _isNavigatingAway = false;
-  });
-}
+    );
+
+    setState(() {
+      _isNavigatingAway = false;
+    });
+  }
 
   // Helper function to get public Downloads directory
   Future<Directory?> _getDownloadsDirectory() async {
-  if (Platform.isAndroid) {
-    // For Android, use app-specific external storage (no permission needed)
-    // This is accessible via Files app and won't be deleted when app is uninstalled
-    final dir = await getExternalStorageDirectory();
-    if (dir != null) {
-      // Use a public-like directory within app space
+    if (Platform.isAndroid) {
+      // For Android, use app-specific external storage (no permission needed)
+      // This is accessible via Files app and won't be deleted when app is uninstalled
+      final dir = await getExternalStorageDirectory();
+      if (dir != null) {
+        // Use a public-like directory within app space
+        final downloadDir = Directory('${dir.path}/Downloads');
+        if (!await downloadDir.exists()) {
+          await downloadDir.create(recursive: true);
+        }
+        return downloadDir;
+      }
+    } else if (Platform.isIOS) {
+      final dir = await getApplicationDocumentsDirectory();
       final downloadDir = Directory('${dir.path}/Downloads');
       if (!await downloadDir.exists()) {
         await downloadDir.create(recursive: true);
       }
       return downloadDir;
     }
-  } else if (Platform.isIOS) {
-    final dir = await getApplicationDocumentsDirectory();
-    final downloadDir = Directory('${dir.path}/Downloads');
-    if (!await downloadDir.exists()) {
-      await downloadDir.create(recursive: true);
-    }
-    return downloadDir;
+    return null;
   }
-  return null;
-}
 
-Future<String?> _getCachedFilePath(String url) async {
-  final prefs = await SharedPreferences.getInstance();
-  final key = 'downloaded_file_${url.hashCode}';
-  final cachedPath = prefs.getString(key);
-  if (cachedPath == null) return null;
+  Future<String?> _getCachedFilePath(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'downloaded_file_${url.hashCode}';
+    final cachedPath = prefs.getString(key);
+    if (cachedPath == null) return null;
 
-  if (Platform.isAndroid && cachedPath.contains('/app_flutter/')) {
-    final oldFile = File(cachedPath);
-    if (await oldFile.exists()) {
-      final fileName = oldFile.uri.pathSegments.isNotEmpty
-          ? oldFile.uri.pathSegments.last
-          : 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final bytes = await oldFile.readAsBytes();
-      final newPath = await _saveToAppStorage(bytes, fileName);
-      if (newPath != null) {
-        await _cacheFilePath(url, newPath);
-        return newPath;
+    if (Platform.isAndroid && cachedPath.contains('/app_flutter/')) {
+      final oldFile = File(cachedPath);
+      if (await oldFile.exists()) {
+        final fileName = oldFile.uri.pathSegments.isNotEmpty
+            ? oldFile.uri.pathSegments.last
+            : 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final bytes = await oldFile.readAsBytes();
+        final newPath = await _saveToAppStorage(bytes, fileName);
+        if (newPath != null) {
+          await _cacheFilePath(url, newPath);
+          return newPath;
+        }
       }
+      await prefs.remove(key);
+      return null;
     }
+
+    // Verify the file still exists on disk
+    final file = File(cachedPath);
+    if (await file.exists()) return cachedPath;
+
+    // File was deleted, remove stale cache entry
     await prefs.remove(key);
     return null;
   }
-  
-  // Verify the file still exists on disk
-  final file = File(cachedPath);
-  if (await file.exists()) return cachedPath;
-  
-  // File was deleted, remove stale cache entry
-  await prefs.remove(key);
-  return null;
-}
 
-Future<void> _cacheFilePath(String url, String filePath) async {
-  final prefs = await SharedPreferences.getInstance();
-  final key = 'downloaded_file_${url.hashCode}';
-  await prefs.setString(key, filePath);
-}
-
-Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
-  if (!Platform.isAndroid) {
-    return null;
+  Future<void> _cacheFilePath(String url, String filePath) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'downloaded_file_${url.hashCode}';
+    await prefs.setString(key, filePath);
   }
-  
-  try {
-    // Call native Android code to save to public Downloads
-    final String? result = await platform.invokeMethod(
-      'saveToDownloads',
-      {
-        'fileName': fileName,
-        'bytes': bytes,
-      },
-    );
-    return result;
-  } catch (e) {
-    return null;
-  }
-}
 
-Future<String?> _saveToDownloadsUsingMediaStore(
-  Uint8List bytes,
-  String fileName,
-) async {
-  if (!Platform.isAndroid) return null;
-  
-  try {
-    final androidInfo = await DeviceInfoPlugin().androidInfo;
-    final sdkInt = androidInfo.version.sdkInt;
-    
-    // Only use MediaStore for Android 10+
-    if (sdkInt >= 29) {
-      // Call native Android code to save file using MediaStore
-      final String? filePath = await platform.invokeMethod(
+  Future<String?> _saveToPublicDownloads(
+      Uint8List bytes, String fileName) async {
+    if (!Platform.isAndroid) {
+      return null;
+    }
+
+    try {
+      // Call native Android code to save to public Downloads
+      final String? result = await platform.invokeMethod(
         'saveToDownloads',
         {
           'fileName': fileName,
           'bytes': bytes,
         },
       );
-      return filePath;
-    }
-  } catch (e) {
-      // Intentionally ignored.
-    }
-  return null;
-}
-Future<void> _openFileWithChooser(String filePath) async {
-  if (!Platform.isAndroid) return;
-  
-  try {
-    await platform.invokeMethod('openFile', {'filePath': filePath});
-  } catch (e) {
-      // Intentionally ignored.
-    }
-}
-
-// Download Material - simplified version
-Future<void> _downloadMaterial(String materialUrl) async {
-  try {
-    // Check if already downloaded
-    final cachedPath = await _getCachedFilePath(materialUrl);
-    if (cachedPath != null) {
-      await _openFileWithChooser(cachedPath);
-      return; // Skip re-download
-    }
-
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Downloading...'),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final response = await http.get(
-      Uri.parse("https://linkskool.net/$materialUrl"),
-    );
-
-    if (response.statusCode == 200) {
-      final fileName = _getFileNameFromUrl(materialUrl);
-       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
-     await _saveToPublicDownloads(
-        response.bodyBytes,
-        fileName,
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-
-        if (savedPath != null) {
-          // Cache the path for future use
-          await _cacheFilePath(materialUrl, savedPath);
-          await _openFileWithChooser(savedPath);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save file'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } else {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to download material'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  } catch (e) {
-    if (mounted) {
-      if (Navigator.canPop(context)) Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Download failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      return result;
+    } catch (e) {
+      return null;
     }
   }
-}
 
-// Download Certificate - simplified version
-Future<void> _downloadCertificate(String certificateUrl) async {
-  try {
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Downloading...'),
-            ],
-          ),
-        ),
-      );
-    }
+  Future<String?> _saveToDownloadsUsingMediaStore(
+    Uint8List bytes,
+    String fileName,
+  ) async {
+    if (!Platform.isAndroid) return null;
 
-    final response =
-        await http.get(Uri.parse("https://linkskool.net/$certificateUrl"));
+    try {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
 
-    if (response.statusCode == 200) {
-      final fileName = _getFileNameFromUrl(certificateUrl);
-
-       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
-
-    await _saveToPublicDownloads(
-        response.bodyBytes,
-        fileName,
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        if (savedPath != null) {
-          await _openFileWithChooser(savedPath);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save file'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } else {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to download certificate'),
-            backgroundColor: Colors.red,
-          ),
+      // Only use MediaStore for Android 10+
+      if (sdkInt >= 29) {
+        // Call native Android code to save file using MediaStore
+        final String? filePath = await platform.invokeMethod(
+          'saveToDownloads',
+          {
+            'fileName': fileName,
+            'bytes': bytes,
+          },
         );
+        return filePath;
       }
+    } catch (e) {
+      // Intentionally ignored.
     }
-  } catch (e) {
-    if (mounted) {
-      if (Navigator.canPop(context)) Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Download failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-}
-
-
-// New helper — saves to app-private storage, returns a real file path
-Future<String?> _saveToAppStorage(Uint8List bytes, String fileName) async {
-  try {
-    final Directory baseDir = Platform.isAndroid
-        ? await getApplicationSupportDirectory()
-        : await getApplicationDocumentsDirectory();
-    final downloadsDir = Directory('${baseDir.path}/downloads');
-    if (!await downloadsDir.exists()) {
-      await downloadsDir.create(recursive: true);
-    }
-    final file = File('${downloadsDir.path}/$fileName');
-    await file.writeAsBytes(bytes, flush: true);
-    return file.path;
-  } catch (e) {
     return null;
   }
-}
 
-// Download Assignment - simplified version
-Future<void> _downloadAssignment(String assignmentUrl) async {
-  try {
-     final cachedPath = await _getCachedFilePath(assignmentUrl);
-    if (cachedPath != null) {
-      await _openFileWithChooser(cachedPath);
-      return;
+  Future<void> _openFileWithChooser(String filePath) async {
+    if (!Platform.isAndroid) return;
+
+    try {
+      await platform.invokeMethod('openFile', {'filePath': filePath});
+    } catch (e) {
+      // Intentionally ignored.
     }
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Downloading...'),
-            ],
-          ),
-        ),
-      );
-    }
+  }
 
-    final response = await http.get(Uri.parse("https://linkskool.net/$assignmentUrl"));
-    
-    if (response.statusCode == 200) {
-      final fileName = _getFileNameFromUrl(assignmentUrl);
-
-       final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
-
-      await _saveToPublicDownloads(
-        response.bodyBytes,
-        fileName,
-      );
-
+// Download Material - simplified version
+  Future<void> _downloadMaterial(String materialUrl) async {
+    try {
+      // Check if already downloaded
+      final cachedPath = await _getCachedFilePath(materialUrl);
+      if (cachedPath != null) {
+        await _openFileWithChooser(cachedPath);
+        return; // Skip re-download
+      }
 
       if (mounted) {
-        Navigator.pop(context);
-        
-        if (savedPath != null) {
-          // Open with system chooser immediately
-          await _cacheFilePath(assignmentUrl, savedPath);
-          await _openFileWithChooser(savedPath);
-        } else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Downloading...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final response = await http.get(
+        Uri.parse("https://linkskool.net/$materialUrl"),
+      );
+
+      if (response.statusCode == 200) {
+        final fileName = _getFileNameFromUrl(materialUrl);
+        final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+        await _saveToPublicDownloads(
+          response.bodyBytes,
+          fileName,
+        );
+
+        if (mounted) {
+          Navigator.pop(context);
+
+          if (savedPath != null) {
+            // Cache the path for future use
+            await _cacheFilePath(materialUrl, savedPath);
+            await _openFileWithChooser(savedPath);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to save file'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to save file'),
+              content: Text('Failed to download material'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }
-    } else {
+    } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
+        if (Navigator.canPop(context)) Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to download assignment'),
+          SnackBar(
+            content: Text('Download failed: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
-  } catch (e) {
-    if (mounted) {
-      if (Navigator.canPop(context)) Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Download failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
-}
 
+// Download Certificate - simplified version
+  Future<void> _downloadCertificate(String certificateUrl) async {
+    try {
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Downloading...'),
+              ],
+            ),
+          ),
+        );
+      }
 
+      final response =
+          await http.get(Uri.parse("https://linkskool.net/$certificateUrl"));
 
-  @override
-  @override
-Widget build(BuildContext context) {
-  return ChangeNotifierProvider<LessonDetailProvider>.value(
-    value: _lessonDetailProvider,
-    child: Consumer<LessonDetailProvider>(
-      builder: (context, provider, child) {
-        final hasLessonRequest =
-            widget.profileId != null && widget.lessonId != null;
+      if (response.statusCode == 200) {
+        final fileName = _getFileNameFromUrl(certificateUrl);
 
-        if (!_requestSent && hasLessonRequest && !provider.isLoading) {
-          _requestSent = true;
-          provider.fetchLessonDetail(
-            lessonId: widget.lessonId!,
-            profileId: widget.profileId!,
+        final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+
+        await _saveToPublicDownloads(
+          response.bodyBytes,
+          fileName,
+        );
+
+        if (mounted) {
+          Navigator.pop(context);
+          if (savedPath != null) {
+            await _openFileWithChooser(savedPath);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to save file'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to download certificate'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
+      }
+    } catch (e) {
+      if (mounted) {
+        if (Navigator.canPop(context)) Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
-        final lesson = provider.lessonDetailData?.lesson;
-        final submission = provider.lessonDetailData?.submission;
+// New helper — saves to app-private storage, returns a real file path
+  Future<String?> _saveToAppStorage(Uint8List bytes, String fileName) async {
+    try {
+      final Directory baseDir = Platform.isAndroid
+          ? await getApplicationSupportDirectory()
+          : await getApplicationDocumentsDirectory();
+      final downloadsDir = Directory('${baseDir.path}/downloads');
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
+      }
+      final file = File('${downloadsDir.path}/$fileName');
+      await file.writeAsBytes(bytes, flush: true);
+      return file.path;
+    } catch (e) {
+      return null;
+    }
+  }
 
-        if (lesson != null && !_dataLoaded) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _applyLessonData(lesson, submission: submission);
-            }
-          });
+// Download Assignment - simplified version
+  Future<void> _downloadAssignment(String assignmentUrl) async {
+    try {
+      final cachedPath = await _getCachedFilePath(assignmentUrl);
+      if (cachedPath != null) {
+        await _openFileWithChooser(cachedPath);
+        return;
+      }
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Downloading...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final response =
+          await http.get(Uri.parse("https://linkskool.net/$assignmentUrl"));
+
+      if (response.statusCode == 200) {
+        final fileName = _getFileNameFromUrl(assignmentUrl);
+
+        final savedPath = await _saveToAppStorage(response.bodyBytes, fileName);
+
+        await _saveToPublicDownloads(
+          response.bodyBytes,
+          fileName,
+        );
+
+        if (mounted) {
+          Navigator.pop(context);
+
+          if (savedPath != null) {
+            // Open with system chooser immediately
+            await _cacheFilePath(assignmentUrl, savedPath);
+            await _openFileWithChooser(savedPath);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to save file'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
-        if (lesson != null && _dataLoaded) {
-          final signature = _buildLessonMetaSignature(lesson, submission);
-          if (signature != _lastMetaSignature) {
+      } else {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to download assignment'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        if (Navigator.canPop(context)) Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<LessonDetailProvider>.value(
+      value: _lessonDetailProvider,
+      child: Consumer<LessonDetailProvider>(
+        builder: (context, provider, child) {
+          final hasLessonRequest =
+              widget.profileId != null && widget.lessonId != null;
+
+          if (!_requestSent && hasLessonRequest && !provider.isLoading) {
+            _requestSent = true;
+            provider.fetchLessonDetail(
+              lessonId: widget.lessonId!,
+              profileId: widget.profileId!,
+            );
+          }
+
+          final lesson = provider.lessonDetailData?.lesson;
+          final submission = provider.lessonDetailData?.submission;
+
+          if (lesson != null && !_dataLoaded) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
-                _applyLessonMeta(lesson, submission: submission);
+                _applyLessonData(lesson, submission: submission);
               }
             });
           }
-        }
-        if (submission != null && submission != _submission) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              setState(() {
-                _submission = submission;
+          if (lesson != null && _dataLoaded) {
+            final signature = _buildLessonMetaSignature(lesson, submission);
+            if (signature != _lastMetaSignature) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _applyLessonMeta(lesson, submission: submission);
+                }
               });
             }
-          });
-        }
+          }
+          if (submission != null && submission != _submission) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _submission = submission;
+                });
+              }
+            });
+          }
 
-        if (provider.isLoading && hasLessonRequest && !_dataLoaded) {
-          return Scaffold(
-            appBar: AppBar(title: Text('Loading...')),
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+          if (provider.isLoading && hasLessonRequest && !_dataLoaded) {
+            return Scaffold(
+              appBar: AppBar(title: Text('Loading...')),
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-        if (provider.errorMessage != null && hasLessonRequest && !_dataLoaded) {
-          return Scaffold(
-            appBar: AppBar(title: Text('Error')),
-            body: Center(child: Text('Error: ${provider.errorMessage}')),
-          );
-        }
+          if (provider.errorMessage != null &&
+              hasLessonRequest &&
+              !_dataLoaded) {
+            return Scaffold(
+              appBar: AppBar(title: Text('Error')),
+              body: Center(child: Text('Error: ${provider.errorMessage}')),
+            );
+          }
 
-        if (lesson == null && hasLessonRequest && !_dataLoaded) {
-          return Scaffold(
-            appBar: AppBar(title: Text('No Data')),
-            body: Center(child: Text('No lesson data available')),
-          );
-        }
+          if (lesson == null && hasLessonRequest && !_dataLoaded) {
+            return Scaffold(
+              appBar: AppBar(title: Text('No Data')),
+              body: Center(child: Text('No lesson data available')),
+            );
+          }
 
-        final currentVideo = _courseVideos.isNotEmpty
-            ? _courseVideos[_selectedVideoIndex]
-            : {
-                'title': _displayTitle,
-                'description': _displayDescription,
-                'url': _effectiveVideoUrl ?? '',
-              };
+          final currentVideo = _courseVideos.isNotEmpty
+              ? _courseVideos[_selectedVideoIndex]
+              : {
+                  'title': _displayTitle,
+                  'description': _displayDescription,
+                  'url': _effectiveVideoUrl ?? '',
+                };
 
-        return WillPopScope(
-          onWillPop: () async {
-            await _handleBackButton();
-            return false;
-          },
-          child: Scaffold(
-            extendBodyBehindAppBar: true,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: _handleBackButton,
+          return WillPopScope(
+            onWillPop: () async {
+              await _handleBackButton();
+              return false;
+            },
+            child: Scaffold(
+              extendBodyBehindAppBar: true,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: _handleBackButton,
+                ),
               ),
-            ),
-            backgroundColor: Colors.white,
-            body: NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildVideoPlayer(),
-                      const SizedBox(height: 10),
-                      // Video Title
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _displayTitle,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black87,
-                              ),
+              backgroundColor: Colors.white,
+              body: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildVideoPlayer(),
+                          const SizedBox(height: 10),
+                          // Video Title
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _displayTitle,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                          const Divider(height: 1),
+                        ],
+                      ),
+                    ),
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _SliverTabBarDelegate(
+                        TabBar(
+                          controller: _tabController,
+                          labelColor: const Color(0xFF6366F1),
+                          isScrollable: false,
+                          unselectedLabelColor: Colors.grey.shade600,
+                          indicatorColor: const Color(0xFF6366F1),
+                          labelStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          tabs: const [
+                            Tab(text: 'Overview'),
+                            Tab(text: 'Quiz'),
+                            Tab(text: 'Assignments'),
                           ],
                         ),
                       ),
-                      const Divider(height: 1),
-                    ],
-                  ),
-                ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SliverTabBarDelegate(
-                    TabBar(
-                      controller: _tabController,
-                      labelColor: const Color(0xFF6366F1),
-                      isScrollable: false,
-                      unselectedLabelColor: Colors.grey.shade600,
-                      indicatorColor: const Color(0xFF6366F1),
-                      labelStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      tabs: const [
-                        Tab(text: 'Overview'),
-                        Tab(text: 'Quiz'),
-                        Tab(text: 'Assignments'),
-                      ],
                     ),
-                  ),
+                  ];
+                },
+                body: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(),
+                    _buildReviewsTab(),
+                    _buildAssignmentsTab(currentVideo),
+                  ],
                 ),
-              ];
-            },
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildOverviewTab(),
-                _buildReviewsTab(),
-                _buildAssignmentsTab(currentVideo),
-              ],
+              ),
             ),
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
-
+          );
+        },
+      ),
+    );
+  }
 
   List<Widget> _buildSheetContent(Map<String, dynamic> currentVideo) {
     return [
@@ -4352,7 +4671,6 @@ Widget build(BuildContext context) {
       // Tabs Section
       TabBar(
         controller: _tabController,
-        
         labelColor: const Color(0xFF6366F1),
         isScrollable: false,
         unselectedLabelColor: Colors.grey.shade600,
@@ -4382,143 +4700,144 @@ Widget build(BuildContext context) {
       ),
     ];
   }
-Widget _buildVideoPlayer() {
-  if (_videoError != null) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        color: Colors.black,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 48),
-            const SizedBox(height: 16),
-            const Text(
-              'Video Error',
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _videoError!,
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                final url = _effectiveVideoUrl;
-                if (url != null && url.isNotEmpty) {
-                  setState(() {
-                    _lastInitializedUrl = null; // Reset to allow re-init
-                  });
-                  _initializeVideo(url);
-                }
-              },
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  if (!_hasVideo) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        color: Colors.black,
-        alignment: Alignment.center,
-        child: const Text(
-          'No video available',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  // YouTube player
-  if (_isYoutubeVideo && _youtubeController != null) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: YoutubePlayerBuilder(
-        key: ValueKey(_youtubeController!.initialVideoId),
-        player: YoutubePlayer(
-          controller: _youtubeController!,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: const Color(0xFF6366F1),
-          progressColors: const ProgressBarColors(
-            playedColor: Color(0xFF6366F1),
-            handleColor: Color(0xFF6366F1),
-            backgroundColor: Colors.grey,
-            bufferedColor: Colors.grey,
+  Widget _buildVideoPlayer() {
+    if (_videoError != null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.black,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 48),
+              const SizedBox(height: 16),
+              const Text(
+                'Video Error',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _videoError!,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  final url = _effectiveVideoUrl;
+                  if (url != null && url.isNotEmpty) {
+                    setState(() {
+                      _lastInitializedUrl = null; // Reset to allow re-init
+                    });
+                    _initializeVideo(url);
+                  }
+                },
+                child: const Text('Retry'),
+              ),
+            ],
           ),
-          onReady: () {
+        ),
+      );
+    }
+
+    if (!_hasVideo) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.black,
+          alignment: Alignment.center,
+          child: const Text(
+            'No video available',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    // YouTube player
+    if (_isYoutubeVideo && _youtubeController != null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: YoutubePlayerBuilder(
+          key: ValueKey(_youtubeController!.initialVideoId),
+          player: YoutubePlayer(
+            controller: _youtubeController!,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: const Color(0xFF6366F1),
+            progressColors: const ProgressBarColors(
+              playedColor: Color(0xFF6366F1),
+              handleColor: Color(0xFF6366F1),
+              backgroundColor: Colors.grey,
+              bufferedColor: Colors.grey,
+            ),
+            onReady: () {},
+          ),
+          builder: (context, player) {
+            return player;
           },
         ),
-        builder: (context, player) {
-          return player;
-        },
-      ),
-    );
-  }
+      );
+    }
 
-  // Direct video player
-  if (!_isYoutubeVideo && _chewieController != null && _isVideoInitialized) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      key: ValueKey(_videoController.hashCode),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Chewie(controller: _chewieController!),
-          ),
-          Positioned(
-            right: 8,
-            bottom: 8,
-            child: Material(
-              color: Colors.black54,
-              shape: const CircleBorder(),
-              child: IconButton(
-                onPressed: _toggleFullscreen,
-                icon: const Icon(
-                  Icons.fullscreen,
-                  color: Colors.white,
-                ),
-                tooltip: 'Fullscreen',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Loading state - show while waiting for lesson data or video initialization
-  return AspectRatio(
-    aspectRatio: 16 / 9,
-    child: Container(
-      color: Colors.black,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    // Direct video player
+    if (!_isYoutubeVideo && _chewieController != null && _isVideoInitialized) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        key: ValueKey(_videoController.hashCode),
+        child: Stack(
           children: [
-            const CircularProgressIndicator(
-              color: Color(0xFF6366F1),
+            Positioned.fill(
+              child: Chewie(controller: _chewieController!),
             ),
-            const SizedBox(height: 16),
-            Text(
-              _hasAppliedLessonData ? 'Loading video...' : 'Loading lesson data...',
-              style: const TextStyle(color: Colors.white),
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  onPressed: _toggleFullscreen,
+                  icon: const Icon(
+                    Icons.fullscreen,
+                    color: Colors.white,
+                  ),
+                  tooltip: 'Fullscreen',
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    ),
-  );
-}
+      );
+    }
 
+    // Loading state - show while waiting for lesson data or video initialization
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        color: Colors.black,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                color: Color(0xFF6366F1),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _hasAppliedLessonData
+                    ? 'Loading video...'
+                    : 'Loading lesson data...',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildContentTab() {
     return ListView.builder(
@@ -4743,7 +5062,8 @@ Widget _buildVideoPlayer() {
       const SizedBox(height: 24),
 
       // Course Materials Card - Only show if materialUrl exists
-      if (_effectiveMaterialUrl != null && _effectiveMaterialUrl!.isNotEmpty) ...[
+      if (_effectiveMaterialUrl != null &&
+          _effectiveMaterialUrl!.isNotEmpty) ...[
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -4915,869 +5235,997 @@ Widget _buildVideoPlayer() {
 
       // Join/Watch Button with Zoom-style banner - Show if zoom URL or recorded URL exists
       // Join/Watch Button with class status banner
-  if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
-      (_effectiveRecordedUrl != null && _effectiveRecordedUrl!.isNotEmpty) ||
-      (_effectiveSessionStart != null && _effectiveSessionStart!.isNotEmpty)) ...[
-  StreamBuilder<int>(
-    stream: _countdownStream,
-    builder: (context, snapshot) {
-      final zoomStatus = _getZoomStatus();
-      final status = zoomStatus['status'] as String;
-      final message = zoomStatus['message'] as String;
-      final buttonText = zoomStatus['buttonText'] as String;
-      final url = zoomStatus['url'] as String?;
-      final scheduledStart = zoomStatus['classDate'] as DateTime?;
-      final recordedUrl = _effectiveRecordedUrl;
-     final showRecordedButton = (status == 'ongoing' || status == 'scheduled') &&
-    recordedUrl != null &&
-    recordedUrl.isNotEmpty;
+      if ((_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty) ||
+          (_effectiveRecordedUrl != null &&
+              _effectiveRecordedUrl!.isNotEmpty) ||
+          (_effectiveSessionStart != null &&
+              _effectiveSessionStart!.isNotEmpty)) ...[
+        StreamBuilder<int>(
+          stream: _countdownStream,
+          builder: (context, snapshot) {
+            final zoomStatus = _getZoomStatus();
+            final status = zoomStatus['status'] as String;
+            final message = zoomStatus['message'] as String;
+            final buttonText = zoomStatus['buttonText'] as String;
+            final url = zoomStatus['url'] as String?;
+            final scheduledStart = zoomStatus['classDate'] as DateTime?;
+            final recordedUrl = _effectiveRecordedUrl;
+            final showRecordedButton =
+                (status == 'ongoing' || status == 'scheduled') &&
+                    recordedUrl != null &&
+                    recordedUrl.isNotEmpty;
 
-      // Determine button style and behavior based on status
-      Color backgroundColor;
-      Color iconColor;
-      IconData iconData;
-      bool isButtonEnabled;
-      String cardTitle;
+            // Determine button style and behavior based on status
+            Color backgroundColor;
+            Color iconColor;
+            IconData iconData;
+            bool isButtonEnabled;
+            String cardTitle;
 
-        switch (status) {
-          case 'scheduled':
-            backgroundColor = const Color(0xFF2D8CFF);
-            iconColor = Colors.white;
-            iconData = Icons.videocam;
-            isButtonEnabled = true;
-            cardTitle = 'Live Class';
-            break;
-        case 'ongoing':
-          backgroundColor = const Color(0xFF2D8CFF);
-          iconColor = Colors.white;
-          iconData = Icons.videocam;
-          isButtonEnabled = true;
-          cardTitle = 'Live Class';
-          break;
-        case 'recorded':
-          backgroundColor = const Color(0xFF10B981);
-          iconColor = Colors.white;
-          iconData = Icons.play_circle_outline;
-          isButtonEnabled = true;
-          cardTitle = 'Recorded Class';
-          break;
-        case 'pending':
-          backgroundColor = Colors.blueGrey;
-          iconColor = Colors.white;
-          iconData = Icons.hourglass_empty;
+            switch (status) {
+              case 'scheduled':
+                backgroundColor = const Color(0xFF2D8CFF);
+                iconColor = Colors.white;
+                iconData = Icons.videocam;
+                isButtonEnabled = true;
+                cardTitle = 'Live Class';
+                break;
+              case 'ongoing':
+                backgroundColor = const Color(0xFF2D8CFF);
+                iconColor = Colors.white;
+                iconData = Icons.videocam;
+                isButtonEnabled = true;
+                cardTitle = 'Live Class';
+                break;
+              case 'recorded':
+                backgroundColor = const Color(0xFF10B981);
+                iconColor = Colors.white;
+                iconData = Icons.play_circle_outline;
+                isButtonEnabled = true;
+                cardTitle = 'Recorded Class';
+                break;
+              case 'pending':
+                backgroundColor = Colors.blueGrey;
+                iconColor = Colors.white;
+                iconData = Icons.hourglass_empty;
 
-          isButtonEnabled = false;
-          cardTitle = 'Recorded video';
-          break;
-        case 'available':
-          backgroundColor = const Color(0xFF2D8CFF);
-          iconColor = Colors.white;
-          iconData = Icons.videocam;
-          isButtonEnabled = true;
-          cardTitle = 'Live Class';
-          break;
-        case 'unavailable':
-        default:
-          backgroundColor = Colors.grey.shade300;
-          iconColor = Colors.grey.shade600;
-          iconData = Icons.not_interested;
-          isButtonEnabled = false;
-          cardTitle = 'No Class Available';
-          break;
-      }
+                isButtonEnabled = false;
+                cardTitle = 'Recorded video';
+                break;
+              case 'available':
+                backgroundColor = const Color(0xFF2D8CFF);
+                iconColor = Colors.white;
+                iconData = Icons.videocam;
+                isButtonEnabled = true;
+                cardTitle = 'Live Class';
+                break;
+              case 'unavailable':
+              default:
+                backgroundColor = Colors.grey.shade300;
+                iconColor = Colors.grey.shade600;
+                iconData = Icons.not_interested;
+                isButtonEnabled = false;
+                cardTitle = 'No Class Available';
+                break;
+            }
 
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with icon
-            Row(
-              children: [
-                // Container(
-                //   width: 40,
-                //   height: 40,
-                //   decoration: BoxDecoration(
-                //     color: backgroundColor,
-                //     borderRadius: BorderRadius.circular(8),
-                //   ),
-                //   child: Icon(
-                //     iconData,
-                //     color: iconColor,
-                //     size: 24,
-                //   ),
-                // ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    cardTitle,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: backgroundColor,
-                      letterSpacing: -0.5,
-                    ),
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                // Live indicator for ongoing classes
-                if (status == 'ongoing')
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'LIVE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Message
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-                height: 1.4,
-              ),
-            ),
-            if (status == 'scheduled' && scheduledStart != null) ...[
-              const SizedBox(height: 12),
-              Builder(
-                builder: (context) {
-                  final now = DateTime.now();
-                  final diff = now.isAfter(scheduledStart)
-                      ? Duration.zero
-                      : scheduledStart.difference(now);
-                  final days = diff.inDays;
-                  final hours = diff.inHours % 24;
-                  final minutes = diff.inMinutes % 60;
-                  final seconds = diff.inSeconds % 60;
-
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildCompactCountdownItem('D', days.toString().padLeft(2, '0')),
-                      const SizedBox(width: 8),
-                      _buildCompactCountdownItem('H', hours.toString().padLeft(2, '0')),
-                      const SizedBox(width: 8),
-                      _buildCompactCountdownItem('M', minutes.toString().padLeft(2, '0')),
-                      const SizedBox(width: 8),
-                      _buildCompactCountdownItem('S', seconds.toString().padLeft(2, '0')),
-                    ],
-                  );
-                },
-              ),
-            ],
-            if (buttonText.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              // Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: isButtonEnabled && url != null
-    ? () {
-        if (status == 'ongoing') {
-          unawaited(_logAttendanceIfLive(status));
-        }
-        _launchUrl(url);
-      }
-    : null,
-                  icon: Icon(
-                    iconData,
-                    size: 20,
-                  ),
-                  label: Text(
-                    buttonText,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: backgroundColor,
-                    foregroundColor: iconColor,
-                    disabledBackgroundColor: backgroundColor,
-                    disabledForegroundColor: iconColor,
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8), // reduced vertical, add horizontal
-                    minimumSize: const Size(double.infinity, 54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: isButtonEnabled ? 2 : 0,
-                  ),
-                ),
-              ),
-            ],
-            if (showRecordedButton) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: const [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'or',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider()),
                 ],
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                onPressed: () {
-        // Only log attendance if session is ongoing, NOT scheduled
-        if (status == 'ongoing') {
-          unawaited(_logAttendanceIfLive(status));
-        }
-        _launchUrl(recordedUrl);
-      },
-                //  image
-            icon: Image.asset(
-    'assets/images/explore-images/youtube-live.png',
-    width: 20,
-    height: 20,
-  ),
-                  label: const Text(
-                    'Join Youtube Live Stream',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                     backgroundColor: const Color(0xFFEF5350),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 2,
-                  ),
-                ),
-              ),
-            ]
-          ],
-        ),
-      );
-    },
-  ),
-  const SizedBox(height: 16),
-],
-if (_hasAttendance == false &&
-    (_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty)) ...[
-  StreamBuilder<int>(
-    stream: _countdownStream,
-    builder: (context, snapshot) {
-      final zoomStatus = _getZoomStatus();
-      final status = zoomStatus['status'] as String;
-      final shouldWarn = status == 'scheduled' || status == 'ongoing';
-      if (!shouldWarn) return const SizedBox.shrink();
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF7ED),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFDBA74)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-  
-              decoration: BoxDecoration(
-                color: const Color(0xFFF97316),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Attendance ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
+                  // Header with icon
+                  Row(
+                    children: [
+                      // Container(
+                      //   width: 40,
+                      //   height: 40,
+                      //   decoration: BoxDecoration(
+                      //     color: backgroundColor,
+                      //     borderRadius: BorderRadius.circular(8),
+                      //   ),
+                      //   child: Icon(
+                      //     iconData,
+                      //     color: iconColor,
+                      //     size: 24,
+                      //   ),
+                      // ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          cardTitle,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: backgroundColor,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                      // Live indicator for ongoing classes
+                      if (status == 'ongoing')
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 12),
+                  // Message
                   Text(
-                    'Joining the live stream also counts as attendance.',
-                    style: TextStyle(
+                    message,
+                    style: const TextStyle(
                       fontSize: 13,
-                      color: Colors.black54,
-                      height: 1.3,
+                      color: Colors.black87,
+                      height: 1.4,
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  ),
-  const SizedBox(height: 16),
-],
-if (_hasAttendance) ...[
-  // Attendance card
-  Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const  Color(0xFF2E7D32),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.check_circle_outline,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Attendance',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Attendance completion',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.black54,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE8F5E9),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Text(
-            'Completed',
-            style: TextStyle(
-              color: Color(0xFF2E7D32),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-  const SizedBox(height: 16),
-] else if (_hasAttendance == false ) ...[
+                  if (status == 'scheduled' && scheduledStart != null) ...[
+                    const SizedBox(height: 12),
+                    Builder(
+                      builder: (context) {
+                        final now = DateTime.now();
+                        final diff = now.isAfter(scheduledStart)
+                            ? Duration.zero
+                            : scheduledStart.difference(now);
+                        final days = diff.inDays;
+                        final hours = diff.inHours % 24;
+                        final minutes = diff.inMinutes % 60;
+                        final seconds = diff.inSeconds % 60;
 
-    ],
-  ]);
-  }
-
-  Widget _buildAssignmentsTab(Map<String, dynamic> currentVideo) {
-  final remark = _submission?.remark?.trim();
-  final comment = _submission?.comment?.trim();
-  final hasRemark = remark != null && remark.isNotEmpty;
-  final hasComment = comment != null && comment.isNotEmpty;
-  final hasFeedback = hasRemark || hasComment;
-  final assignedScore = _submission?.assignedScore;
-  final isPastDue = _isAssignmentPastDue();
-  
-  // Check if lesson has assignment
-  final bool hasAssignment = _effectiveAssignmentUrl != null && 
-                             _effectiveAssignmentUrl!.isNotEmpty;
-
-  return ListView(
-    padding: const EdgeInsets.all(16),
-    children: [
-      if (hasFeedback) ...[
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Performance',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF111827),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (assignedScore != null) ...[
-                Center(
-                  child: SizedBox(
-                    width: 120,
-                    height: 120,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 160,
-                          height: 160,
-                          child: CircularProgressIndicator(
-                            value: 1.0,
-                            strokeWidth: 12,
-                            backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              const Color(0xFF1D4ED8).withValues(alpha: 0.15),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 160,
-                          height: 160,
-                          child: CircularProgressIndicator(
-                            value: assignedScore / 100,
-                            strokeWidth: 12,
-                            backgroundColor: Colors.transparent,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color(0xFF1D4ED8),
-                            ),
-                          ),
-                        ),
-                        Column(
+                        return Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              '$assignedScore/100',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1D4ED8),
-                              ),
-                            ),
-                            const Text(
-                              'Score',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF6B7280),
-                              ),
-                            ),
+                            _buildCompactCountdownItem(
+                                'D', days.toString().padLeft(2, '0')),
+                            const SizedBox(width: 8),
+                            _buildCompactCountdownItem(
+                                'H', hours.toString().padLeft(2, '0')),
+                            const SizedBox(width: 8),
+                            _buildCompactCountdownItem(
+                                'M', minutes.toString().padLeft(2, '0')),
+                            const SizedBox(width: 8),
+                            _buildCompactCountdownItem(
+                                'S', seconds.toString().padLeft(2, '0')),
                           ],
+                        );
+                      },
+                    ),
+                  ],
+                  if (buttonText.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    // Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isButtonEnabled && url != null
+                            ? () {
+                                if (status == 'ongoing') {
+                                  unawaited(_logAttendanceIfLive(status));
+                                }
+                                _launchUrl(url);
+                              }
+                            : null,
+                        icon: Icon(
+                          iconData,
+                          size: 20,
+                        ),
+                        label: Text(
+                          buttonText,
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: backgroundColor,
+                          foregroundColor: iconColor,
+                          disabledBackgroundColor: backgroundColor,
+                          disabledForegroundColor: iconColor,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal:
+                                  8), // reduced vertical, add horizontal
+                          minimumSize: const Size(double.infinity, 54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: isButtonEnabled ? 2 : 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (showRecordedButton) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: const [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            'or',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // Only log attendance if session is ongoing, NOT scheduled
+                          if (status == 'ongoing') {
+                            unawaited(_logAttendanceIfLive(status));
+                          }
+                          _launchUrl(recordedUrl);
+                        },
+                        //  image
+                        icon: Image.asset(
+                          'assets/images/explore-images/youtube-live.png',
+                          width: 20,
+                          height: 20,
+                        ),
+                        label: const Text(
+                          'Join Youtube Live Stream',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF5350),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ]
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
+      if (_hasAttendance == false &&
+          (_effectiveZoomUrl != null && _effectiveZoomUrl!.isNotEmpty)) ...[
+        StreamBuilder<int>(
+          stream: _countdownStream,
+          builder: (context, snapshot) {
+            final zoomStatus = _getZoomStatus();
+            final status = zoomStatus['status'] as String;
+            final shouldWarn = status == 'scheduled' || status == 'ongoing';
+            if (!shouldWarn) return const SizedBox.shrink();
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFDBA74)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF97316),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Attendance ',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Joining the live stream also counts as attendance.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                            height: 1.3,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (hasRemark) ...[
-                const Text(
-                  'Remark:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  remark,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF374151),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (hasComment) ...[
-                const Text(
-                  'Instructor Feedback:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  comment,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF374151),
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ],
-          ),
+                ],
+              ),
+            );
+          },
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
       ],
-      
-      if (!hasAssignment) ...[
-        // EMPTY STATE - No assignment available
+      if (_hasAttendance) ...[
+        // Attendance card
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Empty state icon
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.assignment_outlined,
-                  size: 60,
-                  color: Colors.grey.shade400,
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Title
-              const Text(
-                'No Assignment Available',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              
-              // Description
-              Text(
-                'No assignment for this lesson.',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey.shade600,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 32),
-              Center(
-                child: _CourseBannerAd(
-                  key: const ValueKey('assignment_empty_banner'),
-                  adUnitId: EnvConfig.programBannersAdsKey,
-                  size: AdSize.mediumRectangle,
-                  isMinor: true,
-                ),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-        ),
-      ] else ...[
-        // HAS ASSIGNMENT - Show all assignment-related content
-        if (!hasFeedback) ...[
-          const Text(
-            'Lesson Assignment',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Assignment Guidelines Card (always shown)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFB74D).withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  color: Color(0xFFFF9800),
-                  size: 24,
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E7D32),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Assignment Guidelines',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFE65100),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade800,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Deadline: ${_formattedAssignmentDeadline()}',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey.shade900,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      StreamBuilder<int>(
-                        stream: _countdownStream,
-                        builder: (context, snapshot) {
-                          final deadline = _assignmentDeadlineDate();
-                          if (deadline == null) {
-                            return Text(
-                              'No deadline set',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade900,
-                              ),
-                            );
-                          }
-
-                          final now = DateTime.now();
-                          final isPastDue = now.isAfter(deadline);
-                          final diff = isPastDue
-                              ? Duration.zero
-                              : deadline.difference(now);
-                          final days = diff.inDays;
-                          final hours = diff.inHours % 24;
-                          final minutes = diff.inMinutes % 60;
-                          final seconds = diff.inSeconds % 60;
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFDF2E5),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: const Color(0xFFFFD4A1),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _buildCountdownItem(
-                                      'DAYS',
-                                      days.toString().padLeft(2, '0'),
-                                    ),
-                                    _buildCountdownItem(
-                                      'HOURS',
-                                      hours.toString().padLeft(2, '0'),
-                                    ),
-                                    _buildCountdownItem(
-                                      'MINUTES',
-                                      minutes.toString().padLeft(2, '0'),
-                                    ),
-                                    _buildCountdownItem(
-                                      'SECONDS',
-                                      seconds.toString().padLeft(2, '0'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isPastDue) ...[
-                                const SizedBox(height: 6),
-                                Center(
-                                  child: const Text(
-                                    'Deadline passed',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFFB91C1C),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 22,
                 ),
-              ],
-            ),
-          ),
-        ],
-
-        const SizedBox(height: 24),
-
-        // Assignment Instructions (if available)
-        if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1F2937),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.list_alt,
-                        color: Colors.white,
-                        size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Attendance',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Assignment Instructions',
+                    SizedBox(height: 4),
+                    Text(
+                      'Attendance completion',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827),
+                        fontSize: 13,
+                        color: Colors.black54,
+                        height: 1.3,
                       ),
                     ),
                   ],
                 ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Completed',
+                  style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ] else if (_hasAttendance == false)
+        ...[],
+    ]);
+  }
+
+  Widget _buildAssignmentsTab(Map<String, dynamic> currentVideo) {
+    final remark = _submission?.remark?.trim();
+    final comment = _submission?.comment?.trim();
+    final hasRemark = remark != null && remark.isNotEmpty;
+    final hasComment = comment != null && comment.isNotEmpty;
+    final hasFeedback = hasRemark || hasComment;
+    final assignedScore = _submission?.assignedScore;
+    final isPastDue = _isAssignmentPastDue();
+
+    // Check if lesson has assignment
+    final bool hasAssignment =
+        _effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (hasFeedback) ...[
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Performance',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111827),
+                  ),
+                ),
                 const SizedBox(height: 12),
-                Html(
-                  data: _effectiveAssignmentDescription,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(18),
-                      color: Colors.black87,
-                      lineHeight: LineHeight(1.4),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
+                if (assignedScore != null) ...[
+                  Center(
+                    child: SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: CircularProgressIndicator(
+                              value: 1.0,
+                              strokeWidth: 12,
+                              backgroundColor: Colors.transparent,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                const Color(0xFF1D4ED8).withValues(alpha: 0.15),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: CircularProgressIndicator(
+                              value: assignedScore / 100,
+                              strokeWidth: 12,
+                              backgroundColor: Colors.transparent,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Color(0xFF1D4ED8),
+                              ),
+                            ),
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '$assignedScore/100',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1D4ED8),
+                                ),
+                              ),
+                              const Text(
+                                'Score',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    "p": Style(
-                      margin: Margins(bottom: Margin(8)),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (hasRemark) ...[
+                  const Text(
+                    'Remark:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
                     ),
-                    "ul": Style(
-                      margin: Margins(bottom: Margin(8)),
-                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    remark,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF374151),
+                      height: 1.4,
                     ),
-                    "ol": Style(
-                      margin: Margins(bottom: Margin(8)),
-                      padding: HtmlPaddings(left: HtmlPadding(20)),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (hasComment) ...[
+                  const Text(
+                    'Instructor Feedback:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
                     ),
-                    "li": Style(
-                      margin: Margins(bottom: Margin(2)),
-                      padding: HtmlPaddings.zero,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    comment,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF374151),
+                      height: 1.4,
                     ),
-                  },
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+        if (!hasAssignment) ...[
+          // EMPTY STATE - No assignment available
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Empty state icon
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.assignment_outlined,
+                    size: 60,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                const Text(
+                  'No Assignment Available',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+
+                // Description
+                Text(
+                  'No assignment for this lesson.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 32),
+                Center(
+                  child: _CourseBannerAd(
+                    key: const ValueKey('assignment_empty_banner'),
+                    adUnitId: EnvConfig.programBannersAdsKey,
+                    size: AdSize.mediumRectangle,
+                    isMinor: true,
+                  ),
                 ),
               ],
             ),
           ),
+        ] else ...[
+          // HAS ASSIGNMENT - Show all assignment-related content
+          if (!hasFeedback) ...[
+            const Text(
+              'Lesson Assignment',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
 
-        if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
-          const SizedBox(height: 10),
+            // Assignment Guidelines Card (always shown)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: const Color(0xFFFFB74D).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFFFF9800),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Assignment Guidelines',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFE65100),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Complete the assignment and submit before the deadline. Make sure to follow all instructions provided in the downloaded file.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade800,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Deadline: ${_formattedAssignmentDeadline()}',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade900,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        StreamBuilder<int>(
+                          stream: _countdownStream,
+                          builder: (context, snapshot) {
+                            final deadline = _assignmentDeadlineDate();
+                            if (deadline == null) {
+                              return Text(
+                                'No deadline set',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade900,
+                                ),
+                              );
+                            }
 
-        // Download Assignment Card
-        if (_effectiveAssignmentUrl != null && _effectiveAssignmentUrl!.isNotEmpty)
+                            final now = DateTime.now();
+                            final isPastDue = now.isAfter(deadline);
+                            final diff = isPastDue
+                                ? Duration.zero
+                                : deadline.difference(now);
+                            final days = diff.inDays;
+                            final hours = diff.inHours % 24;
+                            final minutes = diff.inMinutes % 60;
+                            final seconds = diff.inSeconds % 60;
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFDF2E5),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFFFFD4A1),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildCountdownItem(
+                                        'DAYS',
+                                        days.toString().padLeft(2, '0'),
+                                      ),
+                                      _buildCountdownItem(
+                                        'HOURS',
+                                        hours.toString().padLeft(2, '0'),
+                                      ),
+                                      _buildCountdownItem(
+                                        'MINUTES',
+                                        minutes.toString().padLeft(2, '0'),
+                                      ),
+                                      _buildCountdownItem(
+                                        'SECONDS',
+                                        seconds.toString().padLeft(2, '0'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (isPastDue) ...[
+                                  const SizedBox(height: 6),
+                                  Center(
+                                    child: const Text(
+                                      'Deadline passed',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFB91C1C),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Assignment Instructions (if available)
+          if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1F2937),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.list_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Assignment Instructions',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Html(
+                    data: _effectiveAssignmentDescription,
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(18),
+                        color: Colors.black87,
+                        lineHeight: LineHeight(1.4),
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                      ),
+                      "p": Style(
+                        margin: Margins(bottom: Margin(8)),
+                      ),
+                      "ul": Style(
+                        margin: Margins(bottom: Margin(8)),
+                        padding: HtmlPaddings(left: HtmlPadding(20)),
+                      ),
+                      "ol": Style(
+                        margin: Margins(bottom: Margin(8)),
+                        padding: HtmlPaddings(left: HtmlPadding(20)),
+                      ),
+                      "li": Style(
+                        margin: Margins(bottom: Margin(2)),
+                        padding: HtmlPaddings.zero,
+                      ),
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+          if ((_effectiveAssignmentDescription ?? '').trim().isNotEmpty)
+            const SizedBox(height: 10),
+
+          // Download Assignment Card
+          if (_effectiveAssignmentUrl != null &&
+              _effectiveAssignmentUrl!.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with icon
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2196F3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.assignment,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Assignment',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2196F3),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Use the buttons below to preview or download the assignment file.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Buttons Row
+                  Row(
+                    children: [
+                      // Preview Button
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            if (_effectiveAssignmentUrl == null ||
+                                _effectiveAssignmentUrl!.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('No assignment file available'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+                            _previewAssignment(_effectiveAssignmentUrl!);
+                          },
+                          icon: const Icon(Icons.visibility, size: 18),
+                          label: const Text('Preview'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF2196F3),
+                            side: const BorderSide(color: Color(0xFF2196F3)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Download Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () =>
+                              _downloadAssignment(_effectiveAssignmentUrl!),
+                          icon: const Icon(Icons.download, size: 18),
+                          label: const Text('Download'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2196F3),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // Submit Assignment Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -5802,209 +6250,136 @@ if (_hasAttendance) ...[
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
-                        Icons.assignment,
+                        Icons.upload_file,
                         color: Colors.white,
                         size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Assignment',
+                    Text(
+                      _hasSubmittedAssignment
+                          ? 'Submitted Assignment'
+                          : 'Submit Assignment',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2196F3),
+                        color: Color(0xFF6366F1),
                         letterSpacing: -0.5,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
+                // Message
                 Text(
-                  'Use the buttons below to preview or download the assignment file.',
-                  style: TextStyle(
+                  _hasSubmittedAssignment
+                      ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
+                      : 'Once you\'ve completed the assignment, submit your work here for review.',
+                  style: const TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade700,
+                    color: Colors.black87,
                     height: 1.4,
                   ),
                 ),
-               
                 const SizedBox(height: 16),
-
-                // Buttons Row
-                Row(
-                  children: [
-                    // Preview Button
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          if (_effectiveAssignmentUrl == null || 
-                              _effectiveAssignmentUrl!.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('No assignment file available'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-                          _previewAssignment(_effectiveAssignmentUrl!);
-                        },
-                        icon: const Icon(Icons.visibility, size: 18),
-                        label: const Text('Preview'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF2196F3),
-                          side: const BorderSide(color: Color(0xFF2196F3)),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Download Button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            _downloadAssignment(_effectiveAssignmentUrl!),
-                        icon: const Icon(Icons.download, size: 18),
-                        label: const Text('Download'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2196F3),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-        const SizedBox(height: 16),
-
-        // Submit Assignment Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with icon
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.upload_file,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _hasSubmittedAssignment ? 'Submitted Assignment' : 'Submit Assignment',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF6366F1),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Message
-              Text(
+                // Buttons
                 _hasSubmittedAssignment
-                    ? 'You have already submitted this assignment. Preview it or resubmit with an updated file.'
-                    : 'Once you\'ve completed the assignment, submit your work here for review.',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Buttons
-              _hasSubmittedAssignment
-                ? Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            final submittedFileUrl = _submittedAssignmentUrl;
-                            if (submittedFileUrl != null && submittedFileUrl.isNotEmpty) {
-                              _previewAssignment(submittedFileUrl);
-                              return;
-                            }
-                            final linkUrl = _submission?.linkUrl?.trim();
-                            if (linkUrl != null && linkUrl.isNotEmpty) {
-                              _launchUrl(linkUrl);
-                              return;
-                            }
-                            final textContent = _submission?.textContent?.trim();
-                            if (textContent != null && textContent.isNotEmpty) {
-                              _showTextSubmissionDialog(textContent);
-                              return;
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('No submitted assignment found'),
-                                backgroundColor: Colors.red,
+                    ? Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                final submittedFileUrl =
+                                    _submittedAssignmentUrl;
+                                if (submittedFileUrl != null &&
+                                    submittedFileUrl.isNotEmpty) {
+                                  _previewAssignment(submittedFileUrl);
+                                  return;
+                                }
+                                final linkUrl = _submission?.linkUrl?.trim();
+                                if (linkUrl != null && linkUrl.isNotEmpty) {
+                                  _launchUrl(linkUrl);
+                                  return;
+                                }
+                                final textContent =
+                                    _submission?.textContent?.trim();
+                                if (textContent != null &&
+                                    textContent.isNotEmpty) {
+                                  _showTextSubmissionDialog(textContent);
+                                  return;
+                                }
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('No submitted assignment found'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.visibility, size: 18),
+                              label: const Text('Preview'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF6366F1),
+                                side:
+                                    const BorderSide(color: Color(0xFF6366F1)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.visibility, size: 18),
-                          label: const Text('Preview'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF6366F1),
-                            side: const BorderSide(color: Color(0xFF6366F1)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isPastDue
+                                  ? null
+                                  : () {
+                                      if (!_assignmentResubmitUnlocked) {
+                                        _showUnlockRewardDialog(
+                                            _RewardAction.assignmentResubmit);
+                                        return;
+                                      }
+                                      _openSubmitAssignmentPage(context);
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isPastDue
+                                    ? Colors.grey.shade400
+                                    : const Color(0xFF6366F1),
+                                disabledBackgroundColor: Colors.grey.shade400,
+                                disabledForegroundColor: Colors.white,
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Resubmit',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : SizedBox(
+                        width: double.infinity,
                         child: ElevatedButton(
                           onPressed: isPastDue
                               ? null
                               : () {
-                                  if (!_assignmentResubmitUnlocked) {
-                                    _showUnlockRewardDialog(_RewardAction.assignmentResubmit);
-                                    return;
-                                  }
                                   _openSubmitAssignmentPage(context);
                                 },
                           style: ElevatedButton.styleFrom(
@@ -6021,7 +6396,7 @@ if (_hasAttendance) ...[
                             elevation: 0,
                           ),
                           child: const Text(
-                            'Resubmit',
+                            'Submit Assignment',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -6029,437 +6404,400 @@ if (_hasAttendance) ...[
                           ),
                         ),
                       ),
-                    ],
-                  )
-                : SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isPastDue
-                          ? null
-                          : () {
-                              _openSubmitAssignmentPage(context);
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isPastDue
-                            ? Colors.grey.shade400
-                            : const Color(0xFF6366F1),
-                        disabledBackgroundColor: Colors.grey.shade400,
-                        disabledForegroundColor: Colors.white,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Submit Assignment',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-        // Additional Info
-      ],
-    ],
-  );
-}
-
-Widget _buildReviewsTab() {
-
-  // Show loading while waiting for data
-  if (!_dataLoaded) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: Color(0xFFFFA500)),
-          SizedBox(height: 16),
-          Text('Loading quiz data...'),
+          // Additional Info
         ],
-      ),
+      ],
     );
   }
 
-  // If we have data but no quiz, show empty state
-  if (!_lessonHasQuiz) {
+  Widget _buildReviewsTab() {
+    // Show loading while waiting for data
+    if (!_dataLoaded) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: Color(0xFFFFA500)),
+            SizedBox(height: 16),
+            Text('Loading quiz data...'),
+          ],
+        ),
+      );
+    }
+
+    // If we have data but no quiz, show empty state
+    if (!_lessonHasQuiz) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Empty state icon
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.quiz_outlined,
+                    size: 60,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                const Text(
+                  'No Quiz Available',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+
+                // Description
+                Text(
+                  'There is no quiz available for this lesson.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 32),
+                Builder(
+                  builder: (adContext) => Center(
+                    child: _CourseBannerAd(
+                      key: const ValueKey('quiz_empty_banner'),
+                      adUnitId: EnvConfig.programBannersAdsKey,
+                      size: AdSize.mediumRectangle,
+                      isMinor: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // If we have a quiz, show the quiz UI
+    final bool isBelowThreshold = _quizTaken && _quizScore < 50;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Empty state icon
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.quiz_outlined,
-                  size: 60,
-                  color: Colors.grey.shade400,
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Title
-              const Text(
-                'No Quiz Available',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              
-              // Description
-              Text(
-                'There is no quiz available for this lesson.',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey.shade600,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 32),
-              Builder(
-                builder: (adContext) => Center(
-                  child: _CourseBannerAd(
-                    key: const ValueKey('quiz_empty_banner'),
-                    adUnitId: EnvConfig.programBannersAdsKey,
-                    size: AdSize.mediumRectangle,
-                    isMinor: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // If we have a quiz, show the quiz UI
-  final bool isBelowThreshold = _quizTaken && _quizScore < 50;
-
-  return ListView(
-    padding: const EdgeInsets.all(16),
-    children: [
-      // Low Score Warning - Only shown if score is below 50 and quiz taken
-      if (isBelowThreshold) ...[
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFEBEE),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF5350),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.warning_outlined,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Score Below Threshold',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFFEF5350),
+        // Low Score Warning - Only shown if score is below 50 and quiz taken
+        if (isBelowThreshold) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEBEE),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: const Color(0xFFEF5350).withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF5350),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.warning_outlined,
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              RichText(
-                text: TextSpan(
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade800,
-                    height: 1.5,
-                  ),
-                  children: [
-                    const TextSpan(text: 'Your current score of '),
-                    TextSpan(
-                      text: '$_quizScore%',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const TextSpan(
-                      text:
-                          ' does not meet the program\'s minimum threshold of ',
-                    ),
-                    const TextSpan(
-                      text: '50%',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const TextSpan(
-                      text:
-                          '. Please retake the quiz to improve your score.',
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Score Below Threshold',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFEF5350),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-             
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    // Check if retake needs to be unlocked
-                    if (_quizTaken && !_quizUnlocked) {
-                      _showUnlockRewardDialog(_RewardAction.quizRetake);
-                      return;
-                    }
-
-                    // Otherwise, navigate to quiz directly
-                    _navigateToQuiz();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF5350),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child:  Text( 
-                    _quizRetryMessage != null ? 'Retake Quiz' : 'Retake Quiz',
+                const SizedBox(height: 12),
+                RichText(
+                  text: TextSpan(
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Colors.grey.shade800,
+                      height: 1.5,
                     ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-
-      // Take Quiz Card (show only if lesson has quiz and not below threshold or not taken)
-      if (!isBelowThreshold)
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with icon
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFA500),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.quiz,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Lesson Quiz',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFFFA500),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Message
-              const Text(
-                'Find out how much you learnt by taking a Test',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    // Check if retake needs to be unlocked
-                    if (_quizTaken && !_quizUnlocked) {
-                      _showUnlockRewardDialog(_RewardAction.quizRetake);
-                      return;
-                    }
-
-                    // Otherwise, navigate to quiz directly
-                    _navigateToQuiz();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFA500),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    _quizTaken ? 'Retake Quiz' : 'Take Quiz',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-      // Show quiz assessment only if quiz is taken
-      if (_quizTaken) ...[
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Lesson Assessment',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Circular Progress
-              Center(
-                child: SizedBox(
-                  width: 160,
-                  height: 160,
-                  child: Stack(
-                    alignment: Alignment.center,
                     children: [
-                      // Background circle
-                      SizedBox(
-                        width: 160,
-                        height: 160,
-                        child: CircularProgressIndicator(
-                          value: 1.0,
-                          strokeWidth: 12,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            const Color(0xFFFFA500).withValues(alpha: 0.15),
-                          ),
-                        ),
+                      const TextSpan(text: 'Your current score of '),
+                      TextSpan(
+                        text: '$_quizScore%',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      // Progress circle with color based on score
-                      SizedBox(
-                        width: 160,
-                        height: 160,
-                        child: CircularProgressIndicator(
-                          value: _quizScore / 100,
-                          strokeWidth: 12,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            _quizScore >= 50
-                                ? const Color(0xFF4CAF50) // Green for passing
-                                : const Color(0xFFEF5350), // Red for failing
-                          ),
-                        ),
+                      const TextSpan(
+                        text:
+                            ' does not meet the program\'s minimum threshold of ',
                       ),
-                      // Score text - FIX THIS PART
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$_quizScore%', // Show actual score
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              color: _quizScore >= 50
-                                  ? const Color(0xFF4CAF50)
-                                  : const Color(0xFFEF5350),
-                            ),
-                          ),
-                          Text(
-                            'Score',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
+                      const TextSpan(
+                        text: '50%',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const TextSpan(
+                        text: '. Please retake the quiz to improve your score.',
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      // Check if retake needs to be unlocked
+                      if (_quizTaken && !_quizUnlocked) {
+                        _showUnlockRewardDialog(_RewardAction.quizRetake);
+                        return;
+                      }
+
+                      // Otherwise, navigate to quiz directly
+                      _navigateToQuiz();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF5350),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      _quizRetryMessage != null ? 'Retake Quiz' : 'Retake Quiz',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 16),
+        ],
+
+        // Take Quiz Card (show only if lesson has quiz and not below threshold or not taken)
+        if (!isBelowThreshold)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with icon
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFA500),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.quiz,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Lesson Quiz',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFFFA500),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Message
+                const Text(
+                  'Find out how much you learnt by taking a Test',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      // Check if retake needs to be unlocked
+                      if (_quizTaken && !_quizUnlocked) {
+                        _showUnlockRewardDialog(_RewardAction.quizRetake);
+                        return;
+                      }
+
+                      // Otherwise, navigate to quiz directly
+                      _navigateToQuiz();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFA500),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      _quizTaken ? 'Retake Quiz' : 'Take Quiz',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Show quiz assessment only if quiz is taken
+        if (_quizTaken) ...[
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Lesson Assessment',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Circular Progress
+                Center(
+                  child: SizedBox(
+                    width: 160,
+                    height: 160,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Background circle
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: 1.0,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              const Color(0xFFFFA500).withValues(alpha: 0.15),
+                            ),
+                          ),
+                        ),
+                        // Progress circle with color based on score
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: _quizScore / 100,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _quizScore >= 50
+                                  ? const Color(0xFF4CAF50) // Green for passing
+                                  : const Color(0xFFEF5350), // Red for failing
+                            ),
+                          ),
+                        ),
+                        // Score text - FIX THIS PART
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$_quizScore%', // Show actual score
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: _quizScore >= 50
+                                    ? const Color(0xFF4CAF50)
+                                    : const Color(0xFFEF5350),
+                              ),
+                            ),
+                            Text(
+                              'Score',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
-    ],
-  );
-}
-// preview assignment 
-
-
-
+    );
+  }
+// preview assignment
 
   String _calculateTotalDuration() {
     int totalMinutes = 0;
@@ -6898,7 +7236,8 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                                       Text(
                                         ' / ${_formatDuration(widget.controller.value.duration)}',
                                         style: TextStyle(
-                                          color: Colors.white.withValues(alpha: 0.7),
+                                          color: Colors.white
+                                              .withValues(alpha: 0.7),
                                           fontSize: 14,
                                         ),
                                       ),
@@ -6925,8 +7264,8 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 12, vertical: 6),
                                           decoration: BoxDecoration(
-                                            color:
-                                                Colors.white.withValues(alpha: 0.2),
+                                            color: Colors.white
+                                                .withValues(alpha: 0.2),
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                           ),
@@ -7008,19 +7347,19 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
       // For Android, use the public Downloads folder
       final downloadsPath = '/storage/emulated/0/Download';
       final downloadsDir = Directory(downloadsPath);
-      
+
       // Check if the directory exists, if not try alternative paths
       if (await downloadsDir.exists()) {
         return downloadsDir;
       }
-      
+
       // Try alternative path (some devices use different paths)
       final altPath = '/sdcard/Download';
       final altDir = Directory(altPath);
       if (await altDir.exists()) {
         return altDir;
       }
-      
+
       // If neither exists, create the standard one
       try {
         await downloadsDir.create(recursive: true);
@@ -7038,27 +7377,29 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
     return null;
   }
 
-  Future<String?> _saveToPublicDownloads(Uint8List bytes, String fileName) async {
-  if (!Platform.isAndroid) return null;
-  
-  try {
-    const platform = MethodChannel('com.linkskool.app/downloads');
-    final String? result = await platform.invokeMethod(
-      'saveToDownloads',
-      {
-        'fileName': fileName,
-        'bytes': bytes,
-      },
-    );
-    return result;
-  } catch (e) {
-    return null;
+  Future<String?> _saveToPublicDownloads(
+      Uint8List bytes, String fileName) async {
+    if (!Platform.isAndroid) return null;
+
+    try {
+      const platform = MethodChannel('com.linkskool.app/downloads');
+      final String? result = await platform.invokeMethod(
+        'saveToDownloads',
+        {
+          'fileName': fileName,
+          'bytes': bytes,
+        },
+      );
+      return result;
+    } catch (e) {
+      return null;
+    }
   }
-}
 
   Future<void> _downloadPdf() async {
     try {
-      final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
+      final response = await http
+          .get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
       if (response.statusCode == 200) {
         final dir = await getTemporaryDirectory();
         final file = File('${dir.path}/assignment_preview.pdf');
@@ -7089,93 +7430,93 @@ class _AssignmentPreviewScreenState extends State<_AssignmentPreviewScreen> {
   }
 
   String _getFileNameFromUrl(String url) {
-  try {
-    final uri = Uri.parse(url);
-    final pathSegments = uri.pathSegments;
-    
-    if (pathSegments.isNotEmpty) {
-      String filename = pathSegments.last;
-      filename = Uri.decodeComponent(filename);
-      
-      if (!filename.toLowerCase().endsWith('.pdf')) {
-        filename = '$filename.pdf';
+    try {
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments;
+
+      if (pathSegments.isNotEmpty) {
+        String filename = pathSegments.last;
+        filename = Uri.decodeComponent(filename);
+
+        if (!filename.toLowerCase().endsWith('.pdf')) {
+          filename = '$filename.pdf';
+        }
+
+        return filename;
       }
-      
-      return filename;
-    }
-  } catch (e) {
+    } catch (e) {
       // Intentionally ignored.
     }
-  
-  return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
-}
 
-Future<void> _downloadToDevice() async {
-  try {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 20),
-            Text('Downloading...'),
-          ],
+    return 'Linkskool_File_${DateTime.now().millisecondsSinceEpoch}.pdf';
+  }
+
+  Future<void> _downloadToDevice() async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Downloading...'),
+            ],
+          ),
         ),
-      ),
-    );
-
-    final response = await http.get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
-    
-    if (response.statusCode == 200) {
-       final fileName = _getFileNameFromUrl(widget.assignmentUrl);
-      
-      final savedPath = await _saveToPublicDownloads(
-        response.bodyBytes,
-        fileName,
       );
 
-      if (mounted) {
-        Navigator.pop(context);
-        
-        if (savedPath != null) {
-          // Open with system chooser immediately
-          await _openFileWithChooser(savedPath);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save file'),
-              backgroundColor: Colors.red,
-            ),
-          );
+      final response = await http
+          .get(Uri.parse("https://linkskool.net/${widget.assignmentUrl}"));
+
+      if (response.statusCode == 200) {
+        final fileName = _getFileNameFromUrl(widget.assignmentUrl);
+
+        final savedPath = await _saveToPublicDownloads(
+          response.bodyBytes,
+          fileName,
+        );
+
+        if (mounted) {
+          Navigator.pop(context);
+
+          if (savedPath != null) {
+            // Open with system chooser immediately
+            await _openFileWithChooser(savedPath);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to save file'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       }
-    }
-  } catch (e) {
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Download failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
-}
 
+  Future<void> _openFileWithChooser(String filePath) async {
+    if (!Platform.isAndroid) return;
 
-Future<void> _openFileWithChooser(String filePath) async {
-  if (!Platform.isAndroid) return;
-  
-  try {
-    const platform = MethodChannel('com.linkskool.app/downloads');
-    await platform.invokeMethod('openFile', {'filePath': filePath});
-  } catch (e) {
+    try {
+      const platform = MethodChannel('com.linkskool.app/downloads');
+      await platform.invokeMethod('openFile', {'filePath': filePath});
+    } catch (e) {
       // Intentionally ignored.
     }
-}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -7265,8 +7606,7 @@ Future<void> _openFileWithChooser(String filePath) async {
                         onPageChanged: (page, total) {
                           setState(() => _currentPage = page ?? 0);
                         },
-                        onError: (error) {
-                        },
+                        onError: (error) {},
                       ),
                     ),
                   ],
@@ -7285,7 +7625,7 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   double get minExtent => _tabBar.preferredSize.height;
-  
+
   @override
   double get maxExtent => _tabBar.preferredSize.height;
 
@@ -7330,19 +7670,20 @@ class _CourseBannerAdState extends State<_CourseBannerAd> {
   @override
   void initState() {
     super.initState();
-   _ad = BannerAd(
-  adUnitId: widget.adUnitId,
-  size: widget.size,
-  request: AdRequest(nonPersonalizedAds: widget.isMinor),
-  listener: BannerAdListener(
-    onAdLoaded: (_) => mounted ? setState(() => _isLoaded = true) : null,
-    onAdFailedToLoad: (ad, error) {
-      ad.dispose();
-    },
-  ),
-); Future.delayed(const Duration(seconds: 3), () {
-    if (mounted) _ad?.load();
-  });
+    _ad = BannerAd(
+      adUnitId: widget.adUnitId,
+      size: widget.size,
+      request: AdRequest(nonPersonalizedAds: widget.isMinor),
+      listener: BannerAdListener(
+        onAdLoaded: (_) => mounted ? setState(() => _isLoaded = true) : null,
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+        },
+      ),
+    );
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) _ad?.load();
+    });
   }
 
   @override
@@ -7368,15 +7709,3 @@ class _CourseBannerAdState extends State<_CourseBannerAd> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -247,7 +247,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           child: CbtContinueAdsDialog(
             onWatchAds: () async {
               await _subscriptionService.setAdMode('continue_with_ads');
-              if (!context.mounted) return false;
+              if (!mounted) return false;
               final rewarded =
                   await StudyAdManager.instance.showRewardedForPaywall(
                 context: context,
@@ -273,7 +273,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
               if (planResult == 'continue_ads') {
                 await _subscriptionService.setAdMode('continue_with_ads');
-                if (!context.mounted) return false;
+                if (!mounted) return false;
                 final rewarded =
                     await StudyAdManager.instance.showRewardedForPaywall(
                   context: context,
@@ -434,7 +434,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                 context: context,
                 trigger: CbtScopedAdTrigger.resultNavigation,
               );
-              if (!mounted) return;
+              if (!context.mounted) return;
 
               _isNavigatingAway = true;
               // Navigate to progress dashboard

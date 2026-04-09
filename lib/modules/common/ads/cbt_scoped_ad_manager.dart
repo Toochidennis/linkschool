@@ -130,6 +130,7 @@ class CbtScopedAdManager {
 
     await preloadInterstitial();
     await preloadRewarded();
+    if (!context.mounted) return;
 
     if (await shouldShowAppOpenAds(context)) {
       await preloadAppOpen();

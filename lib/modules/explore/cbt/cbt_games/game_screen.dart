@@ -12,8 +12,10 @@ import 'dart:convert';
 
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
+import 'package:linkschool/modules/services/explore/gamify_leaderboard_service.dart';
 import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
 
@@ -37,17 +39,22 @@ class GameTestScreen extends StatefulWidget {
 
 class _GameTestScreenState extends State<GameTestScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const int _startingLives = 5;
+  static const int _questionsPerLevel = 15;
+
+  final GamifyLeaderboardService _leaderboardService =
+      GamifyLeaderboardService();
   final Map<int, int> _userAnswers = {};
   int _score = 0;
   int _streak = 0;
   int _highestStreak = 0;
-  int _correctAnswers = 0; // Track correct answers for accuracy
-  int _userCoins =
-      50; // User's available coins (initialize with default or fetch from provider)
+  int _correctAnswers = 0;
+  int _currentLevel = 1;
+  int _lives = _startingLives;
+  int _completedLevels = 0;
+  bool _hasSavedScore = false;
   late AnimationController _pulseController;
   late AnimationController _progressController;
-  late AnimationController _bounceController;
-  late Animation<double> _bounceAnimation;
 
   // Lifeline states
   bool _fiftyFiftyUsed = false;
@@ -70,8 +77,6 @@ class _GameTestScreenState extends State<GameTestScreen>
 
   // Ad and lives system
   bool _canShowGamifyAds = false;
-  bool _isPendingFinish =
-      false; // Track if quiz should finish after failed last question
 
   void _initializeAudio() async {
     _correctSoundPlayer = AudioPlayer();
@@ -89,13 +94,17 @@ class _GameTestScreenState extends State<GameTestScreen>
     }
   }
 
-  int _remainingTime = 600; // 10 minutes
   bool _isAnswered = false;
   bool _showAnswerPopup = false;
   bool _showExplanationModal = false;
   bool _isCountdownComplete = false;
   bool _shouldShowAppOpenOnResume = false;
-  Timer? _timer;
+  int _visibleOptionCount = 0;
+  String? _activeQuestionPresentationKey;
+  Timer? _optionsRevealTimer;
+  Timer? _instructionPromptTimer;
+  final Set<String> _autoShownInstructionKeys = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -111,16 +120,6 @@ class _GameTestScreenState extends State<GameTestScreen>
       duration: const Duration(milliseconds: 500),
     );
 
-    // Bounce animation for "Read More" arrow
-    _bounceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
-
-    _bounceAnimation = Tween<double>(begin: 0, end: 4).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
-    );
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _prepareGameEntry();
     });
@@ -132,6 +131,14 @@ class _GameTestScreenState extends State<GameTestScreen>
     if (!mounted) return;
     setState(() {
       _canShowGamifyAds = canShowAds;
+      _score = 0;
+      _streak = 0;
+      _highestStreak = 0;
+      _correctAnswers = 0;
+      _currentLevel = 1;
+      _lives = _startingLives;
+      _completedLevels = 0;
+      _hasSavedScore = false;
     });
     await GamifyAdManager.instance.preloadAll(context);
     if (!mounted) return;
@@ -161,13 +168,13 @@ class _GameTestScreenState extends State<GameTestScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => _LoadingCountdownDialog(
+        level: _currentLevel,
         onComplete: () {
           if (!mounted) return;
           Navigator.of(context).pop();
           setState(() {
             _isCountdownComplete = true;
           });
-          _startTimer(); // Start the timer after countdown
         },
       ),
     );
@@ -181,33 +188,107 @@ class _GameTestScreenState extends State<GameTestScreen>
     await provider.initializeOfflineSession(
       courseId: widget.courseId,
       examTypeId: widget.examTypeId,
-      questionLimit: widget.questionLimit,
+      questionLimit: _questionsPerLevel,
     );
+    if (!mounted) return;
+    _resetQuestionUi();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _optionsRevealTimer?.cancel();
+    _instructionPromptTimer?.cancel();
     _pulseController.dispose();
     _progressController.dispose();
-    _bounceController.dispose();
     _correctSoundPlayer.dispose();
     _wrongSoundPlayer.dispose();
     _buttonSoundPlayer.dispose();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      if (_remainingTime <= 0) {
-        _timer?.cancel();
-        _finishQuiz();
-        return;
-      }
-      setState(() => _remainingTime--);
-    });
+  void _resetQuestionUi() {
+    _optionsRevealTimer?.cancel();
+    _instructionPromptTimer?.cancel();
+    _userAnswers.clear();
+    _hiddenOptionsPerQuestion.clear();
+    _computerSuggestion = null;
+    _fiftyFiftyUsed = false;
+    _askComputerUsed = false;
+    _isAnswered = false;
+    _showAnswerPopup = false;
+    _showExplanationModal = false;
+    _visibleOptionCount = 0;
+    _activeQuestionPresentationKey = null;
+  }
+
+  Future<void> _reloadCurrentLevel({
+    required int startIndex,
+  }) async {
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    await provider.reloadOfflineSession(
+      courseId: widget.courseId,
+      examTypeId: widget.examTypeId,
+      questionLimit: _questionsPerLevel,
+      startIndex: startIndex,
+    );
+    if (!mounted) return;
+    setState(_resetQuestionUi);
+    _progressController.forward(from: 0);
+  }
+
+  Future<void> _loadNextLevel() async {
+    final nextLevel = _currentLevel + 1;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _NextTopicCountdownDialog(
+        level: nextLevel,
+        onComplete: () async {
+          if (!mounted) return;
+          Navigator.of(context).pop();
+          await _reloadCurrentLevel(startIndex: 0);
+          if (!mounted) return;
+          setState(() {
+            _currentLevel = nextLevel;
+            _completedLevels = nextLevel - 1;
+          });
+        },
+      ),
+    );
+  }
+
+  int _currentProgressWithinLevel(QuestionsProvider provider) {
+    final base = provider.currentQuestionIndex;
+    return base + (_isAnswered ? 1 : 0);
+  }
+
+  int _totalAnsweredProgress(QuestionsProvider provider) {
+    return (_completedLevels * _questionsPerLevel) +
+        _currentProgressWithinLevel(provider);
+  }
+
+  String _playerName() {
+    final user =
+        Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+    return user?.displayName ?? 'Player';
+  }
+
+  Future<void> _saveScoreIfNeeded() async {
+    if (_hasSavedScore) return;
+    _hasSavedScore = true;
+    final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    await _leaderboardService.saveEntry(
+      GamifyLeaderboardEntry(
+        playerName: _playerName(),
+        subject: widget.subject,
+        score: _score,
+        levelReached: _currentLevel,
+        correctAnswers: _correctAnswers,
+        totalAnswered: _totalAnsweredProgress(provider),
+        playedAt: DateTime.now(),
+      ),
+    );
   }
 
   void _selectAnswer(int optionIndex, Question question) {
@@ -252,17 +333,6 @@ class _GameTestScreenState extends State<GameTestScreen>
         _vibrateWrong();
 
         _showAnswerPopup = true;
-
-        // Check if this is the last question
-        final provider = Provider.of<QuestionsProvider>(context, listen: false);
-        final isLastQuestion =
-            provider.currentQuestionIndex >= provider.allQuestions.length - 1 &&
-                !provider.hasMoreTopics;
-
-        if (isLastQuestion) {
-          // Set flag to prevent auto-finish and show revive dialog first
-          _isPendingFinish = true;
-        }
       }
     });
 
@@ -301,69 +371,27 @@ class _GameTestScreenState extends State<GameTestScreen>
 
   Future<void> _moveToNextQuestion() async {
     final provider = Provider.of<QuestionsProvider>(context, listen: false);
-
-    // Check if we're at the last question of current batch and there are more topics
-    final isAtEndOfCurrentBatch =
+    final isLastQuestion =
         provider.currentQuestionIndex >= provider.allQuestions.length - 1;
-    final hasMoreTopicsToLoad = provider.hasMoreTopics;
 
-    if (isAtEndOfCurrentBatch && hasMoreTopicsToLoad) {
-      // Show countdown while loading next topic's questions
-      _showNextTopicCountdown();
+    if (isLastQuestion) {
+      if (_lives <= 0) {
+        _showNextLevelRewardGate();
+      } else {
+        await _loadNextLevel();
+      }
       return;
     }
 
     // Try to move to next question
     final hasMore = await provider.nextQuestion();
 
-    if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
-      // Game complete - no more questions from any topic
-      // Only finish if not pending (meaning user didn't fail on last question)
-      if (!_isPendingFinish) {
-        _finishQuiz();
-      }
+    if (!hasMore) {
+      await _loadNextLevel();
     } else {
-      // Reset state for next question (but keep lifeline usage state)
-      setState(() {
-        _isAnswered = false;
-        _showAnswerPopup = false;
-        // Note: Lifelines (_fiftyFiftyUsed, _askComputerUsed, _shuffleUsed) are NOT reset
-        // They remain used for the entire game session
-        // Hidden options per question are preserved in _hiddenOptionsPerQuestion map
-        _computerSuggestion = null;
-      });
+      setState(_resetQuestionUi);
       _progressController.forward(from: 0);
     }
-  }
-
-  void _showNextTopicCountdown() {
-    final provider = Provider.of<QuestionsProvider>(context, listen: false);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => _NextTopicCountdownDialog(
-        currentTopicIndex: provider.currentTopicIndex,
-        totalTopics: provider.totalTopics,
-        onComplete: () async {
-          if (!mounted) return;
-          Navigator.of(context).pop();
-
-          // Now fetch the next topic's questions
-          final hasMore = await provider.nextQuestion();
-
-          if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
-            _finishQuiz();
-          } else {
-            setState(() {
-              _isAnswered = false;
-              _showAnswerPopup = false;
-            });
-            _progressController.forward(from: 0);
-          }
-        },
-      ),
-    );
   }
 
   void _playCorrectSound() async {
@@ -418,6 +446,19 @@ class _GameTestScreenState extends State<GameTestScreen>
     }
   }
 
+  Future<void> _consumeLifeAndReloadLevel(int failedIndex) async {
+    if (_lives <= 0) {
+      _showFailModal();
+      return;
+    }
+
+    setState(() {
+      _lives -= 1;
+    });
+
+    await _reloadCurrentLevel(startIndex: failedIndex);
+  }
+
   void _showFailModal() {
     showDialog(
       context: context,
@@ -431,7 +472,6 @@ class _GameTestScreenState extends State<GameTestScreen>
         final dialogWidth =
             isLandscape ? screenWidth * 0.7 : screenWidth * 0.90;
         final maxHeight = screenHeight * 0.8;
-        final hasEnoughCoins = _userCoins >= 20;
         final canWatchRewardAd = _canShowGamifyAds;
 
         return Dialog(
@@ -466,41 +506,33 @@ class _GameTestScreenState extends State<GameTestScreen>
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Revive?',
+                            'Out of lives',
                             style: AppTextStyles.normal600(
                                 fontSize: 20, color: Colors.black87),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'You answered incorrectly. Choose an option to continue playing.',
+                            'Watch a rewarded ad to continue from this question, or end this run here.',
                             textAlign: TextAlign.center,
                             style: AppTextStyles.normal400(
                                 fontSize: 14, color: Colors.black54),
                           ),
                           const SizedBox(height: 8),
-                          // Display user's current coins
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
+                              color: Colors.red.shade50,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                  color: Colors.amber.shade200, width: 1),
+                                  color: Colors.red.shade200, width: 1),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.monetization_on,
-                                    color: Colors.amber.shade700, size: 18),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Your coins: $_userCoins',
-                                  style: AppTextStyles.normal600(
-                                      fontSize: 12,
-                                      color: Colors.amber.shade900),
-                                ),
-                              ],
+                            child: Text(
+                              'Lives left: $_lives',
+                              style: AppTextStyles.normal600(
+                                fontSize: 12,
+                                color: Colors.red.shade900,
+                              ),
                             ),
                           ),
                         ],
@@ -511,18 +543,15 @@ class _GameTestScreenState extends State<GameTestScreen>
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
                       child: Column(
                         children: [
-                          // Revive with 20 coins button
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: hasEnoughCoins
-                                  ? () {
-                                      _reviveWithCoins();
-                                    }
-                                  : null,
+                              onPressed: () async {
+                                Navigator.pop(context);
+                                await _finishQuiz();
+                              },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber.shade600,
-                                disabledBackgroundColor: Colors.grey.shade300,
+                                backgroundColor: Colors.grey.shade200,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
@@ -532,18 +561,14 @@ class _GameTestScreenState extends State<GameTestScreen>
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
-                                    Icons.monetization_on,
-                                    color: hasEnoughCoins
-                                        ? Colors.white
-                                        : Colors.grey.shade500,
+                                    Icons.stop_circle_outlined,
+                                    color: Colors.grey.shade800,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Revive with 20 Coins',
+                                    'End Run',
                                     style: AppTextStyles.normal600(
-                                        color: hasEnoughCoins
-                                            ? Colors.white
-                                            : Colors.grey.shade500,
+                                        color: Colors.grey.shade800,
                                         fontSize: 14),
                                   ),
                                 ],
@@ -556,9 +581,23 @@ class _GameTestScreenState extends State<GameTestScreen>
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: canWatchRewardAd
-                                  ? () {
-                                      _showRewardedAd();
-                                    }
+                                  ? () => _showRewardedAd(
+                                        successMessage:
+                                            'Ad complete. Continue from where you stopped.',
+                                        onRewardEarned: () async {
+                                          final provider =
+                                              Provider.of<QuestionsProvider>(
+                                            context,
+                                            listen: false,
+                                          );
+                                          final failedIndex =
+                                              provider.currentQuestionIndex;
+                                          Navigator.pop(context);
+                                          await _reloadCurrentLevel(
+                                            startIndex: failedIndex,
+                                          );
+                                        },
+                                      )
                                   : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.eLearningContColor3,
@@ -592,11 +631,11 @@ class _GameTestScreenState extends State<GameTestScreen>
                               ),
                             ),
                           ),
-                          if (!hasEnoughCoins && canWatchRewardAd)
+                          if (canWatchRewardAd)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
-                                'Not enough coins. Watch an ad to continue!',
+                                'You will continue from this same question after the ad.',
                                 textAlign: TextAlign.center,
                                 style: AppTextStyles.normal400(
                                     fontSize: 12, color: Colors.red.shade600),
@@ -614,14 +653,9 @@ class _GameTestScreenState extends State<GameTestScreen>
                 right: 8,
                 child: IconButton(
                   icon: Icon(Icons.close, color: Colors.grey.shade600),
-                  onPressed: () {
-                    Navigator.pop(context); // close dialog
-                    if (_isPendingFinish) {
-                      _isPendingFinish = false;
-                      _finishQuiz();
-                    } else {
-                      Navigator.pop(context); // exit game
-                    }
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _finishQuiz();
                   },
                 ),
               ),
@@ -632,70 +666,66 @@ class _GameTestScreenState extends State<GameTestScreen>
     );
   }
 
-  void _reviveWithCoins() {
-    if (_userCoins < 20) {
-      return;
-    }
-
-    setState(() {
-      _userCoins -= 20; // Deduct 20 coins
-    });
-
-    // Clear pending finish flag since user is continuing
-    _isPendingFinish = false;
-
-    // Close the fail modal
-    Navigator.pop(context);
-
-    // Show success message (without sound since this is a revive action)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Revived! 20 coins deducted. Continue playing! 🎮',
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
+  void _showNextLevelRewardGate() {
+    final nextLevel = _currentLevel + 1;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Unlock Level $nextLevel',
+          style: AppTextStyles.normal600(fontSize: 20),
+        ),
+        content: Text(
+          'You completed Level $_currentLevel with no lives left. Watch a rewarded ad to move to Level $nextLevel.',
+          style: AppTextStyles.normal400(fontSize: 14, color: Colors.black54),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _finishQuiz();
+            },
+            child: Text(
+              'End Run',
+              style: AppTextStyles.normal600(
+                fontSize: 14,
+                color: Colors.grey.shade700,
               ),
             ),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+          ),
+          ElevatedButton(
+            onPressed: _canShowGamifyAds
+                ? () => _showRewardedAd(
+                      successMessage: 'Level $nextLevel unlocked.',
+                      onRewardEarned: () async {
+                        Navigator.pop(context);
+                        await _loadNextLevel();
+                      },
+                    )
+                : null,
+            child: const Text('Watch Ad'),
+          ),
+        ],
       ),
     );
-
-    // Continue to next question after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        _moveToNextQuestion();
-      }
-    });
   }
 
-  void _showRewardedAd() {
+  void _showRewardedAd({
+    required Future<void> Function() onRewardEarned,
+    required String successMessage,
+  }) {
     if (!_canShowGamifyAds) {
       return;
     }
 
     GamifyAdManager.instance
         .showRewardedIfEligible(context: context)
-        .then((rewardEarned) {
+        .then((rewardEarned) async {
       if (!mounted || !rewardEarned) {
         return;
       }
-
-      _isPendingFinish = false;
-      Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -705,7 +735,7 @@ class _GameTestScreenState extends State<GameTestScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Great! You can continue playing! 🎮',
+                  successMessage,
                   style: AppTextStyles.normal600(
                     fontSize: 14,
                     color: Colors.white,
@@ -723,11 +753,7 @@ class _GameTestScreenState extends State<GameTestScreen>
         ),
       );
 
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _moveToNextQuestion();
-        }
-      });
+      await onRewardEarned();
     });
   }
 
@@ -834,102 +860,10 @@ class _GameTestScreenState extends State<GameTestScreen>
     _vibrateButton();
 
     if (!_canShowGamifyAds) {
-      _moveToNextQuestion();
       return;
     }
 
-    _showShuffleAdDialog();
-  }
-
-  void _showShuffleAdDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.eLearningBtnColor1,
-                AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.shuffle, size: 64, color: Colors.white),
-              SizedBox(height: 16),
-              Text(
-                'Shuffle Question',
-                style: AppTextStyles.normal600(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 12),
-              Text(
-                'Watch a short ad to skip to the next question',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.normal400(
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.white),
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: AppTextStyles.normal600(
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _canShowGamifyAds
-                          ? () {
-                              Navigator.pop(context);
-                              _showShuffleRewardedAd();
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.grey.shade300,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: Text(
-                        _canShowGamifyAds ? 'Watch Ad' : 'Ad Unavailable',
-                        style: AppTextStyles.normal600(
-                          fontSize: 16,
-                          color: _canShowGamifyAds
-                              ? AppColors.eLearningBtnColor1
-                              : Colors.grey.shade500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    _showShuffleRewardedAd();
   }
 
   void _showShuffleRewardedAd() {
@@ -937,59 +871,28 @@ class _GameTestScreenState extends State<GameTestScreen>
       return;
     }
 
-    GamifyAdManager.instance
-        .showRewardedIfEligible(context: context)
-        .then((rewardEarned) {
-      if (!mounted || !rewardEarned) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Moving to next question! 🔀',
-                  style: AppTextStyles.normal600(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _moveToNextQuestion();
-        }
-      });
-    });
+    _showRewardedAd(
+      successMessage: 'Moving to the next question.',
+      onRewardEarned: () async {
+        await _moveToNextQuestion();
+      },
+    );
   }
 
-  void _finishQuiz() {
+  Future<void> _finishQuiz() async {
     final provider = Provider.of<QuestionsProvider>(context, listen: false);
+    await _saveScoreIfNeeded();
+    if (!mounted) return;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => _ResultDialog(
         score: _score,
-        totalQuestions: provider.allQuestions.length,
-        answeredQuestions: _userAnswers.length,
+        answeredQuestions: _totalAnsweredProgress(provider),
         correctAnswers: _correctAnswers,
         highestStreak: _highestStreak,
+        levelReached: _currentLevel,
       ),
     );
   }
@@ -1018,26 +921,54 @@ class _GameTestScreenState extends State<GameTestScreen>
       );
     }
 
-    // Prepend base URL if it's a relative path
-    String imageUrl = url;
-    if (!url.startsWith('http') && !url.startsWith('data:')) {
-      imageUrl = 'https://linkskool.net/$url';
+    if (url.startsWith('assets/')) {
+      return Image.asset(
+        url,
+        width: width,
+        height: height,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: width,
+          height: height,
+          color: Colors.grey.shade200,
+          alignment: Alignment.center,
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: Colors.grey.shade500,
+          ),
+        ),
+      );
     }
 
-    return Image.network(
-      imageUrl,
+    return Container(
       width: width,
       height: height,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) =>
-          Container(width: width, height: height, color: Colors.grey.shade200),
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return SizedBox(
-            width: width,
-            height: height,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
-      },
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            color: Colors.grey.shade500,
+            size: 28,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Image unavailable',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1098,10 +1029,12 @@ class _GameTestScreenState extends State<GameTestScreen>
     final isCorrect = selectedAnswer == question.correct.order;
 
     if (!isCorrect) {
-      // Show revive modal for wrong answer
-      _showFailModal();
+      if (_lives > 0) {
+        await _consumeLifeAndReloadLevel(questionIndex);
+      } else {
+        _showFailModal();
+      }
     } else {
-      // Auto-advance for correct answer
       await _moveToNextQuestion();
     }
   }
@@ -1111,12 +1044,16 @@ class _GameTestScreenState extends State<GameTestScreen>
 
     _isExitingToDashboard = true;
     try {
-      provider.reset();
-      await GamifyAdManager.instance.showInterstitialIfEligible(
-        context: context,
-      );
-      if (!mounted) return;
-      Navigator.pop(context);
+      if (_score > 0 || _correctAnswers > 0) {
+        await _finishQuiz();
+      } else {
+        provider.reset();
+        await GamifyAdManager.instance.showInterstitialIfEligible(
+          context: context,
+        );
+        if (!mounted) return;
+        Navigator.pop(context);
+      }
     } finally {
       _isExitingToDashboard = false;
     }
@@ -1281,6 +1218,7 @@ class _GameTestScreenState extends State<GameTestScreen>
         final question = provider.allQuestions[questionIndex];
         final selectedAnswer = _userAnswers[questionIndex];
         final isCorrect = selectedAnswer == question.correct.order;
+        _ensureQuestionPresentation(question: question, provider: provider);
 
         return PopScope(
           canPop: false,
@@ -1311,7 +1249,6 @@ class _GameTestScreenState extends State<GameTestScreen>
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               children: [
-                                _buildInstructionPassagePreviewCard(question),
                                 _buildQuestionCard(question),
                                 const SizedBox(height: 20),
                                 _buildLifelinesSection(question),
@@ -1401,28 +1338,62 @@ class _GameTestScreenState extends State<GameTestScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
+                  icon: Icons.layers_rounded,
+                  label: 'Level',
+                  value: '$_currentLevel',
+                  color: Colors.cyanAccent,
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Lives',
+                        style: AppTextStyles.normal400(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 350),
+                        transitionBuilder: (child, animation) {
+                          return ScaleTransition(
+                              scale: animation, child: child);
+                        },
+                        child: Text(
+                          '$_lives',
+                          key: ValueKey(_lives),
+                          style: AppTextStyles.normal600(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Icon(Icons.favorite, color: Colors.redAccent, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: _buildStatCard(
                   icon: Icons.star,
                   label: 'Score',
                   value: '$_score',
                   color: Colors.amber,
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: _buildStatCard(
-                  icon: Icons.local_fire_department,
-                  label: 'Streak',
-                  value: '$_streak',
-                  color: Colors.orange,
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: _buildStatCard(
-                  icon: Icons.trending_up,
-                  label: 'Best',
-                  value: '$_highestStreak',
-                  color: Colors.green,
                 ),
               ),
             ],
@@ -1431,11 +1402,22 @@ class _GameTestScreenState extends State<GameTestScreen>
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: (provider.currentQuestionIndex + 1) /
-                  provider.allQuestions.length,
+              value: provider.allQuestions.isEmpty
+                  ? 0
+                  : ((provider.currentQuestionIndex + 1) /
+                          provider.allQuestions.length)
+                      .clamp(0, 1),
               backgroundColor: Colors.white.withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation<Color>(Colors.greenAccent),
               minHeight: 8,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Question ${provider.currentQuestionIndex + 1} of ${provider.allQuestions.length} in Level $_currentLevel',
+            style: AppTextStyles.normal400(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.85),
             ),
           ),
         ],
@@ -1488,168 +1470,123 @@ class _GameTestScreenState extends State<GameTestScreen>
     );
   }
 
-  /// Build instruction/passage preview card
-  Widget _buildInstructionPassagePreviewCard(Question question) {
-    final hasInstruction = question.instruction.isNotEmpty;
-    final hasPassage = question.passage.isNotEmpty;
+  bool _hasInstructionOrPassage(Question question) {
+    return question.instruction.trim().isNotEmpty ||
+        question.passage.trim().isNotEmpty;
+  }
 
-    String title = '';
-    String content = '';
+  String _instructionModalTitle(Question question) {
+    final hasInstruction = question.instruction.trim().isNotEmpty;
+    final hasPassage = question.passage.trim().isNotEmpty;
+
+    if (hasInstruction && hasPassage) return 'Instruction & Passage';
+    if (hasInstruction) return 'Instruction';
+    return 'Passage';
+  }
+
+  String _instructionModalContent(Question question) {
+    final hasInstruction = question.instruction.trim().isNotEmpty;
+    final hasPassage = question.passage.trim().isNotEmpty;
 
     if (hasInstruction && hasPassage) {
-      title = 'Instruction & Passage';
-      content = '${question.instruction}\n\n${question.passage}';
-    } else if (hasInstruction) {
-      title = 'Instruction';
-      content = question.instruction;
-    } else if (hasPassage) {
-      title = 'Passage';
-      content = question.passage;
+      return '${question.instruction}\n\n${question.passage}';
+    }
+    if (hasInstruction) return question.instruction;
+    return question.passage;
+  }
+
+  String _questionPresentationKey(
+    Question question,
+    QuestionsProvider provider,
+  ) {
+    return '$_currentLevel-${provider.currentQuestionIndex}-${question.questionId}';
+  }
+
+  void _ensureQuestionPresentation({
+    required Question question,
+    required QuestionsProvider provider,
+  }) {
+    final presentationKey = _questionPresentationKey(question, provider);
+    if (_activeQuestionPresentationKey == presentationKey) {
+      return;
     }
 
-    if (content.isEmpty) return const SizedBox.shrink();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _startQuestionPresentation(
+        question: question,
+        provider: provider,
+      );
+    });
+  }
 
-    // Define max characters for preview
-    const int maxPreviewLength = 150;
-    final bool isLongText = content.length > maxPreviewLength;
-    final String previewText =
-        isLongText ? '${content.substring(0, maxPreviewLength)}...' : content;
+  void _startQuestionPresentation({
+    required Question question,
+    required QuestionsProvider provider,
+  }) {
+    final presentationKey = _questionPresentationKey(question, provider);
+    if (_activeQuestionPresentationKey == presentationKey) {
+      return;
+    }
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with icon and title
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  hasInstruction && hasPassage
-                      ? Icons.menu_book_rounded
-                      : (hasInstruction
-                          ? Icons.info_outline
-                          : Icons.article_outlined),
-                  color: AppColors.eLearningBtnColor1,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTextStyles.normal700(
-                    fontSize: 14,
-                    color: AppColors.eLearningBtnColor1,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Preview text with gradient fade overlay for long text
-          Stack(
-            children: [
-              Html(
-                data: previewText,
-                style: {
-                  "body": Style(
-                    fontSize: FontSize(14),
-                    margin: Margins.zero,
-                    padding: HtmlPaddings.zero,
-                    lineHeight: LineHeight(1.5),
-                    color: AppColors.text4Light,
-                    maxLines: 4,
-                    textOverflow: TextOverflow.ellipsis,
-                  ),
-                },
-              ),
-              // White gradient fade overlay at bottom (only if text is long)
-              if (isLongText)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.white.withValues(alpha: 0),
-                          Colors.white.withValues(alpha: 0.7),
-                          Colors.white,
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          // Read More (only if text is long)
-          if (isLongText) ...[
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerRight,
-              child: InkWell(
-                onTap: () => _showInstructionOrPassageModal(title, content),
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Read More',
-                        style: AppTextStyles.normal600(
-                          fontSize: 13,
-                          color: AppColors.eLearningBtnColor1,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      AnimatedBuilder(
-                        animation: _bounceAnimation,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(_bounceAnimation.value, 0),
-                            child: child,
-                          );
-                        },
-                        child: Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          color: AppColors.eLearningBtnColor1,
-                          size: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+    _optionsRevealTimer?.cancel();
+    _instructionPromptTimer?.cancel();
+
+    setState(() {
+      _activeQuestionPresentationKey = presentationKey;
+      _visibleOptionCount = 0;
+    });
+
+    final totalOptions = question.options.length;
+    if (totalOptions == 0) {
+      _scheduleInstructionPrompt(question, presentationKey);
+      return;
+    }
+
+    var revealedOptions = 0;
+    _optionsRevealTimer = Timer.periodic(
+      const Duration(milliseconds: 100),
+      (timer) {
+        if (!mounted || _activeQuestionPresentationKey != presentationKey) {
+          timer.cancel();
+          return;
+        }
+
+        revealedOptions += 1;
+        setState(() {
+          _visibleOptionCount = revealedOptions.clamp(0, totalOptions);
+        });
+
+        if (revealedOptions >= totalOptions) {
+          timer.cancel();
+          _scheduleInstructionPrompt(question, presentationKey);
+        }
+      },
+    );
+  }
+
+  void _scheduleInstructionPrompt(Question question, String presentationKey) {
+    if (!_hasInstructionOrPassage(question) ||
+        _autoShownInstructionKeys.contains(presentationKey)) {
+      return;
+    }
+
+    _instructionPromptTimer = Timer(
+      const Duration(milliseconds: 220),
+      () {
+        if (!mounted ||
+            _activeQuestionPresentationKey != presentationKey ||
+            _showAnswerPopup ||
+            _showExplanationModal) {
+          return;
+        }
+
+        _autoShownInstructionKeys.add(presentationKey);
+        _showInstructionOrPassageModal(
+          _instructionModalTitle(question),
+          _instructionModalContent(question),
+        );
+      },
     );
   }
 
@@ -1824,6 +1761,35 @@ class _GameTestScreenState extends State<GameTestScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 20),
+              if (_hasInstructionOrPassage(question)) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => _showInstructionOrPassageModal(
+                      _instructionModalTitle(question),
+                      _instructionModalContent(question),
+                    ),
+                    icon: Icon(
+                      question.instruction.trim().isNotEmpty &&
+                              question.passage.trim().isNotEmpty
+                          ? Icons.menu_book_rounded
+                          : question.instruction.trim().isNotEmpty
+                              ? Icons.info_outline
+                              : Icons.article_outlined,
+                      color: AppColors.eLearningBtnColor1,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _instructionModalTitle(question),
+                      style: AppTextStyles.normal600(
+                        fontSize: 13,
+                        color: AppColors.eLearningBtnColor1,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+              ],
               Html(
                 data: question.questionText,
                 style: {
@@ -1924,6 +1890,7 @@ class _GameTestScreenState extends State<GameTestScreen>
         final showWrong = _isAnswered && isSelected && !isCorrect;
         final isHidden = hiddenOptions.contains(index);
         final isComputerSuggestion = _computerSuggestion == index;
+        final isVisible = index < _visibleOptionCount || _isAnswered;
 
         // Keep empty space for removed options (even after answering)
         if (isHidden) {
@@ -1952,142 +1919,147 @@ class _GameTestScreenState extends State<GameTestScreen>
           borderColor = Colors.blue;
         }
 
-        return TweenAnimationBuilder(
-          duration: Duration(milliseconds: 300),
-          tween: Tween<double>(begin: 0, end: 1),
-          builder: (context, double value, child) {
-            return Transform.scale(
-              scale: value,
-              child: child,
-            );
-          },
-          child: GestureDetector(
-            onTap: () => _selectAnswer(index, question),
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 300),
-              margin: EdgeInsets.only(bottom: 12),
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: borderColor,
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: borderColor.withValues(alpha: 0.2),
-                    blurRadius: isSelected ? 8 : 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: showCorrect
-                          ? Colors.green
-                          : showWrong
-                              ? Colors.red
-                              : isSelected
-                                  ? AppColors.eLearningBtnColor1
-                                  : Colors.transparent,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: showCorrect || showWrong || isSelected
-                            ? Colors.transparent
-                            : Colors.grey,
-                        width: 2,
-                      ),
+        return AnimatedSlide(
+          offset: isVisible ? Offset.zero : const Offset(0.12, 0),
+          duration: Duration(milliseconds: 280 + (index * 40)),
+          curve: Curves.easeOutCubic,
+          child: AnimatedOpacity(
+            opacity: isVisible ? 1 : 0,
+            duration: Duration(milliseconds: 240 + (index * 40)),
+            curve: Curves.easeOut,
+            child: IgnorePointer(
+              ignoring: !isVisible,
+              child: GestureDetector(
+                onTap: () => _selectAnswer(index, question),
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  margin: EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: borderColor,
+                      width: 2,
                     ),
-                    child: Center(
-                      child: showCorrect
-                          ? Icon(Icons.check, color: Colors.white, size: 20)
-                          : showWrong
-                              ? Icon(Icons.close, color: Colors.white, size: 20)
-                              : isSelected
-                                  ? Icon(Icons.check,
+                    boxShadow: [
+                      BoxShadow(
+                        color: borderColor.withValues(alpha: 0.2),
+                        blurRadius: isSelected ? 8 : 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: showCorrect
+                              ? Colors.green
+                              : showWrong
+                                  ? Colors.red
+                                  : isSelected
+                                      ? AppColors.eLearningBtnColor1
+                                      : Colors.transparent,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: showCorrect || showWrong || isSelected
+                                ? Colors.transparent
+                                : Colors.grey,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: showCorrect
+                              ? Icon(Icons.check, color: Colors.white, size: 20)
+                              : showWrong
+                                  ? Icon(Icons.close,
                                       color: Colors.white, size: 20)
-                                  : Text(
-                                      String.fromCharCode(65 + index),
-                                      style: AppTextStyles.normal600(
-                                        fontSize: 16,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Html(
-                      data: option.text,
-                      style: {
-                        "body": Style(
-                          margin: Margins.zero,
-                          padding: HtmlPaddings.zero,
-                          fontSize: FontSize(16),
-                          color: textColor,
-                          fontWeight: FontWeight.w600,
+                                  : isSelected
+                                      ? Icon(Icons.check,
+                                          color: Colors.white, size: 20)
+                                      : Text(
+                                          String.fromCharCode(65 + index),
+                                          style: AppTextStyles.normal600(
+                                            fontSize: 16,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                         ),
-                        "img": Style(
-                          width: Width.auto(),
-                          padding: HtmlPaddings.only(left: 4, right: 4),
-                        ),
-                      },
-                      extensions: [
-                        TagExtension(
-                          tagsToExtend: {"img"},
-                          builder: (extensionContext) {
-                            final attributes = extensionContext.attributes;
-                            final src = attributes['src'] ?? '';
-
-                            if (src.isEmpty) return const SizedBox.shrink();
-
-                            return GestureDetector(
-                              onTap: () => _showFullScreenImage(src),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 2),
-                                child: _getImageWidget(src, height: 30),
-                              ),
-                            );
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Html(
+                          data: option.text,
+                          style: {
+                            "body": Style(
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                              fontSize: FontSize(16),
+                              color: textColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            "img": Style(
+                              width: Width.auto(),
+                              padding: HtmlPaddings.only(left: 4, right: 4),
+                            ),
                           },
+                          extensions: [
+                            TagExtension(
+                              tagsToExtend: {"img"},
+                              builder: (extensionContext) {
+                                final attributes = extensionContext.attributes;
+                                final src = attributes['src'] ?? '';
+
+                                if (src.isEmpty) return const SizedBox.shrink();
+
+                                return GestureDetector(
+                                  onTap: () => _showFullScreenImage(src),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 2),
+                                    child: _getImageWidget(src, height: 30),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      if (showCorrect)
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '+$_pointsPerQuestion ⭐',
+                            style: AppTextStyles.normal600(
+                              fontSize: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      if (isComputerSuggestion && !_isAnswered)
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.computer,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                    ],
                   ),
-                  if (showCorrect)
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '+$_pointsPerQuestion ⭐',
-                        style: AppTextStyles.normal600(
-                          fontSize: 12,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  if (isComputerSuggestion && !_isAnswered)
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.computer,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
           ),
@@ -2234,17 +2206,17 @@ class _GameTestScreenState extends State<GameTestScreen>
 
 class _ResultDialog extends StatelessWidget {
   final int score;
-  final int totalQuestions;
   final int answeredQuestions;
   final int correctAnswers;
   final int highestStreak;
+  final int levelReached;
 
   const _ResultDialog({
     required this.score,
-    required this.totalQuestions,
     required this.answeredQuestions,
     required this.correctAnswers,
     required this.highestStreak,
+    required this.levelReached,
   });
 
   @override
@@ -2286,7 +2258,7 @@ class _ResultDialog extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Text(
-              'Quiz Complete!',
+              'Run Complete!',
               style: AppTextStyles.normal600(
                 fontSize: 24,
                 color: Colors.white,
@@ -2294,7 +2266,7 @@ class _ResultDialog extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              'Great job! Here\'s your result',
+              'You reached Level $levelReached',
               style: AppTextStyles.normal400(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.8),
@@ -2314,9 +2286,7 @@ class _ResultDialog extends StatelessWidget {
                     children: [
                       _buildStatItem('Score', '$score ⭐', Colors.amber),
                       _buildStatItem(
-                          'Answered',
-                          '$answeredQuestions/$totalQuestions',
-                          Colors.greenAccent),
+                          'Answered', '$answeredQuestions', Colors.greenAccent),
                     ],
                   ),
                   SizedBox(height: 16),
@@ -2335,6 +2305,7 @@ class _ResultDialog extends StatelessWidget {
             SizedBox(height: 24),
             ElevatedButton(
               onPressed: () async {
+                Provider.of<QuestionsProvider>(context, listen: false).reset();
                 await GamifyAdManager.instance.showInterstitialIfEligible(
                   context: context,
                 );
@@ -3229,9 +3200,11 @@ class _GameCountdownDialogState extends State<_GameCountdownDialog>
 }
 
 class _LoadingCountdownDialog extends StatefulWidget {
+  final int level;
   final VoidCallback onComplete;
 
   const _LoadingCountdownDialog({
+    required this.level,
     required this.onComplete,
   });
 
@@ -3335,10 +3308,20 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
             // Title
             const Text(
-              'Starting Game',
+              'Starting Level',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Level ${widget.level}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
                 fontFamily: 'Urbanist',
               ),
@@ -3410,13 +3393,11 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 }
 
 class _NextTopicCountdownDialog extends StatefulWidget {
-  final int currentTopicIndex;
-  final int totalTopics;
+  final int level;
   final VoidCallback onComplete;
 
   const _NextTopicCountdownDialog({
-    required this.currentTopicIndex,
-    required this.totalTopics,
+    required this.level,
     required this.onComplete,
   });
 
@@ -3520,7 +3501,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
 
             // Title
             const Text(
-              'Next Topic',
+              'Next Level',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -3532,7 +3513,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
 
             // Progress indicator
             Text(
-              'Topic ${widget.currentTopicIndex + 1} of ${widget.totalTopics}',
+              'Level ${widget.level}',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
@@ -3544,7 +3525,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
 
             // Message
             const Text(
-              'Loading more questions...',
+              'Loading a fresh question set...',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

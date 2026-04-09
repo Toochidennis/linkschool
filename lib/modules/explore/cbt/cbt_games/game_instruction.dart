@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
+
+import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_screen.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
+import 'package:linkschool/modules/services/explore/gamify_leaderboard_service.dart';
 
 class GameInstructionsScreen extends StatefulWidget {
   final String subject;
@@ -21,7 +23,6 @@ class GameInstructionsScreen extends StatefulWidget {
   State<GameInstructionsScreen> createState() => _GameInstructionsScreenState();
 }
 
-// Custom painter for animated background pattern
 class _PatternPainter extends CustomPainter {
   final double animationValue;
 
@@ -55,37 +56,20 @@ class _PatternPainter extends CustomPainter {
 
 class _GameInstructionsScreenState extends State<GameInstructionsScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const int _startingLives = 5;
+  static const int _pointsPerCorrectAnswer = 10;
+
+  final GamifyLeaderboardService _leaderboardService =
+      GamifyLeaderboardService();
+
   late AnimationController _slideController;
   late AnimationController _fadeController;
   late AnimationController _pulseController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  bool _shouldShowAppOpenOnResume = false;
 
-  // Sample top players data - replace with real data from your backend
-  final List<Map<String, dynamic>> _topPlayers = [
-    {
-      'name': 'Sarah Johnson',
-      'points': 2850,
-      'avatar': '🏆',
-      'rank': 1,
-      'color': Color(0xFFFFD700), // Gold
-    },
-    {
-      'name': 'David Chen',
-      'points': 2640,
-      'avatar': '🥈',
-      'rank': 2,
-      'color': Color(0xFFC0C0C0), // Silver
-    },
-    {
-      'name': 'Emma Wilson',
-      'points': 2420,
-      'avatar': '🥉',
-      'rank': 3,
-      'color': Color(0xFFCD7F32), // Bronze
-    },
-  ];
+  bool _shouldShowAppOpenOnResume = false;
+  List<GamifyLeaderboardEntry> _leaderboardEntries = const [];
 
   @override
   void initState() {
@@ -94,21 +78,21 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
 
     _slideController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 600),
     );
 
     _pulseController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
     _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.3),
+      begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
@@ -129,6 +113,15 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await GamifyAdManager.instance.preloadAll(context);
+      await _loadLeaderboardPreview();
+    });
+  }
+
+  Future<void> _loadLeaderboardPreview() async {
+    final entries = await _leaderboardService.getEntries();
+    if (!mounted) return;
+    setState(() {
+      _leaderboardEntries = entries.take(3).toList(growable: false);
     });
   }
 
@@ -184,8 +177,8 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF6366F1).withValues(alpha: 0.1),
-              Color(0xFF8B5CF6).withValues(alpha: 0.05),
+              const Color(0xFF6366F1).withValues(alpha: 0.1),
+              const Color(0xFF8B5CF6).withValues(alpha: 0.05),
               Colors.white,
             ],
           ),
@@ -193,31 +186,23 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         child: SafeArea(
           child: Column(
             children: [
-              // Header
               _buildHeader(),
-
-              // Scrollable Content
               Expanded(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: SingleChildScrollView(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Game Info Card
                           _buildGameInfoCard(),
-                          SizedBox(height: 24),
-
-                          // Instructions Section
+                          const SizedBox(height: 24),
                           _buildInstructionsSection(),
-                          SizedBox(height: 24),
-
-                          // Top 3 Players Section
+                          const SizedBox(height: 24),
                           _buildTopPlayersSection(),
-                          SizedBox(height: 100),
+                          const SizedBox(height: 100),
                         ],
                       ),
                     ),
@@ -234,14 +219,14 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -249,10 +234,10 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back, color: Colors.black87),
+            icon: const Icon(Icons.arrow_back, color: Colors.black87),
           ),
-          SizedBox(width: 8),
-          Text(
+          const SizedBox(width: 8),
+          const Text(
             'Game Instructions',
             style: TextStyle(
               fontSize: 20,
@@ -269,7 +254,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
     return Container(
       width: math.min(MediaQuery.of(context).size.width, 500),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -280,15 +265,14 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF6366F1).withValues(alpha: 0.4),
+            color: const Color(0xFF6366F1).withValues(alpha: 0.4),
             blurRadius: 15,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Animated background pattern
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _pulseController,
@@ -300,39 +284,39 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(15),
+            padding: const EdgeInsets.all(15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.gamepad,
                         color: Colors.white,
                         size: 28,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             widget.subject,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
                             ),
                           ),
                           Text(
-                            'Quiz Game',
+                            'Offline Level Run',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white.withValues(alpha: 0.9),
@@ -344,21 +328,45 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                     ),
                   ],
                 ),
-                SizedBox(height: 18),
-                Row(
+                const SizedBox(height: 18),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
-                    _buildInfoChip(
-                      icon: Icons.quiz_outlined,
-                      label: '${widget.questionLimit}',
-                      subtitle: ' Questions',
+                    SizedBox(
+                      width: 132,
+                      child: _buildInfoChip(
+                        icon: Icons.quiz_outlined,
+                        label: '${widget.questionLimit}',
+                        subtitle: ' / Level',
+                      ),
                     ),
-                    SizedBox(width: 10),
-                    _buildInfoChip(
-                      icon: Icons.timer,
-                      label: '10',
-                      subtitle: ' Min',
+                    SizedBox(
+                      width: 132,
+                      child: _buildInfoChip(
+                        icon: Icons.favorite,
+                        label: '$_startingLives',
+                        subtitle: ' Lives',
+                      ),
+                    ),
+                    SizedBox(
+                      width: 132,
+                      child: _buildInfoChip(
+                        icon: Icons.stars_rounded,
+                        label: '+$_pointsPerCorrectAnswer',
+                        subtitle: ' Score',
+                      ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Each level pulls random questions from the subject you already downloaded to your CBT database.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.92),
+                    height: 1.5,
+                  ),
                 ),
               ],
             ),
@@ -373,51 +381,57 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
     required String label,
     required String subtitle,
   }) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 7),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 18),
-            SizedBox(width: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 18),
+          const SizedBox(width: 6),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: label,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  TextSpan(
+                    text: subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.9),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildInstructionsSection() {
     final instructions = [
-      'Read each question carefully before answering',
-      'Use lifelines wisely - 50:50, Ask PC, and Shuffle',
-      'Each correct answer earns you points',
-      'Build a streak by answering consecutively correct',
-      'You can revive with coins or by watching ads',
-      'Try to beat the top players!',
+      'Start each run with $_startingLives lives and keep climbing until you stop or can no longer continue.',
+      'Every level loads ${widget.questionLimit} random questions from the downloaded subject database.',
+      'Each correct answer earns $_pointsPerCorrectAnswer points, and clearing the full level moves you to the next one.',
+      'Miss a question with lives left and 1 life is removed, the level refreshes, and you continue from that same question count.',
+      'Run out of lives and you can watch a rewarded ad to continue from where you stopped. If you finish a level with zero lives, you will also watch an ad before the next level unlocks.',
+      'Shuffle also uses a rewarded ad, while your score, level, and name are saved for the gamify leaderboard.',
     ];
 
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -425,7 +439,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -435,21 +449,21 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.info_outline,
                   color: Colors.white,
                   size: 20,
                 ),
               ),
-              SizedBox(width: 12),
-              Text(
+              const SizedBox(width: 12),
+              const Text(
                 'How to Play',
                 style: TextStyle(
                   fontSize: 20,
@@ -459,7 +473,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
               ),
             ],
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           ...instructions.asMap().entries.map((entry) {
             return TweenAnimationBuilder(
               duration: Duration(milliseconds: 400 + (entry.key * 100)),
@@ -474,22 +488,22 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                 );
               },
               child: Container(
-                margin: EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 16),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      margin: EdgeInsets.only(top: 2),
+                      margin: const EdgeInsets.only(top: 2),
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: Color(0xFF6366F1).withValues(alpha: 0.1),
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Text(
                           '${entry.key + 1}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF6366F1),
@@ -497,11 +511,11 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                         ),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         entry.value,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black87,
                           height: 1.5,
@@ -525,22 +539,22 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         Row(
           children: [
             Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.emoji_events,
                 color: Colors.white,
                 size: 20,
               ),
             ),
-            SizedBox(width: 12),
-            Text(
-              'Top 3 Players',
+            const SizedBox(width: 12),
+            const Text(
+              'Top Leaders',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -549,12 +563,37 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
             ),
           ],
         ),
-        SizedBox(height: 16),
-        ..._topPlayers.asMap().entries.map((entry) {
+        const SizedBox(height: 16),
+        if (_leaderboardEntries.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Text(
+              'No gamify scores yet. Finish a run and your name will appear here.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ..._leaderboardEntries.asMap().entries.map((entry) {
           final player = entry.value;
-          final index = entry.key;
+          final rank = entry.key + 1;
+          final color = switch (rank) {
+            1 => const Color(0xFFFFD700),
+            2 => const Color(0xFFC0C0C0),
+            3 => const Color(0xFFCD7F32),
+            _ => const Color(0xFF6366F1),
+          };
+
           return TweenAnimationBuilder(
-            duration: Duration(milliseconds: 600 + (index * 150)),
+            duration: Duration(milliseconds: 600 + (entry.key * 150)),
             tween: Tween<double>(begin: 0, end: 1),
             builder: (context, double value, child) {
               return Transform.scale(
@@ -566,103 +605,73 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
               );
             },
             child: Container(
-              margin: EdgeInsets.only(bottom: 12),
-              padding: EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: player['color'] as Color,
-                  width: 2,
-                ),
+                border: Border.all(color: color, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: (player['color'] as Color).withValues(alpha: 0.2),
+                    color: color.withValues(alpha: 0.2),
                     blurRadius: 10,
-                    offset: Offset(0, 4),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Row(
                 children: [
-                  // Rank badge
                   Container(
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          player['color'] as Color,
-                          (player['color'] as Color).withValues(alpha: 0.7),
-                        ],
+                        colors: [color, color.withValues(alpha: 0.7)],
                       ),
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              (player['color'] as Color).withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: Center(
                       child: Text(
-                        player['avatar'],
-                        style: TextStyle(fontSize: 24),
+                        '$rank',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                  SizedBox(width: 16),
-                  // Player info
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          player['name'],
-                          style: TextStyle(
+                          player.playerName,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: Colors.black87,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              size: 16,
-                              color: Colors.amber,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              '${player['points']} points',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${player.score} points • Level ${player.levelReached}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          player.subject,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ],
-                    ),
-                  ),
-                  // Rank number
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: (player['color'] as Color).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '#${player['rank']}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: player['color'] as Color,
-                      ),
                     ),
                   ),
                 ],
@@ -676,10 +685,8 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
 
   Widget _buildBottomButton() {
     return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-      ),
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: AnimatedBuilder(
         animation: _pulseController,
         builder: (context, child) {
@@ -691,15 +698,15 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
         child: ElevatedButton(
           onPressed: _startGame,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF6366F1),
-            padding: EdgeInsets.symmetric(vertical: 8),
+            backgroundColor: const Color(0xFF6366F1),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             elevation: 8,
-            shadowColor: Color(0xFF6366F1).withValues(alpha: 0.5),
+            shadowColor: const Color(0xFF6366F1).withValues(alpha: 0.5),
           ),
-          child: Row(
+          child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(

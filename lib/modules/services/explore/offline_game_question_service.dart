@@ -2,7 +2,7 @@ import 'package:linkschool/database/cbt_db_helper.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 
 class OfflineGameQuestionService {
-  static const int defaultQuestionLimit = 20;
+  static const int defaultQuestionLimit = 15;
 
   final CbtDbHelper _db = CbtDbHelper.instance;
 

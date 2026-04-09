@@ -85,6 +85,38 @@ class QuestionsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> reloadOfflineSession({
+    required int courseId,
+    required int examTypeId,
+    int questionLimit = OfflineGameQuestionService.defaultQuestionLimit,
+    int startIndex = 0,
+  }) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      questionsData = await _offlineGameService.fetchQuestions(
+        courseId: courseId,
+        examTypeId: examTypeId,
+        limit: questionLimit,
+      );
+      allQuestions = questionsData?.data ?? [];
+      if (allQuestions.isEmpty) {
+        currentQuestionIndex = 0;
+      } else {
+        currentQuestionIndex = startIndex.clamp(0, allQuestions.length - 1);
+      }
+    } catch (e) {
+      error = e.toString();
+      allQuestions = [];
+      currentQuestionIndex = 0;
+    }
+
+    loading = false;
+    notifyListeners();
+  }
+
   /// Initialize study session with selected topics
   Future<void> initializeStudySession({
     required List<int> topicIds,

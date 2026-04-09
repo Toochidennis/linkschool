@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
-import 'package:linkschool/modules/providers/explore/challenge/challenge_leader_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:linkschool/modules/services/explore/gamify_leaderboard_service.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   final bool? fromChallenge;
@@ -21,7 +20,12 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen>
     with WidgetsBindingObserver {
+  final GamifyLeaderboardService _leaderboardService =
+      GamifyLeaderboardService();
+
   bool _shouldShowAppOpenOnResume = false;
+  bool _loading = true;
+  List<GamifyLeaderboardEntry> _entries = const [];
 
   @override
   void initState() {
@@ -30,16 +34,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await GamifyAdManager.instance.preloadAll(context);
+      await _loadLeaderboard();
     });
+  }
 
-    // Load leaderboard data when screen opens
-    if (widget.challengeId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context
-            .read<LeaderboardProvider>()
-            .loadLeaderboard(widget.challengeId!);
-      });
-    }
+  Future<void> _loadLeaderboard() async {
+    final entries = await _leaderboardService.getEntries();
+    if (!mounted) return;
+    setState(() {
+      _entries = entries;
+      _loading = false;
+    });
   }
 
   @override
@@ -61,12 +66,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Future<void> _handleBack() async {
-    if (widget.fromChallenge == true) {
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
-      return;
-    }
-
     await GamifyAdManager.instance.showInterstitialIfEligible(context: context);
     if (!mounted) return;
 
@@ -75,8 +74,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       return;
     }
 
-    Navigator.of(context).pop();
-    if (!mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -103,8 +100,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: _handleBack,
           ),
-          title: Text(
-            'Leaderboard',
+          title: const Text(
+            'Gamify Leaderboard',
             style: TextStyle(
               color: Colors.black,
               fontSize: 18,
@@ -113,279 +110,124 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           ),
           centerTitle: true,
         ),
-        body: Consumer<LeaderboardProvider>(
-          builder: (context, provider, child) {
-            if (provider.loading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            if (provider.error != null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.red),
-                    SizedBox(height: 16),
-                    Text(
-                      'Failed to load leaderboard',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _entries.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.leaderboard, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'No gamify scores yet',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      provider.error!,
-                      style: TextStyle(color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (widget.challengeId != null) {
-                          provider.loadLeaderboard(widget.challengeId!);
-                        }
-                      },
-                      child: Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            final leaderboard = provider.leaderboard;
-
-            if (leaderboard.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.leaderboard, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'No leaderboard data yet',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // Separate top 3 and rest
-            final top3 = leaderboard.take(3).toList();
-            final rest = leaderboard.skip(3).toList();
-
-            return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Top 3 Winners
-                    if (top3.length >= 3)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  )
+                : SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
                         children: [
-                          _buildTopWinner(
-                            rank: 2,
-                            name: top3[1].username,
-                            points: '${top3[1].score} points',
-                            image: '',
-                            borderColor: Colors.grey[300]!,
-                          ),
-                          _buildTopWinner(
-                            rank: 1,
-                            name: top3[0].username,
-                            points: '${top3[0].score} points',
-                            image: '',
-                            borderColor: const Color(0xFF8B5CF6),
-                          ),
-                          _buildTopWinner(
-                            rank: 3,
-                            name: top3[2].username,
-                            points: '${top3[2].score} points',
-                            image: '',
-                            borderColor: Colors.orange,
-                          ),
-                        ],
-                      )
-                    else if (top3.isNotEmpty)
-                      // Show available top winners
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: top3
-                            .map((entry) => _buildTopWinner(
-                                  rank: entry.position,
-                                  name: entry.username,
-                                  points: '${entry.score} points',
-                                  image: '',
-                                  borderColor: entry.position == 1
-                                      ? const Color(0xFF8B5CF6)
-                                      : entry.position == 2
-                                          ? Colors.grey[300]!
-                                          : Colors.orange,
-                                ))
-                            .toList(),
-                      ),
-
-                    const SizedBox(height: 24),
-
-                    // Header
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                              width: 40,
-                              child: Text('Rank',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 12))),
-                          Expanded(
-                              child: Text('Player',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 12))),
-                          Text('Points',
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 12)),
+                          ..._entries.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _buildLeaderboardItem(
+                                rank: index + 1,
+                                entry: item,
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ),
-
-                    // Leaderboard List
-                    ...rest.map((entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: _buildLeaderboardItem(
-                            entry.position,
-                            entry.username,
-                            '${entry.score} points',
-                            '',
-                          ),
-                        )),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+                  ),
       ),
     );
   }
 
-  Widget _buildTopWinner({
+  Widget _buildLeaderboardItem({
     required int rank,
-    required String name,
-    required String points,
-    required String image,
-    required Color borderColor,
+    required GamifyLeaderboardEntry entry,
   }) {
-    return Column(
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: borderColor, width: 3),
-              ),
-              child: CircleAvatar(
-                backgroundColor: Colors.grey[300],
-                child: Text(
-                  name.split(' ').map((e) => e[0]).join(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            if (rank == 1)
-              Positioned(
-                top: -10,
-                right: 25,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.amber,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.star,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          name,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          points,
-          style: TextStyle(
-            fontSize: 11,
-            color: rank == 1 ? const Color(0xFF8B5CF6) : Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
+    final isTopThree = rank <= 3;
+    final accent = switch (rank) {
+      1 => const Color(0xFFFFB800),
+      2 => const Color(0xFFB8C2CC),
+      3 => const Color(0xFFE38B2C),
+      _ => const Color(0xFF8B5CF6),
+    };
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String value,
-  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F8),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: accent.withValues(alpha: 0.28),
+          width: isTopThree ? 2 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: iconColor, size: 16),
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: accent.withValues(alpha: 0.14),
+            child: Text(
+              '$rank',
+              style: TextStyle(
+                color: accent,
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.playerName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  entry.subject,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildMetaChip('Score ${entry.score}'),
+                    _buildMetaChip('Level ${entry.levelReached}'),
+                    _buildMetaChip('Correct ${entry.correctAnswers}'),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -393,64 +235,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildLeaderboardItem(
-      int rank, String name, String points, String image) {
+  Widget _buildMetaChip(String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF4F4F7),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 24,
-            child: Text(
-              '$rank',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.white,
-            child: Text(
-              name.split(' ').map((e) => e[0]).join(),
-              style: const TextStyle(
-                color: Color(0xFF8B5CF6),
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            points,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey.shade800,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
