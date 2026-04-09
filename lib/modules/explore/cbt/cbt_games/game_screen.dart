@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -18,18 +19,16 @@ import 'package:vibration/vibration.dart';
 
 class GameTestScreen extends StatefulWidget {
   final String subject;
-  final List<String> topics;
-  final List<int> topicIds;
   final int courseId;
   final int examTypeId;
+  final int questionLimit;
 
   const GameTestScreen({
     super.key,
     required this.subject,
-    required this.topics,
-    required this.topicIds,
     required this.courseId,
     required this.examTypeId,
+    required this.questionLimit,
   });
 
   @override
@@ -37,7 +36,7 @@ class GameTestScreen extends StatefulWidget {
 }
 
 class _GameTestScreenState extends State<GameTestScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final Map<int, int> _userAnswers = {};
   int _score = 0;
   int _streak = 0;
@@ -57,7 +56,6 @@ class _GameTestScreenState extends State<GameTestScreen>
   final Map<int, Set<int>> _hiddenOptionsPerQuestion =
       {}; // For 50:50 lifeline - stores hidden options per question index
   int? _computerSuggestion; // For Ask Computer lifeline
-  List<int>? _shuffledIndices; // For Shuffle lifeline
 
   late AudioPlayer _correctSoundPlayer;
   late AudioPlayer _wrongSoundPlayer;
@@ -96,10 +94,13 @@ class _GameTestScreenState extends State<GameTestScreen>
   bool _showAnswerPopup = false;
   bool _showExplanationModal = false;
   bool _isCountdownComplete = false;
+  bool _shouldShowAppOpenOnResume = false;
   Timer? _timer;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initializeAudio();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -134,9 +135,25 @@ class _GameTestScreenState extends State<GameTestScreen>
     });
     await GamifyAdManager.instance.preloadAll(context);
     if (!mounted) return;
-    await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
-    if (!mounted) return;
     _showLoadingCountdown();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        !GamifyAdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAppOpenOnResume = true;
+    } else if (state == AppLifecycleState.resumed &&
+        _shouldShowAppOpenOnResume) {
+      _shouldShowAppOpenOnResume = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+      });
+    }
   }
 
   void _showLoadingCountdown() {
@@ -161,15 +178,16 @@ class _GameTestScreenState extends State<GameTestScreen>
 
   Future<void> _initializeGameSession() async {
     final provider = Provider.of<QuestionsProvider>(context, listen: false);
-    await provider.initializeStudySession(
-      topicIds: widget.topicIds,
+    await provider.initializeOfflineSession(
       courseId: widget.courseId,
       examTypeId: widget.examTypeId,
+      questionLimit: widget.questionLimit,
     );
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     _progressController.dispose();
     _bounceController.dispose();
@@ -313,7 +331,6 @@ class _GameTestScreenState extends State<GameTestScreen>
         // They remain used for the entire game session
         // Hidden options per question are preserved in _hiddenOptionsPerQuestion map
         _computerSuggestion = null;
-        _shuffledIndices = null;
       });
       _progressController.forward(from: 0);
     }
@@ -378,25 +395,25 @@ class _GameTestScreenState extends State<GameTestScreen>
   }
 
   void _vibrateCorrect() async {
-    if (await Vibration.hasVibrator() ?? false) {
+    if (await Vibration.hasVibrator() == true) {
       Vibration.vibrate(duration: _correctVibrationDuration);
     }
   }
 
   void _vibrateWrong() async {
-    if (await Vibration.hasVibrator() ?? false) {
+    if (await Vibration.hasVibrator() == true) {
       Vibration.vibrate(duration: _wrongVibrationDuration);
     }
   }
 
   void _vibrateStreak() async {
-    if (await Vibration.hasVibrator() ?? false) {
+    if (await Vibration.hasVibrator() == true) {
       Vibration.vibrate(pattern: _streakVibrationPattern);
     }
   }
 
   void _vibrateButton() async {
-    if (await Vibration.hasVibrator() ?? false) {
+    if (await Vibration.hasVibrator() == true) {
       Vibration.vibrate(duration: 50);
     }
   }
@@ -714,29 +731,6 @@ class _GameTestScreenState extends State<GameTestScreen>
     });
   }
 
-  Future<void> _nextQuestion() async {
-    _playButtonSound();
-    _vibrateButton();
-
-    await _moveToNextQuestion();
-  }
-
-  void _previousQuestion() {
-    _playButtonSound();
-    _vibrateButton();
-
-    final provider = Provider.of<QuestionsProvider>(context, listen: false);
-    provider.previousQuestion();
-
-    setState(() {
-      _isAnswered = _userAnswers.containsKey(provider.currentQuestionIndex);
-      // Clear visual effects when going back (lifeline usage flags remain)
-      // Hidden options per question are preserved in _hiddenOptionsPerQuestion map
-      _computerSuggestion = null;
-      _shuffledIndices = null;
-    });
-  }
-
   // Lifeline: 50:50 - Remove 2 random wrong answers
   void _useFiftyFifty(Question question) {
     if (_fiftyFiftyUsed || _isAnswered) return;
@@ -1011,6 +1005,17 @@ class _GameTestScreenState extends State<GameTestScreen>
         return Container(
             width: width, height: height, color: Colors.grey.shade200);
       }
+    }
+
+    if (url.startsWith('/')) {
+      return Image.file(
+        File(url),
+        width: width,
+        height: height,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Container(
+            width: width, height: height, color: Colors.grey.shade200),
+      );
     }
 
     // Prepend base URL if it's a relative path
@@ -2225,112 +2230,6 @@ class _GameTestScreenState extends State<GameTestScreen>
       ),
     );
   }
-
-  Widget _buildNavigationBar() {
-    final provider = Provider.of<QuestionsProvider>(context, listen: false);
-    final currentIndex = provider.currentQuestionIndex;
-    final totalQuestions = provider.allQuestions.length;
-
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: currentIndex > 0 ? _previousQuestion : null,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: currentIndex > 0
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.3),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Previous',
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
-                  color: currentIndex > 0
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.3),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: _finishQuiz,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 4,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.flag, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Finish Quiz',
-                    style: AppTextStyles.normal600(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: currentIndex < totalQuestions - 1 && !_isAnswered
-                  ? _nextQuestion
-                  : null,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: currentIndex < totalQuestions - 1 && !_isAnswered
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.3),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Skip',
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
-                  color: currentIndex < totalQuestions - 1 && !_isAnswered
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.3),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _ResultDialog extends StatelessWidget {
@@ -2443,7 +2342,8 @@ class _ResultDialog extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => LeaderboardScreen(),
+                    builder: (context) =>
+                        const LeaderboardScreen(fromGameDashboard: true),
                   ),
                 );
               },

@@ -5,18 +5,16 @@ import 'package:linkschool/modules/explore/cbt/cbt_games/game_screen.dart';
 
 class GameInstructionsScreen extends StatefulWidget {
   final String subject;
-  final List<String> topics;
-  final List<int> topicIds;
   final int courseId;
   final int examTypeId;
+  final int questionLimit;
 
   const GameInstructionsScreen({
     super.key,
     required this.subject,
-    required this.topics,
-    required this.topicIds,
     required this.courseId,
     required this.examTypeId,
+    required this.questionLimit,
   });
 
   @override
@@ -56,12 +54,13 @@ class _PatternPainter extends CustomPainter {
 }
 
 class _GameInstructionsScreenState extends State<GameInstructionsScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _slideController;
   late AnimationController _fadeController;
   late AnimationController _pulseController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
+  bool _shouldShowAppOpenOnResume = false;
 
   // Sample top players data - replace with real data from your backend
   final List<Map<String, dynamic>> _topPlayers = [
@@ -91,6 +90,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _slideController = AnimationController(
       vsync: this,
@@ -129,13 +129,30 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await GamifyAdManager.instance.preloadAll(context);
-      if (!mounted) return;
-      await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        !GamifyAdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAppOpenOnResume = true;
+    } else if (state == AppLifecycleState.resumed &&
+        _shouldShowAppOpenOnResume) {
+      _shouldShowAppOpenOnResume = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _slideController.dispose();
     _fadeController.dispose();
     _pulseController.dispose();
@@ -143,15 +160,16 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
   }
 
   Future<void> _startGame() async {
+    await GamifyAdManager.instance.showInterstitialIfEligible(context: context);
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => GameTestScreen(
           subject: widget.subject,
-          topics: widget.topics,
-          topicIds: widget.topicIds,
           courseId: widget.courseId,
           examTypeId: widget.examTypeId,
+          questionLimit: widget.questionLimit,
         ),
       ),
     );
@@ -330,9 +348,9 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                 Row(
                   children: [
                     _buildInfoChip(
-                      icon: Icons.topic,
-                      label: '${widget.topics.length}',
-                      subtitle: ' Topics',
+                      icon: Icons.quiz_outlined,
+                      label: '${widget.questionLimit}',
+                      subtitle: ' Questions',
                     ),
                     SizedBox(width: 10),
                     _buildInfoChip(

@@ -5,7 +5,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/ads/cbt_scoped_ad_manager.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_challange/challenge_ad_manager.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challenge_leader.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
@@ -48,12 +50,13 @@ class StartChallenge extends StatefulWidget {
 }
 
 class _StartChallengeState extends State<StartChallenge>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _slideController;
   late AnimationController _scaleController;
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
   final int _lastDisplayedQuestionIndex = -1;
+  bool _shouldShowAppOpenOnResume = false;
 
   Timer? _timer;
   int? _remainingSeconds;
@@ -76,6 +79,7 @@ class _StartChallengeState extends State<StartChallenge>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _slideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -141,7 +145,31 @@ class _StartChallengeState extends State<StartChallenge>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showLoadingCountdown();
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await ChallengeAdManager.instance.preloadAll(context);
+    });
     _slideController.forward();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        !ChallengeAdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAppOpenOnResume = true;
+    } else if (state == AppLifecycleState.resumed &&
+        _shouldShowAppOpenOnResume) {
+      _shouldShowAppOpenOnResume = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await ChallengeAdManager.instance.showAppOpenIfEligible(
+          context: context,
+        );
+      });
+    }
   }
 
   void _startTimer() {
@@ -169,19 +197,19 @@ class _StartChallengeState extends State<StartChallenge>
     final questionLimitForSubject =
         subjectQuestionLimits[currentExamId] ?? widget.questionLimit;
 
-      try {
-        if (widget.isPreview) {
-          // PREVIEW MODE → Use ChallengeProvider + ExamProvider (random questions)
-          final challengeProvider = context.read<ChallengeProvider>();
+    try {
+      if (widget.isPreview) {
+        // PREVIEW MODE → Use ChallengeProvider + ExamProvider (random questions)
+        final challengeProvider = context.read<ChallengeProvider>();
 
-          // Use the selected exam ID for the preview request.
-          // Subject names are only for display, not for the endpoint path.
-          final examType = currentExamId;
+        // Use the selected exam ID for the preview request.
+        // Subject names are only for display, not for the endpoint path.
+        final examType = currentExamId;
 
-          await challengeProvider.previewChallengeExam(
-            examType,
-            limit: questionLimitForSubject,
-          );
+        await challengeProvider.previewChallengeExam(
+          examType,
+          limit: questionLimitForSubject,
+        );
 
         // Manually set questions into ChallengeQuestionProvider (to reuse UI)
         // final questionProvider = context.read<ChallengeQuestionProvider>();
@@ -270,10 +298,12 @@ class _StartChallengeState extends State<StartChallenge>
     final question = provider.questions[currentIdx];
     final options = question.getOptions();
     final correctOptionIndex = question.getCorrectAnswerIndex();
-    final selectedOptionText =
-        optionIndex >= 0 && optionIndex < options.length ? options[optionIndex] : '';
+    final selectedOptionText = optionIndex >= 0 && optionIndex < options.length
+        ? options[optionIndex]
+        : '';
 
-    final isCorrect = correctOptionIndex != null && optionIndex == correctOptionIndex;
+    final isCorrect =
+        correctOptionIndex != null && optionIndex == correctOptionIndex;
 
     // Prefer the resolved option text, but fall back to the API-provided text.
     String correctAnswerText = '';
@@ -284,7 +314,6 @@ class _StartChallengeState extends State<StartChallenge>
     } else {
       correctAnswerText = question.correctAnswer?['text']?.toString() ?? '';
     }
-
 
     setState(() {
       _isCurrentAnswerCorrect = isCorrect;
@@ -299,7 +328,6 @@ class _StartChallengeState extends State<StartChallenge>
       _playWrongSound();
     }
   }
-  
 
   void _playCorrectSound() async {
     try {
@@ -313,7 +341,7 @@ class _StartChallengeState extends State<StartChallenge>
   void _playWrongSound() async {
     try {
       await _wrongSoundPlayer.stop();
-       await _wrongSoundPlayer.play(AssetSource('sounds/wrong.mp3.mpeg'));
+      await _wrongSoundPlayer.play(AssetSource('sounds/wrong.mp3.mpeg'));
       //await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
     } catch (e) {
       // Intentionally ignored.
@@ -345,10 +373,10 @@ class _StartChallengeState extends State<StartChallenge>
 
   void _completeCurrentExam(ChallengeQuestionProvider provider) {
     // Save answers and questions for current exam
-    final currentExamId = (widget.courseIds ?? widget.examIds)![currentExamIndex];
+    final currentExamId =
+        (widget.courseIds ?? widget.examIds)![currentExamIndex];
     allAnswers[currentExamId] = Map<int, int>.from(provider.userAnswers);
     allQuestions[currentExamId] = List<QuestionModel>.from(provider.questions);
-
 
     // Reset provider for next exam
     provider.reset();
@@ -405,7 +433,6 @@ class _StartChallengeState extends State<StartChallenge>
   }
 
   void _showFinalResults() {
-
     int totalQuestions = 0;
     int totalAnswered = 0;
     for (var entry in allAnswers.entries) {
@@ -415,11 +442,19 @@ class _StartChallengeState extends State<StartChallenge>
       totalQuestions += questions.length;
       totalAnswered += answers.length;
       final index = (widget.courseIds ?? widget.examIds)!.indexOf(examId);
-      if (index >= 0) {
-      }
+      if (index >= 0) {}
     }
 
     _submitQuiz();
+  }
+
+  Future<void> _handleExitChallenge() async {
+    await ChallengeAdManager.instance.showIfEligible(
+      context: context,
+      trigger: CbtScopedAdTrigger.testExit,
+    );
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   int _calculateScore(ChallengeQuestionProvider p) {
@@ -490,6 +525,7 @@ class _StartChallengeState extends State<StartChallenge>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _slideController.dispose();
     _scaleController.dispose();
@@ -530,63 +566,71 @@ class _StartChallengeState extends State<StartChallenge>
 
         // Dialog only shows when Read More button is clicked - no auto-show
 
-        return Scaffold(
-          backgroundColor: Colors.white,
-          body: Stack(
-            children: [
-              SafeArea(
-                child: Column(
-                  children: [
-                    _buildHeader(provider, progress.toDouble()),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: BouncingScrollPhysics(),
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          children: [
-                            SizedBox(height: 20),
-                            // Instruction/Passage Preview Card
-                            if (question != null &&
-                                ((question.instruction.isNotEmpty ?? false) ||
-                                    (question.passage.isNotEmpty ?? false)))
-                              _buildInstructionPassagePreviewCard(question),
-                            if (question != null)
-                              SlideTransition(
-                                position: Tween<Offset>(
-                                        begin: Offset(1.0, 0), end: Offset.zero)
-                                    .animate(CurvedAnimation(
-                                        parent: _slideController,
-                                        curve: Curves.easeOutCubic)),
-                                child: FadeTransition(
-                                  opacity: _slideController,
-                                  child: _buildQuestionCard(question),
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            await _handleExitChallenge();
+          },
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            body: Stack(
+              children: [
+                SafeArea(
+                  child: Column(
+                    children: [
+                      _buildHeader(provider, progress.toDouble()),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: BouncingScrollPhysics(),
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              SizedBox(height: 20),
+                              // Instruction/Passage Preview Card
+                              if (question != null &&
+                                  ((question.instruction.isNotEmpty ?? false) ||
+                                      (question.passage.isNotEmpty ?? false)))
+                                _buildInstructionPassagePreviewCard(question),
+                              if (question != null)
+                                SlideTransition(
+                                  position: Tween<Offset>(
+                                          begin: Offset(1.0, 0),
+                                          end: Offset.zero)
+                                      .animate(CurvedAnimation(
+                                          parent: _slideController,
+                                          curve: Curves.easeOutCubic)),
+                                  child: FadeTransition(
+                                    opacity: _slideController,
+                                    child: _buildQuestionCard(question),
+                                  ),
                                 ),
-                              ),
-                            SizedBox(height: 30),
-                            if (question != null)
-                              _buildOptions(question, selected),
-                            SizedBox(height: 100),
-                          ],
+                              SizedBox(height: 30),
+                              if (question != null)
+                                _buildOptions(question, selected),
+                              SizedBox(height: 100),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Answer Popup Overlay
-              if (_showAnswerPopup)
-                Container(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  child: Center(
-                    child: _AnswerPopup(
-                      isCorrect: _isCurrentAnswerCorrect,
-                      onClose: _closeAnswerPopup,
-                      correctAnswerText: _correctAnswerText,
-                    ),
+                    ],
                   ),
                 ),
-            ],
+
+                // Answer Popup Overlay
+                if (_showAnswerPopup)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    child: Center(
+                      child: _AnswerPopup(
+                        isCorrect: _isCurrentAnswerCorrect,
+                        onClose: _closeAnswerPopup,
+                        correctAnswerText: _correctAnswerText,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -638,7 +682,7 @@ class _StartChallengeState extends State<StartChallenge>
           Row(
             children: [
               IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _handleExitChallenge,
                 icon: Icon(Icons.arrow_back_ios_new, size: 20),
                 style: IconButton.styleFrom(backgroundColor: Colors.white),
               ),
@@ -1025,13 +1069,15 @@ class _StartChallengeState extends State<StartChallenge>
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
+                        color:
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: Offset(0, 4))
                   ]
                 : [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6)
                   ],
           ),
           child: Row(
@@ -1861,7 +1907,8 @@ class _ResultDialogState extends State<_ResultDialog>
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2),
+                                        color:
+                                            Colors.black.withValues(alpha: 0.2),
                                         blurRadius: 20,
                                         offset: Offset(0, 10),
                                       ),
@@ -1921,6 +1968,11 @@ class _ResultDialogState extends State<_ResultDialog>
                         if (success) {
                           // Navigate to leaderboard on success
                           if (context.mounted) {
+                            await ChallengeAdManager.instance.showIfEligible(
+                              context: context,
+                              trigger: CbtScopedAdTrigger.resultNavigation,
+                            );
+                            if (!context.mounted) return;
                             await Navigator.push(
                               context,
                               MaterialPageRoute(

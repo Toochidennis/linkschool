@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_modal.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_download_screen.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 
 class GameDashboardScreen extends StatefulWidget {
@@ -20,11 +20,12 @@ class GameDashboardScreen extends StatefulWidget {
 }
 
 class _GameDashboardScreenState extends State<GameDashboardScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _controller;
   late Animation<double> _rotation;
   late PageController _pageController;
   int _currentPage = 0;
+  bool _shouldShowAppOpenOnResume = false;
 
   final bool fromGameDashboard = true;
 
@@ -79,6 +80,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     // Lanyard swing animation
     _controller = AnimationController(
@@ -96,13 +98,30 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await GamifyAdManager.instance.preloadAll(context);
-      if (!mounted) return;
-      await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        !GamifyAdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAppOpenOnResume = true;
+    } else if (state == AppLifecycleState.resumed &&
+        _shouldShowAppOpenOnResume) {
+      _shouldShowAppOpenOnResume = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _pageController.dispose();
     super.dispose();
@@ -397,13 +416,13 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                           ),
                         ),
                         onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => GameSubjectModal(
-                              subjects: widget.subjects,
-                              examTypeId: widget.examTypeId,
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GameSubjectDownloadScreen(
+                                subjects: widget.subjects,
+                                examTypeId: widget.examTypeId,
+                              ),
                             ),
                           );
                         },
@@ -423,90 +442,6 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ---------------- MISSION TILE ----------------
-
-  Widget _buildMissionTile({
-    required String title,
-    required int xp,
-    required double progress,
-    required IconData icon,
-    required Color missionColor,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: missionColor,
-            ),
-            child: Center(
-              child: Icon(icon, color: Colors.white, size: 28),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Text + Progress
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.grey.shade200,
-                  color: missionColor,
-                  minHeight: 6,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // XP Label
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: missionColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              "+$xp XP",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: missionColor,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

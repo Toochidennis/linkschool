@@ -19,15 +19,17 @@ class LeaderboardScreen extends StatefulWidget {
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
+class _LeaderboardScreenState extends State<LeaderboardScreen>
+    with WidgetsBindingObserver {
+  bool _shouldShowAppOpenOnResume = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await GamifyAdManager.instance.preloadAll(context);
-      if (!mounted) return;
-      await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
     });
 
     // Load leaderboard data when screen opens
@@ -36,6 +38,24 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         context
             .read<LeaderboardProvider>()
             .loadLeaderboard(widget.challengeId!);
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        !GamifyAdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAppOpenOnResume = true;
+    } else if (state == AppLifecycleState.resumed &&
+        _shouldShowAppOpenOnResume) {
+      _shouldShowAppOpenOnResume = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
       });
     }
   }
@@ -58,6 +78,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     Navigator.of(context).pop();
     if (!mounted) return;
     Navigator.of(context).pop();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

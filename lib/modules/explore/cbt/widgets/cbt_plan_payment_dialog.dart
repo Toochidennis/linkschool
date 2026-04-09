@@ -59,34 +59,42 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: keyboardHeight > 0 ? 8 : 24,
-      ),
-      child: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 340),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 14),
-                _buildTabSwitcher(),
-                const SizedBox(height: 16),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _tabController.index == 0
-                      ? _buildPayOnlineTab()
-                      : _buildVoucherTab(),
+    return PopScope(
+      canPop: !_isProcessing,
+      child: Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: keyboardHeight > 0 ? 8 : 24,
+        ),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 340),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 14),
+                      _buildTabSwitcher(),
+                      const SizedBox(height: 16),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: _tabController.index == 0
+                            ? _buildPayOnlineTab()
+                            : _buildVoucherTab(),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
+            if (_isProcessing) _buildBlockingOverlay(),
+          ],
         ),
       ),
     );
@@ -133,9 +141,9 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
           ),
         ),
         IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close),
-          color: AppColors.text7Light,
+          color: _isProcessing ? AppColors.text8Light : AppColors.text7Light,
           splashRadius: 20,
           tooltip: 'Close',
         ),
@@ -393,6 +401,60 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                   color: Colors.white,
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildBlockingOverlay() {
+    final label = _statusMessage ?? 'Processing payment...';
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.78),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: AppColors.eLearningBtnColor1,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTextStyles.normal600(
+                        fontSize: 14,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -898,7 +960,10 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     required String backendMessage,
   }) async {
     final amount = _formatPrice(widget.plan);
-    final message = backendMessage.trim();
+    final message = backendMessage.trim() ==
+            'Your payment is still being processed. Please check back shortly.'
+        ? ''
+        : backendMessage.trim();
 
     await showDialog<void>(
       context: context,
@@ -933,69 +998,54 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: IconButton(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            splashRadius: 18,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        ),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.16),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.account_balance_wallet_outlined,
-                                color: Colors.white,
-                                size: 22,
+                            Expanded(
+                              child: IconButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                icon: const Icon(Icons.close,
+                                    color: Colors.white),
+                                splashRadius: 18,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 9,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.14),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Amount to pay',
-                                      style: AppTextStyles.normal500(
-                                        fontSize: 11,
-                                        color: Colors.white.withValues(
-                                          alpha: 0.85,
-                                        ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Amount',
+                                    style: AppTextStyles.normal500(
+                                      fontSize: 10,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.82,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      amount,
-                                      style: AppTextStyles.normal700(
-                                        fontSize: 18,
-                                        color: Colors.white,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    amount,
+                                    style: AppTextStyles.normal700(
+                                      fontSize: 17,
+                                      color: Colors.white,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
                         Text(
                           'Having trouble making payment?',
                           style: AppTextStyles.normal700(
@@ -1041,12 +1091,12 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              _buildDetailRow(
+                              _buildInlineDetailRow(
                                 label: 'Account Name',
                                 value: _accountName,
                               ),
                               const SizedBox(height: 8),
-                              _buildDetailRow(
+                              _buildInlineDetailRow(
                                 label: 'Account Number',
                                 value: _accountNumber,
                                 isCopyable: true,
@@ -1056,7 +1106,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              _buildDetailRow(
+                              _buildInlineDetailRow(
                                 label: 'Bank Name',
                                 value: _bankName,
                               ),
@@ -1119,14 +1169,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'After payment, send your receipt and payment name to this number for confirmation.',
-                                style: AppTextStyles.normal400(
-                                  fontSize: 12,
-                                  color: AppColors.text7Light,
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -1178,28 +1220,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 46,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: AppColors.textFieldBorderLight,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: Text(
-                              'Close',
-                              style: AppTextStyles.normal600(
-                                fontSize: 13,
-                                color: AppColors.text4Light,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -1212,56 +1232,51 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     );
   }
 
-  Widget _buildDetailRow({
+  Widget _buildInlineDetailRow({
     required String label,
     required String value,
     bool isCopyable = false,
     VoidCallback? onCopy,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.textFieldBorderLight),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.normal500(
-                    fontSize: 11,
-                    color: AppColors.text7Light,
-                  ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.normal500(
+                  fontSize: 11,
+                  color: AppColors.text7Light,
                 ),
-                const SizedBox(height: 4),
-                SelectableText(
-                  value,
-                  style: AppTextStyles.normal700(
-                    fontSize: 14,
-                    color: AppColors.text4Light,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (isCopyable && onCopy != null)
-            IconButton(
-              onPressed: onCopy,
-              icon: const Icon(
-                Icons.copy_rounded,
-                color: AppColors.eLearningBtnColor1,
-                size: 20,
               ),
-              tooltip: 'Copy',
-              splashRadius: 18,
+              const SizedBox(height: 4),
+              SelectableText(
+                value,
+                style: AppTextStyles.normal700(
+                  fontSize: 14,
+                  color: AppColors.text4Light,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (isCopyable && onCopy != null)
+          IconButton(
+            onPressed: onCopy,
+            icon: const Icon(
+              Icons.copy_rounded,
+              color: AppColors.eLearningBtnColor1,
+              size: 20,
             ),
-        ],
-      ),
+            tooltip: 'Copy',
+            splashRadius: 18,
+            padding: const EdgeInsets.only(left: 8),
+            constraints: const BoxConstraints(),
+          ),
+      ],
     );
   }
 

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
+import 'package:linkschool/modules/services/explore/offline_game_question_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 
 class QuestionsProvider extends ChangeNotifier {
   final QuestionsService _service;
+  final OfflineGameQuestionService _offlineGameService =
+      OfflineGameQuestionService();
 
   QuestionsResponse? questionsData;
   List<Question> allQuestions = [];
@@ -42,6 +45,45 @@ class QuestionsProvider extends ChangeNotifier {
   int get totalQuestions => allQuestions.length;
   int get currentTopicIndex => _currentTopicIndex;
   int get totalTopics => _topicIds.length;
+
+  Future<void> initializeOfflineSession({
+    required int courseId,
+    required int examTypeId,
+    int questionLimit = OfflineGameQuestionService.defaultQuestionLimit,
+  }) async {
+    _topicIds = [];
+    _currentTopicIndex = 0;
+    _courseId = courseId;
+    _examTypeId = examTypeId;
+    _topicNames = [];
+    allQuestions = [];
+    currentQuestionIndex = 0;
+    loading = true;
+    loadingMore = false;
+    error = null;
+    _sessionStartTime = DateTime.now();
+    _topicStats.clear();
+    _topicStartTimes.clear();
+    _correctAnswersPerTopic.clear();
+    _wrongAnswersPerTopic.clear();
+    _questionsAnsweredPerTopic.clear();
+    notifyListeners();
+
+    try {
+      questionsData = await _offlineGameService.fetchQuestions(
+        courseId: courseId,
+        examTypeId: examTypeId,
+        limit: questionLimit,
+      );
+      allQuestions = questionsData?.data ?? [];
+    } catch (e) {
+      error = e.toString();
+      allQuestions = [];
+    }
+
+    loading = false;
+    notifyListeners();
+  }
 
   /// Initialize study session with selected topics
   Future<void> initializeStudySession({
@@ -101,8 +143,7 @@ class QuestionsProvider extends ChangeNotifier {
 
       if (questionsData != null && questionsData!.data.isNotEmpty) {
         allQuestions.addAll(questionsData!.data);
-      } else {
-      }
+      } else {}
 
       _currentTopicIndex++;
     } catch (e) {
@@ -189,7 +230,6 @@ class QuestionsProvider extends ChangeNotifier {
       _wrongAnswersPerTopic[topicId] =
           (_wrongAnswersPerTopic[topicId] ?? 0) + 1;
     }
-
   }
 
   /// Find which topic a question belongs to
@@ -279,4 +319,3 @@ class QuestionsProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-
