@@ -56,6 +56,29 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
     return provider.selectedBoard?.id ?? '0';
   }
 
+  List<SubjectModel> _prioritizeSubjects(List<SubjectModel> subjects) {
+    final indexed = subjects.asMap().entries.toList();
+
+    int priorityFor(SubjectModel subject) {
+      final name = subject.name.trim().toLowerCase();
+      if (name.contains('english')) return 0;
+      if (name.contains('lekki') &&
+          (name.contains('headmaster') || name.contains('headaster'))) {
+        return 1;
+      }
+      return 2;
+    }
+
+    indexed.sort((a, b) {
+      final priorityCompare =
+          priorityFor(a.value).compareTo(priorityFor(b.value));
+      if (priorityCompare != 0) return priorityCompare;
+      return a.key.compareTo(b.key);
+    });
+
+    return indexed.map((entry) => entry.value).toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -199,8 +222,9 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
     }
 
     // Build ordered list of selected subjects
-    final selected =
-        allSubjects.where((s) => _selectedSubjectIds.contains(s.id)).toList();
+    final selected = _prioritizeSubjects(allSubjects)
+        .where((s) => _selectedSubjectIds.contains(s.id))
+        .toList();
 
     Navigator.push(
       context,
@@ -220,7 +244,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen>
             final subjects = provider.currentBoardSubjects;
             final boardName =
                 provider.selectedBoard?.shortName ?? 'Subject Selection';
-            final sortedSubjects = List<SubjectModel>.from(subjects);
+            final sortedSubjects = _prioritizeSubjects(subjects);
 
             return Column(
               children: [

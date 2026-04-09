@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_screen.dart';
 
 class GameInstructionsScreen extends StatefulWidget {
@@ -38,7 +39,8 @@ class _PatternPainter extends CustomPainter {
     final circleCount = 5;
     final maxRadius = size.width * 0.7;
     for (int i = 0; i < circleCount; i++) {
-      final radius = maxRadius * ((i + 1) / circleCount) * (0.8 + 0.2 * animationValue);
+      final radius =
+          maxRadius * ((i + 1) / circleCount) * (0.8 + 0.2 * animationValue);
       canvas.drawCircle(
         Offset(size.width / 2, size.height / 2),
         radius,
@@ -123,6 +125,13 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
 
     _slideController.forward();
     _fadeController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await GamifyAdManager.instance.preloadAll(context);
+      if (!mounted) return;
+      await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+    });
   }
 
   @override
@@ -133,7 +142,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
     super.dispose();
   }
 
-  void _startGame() {
+  Future<void> _startGame() async {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -572,7 +581,8 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: (player['color'] as Color).withValues(alpha: 0.4),
+                          color:
+                              (player['color'] as Color).withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: Offset(0, 4),
                         ),

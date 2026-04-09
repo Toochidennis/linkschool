@@ -248,7 +248,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     }
 
     final didProceed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
+      MaterialPageRoute(
+        builder: (_) => const CbtPlansScreen(
+          showTrialButton: false,
+          preferTrialLabel: false,
+        ),
+      ),
     );
     if (didProceed == true && mounted) {
       setState(() {});

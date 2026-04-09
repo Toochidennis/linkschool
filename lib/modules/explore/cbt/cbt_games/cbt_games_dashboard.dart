@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_modal.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 
@@ -91,6 +92,13 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
     // Initialize PageController for swipeable cards
     _pageController = PageController(initialPage: 0);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await GamifyAdManager.instance.preloadAll(context);
+      if (!mounted) return;
+      await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+    });
   }
 
   @override
@@ -302,10 +310,8 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
             },
             children: [
               _buildStartBanner(),
-              ..._subjectLeaderboards
-                  .map((subjectData) =>
-                      _buildSubjectLeaderboardCard(subjectData))
-                  ,
+              ..._subjectLeaderboards.map(
+                  (subjectData) => _buildSubjectLeaderboardCard(subjectData)),
             ],
           ),
         ),

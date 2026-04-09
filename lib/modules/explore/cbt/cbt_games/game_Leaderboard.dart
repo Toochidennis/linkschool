@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_leader_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +23,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await GamifyAdManager.instance.preloadAll(context);
+      if (!mounted) return;
+      await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+    });
+
     // Load leaderboard data when screen opens
     if (widget.challengeId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -32,193 +40,207 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
+  Future<void> _handleBack() async {
+    if (widget.fromChallenge == true) {
+      Navigator.of(context).pop();
+      Navigator.of(context).pop();
+      return;
+    }
+
+    await GamifyAdManager.instance.showInterstitialIfEligible(context: context);
+    if (!mounted) return;
+
+    if (widget.fromGameDashboard == true) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    Navigator.of(context).pop();
+    if (!mounted) return;
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        await _handleBack();
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            if (widget.fromChallenge == true) {
-              // Just pop without returning any value - no refresh needed
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
-             
-            } else if (widget.fromGameDashboard == true) {
-              Navigator.of(context).pop();
-            } else {
-              Navigator.of(context).pop();
-             
-              Navigator.of(context).pop();
-
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: _handleBack,
+          ),
+          title: Text(
+            'Leaderboard',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: Consumer<LeaderboardProvider>(
+          builder: (context, provider, child) {
+            if (provider.loading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
             }
+
+            if (provider.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    SizedBox(height: 16),
+                    Text(
+                      'Failed to load leaderboard',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      provider.error!,
+                      style: TextStyle(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (widget.challengeId != null) {
+                          provider.loadLeaderboard(widget.challengeId!);
+                        }
+                      },
+                      child: Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final leaderboard = provider.leaderboard;
+
+            if (leaderboard.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.leaderboard, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'No leaderboard data yet',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            // Separate top 3 and rest
+            final top3 = leaderboard.take(3).toList();
+            final rest = leaderboard.skip(3).toList();
+
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Top 3 Winners
+                    if (top3.length >= 3)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildTopWinner(
+                            rank: 2,
+                            name: top3[1].username,
+                            points: '${top3[1].score} points',
+                            image: '',
+                            borderColor: Colors.grey[300]!,
+                          ),
+                          _buildTopWinner(
+                            rank: 1,
+                            name: top3[0].username,
+                            points: '${top3[0].score} points',
+                            image: '',
+                            borderColor: const Color(0xFF8B5CF6),
+                          ),
+                          _buildTopWinner(
+                            rank: 3,
+                            name: top3[2].username,
+                            points: '${top3[2].score} points',
+                            image: '',
+                            borderColor: Colors.orange,
+                          ),
+                        ],
+                      )
+                    else if (top3.isNotEmpty)
+                      // Show available top winners
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: top3
+                            .map((entry) => _buildTopWinner(
+                                  rank: entry.position,
+                                  name: entry.username,
+                                  points: '${entry.score} points',
+                                  image: '',
+                                  borderColor: entry.position == 1
+                                      ? const Color(0xFF8B5CF6)
+                                      : entry.position == 2
+                                          ? Colors.grey[300]!
+                                          : Colors.orange,
+                                ))
+                            .toList(),
+                      ),
+
+                    const SizedBox(height: 24),
+
+                    // Header
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                              width: 40,
+                              child: Text('Rank',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 12))),
+                          Expanded(
+                              child: Text('Player',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 12))),
+                          Text('Points',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+
+                    // Leaderboard List
+                    ...rest.map((entry) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: _buildLeaderboardItem(
+                            entry.position,
+                            entry.username,
+                            '${entry.score} points',
+                            '',
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+            );
           },
         ),
-        title:  Text(
-          'Leaderboard',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Consumer<LeaderboardProvider>(
-        builder: (context, provider, child) {
-          if (provider.loading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  SizedBox(height: 16),
-                  Text(
-                    'Failed to load leaderboard',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    provider.error!,
-                    style: TextStyle(color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (widget.challengeId != null) {
-                        provider.loadLeaderboard(widget.challengeId!);
-                      }
-                    },
-                    child: Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final leaderboard = provider.leaderboard;
-
-          if (leaderboard.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.leaderboard, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No leaderboard data yet',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Separate top 3 and rest
-          final top3 = leaderboard.take(3).toList();
-          final rest = leaderboard.skip(3).toList();
-
-          return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Top 3 Winners
-                  if (top3.length >= 3)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildTopWinner(
-                          rank: 2,
-                          name: top3[1].username,
-                          points: '${top3[1].score} points',
-                          image: '',
-                          borderColor: Colors.grey[300]!,
-                        ),
-                        _buildTopWinner(
-                          rank: 1,
-                          name: top3[0].username,
-                          points: '${top3[0].score} points',
-                          image: '',
-                          borderColor: const Color(0xFF8B5CF6),
-                        ),
-                        _buildTopWinner(
-                          rank: 3,
-                          name: top3[2].username,
-                          points: '${top3[2].score} points',
-                          image: '',
-                          borderColor: Colors.orange,
-                        ),
-                      ],
-                    )
-                  else if (top3.isNotEmpty)
-                    // Show available top winners
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: top3
-                          .map((entry) => _buildTopWinner(
-                                rank: entry.position,
-                                name: entry.username,
-                                points: '${entry.score} points',
-                                image: '',
-                                borderColor: entry.position == 1
-                                    ? const Color(0xFF8B5CF6)
-                                    : entry.position == 2
-                                        ? Colors.grey[300]!
-                                        : Colors.orange,
-                              ))
-                          .toList(),
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // Header
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                            width: 40,
-                            child: Text('Rank',
-                                style: TextStyle(
-                                    color: Colors.grey, fontSize: 12))),
-                        Expanded(
-                            child: Text('Player',
-                                style: TextStyle(
-                                    color: Colors.grey, fontSize: 12))),
-                        Text('Points',
-                            style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-
-                  // Leaderboard List
-                  ...rest
-                      .map((entry) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: _buildLeaderboardItem(
-                              entry.position,
-                              entry.username,
-                              '${entry.score} points',
-                              '',
-                            ),
-                          ))
-                      ,
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

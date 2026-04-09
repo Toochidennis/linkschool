@@ -91,6 +91,51 @@ class EnvConfig {
         defaultValue: _unsetValue,
       );
 
+  static String get gamifyAdOpenKey => const String.fromEnvironment(
+        'GAMIFY_AD_OPEN_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get gamifyInterstitialKey => const String.fromEnvironment(
+        'GAMIFY_INTERSTITIAL_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get gamifyRewardKey => const String.fromEnvironment(
+        'GAMIFY_REWARD_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get studyAdOpenKey => const String.fromEnvironment(
+        'STUDY_AD_OPEN_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get studyInterstitialKey => const String.fromEnvironment(
+        'STUDY_INTERSTITIAL_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get studyRewardKey => const String.fromEnvironment(
+        'STUDY_REWARD_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get challengeAdOpenKey => const String.fromEnvironment(
+        'CHALLENGE_AD_OPEN_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get challengeInterstitialKey => const String.fromEnvironment(
+        'CHALLENGE_INTERSTITIAL_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get challengeRewardKey => const String.fromEnvironment(
+        'CHALLENGE_REWARD_KEY',
+        defaultValue: _unsetValue,
+      );
+
   // Dynamic database name - gets from current user session
   static String get dbName {
     try {

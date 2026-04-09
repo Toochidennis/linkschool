@@ -4,7 +4,7 @@ import '../model/explore/cbt_history_model.dart';
 
 class CbtHistoryService {
   static const String _historyKey = 'cbt_test_history';
-  List<CbtHistoryModel>? _historyCache;
+  static List<CbtHistoryModel>? _historyCache;
 
   // Save a test result
   Future<void> saveTestResult(CbtHistoryModel history) async {

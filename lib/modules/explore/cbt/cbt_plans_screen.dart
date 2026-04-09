@@ -34,6 +34,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   bool _didLoad = false;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
+  bool _isOpeningPaymentDialog = false;
   _TrialActionState _trialActionState = _TrialActionState.startTrial;
 
   @override
@@ -44,6 +45,13 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     Future.microtask(() {
       if (!mounted) return;
       context.read<CbtPlanProvider>().fetchPlans();
+      if (!widget.showTrialButton) {
+        setState(() {
+          _isLoadingTrial = false;
+          _trialActionState = _TrialActionState.hidden;
+        });
+        return;
+      }
       _loadTrialState();
     });
   }
@@ -203,30 +211,9 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                     child: SizedBox(
                                       height: 54,
                                       child: ElevatedButton(
-                                        onPressed: () async {
-                                          final selectedPlan = plans.isNotEmpty
-                                              ? plans[_currentIndex.clamp(
-                                                  0, plans.length - 1)]
-                                              : null;
-
-                                          if (selectedPlan == null) return;
-
-                                          final result = await showDialog<bool>(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (dialogContext) =>
-                                                CbtPlanPaymentDialog(
-                                              plan: selectedPlan,
-                                            ),
-                                          );
-
-                                          if (!context.mounted ||
-                                              result != true) {
-                                            return;
-                                          }
-
-                                          Navigator.of(context).pop(true);
-                                        },
+                                        onPressed: _isOpeningPaymentDialog
+                                            ? null
+                                            : () => _openPaymentDialog(plans),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.barColor3,
                                           shape: RoundedRectangleBorder(
@@ -295,37 +282,72 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     );
   }
 
-  Future<void> _loadTrialState() async {
+  Future<void> _openPaymentDialog(List<CbtPlanModel> plans) async {
+    if (_isOpeningPaymentDialog) return;
+
+    final selectedPlan = plans.isNotEmpty
+        ? plans[_currentIndex.clamp(0, plans.length - 1)]
+        : null;
+    if (selectedPlan == null) return;
+
+    _isOpeningPaymentDialog = true;
     try {
-      final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-      final user = userProvider.currentUser;
-      var actionState = _resolveTrialActionState(
-        hasValidLicense: userProvider.hasValidLicense,
-        hasPaid: userProvider.hasPaid,
-        licenseSource: userProvider.licenseSource,
-        licenseReason: userProvider.licenseReason,
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!mounted) return;
+
+      final result = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => CbtPlanPaymentDialog(
+          plan: selectedPlan,
+        ),
       );
 
+      if (!mounted || result != true) {
+        return;
+      }
+
+      Navigator.of(context).pop(true);
+    } finally {
+      _isOpeningPaymentDialog = false;
+    }
+  }
+
+  Future<void> _loadTrialState() async {
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final initialState = _resolveTrialActionState(
+      hasValidLicense: userProvider.hasValidLicense,
+      hasPaid: userProvider.hasPaid,
+      licenseSource: userProvider.licenseSource,
+      licenseReason: userProvider.licenseReason,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoadingTrial = false;
+        _trialActionState = initialState;
+      });
+    }
+
+    try {
+      final user = userProvider.currentUser;
       if (user?.id != null) {
-        await userProvider.syncLicenseStatus(forceRefresh: true);
-        actionState = _resolveTrialActionState(
+        await userProvider.syncLicenseStatus(forceRefresh: false);
+        final refreshedState = _resolveTrialActionState(
           hasValidLicense: userProvider.hasValidLicense,
           hasPaid: userProvider.hasPaid,
           licenseSource: userProvider.licenseSource,
           licenseReason: userProvider.licenseReason,
         );
-      }
 
-      if (mounted) {
-        setState(() {
-          _isLoadingTrial = false;
-          _trialActionState = actionState;
-        });
+        if (mounted) {
+          setState(() {
+            _trialActionState = refreshedState;
+          });
+        }
       }
     } catch (_) {
-      if (mounted) {
-        setState(() => _isLoadingTrial = false);
-      }
+      // Keep the last known local state instead of blocking the plans screen.
     }
   }
 

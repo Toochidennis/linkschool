@@ -4,14 +4,13 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'dart:math' as math;
 import 'dart:convert';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:provider/provider.dart';
@@ -54,7 +53,7 @@ class _GameTestScreenState extends State<GameTestScreen>
   // Lifeline states
   bool _fiftyFiftyUsed = false;
   bool _askComputerUsed = false;
-  final bool _shuffleUsed = false;
+  bool _isExitingToDashboard = false;
   final Map<int, Set<int>> _hiddenOptionsPerQuestion =
       {}; // For 50:50 lifeline - stores hidden options per question index
   int? _computerSuggestion; // For Ask Computer lifeline
@@ -72,10 +71,7 @@ class _GameTestScreenState extends State<GameTestScreen>
   final int _pointsPerQuestion = 10;
 
   // Ad and lives system
-  RewardedAd? _rewardedAd;
-  RewardedAd? _shuffleRewardedAd; // Separate ad for shuffle
-  bool _isAdLoaded = false;
-  bool _isShuffleAdLoaded = false;
+  bool _canShowGamifyAds = false;
   bool _isPendingFinish =
       false; // Track if quiz should finish after failed last question
 
@@ -88,7 +84,7 @@ class _GameTestScreenState extends State<GameTestScreen>
     try {
       await _correctSoundPlayer.setSource(AssetSource('sounds/correct.wav'));
       // await _wrongSoundPlayer.setSource(AssetSource('sounds/wrong.wav'));
-       await _wrongSoundPlayer.setSource(AssetSource('sounds/wrong.mp3.mpeg'));
+      await _wrongSoundPlayer.setSource(AssetSource('sounds/wrong.mp3.mpeg'));
       await _buttonSoundPlayer.setSource(AssetSource('sounds/completed.wav'));
     } catch (e) {
       // Intentionally ignored.
@@ -100,7 +96,7 @@ class _GameTestScreenState extends State<GameTestScreen>
   bool _showAnswerPopup = false;
   bool _showExplanationModal = false;
   bool _isCountdownComplete = false;
-Timer? _timer;
+  Timer? _timer;
   @override
   void initState() {
     super.initState();
@@ -125,17 +121,22 @@ Timer? _timer;
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-    // let the first frame render, dialog show, etc.
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    _loadRewardedAd();
-    _loadShuffleRewardedAd();
-  });
-
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showLoadingCountdown();
+      await _prepareGameEntry();
     });
+  }
+
+  Future<void> _prepareGameEntry() async {
+    if (!mounted) return;
+    final canShowAds = await GamifyAdManager.instance.canShowRewarded(context);
+    if (!mounted) return;
+    setState(() {
+      _canShowGamifyAds = canShowAds;
+    });
+    await GamifyAdManager.instance.preloadAll(context);
+    if (!mounted) return;
+    await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+    if (!mounted) return;
+    _showLoadingCountdown();
   }
 
   void _showLoadingCountdown() {
@@ -165,10 +166,7 @@ Timer? _timer;
       courseId: widget.courseId,
       examTypeId: widget.examTypeId,
     );
-
   }
-
-  
 
   @override
   void dispose() {
@@ -178,27 +176,21 @@ Timer? _timer;
     _correctSoundPlayer.dispose();
     _wrongSoundPlayer.dispose();
     _buttonSoundPlayer.dispose();
-    _rewardedAd?.dispose();
-    _shuffleRewardedAd?.dispose();
     super.dispose();
   }
 
-
-
- void _startTimer() {
-  
-  _timer?.cancel();
-  _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-    if (!mounted) return;
-    if (_remainingTime <= 0) {
-      _timer?.cancel();
-      _finishQuiz();
-      return;
-    }
-    setState(() => _remainingTime--);
-  });
-}
-
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      if (_remainingTime <= 0) {
+        _timer?.cancel();
+        _finishQuiz();
+        return;
+      }
+      setState(() => _remainingTime--);
+    });
+  }
 
   void _selectAnswer(int optionIndex, Question question) {
     if (_isAnswered) return;
@@ -409,102 +401,6 @@ Timer? _timer;
     }
   }
 
-  void _loadRewardedAd() {
-    // Dispose old ad before loading new one to prevent memory leaks
-    _rewardedAd?.dispose();
-    _rewardedAd = null;
-    _isAdLoaded = false;
-    
-    RewardedAd.load(
-      adUnitId: EnvConfig.googleAdsApiKey,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          // Check if widget is still mounted before updating state
-          if (!mounted) {
-            ad.dispose();
-            return;
-          }
-          
-          _rewardedAd = ad;
-          _isAdLoaded = true;
-
-          // Set full screen content callback
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _rewardedAd = null;
-              _isAdLoaded = false;
-              // Load next ad for future use if mounted
-              if (mounted) _loadRewardedAd();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _rewardedAd = null;
-              _isAdLoaded = false;
-              if (mounted) _loadRewardedAd();
-            },
-          );
-        },
-        onAdFailedToLoad: (error) {
-          _isAdLoaded = false;
-          // Retry loading after a delay
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted) _loadRewardedAd();
-          });
-        },
-      ),
-    );
-  }
-
-  void _loadShuffleRewardedAd() {
-    // Dispose old ad before loading new one to prevent memory leaks
-    _shuffleRewardedAd?.dispose();
-    _shuffleRewardedAd = null;
-    _isShuffleAdLoaded = false;
-    
-    RewardedAd.load(
-      adUnitId: EnvConfig.googleAdsApiKey,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          // Check if widget is still mounted before updating state
-          if (!mounted) {
-            ad.dispose();
-            return;
-          }
-          
-          _shuffleRewardedAd = ad;
-          _isShuffleAdLoaded = true;
-
-          // Set full screen content callback
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _shuffleRewardedAd = null;
-              _isShuffleAdLoaded = false;
-              // Load next ad for future use if mounted
-              if (mounted) _loadShuffleRewardedAd();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _shuffleRewardedAd = null;
-              _isShuffleAdLoaded = false;
-              if (mounted) _loadShuffleRewardedAd();
-            },
-          );
-        },
-        onAdFailedToLoad: (error) {
-          _isShuffleAdLoaded = false;
-          // Retry loading after a delay
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted) _loadShuffleRewardedAd();
-          });
-        },
-      ),
-    );
-  }
-
   void _showFailModal() {
     showDialog(
       context: context,
@@ -519,6 +415,7 @@ Timer? _timer;
             isLandscape ? screenWidth * 0.7 : screenWidth * 0.90;
         final maxHeight = screenHeight * 0.8;
         final hasEnoughCoins = _userCoins >= 20;
+        final canWatchRewardAd = _canShowGamifyAds;
 
         return Dialog(
           shape:
@@ -641,7 +538,7 @@ Timer? _timer;
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: _isAdLoaded
+                              onPressed: canWatchRewardAd
                                   ? () {
                                       _showRewardedAd();
                                     }
@@ -658,19 +555,19 @@ Timer? _timer;
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
-                                      _isAdLoaded
+                                      canWatchRewardAd
                                           ? Icons.play_circle_outline
                                           : Icons.hourglass_empty,
-                                      color: _isAdLoaded
+                                      color: canWatchRewardAd
                                           ? Colors.white
                                           : Colors.grey.shade500),
                                   const SizedBox(width: 8),
                                   Text(
-                                      _isAdLoaded
+                                      canWatchRewardAd
                                           ? 'Watch Ad'
-                                          : 'Loading Ad...',
+                                          : 'Ad Unavailable',
                                       style: AppTextStyles.normal600(
-                                          color: _isAdLoaded
+                                          color: canWatchRewardAd
                                               ? Colors.white
                                               : Colors.grey.shade500,
                                           fontSize: 14)),
@@ -678,7 +575,7 @@ Timer? _timer;
                               ),
                             ),
                           ),
-                          if (!hasEnoughCoins)
+                          if (!hasEnoughCoins && canWatchRewardAd)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
@@ -769,54 +666,52 @@ Timer? _timer;
   }
 
   void _showRewardedAd() {
-    if (_rewardedAd == null) {
+    if (!_canShowGamifyAds) {
       return;
     }
 
-    _rewardedAd!.show(
-      onUserEarnedReward: (ad, reward) {
+    GamifyAdManager.instance
+        .showRewardedIfEligible(context: context)
+        .then((rewardEarned) {
+      if (!mounted || !rewardEarned) {
+        return;
+      }
 
-        // Clear pending finish flag since user is continuing
-        _isPendingFinish = false;
+      _isPendingFinish = false;
+      Navigator.pop(context);
 
-        // Close the fail modal
-        Navigator.pop(context);
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Great! You can continue playing! 🎮',
-                    style: AppTextStyles.normal600(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Great! You can continue playing! 🎮',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: Colors.white,
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+              ),
+            ],
           ),
-        );
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
 
-        // Continue to next question after a short delay
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            _moveToNextQuestion();
-          }
-        });
-      },
-    );
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _moveToNextQuestion();
+        }
+      });
+    });
   }
 
   Future<void> _nextQuestion() async {
@@ -940,18 +835,18 @@ Timer? _timer;
   }
 
   // Lifeline: Shuffle - Watch ad then shuffle to next question
- void _useShuffle(Question question) {
-  _playButtonSound();
-  _vibrateButton();
+  void _useShuffle(Question question) {
+    _playButtonSound();
+    _vibrateButton();
 
-  if (_shuffleRewardedAd == null) {
-    _loadShuffleRewardedAd();
-    _showShuffleAdDialog(); // "Loading..."
-    return;
+    if (!_canShowGamifyAds) {
+      _moveToNextQuestion();
+      return;
+    }
+
+    _showShuffleAdDialog();
   }
 
-  _showShuffleRewardedAd();
-}
   void _showShuffleAdDialog() {
     showDialog(
       context: context,
@@ -1012,7 +907,7 @@ Timer? _timer;
                   SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isShuffleAdLoaded
+                      onPressed: _canShowGamifyAds
                           ? () {
                               Navigator.pop(context);
                               _showShuffleRewardedAd();
@@ -1024,10 +919,10 @@ Timer? _timer;
                         padding: EdgeInsets.symmetric(vertical: 12),
                       ),
                       child: Text(
-                        _isShuffleAdLoaded ? 'Watch Ad' : 'Loading...',
+                        _canShowGamifyAds ? 'Watch Ad' : 'Ad Unavailable',
                         style: AppTextStyles.normal600(
                           fontSize: 16,
-                          color: _isShuffleAdLoaded
+                          color: _canShowGamifyAds
                               ? AppColors.eLearningBtnColor1
                               : Colors.grey.shade500,
                         ),
@@ -1044,48 +939,49 @@ Timer? _timer;
   }
 
   void _showShuffleRewardedAd() {
-    if (_shuffleRewardedAd == null) {
+    if (!_canShowGamifyAds) {
       return;
     }
 
-    _shuffleRewardedAd!.show(
-      onUserEarnedReward: (ad, reward) {
+    GamifyAdManager.instance
+        .showRewardedIfEligible(context: context)
+        .then((rewardEarned) {
+      if (!mounted || !rewardEarned) {
+        return;
+      }
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Moving to next question! 🔀',
-                    style: AppTextStyles.normal600(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Moving to next question! 🔀',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: Colors.white,
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+              ),
+            ],
           ),
-        );
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
 
-        // Move to next question after a short delay
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            _moveToNextQuestion();
-          }
-        });
-      },
-    );
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _moveToNextQuestion();
+        }
+      });
+    });
   }
 
   void _finishQuiz() {
@@ -1205,29 +1101,52 @@ Timer? _timer;
     }
   }
 
+  Future<void> _handleExitToDashboard(QuestionsProvider provider) async {
+    if (_isExitingToDashboard) return;
+
+    _isExitingToDashboard = true;
+    try {
+      provider.reset();
+      await GamifyAdManager.instance.showInterstitialIfEligible(
+        context: context,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+    } finally {
+      _isExitingToDashboard = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<QuestionsProvider>(
       builder: (context, provider, child) {
         // Loading state
         if (provider.loading) {
-          return Scaffold(
-            backgroundColor: AppColors.eLearningBtnColor1,
-            body: SafeArea(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading questions...',
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: Colors.white,
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) async {
+              if (didPop) return;
+              await _handleExitToDashboard(provider);
+            },
+            child: Scaffold(
+              backgroundColor: AppColors.eLearningBtnColor1,
+              body: SafeArea(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading questions...',
+                        style: AppTextStyles.normal600(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1236,49 +1155,59 @@ Timer? _timer;
 
         // Error state
         if (provider.error != null) {
-          return Scaffold(
-            backgroundColor: AppColors.eLearningBtnColor1,
-            body: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.white),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to load questions',
-                        style: AppTextStyles.normal600(
-                          fontSize: 18,
-                          color: Colors.white,
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) async {
+              if (didPop) return;
+              await _handleExitToDashboard(provider);
+            },
+            child: Scaffold(
+              backgroundColor: AppColors.eLearningBtnColor1,
+              body: SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline,
+                            size: 64, color: Colors.white),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Failed to load questions',
+                          style: AppTextStyles.normal600(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        provider.error!,
-                        style: AppTextStyles.normal400(
-                          fontSize: 14,
-                          color: Colors.white70,
+                        const SizedBox(height: 8),
+                        Text(
+                          provider.error!,
+                          style: AppTextStyles.normal400(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () => _initializeGameSession(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.eLearningBtnColor1,
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () => _initializeGameSession(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.eLearningBtnColor1,
+                          ),
+                          child: Text('Try Again'),
                         ),
-                        child: Text('Try Again'),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Go Back',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () => _handleExitToDashboard(provider),
+                          child: Text(
+                            'Go Back',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1288,32 +1217,39 @@ Timer? _timer;
 
         // No questions available
         if (provider.allQuestions.isEmpty) {
-          return Scaffold(
-            backgroundColor: AppColors.eLearningBtnColor1,
-            body: SafeArea(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.quiz_outlined, size: 64, color: Colors.white),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No questions available',
-                      style: AppTextStyles.normal600(
-                        fontSize: 18,
-                        color: Colors.white,
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) async {
+              if (didPop) return;
+              await _handleExitToDashboard(provider);
+            },
+            child: Scaffold(
+              backgroundColor: AppColors.eLearningBtnColor1,
+              body: SafeArea(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.quiz_outlined, size: 64, color: Colors.white),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No questions available',
+                        style: AppTextStyles.normal600(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.eLearningBtnColor1,
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => _handleExitToDashboard(provider),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.eLearningBtnColor1,
+                        ),
+                        child: Text('Go Back'),
                       ),
-                      child: Text('Go Back'),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1322,9 +1258,16 @@ Timer? _timer;
 
         // Countdown not complete - show empty container
         if (!_isCountdownComplete) {
-          return Scaffold(
-            backgroundColor: AppColors.eLearningBtnColor1,
-            body: Container(),
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) async {
+              if (didPop) return;
+              await _handleExitToDashboard(provider);
+            },
+            child: Scaffold(
+              backgroundColor: AppColors.eLearningBtnColor1,
+              body: Container(),
+            ),
           );
         }
 
@@ -1334,85 +1277,78 @@ Timer? _timer;
         final selectedAnswer = _userAnswers[questionIndex];
         final isCorrect = selectedAnswer == question.correct.order;
 
-        return Scaffold(
-          body: Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.eLearningBtnColor1,
-                      AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
-                    ],
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            await _handleExitToDashboard(provider);
+          },
+          child: Scaffold(
+            body: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.eLearningBtnColor1,
+                        AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
+                      ],
+                    ),
                   ),
-                ),
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      // Game Header
-                      _buildGameHeader(provider),
-
-                      // Main Content
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              // Instruction/Passage Preview
-                              _buildInstructionPassagePreviewCard(question),
-
-                              // Question Card
-                              _buildQuestionCard(question),
-                              const SizedBox(height: 20),
-
-                              // Lifelines Section
-                              _buildLifelinesSection(question),
-
-                              // Options
-                              _buildOptionsGrid(
-                                  question, selectedAnswer, isCorrect),
-                            ],
+                  child: SafeArea(
+                    child: Column(
+                      children: [
+                        _buildGameHeader(provider),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                _buildInstructionPassagePreviewCard(question),
+                                _buildQuestionCard(question),
+                                const SizedBox(height: 20),
+                                _buildLifelinesSection(question),
+                                _buildOptionsGrid(
+                                  question,
+                                  selectedAnswer,
+                                  isCorrect,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_showAnswerPopup && _isAnswered)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    child: Center(
+                      child: _AnswerPopup(
+                        isCorrect: isCorrect,
+                        points: _pointsPerQuestion,
+                        onClose: _closeAnswerPopup,
+                        correctAnswerText:
+                            question.options[question.correct.order].text,
                       ),
-
-                      // Navigation Buttons
-                      // _buildNavigationBar(),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Answer Popup Overlay
-              if (_showAnswerPopup && _isAnswered)
-                Container(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  child: Center(
-                    child: _AnswerPopup(
-                      isCorrect: isCorrect,
-                      points: _pointsPerQuestion,
-                      onClose: _closeAnswerPopup,
-                      correctAnswerText:
-                          question.options[question.correct.order].text,
                     ),
                   ),
-                ),
-
-              // Explanation Modal Overlay
-              if (_showExplanationModal)
-                Container(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  child: Center(
-                    child: _ExplanationModal(
-                      explanation: question.explanation,
-                      onContinue: _closeExplanationModal,
-                      onClose: _closeExplanationModal,
+                if (_showExplanationModal)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    child: Center(
+                      child: _ExplanationModal(
+                        explanation: question.explanation,
+                        onContinue: _closeExplanationModal,
+                        onClose: _closeExplanationModal,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -1438,11 +1374,7 @@ Timer? _timer;
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               IconButton(
-                onPressed: () {
-                  // Reset provider when leaving
-                  provider.reset();
-                  Navigator.pop(context);
-                },
+                onPressed: () => _handleExitToDashboard(provider),
                 icon: Icon(Icons.arrow_back, color: Colors.white),
               ),
               Expanded(
@@ -2187,7 +2119,7 @@ Timer? _timer;
             isUsed: false, // Never mark as used - can shuffle anytime
             isDisabled: false, // Never disabled - can shuffle anytime
             onTap: () => _useShuffle(question),
-            showAdBadge: true, // Show ad badge on shuffle
+            showAdBadge: _canShowGamifyAds,
           ),
         ],
       ),
@@ -2228,8 +2160,8 @@ Timer? _timer;
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                              color:
-                                  AppColors.eLearningBtnColor1.withValues(alpha: 0.2),
+                              color: AppColors.eLearningBtnColor1
+                                  .withValues(alpha: 0.2),
                               blurRadius: 12,
                               offset: Offset(0, 4),
                             ),
@@ -2283,7 +2215,9 @@ Timer? _timer;
               label,
               style: AppTextStyles.normal600(
                 fontSize: 12,
-                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                color: isActive
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -2501,11 +2435,17 @@ class _ResultDialog extends StatelessWidget {
             ),
             SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                await GamifyAdManager.instance.showInterstitialIfEligible(
+                  context: context,
+                );
+                if (!context.mounted) return;
                 Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => LeaderboardScreen()));
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LeaderboardScreen(),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,

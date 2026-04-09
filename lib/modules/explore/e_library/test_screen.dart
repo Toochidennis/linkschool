@@ -78,6 +78,7 @@ class _TestScreenState extends State<TestScreen>
   bool _isRestoringSession = false;
   bool _hasLoadedInitialSession = false;
   bool _shouldShowAdOnResume = false;
+  bool _isHandlingBackExit = false;
   int? _lastPersistedRemainingSeconds;
 
   // Animation controller for bouncing arrow
@@ -109,7 +110,8 @@ class _TestScreenState extends State<TestScreen>
 
     // Increment test count only for a brand-new session.
     if (!_isRestoringSession &&
-        (widget.calledFrom != 'multi-subject' || widget.currentExamIndex == 0)) {
+        (widget.calledFrom != 'multi-subject' ||
+            widget.currentExamIndex == 0)) {
       _subscriptionService.incrementTestCount();
     }
 
@@ -258,6 +260,105 @@ class _TestScreenState extends State<TestScreen>
     final mode = await _subscriptionService.getAdMode();
     final isActive = mode == 'continue_with_ads';
     return isActive;
+  }
+
+  bool _looksLikeHtml(String content) {
+    return RegExp(r'<[^>]+>').hasMatch(content);
+  }
+
+  String _normalizeRenderableContent(String? content) {
+    if (content == null || content.isEmpty) {
+      return '';
+    }
+
+    var normalized = content
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .replaceAll(
+          RegExp(
+            r'<p(?:\s[^>]*)?>\s*(?:&nbsp;|&#160;|<br\s*/?>|\s)*<\/p>',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .trim();
+
+    if (normalized.isEmpty) {
+      return '';
+    }
+
+    if (_looksLikeHtml(normalized)) {
+      return normalized
+          .replaceAll(
+            RegExp(
+              r'(<(?:p|div|li|span)(?:\s[^>]*)?>)\s+',
+              caseSensitive: false,
+            ),
+            r'$1',
+          )
+          .replaceAll(
+            RegExp(
+              r'\s+(<\/(?:p|div|li|span)>)',
+              caseSensitive: false,
+            ),
+            r'$1',
+          )
+          .trim();
+    }
+
+    return normalized
+        .replaceAll(RegExp(r'[ \t]+'), ' ')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+
+  String _prepareQuestionContent(String? content) {
+    final normalized = _normalizeRenderableContent(content);
+    if (normalized.isEmpty) {
+      return 'Question';
+    }
+
+    if (_looksLikeHtml(normalized)) {
+      return normalized;
+    }
+
+    return normalized[0].toUpperCase() + normalized.substring(1);
+  }
+
+  Map<String, Style> _buildHtmlStyles({
+    required double fontSize,
+    required Color color,
+    double lineHeight = 1.6,
+    FontWeight? fontWeight,
+    int? maxLines,
+    TextOverflow? textOverflow,
+  }) {
+    Style blockStyle() => Style(
+          fontSize: FontSize(fontSize),
+          color: color,
+          lineHeight: LineHeight(lineHeight),
+          fontWeight: fontWeight,
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+          maxLines: maxLines,
+          textOverflow: textOverflow,
+        );
+
+    return {
+      "body": blockStyle(),
+      "p": blockStyle(),
+      "div": blockStyle(),
+      "span": Style(
+        fontSize: FontSize(fontSize),
+        color: color,
+        lineHeight: LineHeight(lineHeight),
+        fontWeight: fontWeight,
+      ),
+      "figure": Style(
+        margin: Margins.zero,
+        padding: HtmlPaddings.zero,
+      ),
+    };
   }
 
   Future<void> _loadAdMode() async {
@@ -436,77 +537,103 @@ class _TestScreenState extends State<TestScreen>
     return Consumer<ExamProvider>(
       builder: (context, examProvider, child) {
         // Show instruction/passage modal when question changes (skip while countdown active)
-
-        return Scaffold(
-          backgroundColor: AppColors.eLearningBtnColor1,
-          appBar: _buildAppBar(context, examProvider, isLandscape),
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: examProvider.isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : examProvider.questions.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No Questions Available',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 18),
-                            ),
-                          )
-                        : _buildBody(examProvider, isLandscape),
-              ),
-              if (_isSubmittingResult)
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            await _handleBackExit(examProvider);
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            appBar: _buildAppBar(context, examProvider, isLandscape),
+            body: Stack(
+              children: [
                 Positioned.fill(
-                  child: AbsorbPointer(
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      alignment: Alignment.center,
+                  child: examProvider.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : examProvider.questions.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No Questions Available',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 18),
+                              ),
+                            )
+                          : _buildBody(examProvider, isLandscape),
+                ),
+                if (_isSubmittingResult)
+                  Positioned.fill(
+                    child: AbsorbPointer(
                       child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 24),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircularProgressIndicator(
-                              color: AppColors.eLearningBtnColor1,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Submitting your test...',
-                              style: AppTextStyles.normal700(
-                                fontSize: 16,
-                                color: AppColors.text3Light,
+                        color: Colors.black.withValues(alpha: 0.45),
+                        alignment: Alignment.center,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 18,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppColors.eLearningBtnColor1,
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Preparing your result summary.',
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.normal500(
-                                fontSize: 13,
-                                color: AppColors.text7Light,
+                              const SizedBox(height: 16),
+                              Text(
+                                'Submitting your test...',
+                                style: AppTextStyles.normal700(
+                                  fontSize: 16,
+                                  color: AppColors.text3Light,
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 6),
+                              Text(
+                                'Preparing your result summary.',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.normal500(
+                                  fontSize: 13,
+                                  color: AppColors.text7Light,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
+  }
+
+  Future<void> _handleBackExit(ExamProvider examProvider) async {
+    if (_isHandlingBackExit || _isSubmittingResult) return;
+
+    _isHandlingBackExit = true;
+    try {
+      await _saveActiveSession(examProvider, force: true);
+      if (!mounted) return;
+
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.testExit,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } finally {
+      _isHandlingBackExit = false;
+    }
   }
 
   Future<void> _submitAndNavigateToResults({
@@ -566,9 +693,7 @@ class _TestScreenState extends State<TestScreen>
       backgroundColor: AppColors.eLearningBtnColor1,
       leading: IconButton(
         onPressed: () async {
-          await _saveActiveSession(examProvider, force: true);
-          if (!mounted) return;
-          Navigator.of(this.context).pop();
+          await _handleBackExit(examProvider);
         },
         icon: Image.asset(
           'assets/icons/arrow_back.png',
@@ -847,18 +972,12 @@ class _TestScreenState extends State<TestScreen>
                         children: [
                           Expanded(
                             child: Html(
-                              data: question.content.isNotEmpty
-                                  ? question.content[0].toUpperCase() +
-                                      question.content.substring(1)
-                                  : 'Question',
+                              data: _prepareQuestionContent(question.content),
                               style: {
-                                "body": Style(
-                                  fontSize: FontSize(18),
-                                  margin: Margins.zero,
-                                  padding: HtmlPaddings.zero,
-                                  lineHeight: LineHeight(1.6),
-                                  fontWeight: FontWeight.w600,
+                                ..._buildHtmlStyles(
+                                  fontSize: 18,
                                   color: AppColors.text3Light,
+                                  fontWeight: FontWeight.w600,
                                 ),
                                 "img": Style(
                                   width: Width.auto(),
@@ -1077,18 +1196,14 @@ class _TestScreenState extends State<TestScreen>
           Stack(
             children: [
               Html(
-                data: previewText,
-                style: {
-                  "body": Style(
-                    fontSize: FontSize(15),
-                    margin: Margins.zero,
-                    padding: HtmlPaddings.zero,
-                    lineHeight: LineHeight(1.5),
-                    color: Colors.black87,
-                    maxLines: 4,
-                    textOverflow: TextOverflow.ellipsis,
-                  ),
-                },
+                data: _normalizeRenderableContent(previewText),
+                style: _buildHtmlStyles(
+                  fontSize: 15,
+                  color: Colors.black87,
+                  lineHeight: 1.5,
+                  maxLines: 4,
+                  textOverflow: TextOverflow.ellipsis,
+                ),
               ),
               // White gradient fade overlay at bottom (only if text is long)
               if (isLongText)
@@ -1314,16 +1429,11 @@ class _TestScreenState extends State<TestScreen>
     final isSelected = selectedAnswer == index;
 
     Widget optionContent = Html(
-      data: option,
-      style: {
-        "body": Style(
-          fontSize: FontSize(16),
-          margin: Margins.zero,
-          padding: HtmlPaddings.zero,
-          lineHeight: LineHeight(1.6),
-          color: isSelected ? Colors.white : Colors.black87,
-        ),
-      },
+      data: _normalizeRenderableContent(option),
+      style: _buildHtmlStyles(
+        fontSize: 16,
+        color: isSelected ? Colors.white : Colors.black87,
+      ),
     );
 
     // If there's an option image URL, show it alongside the text
@@ -1626,16 +1736,13 @@ class _TestScreenState extends State<TestScreen>
 
                                 // Section content (HTML)
                                 Html(
-                                  data: sectionContent,
-                                  style: {
-                                    "body": Style(
-                                      fontSize: FontSize(19),
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
-                                      lineHeight: LineHeight(1.6),
-                                      color: AppColors.text3Light,
-                                    ),
-                                  },
+                                  data: _normalizeRenderableContent(
+                                    sectionContent,
+                                  ),
+                                  style: _buildHtmlStyles(
+                                    fontSize: 19,
+                                    color: AppColors.text3Light,
+                                  ),
                                 ),
 
                                 // Add spacing between sections

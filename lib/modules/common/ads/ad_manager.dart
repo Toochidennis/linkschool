@@ -13,6 +13,7 @@ enum AdTrigger {
   questionFailure,
   topicCompletion,
   resultNavigation,
+  testExit,
   paywallContinue,
 }
 
@@ -535,7 +536,8 @@ class AdManager {
 
     if (tier == AdTier.freeTrial) {
       return trigger == AdTrigger.topicCompletion ||
-          trigger == AdTrigger.resultNavigation;
+          trigger == AdTrigger.resultNavigation ||
+          trigger == AdTrigger.testExit;
     }
 
     // freeAds
@@ -543,6 +545,7 @@ class AdManager {
         trigger == AdTrigger.topicStart ||
         // trigger == AdTrigger.questionFailure ||
         trigger == AdTrigger.resultNavigation ||
+        trigger == AdTrigger.testExit ||
         trigger == AdTrigger.paywallContinue;
   }
 

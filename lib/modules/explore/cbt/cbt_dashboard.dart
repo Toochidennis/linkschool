@@ -26,7 +26,6 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
-import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:linkschool/main.dart';
 
 class CBTDashboard extends StatefulWidget {
@@ -141,12 +140,9 @@ class _CBTDashboardState extends State<CBTDashboard>
         return true;
       } catch (e) {
         if (!mounted) return false;
-        await NetworkDialog.ensureOnline(
-          context,
-          message:
-              'Unable to verify license status. Please check your connection.',
+        return await _resolveEntitlementFallback(
+          allowAds: allowAdsOverride,
         );
-        return false;
       }
     }
 
@@ -180,6 +176,24 @@ class _CBTDashboardState extends State<CBTDashboard>
     }
 
     return false;
+  }
+
+  Future<bool> _resolveEntitlementFallback({required bool allowAds}) async {
+    if (allowAds) {
+      return true;
+    }
+
+    final hasPaidLocally = await _subscriptionService.hasPaid();
+    if (hasPaidLocally) {
+      return true;
+    }
+
+    final canTakeTestLocally = await _subscriptionService.canTakeTest();
+    if (canTakeTestLocally) {
+      return true;
+    }
+
+    return await _showPlansAndReturn();
   }
 
   @override
@@ -767,6 +781,7 @@ class _CBTDashboardState extends State<CBTDashboard>
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -905,7 +920,7 @@ class _CBTDashboardState extends State<CBTDashboard>
               MaterialPageRoute(
                 builder: (context) => const SubjectSelectionScreen(),
               ),
-            );
+            ).then((_) => provider.refreshStats());
           },
           onStudy: () {
             Navigator.pop(context);
