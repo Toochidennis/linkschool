@@ -23,6 +23,7 @@ platform :android do
       aab: ENV["AAB_PATH"]  ,
       json_key: ENV["PLAY_STORE_JSON_KEY_PATH"],
       skip_upload_metadata: true,
+      skip_upload_changelogs: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
       )
@@ -36,6 +37,7 @@ platform :android do
       track_promote_release_status: "completed",
       json_key: ENV["PLAY_STORE_JSON_KEY_PATH"],
       skip_upload_metadata: true,
+      skip_upload_changelogs: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
