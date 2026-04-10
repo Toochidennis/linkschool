@@ -1044,41 +1044,47 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     required String helper,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.white),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, color: accent, size: 24),
-          const SizedBox(height: 14),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 34,
-              fontWeight: FontWeight.w900,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(16),
             ),
+            child: Icon(icon, color: accent, size: 26),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: const Color(0xFF6B7280),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            helper,
-            style: TextStyle(
-              color: const Color(0xFF9CA3AF),
-              fontSize: 12,
-              height: 1.35,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF1F2937),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1147,7 +1153,8 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         _startButtonConfettiController,
       ]),
       builder: (context, child) {
-        final pulse = 1 + (math.sin(_startCardController.value * math.pi) * 0.03);
+        final pulse =
+            1 + (math.sin(_startCardController.value * math.pi) * 0.03);
         final iconShift = math.sin(_startCardController.value * math.pi) * 3;
 
         return Transform.scale(

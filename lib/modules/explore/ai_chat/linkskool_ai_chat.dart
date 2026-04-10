@@ -984,8 +984,8 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
         backgroundColor: AppColors.eLearningBtnColor1,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1014,10 +1014,9 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
             tooltip: 'New Chat',
           ),
           IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {
-              _showAboutDialog();
-            },
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            tooltip: 'Chat History',
           ),
         ],
       ),

@@ -23,6 +23,7 @@ import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../../modules/explore/cbt/cbt_dashboard.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'home_carousel_banner_ad_cache.dart';
 
 class ExploreHome extends StatefulWidget {
   final Function(bool) onSearchIconVisibilityChanged;
@@ -199,6 +200,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     _controller.removeListener(_onScroll);
     _controller.dispose();
     _disposeAds();
+    HomeCarouselBannerAdCache().dispose();
     super.dispose();
   }
 
@@ -489,32 +491,17 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         height: 265.0,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(12.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12.0),
           child: Stack(
             children: [
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.text2Light.withValues(alpha: 0.06),
-                        AppColors.buttonColor2.withValues(alpha: 0.08),
-                      ],
-                    ),
-                  ),
+              Center(
+                child: _ExploreCarouselBannerAd(
+                  adUnitId: EnvConfig.homeBannerAdKey,
+                  size: AdSize.mediumRectangle,
                 ),
               ),
               Positioned(
@@ -536,12 +523,6 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                       fontFamily: 'Urbanist',
                     ),
                   ),
-                ),
-              ),
-              Center(
-                child: _ExploreCarouselBannerAd(
-                  adUnitId: EnvConfig.homeBannerAdKey,
-                  size: AdSize.mediumRectangle,
                 ),
               ),
             ],
@@ -869,7 +850,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                       padEnds: false,
                       viewportFraction: 0.95,
                       autoPlay: true,
-                      enableInfiniteScroll: announcementCarouselItems.length > 1,
+                      autoPlayInterval: const Duration(seconds: 15),
+                      enableInfiniteScroll:
+                          announcementCarouselItems.length > 1,
                       scrollDirection: Axis.horizontal,
                     ),
                   ),
@@ -893,7 +876,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.text2Light.withValues(alpha: 0.1),
+                                color:
+                                    AppColors.text2Light.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -1369,8 +1353,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               padding: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
                 color: _pressedButtonIndex == index
-                    ? backgroundColor
-                        .withValues(alpha: 0.7) // Darker color when pressed
+                    ? backgroundColor.withValues(
+                        alpha: 0.7) // Darker color when pressed
                     : backgroundColor,
                 borderRadius: BorderRadius.circular(16.0),
                 border: Border.all(color: borderColor, width: 2),
@@ -1620,71 +1604,60 @@ class _ExploreCarouselBannerAd extends StatefulWidget {
 }
 
 class _ExploreCarouselBannerAdState extends State<_ExploreCarouselBannerAd> {
-  BannerAd? _ad;
-  bool _isLoaded = false;
+  late HomeCarouselBannerAdCache _adCache;
 
   @override
   void initState() {
     super.initState();
-    _ad = BannerAd(
-      adUnitId: widget.adUnitId,
-      size: widget.size,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (_) {
-          if (!mounted) return;
-          setState(() {
-            _isLoaded = true;
-          });
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-          if (!mounted) return;
-          setState(() {
-            _isLoaded = false;
-          });
-        },
-      ),
-    )..load();
+    _adCache = HomeCarouselBannerAdCache();
+    _adCache.loadAd(adUnitId: widget.adUnitId);
   }
 
   @override
   void dispose() {
-    _ad?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ad = _ad;
-    if (!_isLoaded || ad == null) {
-      return Container(
-        width: widget.size.width.toDouble(),
-        height: widget.size.height.toDouble(),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.88),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.text2Light.withValues(alpha: 0.10),
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          'Loading sponsor card...',
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Urbanist',
-          ),
-        ),
-      );
-    }
+    return ValueListenableBuilder<BannerAd?>(
+      valueListenable: _adCache.adNotifier,
+      builder: (context, ad, _) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: _adCache.loadedNotifier,
+          builder: (context, isLoaded, _) {
+            if (!isLoaded || ad == null) {
+              return Container(
+                width: widget.size.width.toDouble(),
+                height: widget.size.height.toDouble(),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.text2Light.withValues(alpha: 0.10),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'Loading sponsor card...',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
+                  ),
+                ),
+              );
+            }
 
-    return SizedBox(
-      width: ad.size.width.toDouble(),
-      height: ad.size.height.toDouble(),
-      child: AdWidget(ad: ad),
+            return SizedBox(
+              width: ad.size.width.toDouble(),
+              height: ad.size.height.toDouble(),
+              child: AdWidget(ad: ad),
+            );
+          },
+        );
+      },
     );
   }
 }
