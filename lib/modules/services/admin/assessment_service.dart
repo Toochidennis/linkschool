@@ -32,7 +32,6 @@ class AssessmentService {
   // method for editing assessment
   Future<ApiResponse<Map<String, dynamic>>> editAssessment(
       String assessmentId, Map<String, dynamic> payload) async {
-    print("Payload in service: $payload");
     try {
       // Get token from local storage
       final userBox = Hive.box('userData');
@@ -215,3 +214,4 @@ class AssessmentService {
 //     }
 //   }
 // }
+

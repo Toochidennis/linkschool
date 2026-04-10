@@ -217,7 +217,8 @@ class ChildContent {
         } else {
         }
       } catch (e) {
-      }
+      // Intentionally ignored.
+    }
     }
     return result;
   }
@@ -238,7 +239,8 @@ class ChildContent {
         } else {
         }
       } catch (e) {
-      }
+      // Intentionally ignored.
+    }
     }
     return result;
   }

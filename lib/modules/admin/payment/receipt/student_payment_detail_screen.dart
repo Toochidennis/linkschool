@@ -47,7 +47,6 @@ class _StudentPaymentDetailScreenState
       final token = userBox.get('token');
 
       if (token == null || token.toString().isEmpty) {
-        print('No authentication token found. User needs to login again.');
         return;
       }
 
@@ -55,9 +54,8 @@ class _StudentPaymentDetailScreenState
       apiService.setAuthToken(token.toString());
       _paymentService = PaymentService(apiService);
 
-      print('ApiService initialized with authentication token');
     } catch (e) {
-      print('Error initializing services: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -280,7 +278,7 @@ class _StudentPaymentDetailScreenState
                 color: Theme.of(context).scaffoldBackgroundColor,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     spreadRadius: 1,
                     blurRadius: 5,
                     offset: const Offset(0, -3),

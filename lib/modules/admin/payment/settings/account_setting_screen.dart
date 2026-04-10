@@ -113,10 +113,10 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                      color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                        color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -137,7 +137,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                                   label: Text(
                                       'Search: "${accountProvider.searchQuery}"'),
                                   backgroundColor: AppColors.eLearningBtnColor1
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                                   deleteIcon: const Icon(Icons.close, size: 18),
                                   onDeleted: () {
                                     accountProvider.searchAccounts('');
@@ -149,7 +149,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                                   label: Text(
                                       'Type: ${accountProvider.selectedAccountTypeFilter}'),
                                   backgroundColor: AppColors.eLearningBtnColor1
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                                   deleteIcon: const Icon(Icons.close, size: 18),
                                   onDeleted: () {
                                     accountProvider.filterByAccountType(null);

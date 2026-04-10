@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:linkschool/modules/explore/cbt/cbt_challange/challenge_ad_manager.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
 
 class ChallengeInstructionsScreen extends StatefulWidget {
@@ -27,14 +28,15 @@ class _PatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.08 + 0.07 * animationValue)
+      ..color = Colors.white.withValues(alpha: 0.08 + 0.07 * animationValue)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
     final circleCount = 5;
     final maxRadius = size.width * 0.7;
     for (int i = 0; i < circleCount; i++) {
-      final radius = maxRadius * ((i + 1) / circleCount) * (0.8 + 0.2 * animationValue);
+      final radius =
+          maxRadius * ((i + 1) / circleCount) * (0.8 + 0.2 * animationValue);
       canvas.drawCircle(
         Offset(size.width / 2, size.height / 2),
         radius,
@@ -51,16 +53,18 @@ class _PatternPainter extends CustomPainter {
 
 class _ChallengeInstructionsScreenState
     extends State<ChallengeInstructionsScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _slideController;
   late AnimationController _fadeController;
   late AnimationController _pulseController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
+  bool _shouldShowAppOpenOnResume = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _slideController = AnimationController(
       vsync: this,
@@ -95,10 +99,36 @@ class _ChallengeInstructionsScreenState
 
     _slideController.forward();
     _fadeController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await ChallengeAdManager.instance.preloadAll(context);
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        !ChallengeAdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAppOpenOnResume = true;
+    } else if (state == AppLifecycleState.resumed &&
+        _shouldShowAppOpenOnResume) {
+      _shouldShowAppOpenOnResume = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await ChallengeAdManager.instance.showAppOpenIfEligible(
+          context: context,
+        );
+      });
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _slideController.dispose();
     _fadeController.dispose();
     _pulseController.dispose();
@@ -114,8 +144,8 @@ class _ChallengeInstructionsScreenState
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              widget.challenge.gradient[0].withOpacity(0.1),
-              widget.challenge.gradient[1].withOpacity(0.05),
+              widget.challenge.gradient[0].withValues(alpha: 0.1),
+              widget.challenge.gradient[1].withValues(alpha: 0.05),
               Colors.white,
             ],
           ),
@@ -146,8 +176,8 @@ class _ChallengeInstructionsScreenState
                           SizedBox(height: 24),
 
                           // Rules Section
-                         // _buildRulesSection(),
-                        //  SizedBox(height: 24),
+                          // _buildRulesSection(),
+                          //  SizedBox(height: 24),
 
                           // Rewards Section
                           _buildRewardsSection(),
@@ -173,7 +203,7 @@ class _ChallengeInstructionsScreenState
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -212,7 +242,7 @@ class _ChallengeInstructionsScreenState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: widget.challenge.gradient[0].withOpacity(0.4),
+            color: widget.challenge.gradient[0].withValues(alpha: 0.4),
             blurRadius: 15,
             offset: Offset(0, 8),
           ),
@@ -238,13 +268,10 @@ class _ChallengeInstructionsScreenState
               children: [
                 Row(
                   children: [
-                    
-                
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                         
                           SizedBox(height: 8),
                           Text(
                             widget.challenge.title,
@@ -255,21 +282,20 @@ class _ChallengeInstructionsScreenState
                             ),
                           ),
                           SizedBox(height: 6),
-                            Text(
-                  widget.challenge.description,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white.withOpacity(0.95),
-                    height: 1.5,
-                  ),
-                ),
+                          Text(
+                            widget.challenge.description,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white.withValues(alpha: 0.95),
+                              height: 1.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
                 SizedBox(height: 18),
-              
                 Row(
                   children: [
                     _buildInfoChip(
@@ -308,7 +334,7 @@ class _ChallengeInstructionsScreenState
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 7),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.25),
+          color: Colors.white.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -327,7 +353,7 @@ class _ChallengeInstructionsScreenState
               subtitle,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -340,7 +366,6 @@ class _ChallengeInstructionsScreenState
   Widget _buildInstructionsSection() {
     final instructions = [
       'Read each question carefully before answering',
-     
       'Each correct answer earns you points',
       'Build a streak by answering consecutively correct',
       'Cannot go back once you submit an answer',
@@ -353,7 +378,7 @@ class _ChallengeInstructionsScreenState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -454,7 +479,8 @@ class _ChallengeInstructionsScreenState
       {
         'icon': Icons.check_circle,
         'title': 'Fair Play',
-        'description': 'Complete the challenge independently without external help',
+        'description':
+            'Complete the challenge independently without external help',
       },
       {
         'icon': Icons.timer,
@@ -520,7 +546,7 @@ class _ChallengeInstructionsScreenState
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: Offset(0, 4),
                   ),
@@ -725,11 +751,11 @@ class _ChallengeInstructionsScreenState
         color: Colors.transparent,
         // boxShadow: [
         //   BoxShadow(
-        //     color: Colors.black.withOpacity(0.1),
+        //     color: Colors.black.withValues(alpha: 0.1),
         //     blurRadius: 10,
         //     offset: Offset(0, -4),
         //   ),
-       // ],
+        // ],
       ),
       child: AnimatedBuilder(
         animation: _pulseController,
@@ -740,7 +766,11 @@ class _ChallengeInstructionsScreenState
           );
         },
         child: ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
+            await ChallengeAdManager.instance.showInterstitialIfEligible(
+              context: context,
+            );
+            if (!mounted) return;
             Navigator.pop(context);
             widget.onContinue();
           },
@@ -751,7 +781,7 @@ class _ChallengeInstructionsScreenState
               borderRadius: BorderRadius.circular(16),
             ),
             elevation: 0,
-            shadowColor: widget.challenge.gradient[0].withOpacity(0.5),
+            shadowColor: widget.challenge.gradient[0].withValues(alpha: 0.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -777,5 +807,3 @@ class _ChallengeInstructionsScreenState
     );
   }
 }
-
-

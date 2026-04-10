@@ -79,8 +79,8 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
         await _subscriptionService.setMaxFreeTests(settings.freeTrialDays);
         await _subscriptionService.setTrialStartDate();
       } catch (e) {
-        print('Error syncing trial settings: $e');
-      }
+      // Intentionally ignored.
+    }
     });
   }
 
@@ -368,7 +368,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
             spreadRadius: 0,
             offset: const Offset(0, 1),
             blurRadius: 2,
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
           )
         ],
       ),

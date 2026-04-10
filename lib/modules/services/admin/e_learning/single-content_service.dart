@@ -100,14 +100,14 @@ class SingleAssessmentService {
         },
       );
 
-      print('Raw API response: ${response.rawData}'); // Log raw response
+ // Log raw response
 
       final data = response.rawData?['response'];
       if (data == null) {
         throw Exception("No material data received.");
       }
 
-      print('Parsed response data: $data'); // Log parsed data
+ // Log parsed data
 
       return AssessmentContentItem.fromJson(data); // Parse directly
     } catch (e) {
@@ -115,3 +115,4 @@ class SingleAssessmentService {
     }
   }
 }
+

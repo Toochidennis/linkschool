@@ -53,7 +53,7 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
         year: year,
       );
     } catch (e) {
-      debugPrint('Failed to fetch annual results: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -230,7 +230,7 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
           borderRadius: BorderRadius.circular(12.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -614,7 +614,7 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
 //         year: year,
 //       );
 //     } catch (e) {
-//       debugPrint('Failed to fetch annual results: $e');
+
 //     }
 //   }
 

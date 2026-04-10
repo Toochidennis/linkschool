@@ -19,6 +19,8 @@ import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'course_description_screen.dart';
 import 'course_content_screen.dart';
+import 'course_selection_screen.dart';
+import 'explore_courses_see_all_screen.dart';
 import 'create_user_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -234,7 +236,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         await cbtUserProvider.replaceProfiles(profiles);
       }
     } catch (e) {
-      debugPrint("Failed to fetch profiles on load: $e");
+      // Intentionally ignored.
     }
 
     if (!mounted) return;
@@ -429,6 +431,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
             name: category.name,
             description: category.description,
             imageUrl: category.imageUrl,
+            slug: category.slug,
             courses: matchingCourses,
           ));
         }
@@ -458,6 +461,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
           name: category.name,
           description: category.description,
           imageUrl: category.imageUrl,
+          slug: category.slug,
           courses: notEnrolled,
         ));
       }
@@ -473,6 +477,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         name: 'Enrolled Courses',
         description: '',
         imageUrl: null,
+        slug: null,
         courses: enrolledCourses,
       ),
       ...remainingCategories,
@@ -540,7 +545,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                             },
                             backgroundColor: Colors.grey.shade100,
                             selectedColor:
-                                const Color(0xFFFFA500).withOpacity(0.2),
+                                const Color(0xFFFFA500).withValues(alpha: 0.2),
                             checkmarkColor: const Color(0xFFFFA500),
                             labelStyle: TextStyle(
                               color: isSelected
@@ -720,37 +725,22 @@ class _ExploreCoursesState extends State<ExploreCourses>
             _activeProfile = activeProfile;
           });
 
-          debugPrint(
-              'After bootstrap - _pendingCourse: ${_pendingCourse?.courseName}');
-          debugPrint(
-              'After bootstrap - _pendingCategory: ${_pendingCategory?.name}');
-          debugPrint('After bootstrap - _activeProfile: ${_activeProfile?.id}');
 
           if (_pendingCourse != null && _pendingCategory != null) {
-            debugPrint('Entering enrollment check block');
             final profileId = _activeProfile?.id;
-            debugPrint('Profile ID: $profileId');
-            debugPrint('Cohort ID: ${_pendingCourse!.cohortId}');
 
             if (profileId != null && _pendingCourse!.cohortId != null) {
-              debugPrint('About to check enrollment...');
               try {
                 final isEnrolled = await CourseService().checkIsEnrolled(
                   cohortId: _pendingCourse!.cohortId!,
                   profileId: profileId,
                 );
-                debugPrint(
-                    'Enrollment check after sign-in: isEnrolled=$isEnrolled for course ${_pendingCourse!.courseName}');
               } catch (e) {
-                debugPrint('Error checking enrollment after sign-in: $e');
-              }
+      // Intentionally ignored.
+    }
             } else {
-              debugPrint(
-                  'Skipped enrollment check - profileId: $profileId, cohortId: ${_pendingCourse!.cohortId}');
             }
           } else {
-            debugPrint(
-                'Skipped enrollment check - _pendingCourse: $_pendingCourse, _pendingCategory: $_pendingCategory');
           }
 
           await _resumePendingCourseSelection();
@@ -777,12 +767,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
  Future<void> _showAccountSwitcherDialog(BuildContext context, dynamic user) async {
   // Prevent multiple dialogs from opening
   if (_isShowingAccountSwitcher) {
-    debugPrint('Dialog already showing, ignoring tap');
     return;
   }
   
  _isShowingAccountSwitcher = true;
- debugPrint('Opening account switcher dialog, flag set to: $_isShowingAccountSwitcher');
 
   final userId = user?.id;
   if (userId == null) {
@@ -809,7 +797,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
           .replaceProfiles(profiles);
     }
   } catch (e) {
-    debugPrint("Failed to fetch profiles: $e");
     _isShowingAccountSwitcher = false;
     return;
   }
@@ -928,14 +915,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
       },
     );
   } finally {
-    debugPrint('Account switcher dialog closed');
-    debugPrint('Flag before reset: $_isShowingAccountSwitcher');
     
     // Add a small delay to ensure the dialog animation completes
     await Future.delayed(const Duration(milliseconds: 300));
     
     _isShowingAccountSwitcher = false;
-    debugPrint('Flag after reset: $_isShowingAccountSwitcher');
   }
 }
   
@@ -1019,7 +1003,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -1118,9 +1102,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                  final cohortStart = course.cohortStartDate != null
           ? DateTime.tryParse(course.cohortStartDate!)
           : null;
-
-
-           if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
+      if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -1209,7 +1191,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
       shape: BoxShape.circle,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.15),
+          color: Colors.black.withValues(alpha: 0.15),
           blurRadius: 4,
           offset: const Offset(0, 2),
         ),
@@ -1504,7 +1486,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
               border: Border.all(color: borderColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withOpacity(0.3),
+                  color: backgroundColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -1725,7 +1707,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade200.withOpacity(0.3),
+                            color: Colors.grey.shade200.withValues(alpha: 0.3),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -1891,7 +1873,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
                               child: GestureDetector(
                                 onTap: () async {
     if (_isShowingAccountSwitcher) {
-      debugPrint('Dialog already showing, ignoring tap');
       return;
     }
     await _showAccountSwitcherDialog(context, user);
@@ -1983,11 +1964,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
                                   Container(
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFA500)
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                           color: const Color(0xFFFFA500)
-                                              .withOpacity(0.3)),
+                                              .withValues(alpha: 0.3)),
                                     ),
                                     child: IconButton(
                                       icon: const Icon(
@@ -2037,18 +2018,104 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Widget _buildCategoryHeaderCard(CategoryModel category) {
-    return Column(
+    final isEnrolledBucket = category.id == -1 || category.name == 'Enrolled Courses';
+    final seeAllColor = isEnrolledBucket
+        ? const Color(0xFF0F766E)
+        : _getCategoryColor(category.name);
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          category.name,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              category.name,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+                height: 1.2,
+              ),
+              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            OutlinedButton(
+              onPressed: () {
+                final isEnrolledBucket = category.id == -1;
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ExploreCoursesSeeAllScreen(
+                      categoryName: category.name,
+                      categoryColor: seeAllColor,
+                      categorySlug: isEnrolledBucket ? null : category.slug,
+                      categoryId: category.id,
+                      profileId: _activeProfile?.id,
+                      initialCourses:
+                          isEnrolledBucket ? category.courses : null,
+                    ),
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFFFA500),
+                side: const BorderSide(color: Color(0xFFFFA500), width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              child: const Text(
+                'See all',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CourseSelectionScreen(
+                      slug: category.slug ?? "",
+                    ),
+                  ),
+                );
+
+                if (result == true && mounted) {
+                  await _bootstrapScreen();
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF4F46E5),
+                side: const BorderSide(color: Color(0xFF4F46E5), width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              child: const Text(
+                'Test enroll',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -2064,7 +2131,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         child: Material(
           color: Colors.white,
           elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.06),
+          shadowColor: Colors.black.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -2073,8 +2140,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
             onTapCancel: _clearPressedCourseId,
             onTapUp: (_) => _clearPressedCourseId(),
             borderRadius: BorderRadius.circular(12),
-            splashColor: const Color(0xFFFFA500).withOpacity(0.16),
-            highlightColor: const Color(0xFFFFA500).withOpacity(0.08),
+            splashColor: const Color(0xFFFFA500).withValues(alpha: 0.16),
+            highlightColor: const Color(0xFFFFA500).withValues(alpha: 0.08),
             child: AnimatedScale(
               scale: isPressed ? 0.985 : 1.0,
               duration: const Duration(milliseconds: 120),
@@ -2296,7 +2363,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
                           opacity: 1,
                           duration: const Duration(milliseconds: 120),
                           child: Container(
-                            color: Colors.white.withOpacity(0.55),
+                            color: Colors.white.withValues(alpha: 0.55),
                             child: const Center(
                               child: SizedBox(
                                 width: 24,

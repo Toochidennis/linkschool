@@ -46,7 +46,6 @@ class _PortalDashboardState extends State<PortalDashboard> {
 
     final name = userName.trim().split(' ');
     final firstName = name.isNotEmpty ? name.first : 'User';
-    print("First name: $firstName");
 
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 18),
@@ -100,7 +99,6 @@ class _PortalDashboardState extends State<PortalDashboard> {
         authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
     final name = userName.trim().split(' ');
     final firstName = name.isNotEmpty ? name.first : 'User';
-    print("First name: $firstName");
 
     switch (index) {
       case 0:

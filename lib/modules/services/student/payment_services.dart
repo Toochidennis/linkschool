@@ -62,7 +62,6 @@ class InvoiceService {
         'response': transformedResponse,
       });
     } catch (e) {
-      print("Error fetching invoices: $e");
       rethrow;
     }
   }
@@ -147,3 +146,4 @@ class InvoiceService {
 //     return InvoiceResponse.fromJson(jsonMap);
 //   }
 // }
+

@@ -79,7 +79,6 @@ class VendorService {
 
       return response;
     } catch (e) {
-      print('Error deleting vendor: $e');
       return ApiResponse<Map<String, dynamic>>.error(
         'Failed to delete vendor: ${e.toString()}',
         500,
@@ -181,3 +180,4 @@ class VendorService {
 //     );
 //   }
 // }
+

@@ -88,7 +88,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
       });
 
     } catch (e) {
-      print("❌ Error loading user data: $e");
       setState(() {
         isLoading = false;
       });

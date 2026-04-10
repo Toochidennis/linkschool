@@ -26,7 +26,6 @@ class DiscussionService {
         'page': page.toString(),
         'per_page': perPage.toString(),
       });
-      print("📡 fetching discussions → $uri");
 
       final response = await http.get(
         uri,
@@ -37,15 +36,12 @@ class DiscussionService {
       );
 
       if (response.statusCode != 200) {
-        print("❌ Failed to fetch discussions");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return DiscussionResponseModel.fromJson(decoded);
     } catch (e) {
-      print("❌ Error fetching discussions: $e");
       throw Exception("Error fetching discussions: $e");
     }
   }
@@ -72,7 +68,6 @@ class DiscussionService {
         'per_page': perPage.toString(),
         if (authorId != null && authorId > 0) 'author_id': authorId.toString(),
       });
-      print("📡 fetching discussion detail → $uri");
 
       final response = await http.get(
         uri,
@@ -83,15 +78,12 @@ class DiscussionService {
       );
 
       if (response.statusCode != 200) {
-        print("❌ Failed to fetch discussion detail");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return DiscussionDetailResponseModel.fromJson(decoded);
     } catch (e) {
-      print("❌ Error fetching discussion detail: $e");
       throw Exception("Error fetching discussion detail: $e");
     }
   }
@@ -116,7 +108,6 @@ class DiscussionService {
         'per_page': perPage.toString(),
         if (authorId != null && authorId > 0) 'author_id': authorId.toString(),
       });
-      print("📡 fetching post replies → $uri");
 
       final response = await http.get(
         uri,
@@ -127,15 +118,12 @@ class DiscussionService {
       );
 
       if (response.statusCode != 200) {
-        print("❌ Failed to fetch post replies");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return DiscussionPostRepliesResponseModel.fromJson(decoded);
     } catch (e) {
-      print("❌ Error fetching post replies: $e");
       throw Exception("Error fetching post replies: $e");
     }
   }
@@ -154,8 +142,6 @@ class DiscussionService {
       final uri = Uri.parse(
         "${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions",
       );
-      print("📡 creating discussion → $uri");
-      print( "📦 payload: $payload");
 
       final response = await http.post(
         uri,
@@ -168,15 +154,12 @@ class DiscussionService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to create discussion");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
       return DiscussionResponseModel.fromJson(decoded);
     } catch (e) {
-      print("❌ Error creating discussion: $e");
       throw Exception("Error creating discussion: $e");
     }
   }
@@ -196,8 +179,6 @@ class DiscussionService {
       final uri = Uri.parse(
         "${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions/$discussionId/posts",
       );
-      print("📡 creating discussion post → $uri");
-      print("📦 payload: $payload");
 
       final response = await http.post(
         uri,
@@ -210,14 +191,11 @@ class DiscussionService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to create discussion post");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       return true;
     } catch (e) {
-      print("❌ Error creating discussion post: $e");
       throw Exception("Error creating discussion post: $e");
     }
   }
@@ -239,7 +217,6 @@ class DiscussionService {
       final uri = Uri.parse(
         "${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/posts/$postId/$action",
       );
-      print("📡 toggling post like → $uri");
 
       final response = await http.post(
         uri,
@@ -254,14 +231,11 @@ class DiscussionService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to toggle post like");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       return true;
     } catch (e) {
-      print("❌ Error toggling post like: $e");
       throw Exception("Error toggling post like: $e");
     }
   }
@@ -284,7 +258,6 @@ class DiscussionService {
       final uri = Uri.parse(
         "${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions/$discussionId/$action",
       );
-      print("📡 toggling discussion like → $uri");
 
       final response = await http.post(
         uri,
@@ -298,17 +271,13 @@ class DiscussionService {
         }),
       );
 
-      print("📦 Response: ${response.body}");
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        print("❌ Failed to toggle discussion like");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
       return true;
     } catch (e) {
-      print("❌ Error toggling discussion like: $e");
       throw Exception("Error toggling discussion like: $e");
     }
   }
@@ -329,7 +298,6 @@ Future<bool> deleteDiscussion({
       '${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions/$discussionId',
     );
 
-    print("📡 deleting discussion → $uri");
 
     final response = await http.delete(
       uri,
@@ -344,15 +312,11 @@ Future<bool> deleteDiscussion({
     if (response.statusCode != 200 && 
         response.statusCode != 201 && 
         response.statusCode != 204) {
-      print("❌ Failed to delete discussion");
-      print("📦 Response: ${response.body}");
       throw Exception("Failed: ${response.body}");
     }
 
-    print('✅ Delete discussion successful: ${response.statusCode}');
     return true;
   } catch (e) {
-    print("❌ Error deleting discussion: $e");
     throw Exception("Error deleting discussion: $e");
   }
 }
@@ -373,8 +337,6 @@ Future<bool> deleteDiscussion({
       '${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions/$discussionId',
     );
 
-    print("📡 updating discussion → $uri");
-    print("📦 payload: $payload");
 
     final response = await http.put(
       uri,
@@ -389,15 +351,11 @@ Future<bool> deleteDiscussion({
     if (response.statusCode != 200 && 
         response.statusCode != 201 && 
         response.statusCode != 204) {
-      print("❌ Failed to update discussion");
-      print("📦 Response: ${response.body}");
       throw Exception("Failed: ${response.body}");
     }
 
-    print('✅ Update discussion successful: ${response.statusCode}');
     return true;
   } catch (e) {
-    print("❌ Error updating discussion: $e");
     throw Exception("Error updating discussion: $e");
   }
 }
@@ -420,8 +378,6 @@ Future<bool> deleteDiscussion({
         '${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/discussions/$discussionId/posts/$postId',
       );
 
-      print("📡 updating post → $uri");
-      print("📦 payload: $payload");
 
       final response = await http.put(
         uri,
@@ -440,10 +396,8 @@ Future<bool> deleteDiscussion({
         throw Exception("Failed: ${response.body}");
       }
 
-      print('✅ Update post successful: ${response.statusCode}');
       return true;
     } catch (e) {
-      print("❌ Error updating post: $e");
       throw Exception("Error updating post: $e");
     }
   }
@@ -465,7 +419,6 @@ Future<bool> deleteDiscussion({
         '${EnvConfig.apiBaseUrl}/public/learning/cohorts/$cohortId/posts/$postId',
       );
 
-      print("📡 deleting post → $uri");
 
       final response = await http.delete(
         uri,
@@ -480,18 +433,15 @@ Future<bool> deleteDiscussion({
       if (response.statusCode != 200 &&
           response.statusCode != 201 &&
           response.statusCode != 204) {
-        print("❌ Failed to delete post");
-        print("📦 Response: ${response.body}");
         throw Exception("Failed: ${response.body}");
       }
 
-      print('✅ Delete post successful: ${response.statusCode}');
       return true;
     } catch (e) {
-      print("❌ Error deleting post: $e");
       throw Exception("Error deleting post: $e");
     }
   }
 }
 
 // post discussions
+

@@ -6,9 +6,7 @@ import 'package:linkschool/modules/services/student/home/student_dashboard_feed_
 class StudentDashboardFeedProvider with ChangeNotifier {
   final StudentDashboardFeedService _dashboardFeedService;
 
-  StudentDashboardFeedProvider(this._dashboardFeedService) {
-    debugPrint("✅ DashboardFeedProvider created");
-  }
+  StudentDashboardFeedProvider(this._dashboardFeedService);
 
   bool _isLoading = false;
   String? _message;
@@ -43,7 +41,6 @@ class StudentDashboardFeedProvider with ChangeNotifier {
       _message = "Dashboard data loaded successfully";
     } catch (e) {
       _error = "Failed to load dashboard data: $e";
-      debugPrint("Dashboard fetch error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();

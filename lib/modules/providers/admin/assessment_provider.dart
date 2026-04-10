@@ -284,7 +284,6 @@ class AssessmentProvider with ChangeNotifier {
       }
     } catch (e) {
       _setError('Failed to fetch assessments: ${e.toString()}');
-      debugPrint('Error fetching assessments: ${e.toString()}');
     } finally {
       _setLoading(false);
     }

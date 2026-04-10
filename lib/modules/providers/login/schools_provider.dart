@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/model/Login/schools_model.dart';
+import 'package:linkschool/modules/model/login/schools_model.dart';
 import 'package:linkschool/modules/services/login/schools_service.dart';
 
 class SchoolProvider with ChangeNotifier {

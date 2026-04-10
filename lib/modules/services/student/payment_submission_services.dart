@@ -35,7 +35,6 @@ class PaymentSubmissionService {
   }) async {
     final token = getuserdata()['token'] as String;
     final dbName = getuserdata()['_db'] ?? 'aalmgzmy_linkskoo_practice';
-    print("Set token: $token");
     _apiService.setAuthToken(token);
 
     final paymentData = {
@@ -55,27 +54,18 @@ class PaymentSubmissionService {
       'student_id': studentId,
     };
 
-    print("Request Payload: $paymentData");
 
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/students/277/make-payment',
         body: paymentData,
       );
-      print("see me here oo $paymentData");
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to submit payment");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to submit payment: ${response.message}");
       } else {
-        print('Payment submitted successfully.');
-        print('Status Code: ${response.statusCode}');
-        print(' ${response.message}');
       }
     } catch (e) {
-      print("Error submitting payment: $e");
       throw Exception("Failed to submit payment: $e");
     }
   }
@@ -135,7 +125,6 @@ class PaymentSubmissionService {
 //         },
 //       );
 
-//       print("kkkkkkkkk response ${response.data} ");
 
 //       if (response.success) {
 //         return ApiResponse<dynamic>(
@@ -159,3 +148,5 @@ class PaymentSubmissionService {
 //     }
 //   }
 // }
+
+

@@ -357,11 +357,11 @@ class _CourseWaitingScreenState extends State<CourseWaitingScreen>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 8,
                           ),
                         ],
@@ -648,7 +648,7 @@ class _LoadingCountdownCard extends StatelessWidget {
         border: Border.all(color: _C.border),
         boxShadow: [
           BoxShadow(
-            color: _C.accent.withOpacity(0.06),
+            color: _C.accent.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 6),
           ),
@@ -711,7 +711,7 @@ class _MediaHeader extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.72),
+                  Colors.black.withValues(alpha: 0.72),
                 ],
                 stops: const [0.4, 1.0],
               ),
@@ -835,7 +835,7 @@ class _CountdownCard extends StatelessWidget {
         border: Border.all(color: _C.border),
         boxShadow: [
           BoxShadow(
-            color: _C.accent.withOpacity(0.06),
+            color: _C.accent.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 6),
           ),

@@ -18,12 +18,10 @@ class AccountService {
 
       if (token != null && token.isNotEmpty) {
         _apiService.setAuthToken(token);
-        print('Auth token set for AccountService');
       } else {
-        print('Warning: No auth token found in userData box');
       }
     } catch (e) {
-      print('Error setting auth token: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -49,7 +47,6 @@ class AccountService {
 
       return response;
     } catch (e) {
-      print('Error fetching accounts: $e');
       return ApiResponse<AccountResponse>.error(
         'Failed to fetch accounts: ${e.toString()}',
         500,
@@ -76,7 +73,6 @@ class AccountService {
 
       return response;
     } catch (e) {
-      print('Error adding account: $e');
       return ApiResponse<Map<String, dynamic>>.error(
         'Failed to add account: ${e.toString()}',
         500,
@@ -104,7 +100,6 @@ class AccountService {
 
       return response;
     } catch (e) {
-      print('Error updating account: $e');
       return ApiResponse<Map<String, dynamic>>.error(
         'Failed to update account: ${e.toString()}',
         500,
@@ -130,7 +125,6 @@ class AccountService {
 
       return response;
     } catch (e) {
-      print('Error deleting account: $e');
       return ApiResponse<Map<String, dynamic>>.error(
         'Failed to delete account: ${e.toString()}',
         500,
@@ -159,12 +153,9 @@ class AccountService {
 
 //       if (token != null && token.isNotEmpty) {
 //         _apiService.setAuthToken(token);
-//         print('Auth token set for AccountService');
 //       } else {
-//         print('Warning: No auth token found in userData box');
 //       }
 //     } catch (e) {
-//       print('Error setting auth token: $e');
 //     }
 //   }
 
@@ -190,7 +181,6 @@ class AccountService {
 
 //       return response;
 //     } catch (e) {
-//       print('Error fetching accounts: $e');
 //       return ApiResponse<AccountResponse>.error(
 //         'Failed to fetch accounts: ${e.toString()}',
 //         500,
@@ -217,7 +207,6 @@ class AccountService {
 
 //       return response;
 //     } catch (e) {
-//       print('Error adding account: $e');
 //       return ApiResponse<Map<String, dynamic>>.error(
 //         'Failed to add account: ${e.toString()}',
 //         500,
@@ -245,7 +234,6 @@ class AccountService {
 
 //       return response;
 //     } catch (e) {
-//       print('Error updating account: $e');
 //       return ApiResponse<Map<String, dynamic>>.error(
 //         'Failed to update account: ${e.toString()}',
 //         500,
@@ -253,3 +241,5 @@ class AccountService {
 //     }
 //   }
 // }
+
+

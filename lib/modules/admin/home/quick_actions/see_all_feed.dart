@@ -77,13 +77,9 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
               : int.tryParse(settings['term'].toString());
         });
 
-        debugPrint(
-            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
       } else {
-        debugPrint('⚠️ No stored user data found.');
       }
-    } catch (e, stack) {
-      debugPrint(stack.toString());
+    } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
       }
@@ -139,7 +135,6 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
         'term':3, // You might want to get this from user data like in PortalHome
       };
 
-      print('Updated Feed Data: $updatedFeed');
 
       // You'll need to add updateFeed method to FeedsPaginationProvider
       await provider.updateFeed(updatedFeed, feed.id.toString());
@@ -154,7 +149,6 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
     } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to update feed: $e');
-        debugPrint('Error updating feed: ${feed.id}, Error: $e');
       }
     }
   }
@@ -209,10 +203,10 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
         border:
-            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+            Border.all(color: AppColors.text2Light.withValues(alpha: 0.3), width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

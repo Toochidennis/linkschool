@@ -27,11 +27,9 @@ class StudentSkillBehaviorTable {
     final skills = <int, String>{};
 
     // Debug: Print the incoming JSON to see the structure
-    debugPrint('Student JSON: $json');
 
     if (json['student_skills'] != null && json['student_skills'] is List) {
       for (var skill in json['student_skills']) {
-        debugPrint('Skill data: $skill');
 
         // Handle skill_id - it comes as String in your JSON
         final skillIdString = skill['skill_id']?.toString();
@@ -42,7 +40,6 @@ class StudentSkillBehaviorTable {
 
         if (skillId > 0) {
           skills[skillId] = value;
-          debugPrint('Added skill: id=$skillId, value=$value');
         }
       }
     }
@@ -54,8 +51,6 @@ class StudentSkillBehaviorTable {
 
     final studentName = json['student_name']?.toString() ?? 'Unknown';
 
-    debugPrint(
-        'Created student: id=$studentId, name=$studentName, skills=$skills');
 
     return StudentSkillBehaviorTable(
       id: studentId, // Use student_id from JSON
@@ -85,14 +80,13 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     required String term,
     required String year,
     required String db,
+    required int type,
   }) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      debugPrint(
-          'Fetching skills and behaviors for class: $classId, level: $levelId');
 
       final response = await _apiService.get(
         endpoint: 'portal/classes/$classId/skill-behavior',
@@ -101,11 +95,10 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
           'term': term,
           'year': year,
           '_db': db,
+          'type': type,
         },
       );
 
-      debugPrint('Raw API response: ${response.rawData}');
-      debugPrint('Response success: ${response.success}');
 
       if (response.success && response.rawData != null) {
         final responseData = response.rawData!['response'];
@@ -117,7 +110,6 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
               .map((skill) => SkillsBehaviorTable.fromJson(skill))
               .toList();
 
-          debugPrint('Parsed ${_skills.length} skills');
 
           // Parse students
           final studentsList = responseData['students'] as List? ?? [];
@@ -125,7 +117,6 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
             try {
               return StudentSkillBehaviorTable.fromJson(student);
             } catch (e) {
-              debugPrint('Error parsing student: $e, student data: $student');
               // Return a default student to avoid breaking the UI
               return StudentSkillBehaviorTable(
                 id: 0,
@@ -135,24 +126,18 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
             }
           }).toList();
 
-          debugPrint('Parsed ${_students.length} students');
 
           // Log detailed information for debugging
           for (var student in _students) {
-            debugPrint(
-                'Student: ${student.name} (ID: ${student.id}), Skills: ${student.skills}');
           }
         } else {
           _errorMessage = 'No response data found';
-          debugPrint(_errorMessage);
         }
       } else {
         _errorMessage = response.message ?? 'Unknown error occurred';
-        debugPrint('API error: $_errorMessage');
       }
     } catch (e) {
       _errorMessage = 'Failed to fetch data: $e';
-      debugPrint('Exception: $_errorMessage');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -166,6 +151,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     required String term,
     required String year,
     required String db,
+    required int type,
   }) async {
     _isLoading = true;
     _errorMessage = '';
@@ -174,7 +160,10 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     try {
       final response = await _apiService.post(
         endpoint: 'portal/students/skill-behavior',
-        body: skillsPayload,
+        body: {
+          ...skillsPayload,
+          'type': type,
+        },
         fromJson: (json) => json,
       );
 
@@ -186,6 +175,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
               term: term,
               year: year,
               db: db,
+              type: type,
             ));
         return true;
       } else {
@@ -208,6 +198,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     required String term,
     required String year,
     required String db,
+    required int type,
   }) async {
     _isLoading = true;
     _errorMessage = '';
@@ -216,7 +207,10 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     try {
       final response = await _apiService.post(
         endpoint: 'portal/students/skill-behavior',
-        body: skillsPayload,
+        body: {
+          ...skillsPayload,
+          'type': type,
+        },
         fromJson: (json) => json,
       );
 
@@ -228,6 +222,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
               term: term,
               year: year,
               db: db,
+              type: type,
             ));
         return true;
       } else {

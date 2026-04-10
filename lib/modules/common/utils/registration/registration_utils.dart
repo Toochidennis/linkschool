@@ -6,7 +6,6 @@ import 'package:linkschool/modules/common/utils/registration/subject_selection.d
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:hive/hive.dart';
-import 'dart:convert';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 
 class CourseRegistrationService {
@@ -21,12 +20,10 @@ class CourseRegistrationService {
     try {
       // Validate classId
       if (classId.isEmpty) {
-        print('Error: Class ID is empty');
         return false;
       }
 
       // Debug the incoming courses
-      print('Raw courses received: $courses');
 
       // Transform and ensure courses match API expected format with proper types
       List<Map<String, dynamic>> registeredCourses = [];
@@ -44,7 +41,6 @@ class CourseRegistrationService {
         } else if (courseIdValue is String) {
           courseId = int.parse(courseIdValue);
         } else {
-          print('Invalid course ID type: ${courseIdValue.runtimeType}');
           continue; // Skip this course
         }
 
@@ -63,7 +59,6 @@ class CourseRegistrationService {
       };
 
       // Print payload for debugging
-      print('Sending payload: ${json.encode(payload)}');
 
       final response = await _apiService.post(
         endpoint: 'portal/classes/$classId/course-registrations',
@@ -71,11 +66,9 @@ class CourseRegistrationService {
       );
 
       // Print response for debugging
-      print('Response: ${response.statusCode} - ${response.message}');
 
       return response.success;
     } catch (e) {
-      print('Error registering courses: $e');
       return false;
     }
   }
@@ -89,7 +82,6 @@ class CourseRegistrationService {
     try {
       // Validate classId
       if (classId.isEmpty) {
-        print('Error: Class ID is empty');
         return [];
       }
 
@@ -99,16 +91,12 @@ class CourseRegistrationService {
         "term": term.toString(),
       };
 
-      print('Fetching registered courses for class: $classId');
-      print('Query params: $queryParams');
 
       final response = await _apiService.get(
         endpoint: 'portal/classes/$classId/registered-courses',
         queryParams: queryParams,
       );
 
-      print(
-          'Get registered courses response: ${response.statusCode} - ${response.message}');
 
       if (response.success && response.rawData != null) {
         final data = response.rawData!['data'];
@@ -128,7 +116,6 @@ class CourseRegistrationService {
 
       return [];
     } catch (e) {
-      print('Error fetching registered courses: $e');
       return [];
     }
   }
@@ -149,7 +136,6 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
     return;
   }
 
-  print('Opening registration dialog for class ID: $classId');
 
   showModalBottomSheet(
     context: context,
@@ -199,7 +185,6 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                           }).toList());
 
                           // Debug the selected courses
-                          print('Selected courses (updated): $selectedCourses');
                         },
                       ),
                       const SizedBox(height: 16),
@@ -281,15 +266,11 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                               }
                             } catch (e) {
                               // Fallback values if parsing fails
-                              print('Error parsing settings: $e');
                               year = 2025;
                               term = 3;
                             }
 
                             // Print debug information
-                            print('Registering courses for class ID: $classId');
-                            print('Year: $year, Term: $term');
-                            print('Selected courses: $selectedCourses');
 
                             // Call API to register courses
                             final success =
@@ -333,7 +314,6 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                             );
 
                             // Print the full error to the console
-                            print('Registration error: $e');
                           }
                         },
                       ),
@@ -358,7 +338,6 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
     final dynamic rawSettings = userBox.get('settings');
 
     if (rawSettings == null) {
-      print('Settings data not found, using default values');
       return await service.getRegisteredCourses(
         classId: classId,
         year: 2025,
@@ -372,7 +351,6 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
     if (rawSettings is Map) {
       typedSettings = Map<String, dynamic>.from(rawSettings);
     } else {
-      print('Invalid settings format, using default values');
       return await service.getRegisteredCourses(
         classId: classId,
         year: 2025,
@@ -400,7 +378,6 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
       }
     } catch (e) {
       // Fallback values if parsing fails
-      print('Error parsing settings: $e');
       year = 2025;
       term = 3;
     }
@@ -411,7 +388,6 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
       term: term,
     );
   } catch (e) {
-    print('Error getting registered courses with settings: $e');
     return [];
   }
 }

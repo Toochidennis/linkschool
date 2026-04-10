@@ -31,11 +31,6 @@ class StaffOverviewService {
         fromJson: (json) => json,
       );
 
-      print("=== Staff Overview API Response ===");
-      print("Success: ${response.success}");
-      print("Message: ${response.message}");
-      print("Raw Data: ${response.data}");
-      print("===================================");
 
       if (!response.success) {
         throw Exception("API Error: ${response.message}");
@@ -45,10 +40,9 @@ class StaffOverviewService {
       }
 
       return DashboardResponse.fromJson(response.data!);
-    } catch (e, stack) {
-      print("Error in StaffOverviewService.getOverview: $e");
-      print(stack);
+    } catch (e) {
       rethrow;
     }
   }
 }
+

@@ -37,7 +37,7 @@ class WatchHistoryService {
       // Save to SharedPreferences
       await prefs.setStringList(_watchHistoryKey, history);
     } catch (e) {
-      print('Error adding to watch history: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -64,7 +64,6 @@ class WatchHistoryService {
 
       return videos;
     } catch (e) {
-      print('Error getting watch history: $e');
       return [];
     }
   }
@@ -75,7 +74,7 @@ class WatchHistoryService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_watchHistoryKey);
     } catch (e) {
-      print('Error clearing watch history: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -92,7 +91,7 @@ class WatchHistoryService {
 
       await prefs.setStringList(_watchHistoryKey, history);
     } catch (e) {
-      print('Error removing from watch history: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -107,8 +106,8 @@ class WatchHistoryService {
         return data['url'] == videoUrl;
       });
     } catch (e) {
-      print('Error checking watch history: $e');
       return false;
     }
   }
 }
+

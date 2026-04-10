@@ -1,15 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/explore/components/year_picker_dialog.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:provider/provider.dart';
 
-class AllSubjectsScreen extends StatelessWidget {
+class AllSubjectsScreen extends StatefulWidget {
   const AllSubjectsScreen({super.key});
+
+  @override
+  State<AllSubjectsScreen> createState() => _AllSubjectsScreenState();
+}
+
+class _AllSubjectsScreenState extends State<AllSubjectsScreen>
+    with WidgetsBindingObserver {
+  bool _shouldShowAdOnResume = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    AdManager.instance.warmUpPracticeAds(context);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _shouldShowAdOnResume = false;
+      AdManager.instance.showAppOpenIfEligible(context: context);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +58,7 @@ class AllSubjectsScreen extends StatelessWidget {
       body: Consumer<CBTProvider>(
         builder: (context, provider, child) {
           final subjects = provider.currentBoardSubjects;
-          
+
           return Container(
             decoration: Constants.customBoxDecoration(context),
             child: subjects.isEmpty
@@ -60,7 +96,8 @@ class AllSubjectsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSubjectCard(BuildContext context, SubjectModel subject, CBTProvider provider) {
+  Widget _buildSubjectCard(
+      BuildContext context, SubjectModel subject, CBTProvider provider) {
     // Get year range
     final yearModels = provider.getYearModelsForSubject(subject.name);
     final yearDisplay = yearModels.isNotEmpty
@@ -69,8 +106,6 @@ class AllSubjectsScreen extends StatelessWidget {
 
     return GestureDetector(
       onTap: () async {
-        final canUseNetwork = await NetworkDialog.ensureOnline(context);
-        if (!canUseNetwork) return;
         if (yearModels.isNotEmpty) {
           YearPickerDialog.show(
             context,

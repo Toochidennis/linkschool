@@ -73,7 +73,6 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
       year = int.parse(typedSettings['year']?.toString() ?? '2025');
       term = int.parse(typedSettings['term']?.toString() ?? '3');
     } catch (e) {
-      print('Error parsing settings: $e');
       year = 2025;
       term = 3;
     }
@@ -213,7 +212,7 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),

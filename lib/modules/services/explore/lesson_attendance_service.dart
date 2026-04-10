@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
 
@@ -19,7 +18,6 @@ class LessonAttendanceService {
       }
 
       final url = '$_baseUrl/public/learning/lessons/$lessonId/attendance';
-      debugPrint('Submitting lesson attendance to $url');
 
       final response = await http.post(
         Uri.parse(url),
@@ -31,11 +29,9 @@ class LessonAttendanceService {
         body: json.encode(payload),
       );
 
-      debugPrint('Attendance response status: ${response.statusCode}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = json.decode(response.body) as Map<String, dynamic>;
-        debugPrint('Attendance submitted successfully');
         return decoded;
       }
 
@@ -49,9 +45,7 @@ class LessonAttendanceService {
           'Server error: ${response.statusCode} - ${response.body}',
         );
       }
-    } catch (e, stackTrace) {
-      debugPrint('Error submitting lesson attendance: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
       rethrow;
     }
   }

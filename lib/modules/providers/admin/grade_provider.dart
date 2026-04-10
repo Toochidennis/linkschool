@@ -27,7 +27,6 @@ class GradeProvider with ChangeNotifier {
       _error = '';
     } catch (e) {
       _error = e.toString();
-      print("Fetch Error: $_error");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -59,7 +58,6 @@ class GradeProvider with ChangeNotifier {
     try {
       await _gradeService.addGrades(_newGrades);
       _grades.addAll(_newGrades);
-      print("new Gradesssssss added: $_grades");
       _newGrades.clear();
       notifyListeners();
     } catch (e) {
@@ -86,7 +84,6 @@ class GradeProvider with ChangeNotifier {
       await fetchGrades();
     } catch (e) {
       _error = e.toString();
-      print("Delete Error: $_error");
       // Revert local deletion if API call fails
       await fetchGrades();
     } finally {
@@ -123,7 +120,6 @@ class GradeProvider with ChangeNotifier {
       await _gradeService.updateGrades(updatedGrade);
     } catch (e) {
       _error = e.toString();
-      print("Update Error: $_error");
       await fetchGrades();
       rethrow;
     } finally {
@@ -132,3 +128,4 @@ class GradeProvider with ChangeNotifier {
     }
   }
 }
+

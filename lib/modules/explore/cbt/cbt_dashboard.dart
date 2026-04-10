@@ -6,6 +6,7 @@ import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart
 import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
 import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/explore/cbt/all_test_history_screen.dart';
@@ -14,7 +15,7 @@ import 'package:linkschool/modules/explore/cbt/widgets/cbt_auth_dialog.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../common/text_styles.dart';
@@ -25,7 +26,6 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/services/user_profile_update_service.dart';
 import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/common/cbt_settings_helper.dart';
-import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'package:linkschool/main.dart';
 
 class CBTDashboard extends StatefulWidget {
@@ -43,10 +43,7 @@ class CBTDashboard extends StatefulWidget {
 }
 
 class _CBTDashboardState extends State<CBTDashboard>
-    with
-        AutomaticKeepAliveClientMixin,
-        TickerProviderStateMixin,
-        RouteAware {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin, RouteAware {
   final _subscriptionService = CbtSubscriptionService();
   final _authService = FirebaseAuthService();
   final _licenseService = CbtLicenseService();
@@ -63,7 +60,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _bounceController;
-    
+
   bool _animationTriggered = false;
   String? _pressedBoardCode;
   String? _lastNetworkMessage;
@@ -71,55 +68,97 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool _skipNextPlanPrompt = false;
   bool _isHandlingBoardTap = false;
 
- Future<bool> _handlePortalLogin() async {
-  final authProvider = Provider.of<AuthProvider>(context, listen: false);
-  if (!authProvider.isLoggedIn) return false;
+  Future<bool> _handlePortalLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isLoggedIn) return false;
 
-  // Portal is logged in — ensure they also have a CBT account
-  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-  if (cbtUserProvider.currentUser == null) {
-    await cbtUserProvider.initialize();
+    if (authProvider.isDemoLogin) {
+      return false;
+    }
+
+    // Portal is logged in — ensure they also have a CBT account
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.currentUser == null) {
+      await cbtUserProvider.initialize();
+    }
+
+    // If still no CBT account, prompt them to sign up for CBT
+    if (cbtUserProvider.currentUser == null) {
+      final signedIn = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => const CbtAuthDialog(), // normal CBT signup
+      );
+      if (signedIn != true) return false;
+      await cbtUserProvider.initialize();
+    }
+
+    // Portal user is always on free trial — no license check
+    await _subscriptionService.setAdMode('free_trial');
+    return true;
   }
 
-  // If still no CBT account, prompt them to sign up for CBT
-  if (cbtUserProvider.currentUser == null) {
+  Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
+    var allowAdsOverride = allowAds;
+    // ✅ Portal login takes priority — skips license check entirely
+    final portalLoggedIn = await _handlePortalLogin();
+    if (portalLoggedIn) return true;
+
+    // --- From here: user is NOT portal logged in ---
+    // Full CBT auth + license check applies
+
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.currentUser == null) {
+      await cbtUserProvider.initialize();
+    }
+
+    final isSignedIn = cbtUserProvider.currentUser != null;
+
+    if (isSignedIn) {
+      final userId = cbtUserProvider.currentUser?.id;
+      if (userId == null) return false;
+
+      try {
+        // Cache-first license check
+        final cachedStatus =
+            await _licenseService.getCachedLicenseStatus(userId);
+        if (cachedStatus == true) return true;
+        if (cachedStatus == false) {
+          if (allowAdsOverride) return true;
+          return await _showPlansAndReturn();
+        }
+
+        // Fresh license check
+        final isActive = await _licenseService.isLicenseActive(userId: userId);
+        if (!mounted) return false;
+        if (!isActive) {
+          if (allowAdsOverride) return true;
+          return await _showPlansAndReturn();
+        }
+        return true;
+      } catch (e) {
+        if (!mounted) return false;
+        return await _resolveEntitlementFallback(
+          allowAds: allowAdsOverride,
+        );
+      }
+    }
+
+    // No CBT account at all — show signup dialog
+    if (!mounted) return false;
     final signedIn = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => const CbtAuthDialog(), // normal CBT signup
+      builder: (context) => const CbtAuthDialog(),
     );
-    if (signedIn != true) return false;
-    await cbtUserProvider.initialize();
-  }
 
-  // Portal user is always on free trial — no license check
-  await _subscriptionService.setAdMode('free_trial');
-  return true;
-}
+    if (signedIn == true && mounted) {
+      final userId = cbtUserProvider.currentUser?.id;
+      if (userId == null) return false;
 
-Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
-  var allowAdsOverride = allowAds;
-
-  // ✅ Portal login takes priority — skips license check entirely
-  final portalLoggedIn = await _handlePortalLogin();
-  if (portalLoggedIn) return true;
-
-  // --- From here: user is NOT portal logged in ---
-  // Full CBT auth + license check applies
-
-  final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
-  if (cbtUserProvider.currentUser == null) {
-    await cbtUserProvider.initialize();
-  }
-
-  final isSignedIn = cbtUserProvider.currentUser != null;
-
-  if (isSignedIn) {
-    final userId = cbtUserProvider.currentUser?.id;
-    if (userId == null) return false;
-
-    try {
-      // Cache-first license check
+      // Check license after fresh signup
       final cachedStatus = await _licenseService.getCachedLicenseStatus(userId);
       if (cachedStatus == true) return true;
       if (cachedStatus == false) {
@@ -127,7 +166,6 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
         return await _showPlansAndReturn();
       }
 
-      // Fresh license check
       final isActive = await _licenseService.isLicenseActive(userId: userId);
       if (!mounted) return false;
       if (!isActive) {
@@ -135,49 +173,28 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
         return await _showPlansAndReturn();
       }
       return true;
-    } catch (e) {
-      print('[CBT_FLOW] License check failed: $e');
-      if (!mounted) return false;
-      await NetworkDialog.ensureOnline(
-        context,
-        message: 'Unable to verify license status. Please check your connection.',
-      );
-      return false;
     }
+
+    return false;
   }
 
-  // No CBT account at all — show signup dialog
-  if (!mounted) return false;
-  final signedIn = await showDialog<bool>(
-    context: context,
-    barrierDismissible: true,
-    builder: (context) => const CbtAuthDialog(),
-  );
-
-  if (signedIn == true && mounted) {
-    final userId = cbtUserProvider.currentUser?.id;
-    if (userId == null) return false;
-
-    // Check license after fresh signup
-    final cachedStatus = await _licenseService.getCachedLicenseStatus(userId);
-    if (cachedStatus == true) return true;
-    if (cachedStatus == false) {
-      if (allowAdsOverride) return true;
-      return await _showPlansAndReturn();
+  Future<bool> _resolveEntitlementFallback({required bool allowAds}) async {
+    if (allowAds) {
+      return true;
     }
 
-    final isActive = await _licenseService.isLicenseActive(userId: userId);
-    if (!mounted) return false;
-    if (!isActive) {
-      if (allowAdsOverride) return true;
-      return await _showPlansAndReturn();
+    final hasPaidLocally = await _subscriptionService.hasPaid();
+    if (hasPaidLocally) {
+      return true;
     }
-    return true;
+
+    final canTakeTestLocally = await _subscriptionService.canTakeTest();
+    if (canTakeTestLocally) {
+      return true;
+    }
+
+    return await _showPlansAndReturn();
   }
-
-  return false;
-}
-
 
   @override
   bool get wantKeepAlive => true;
@@ -200,12 +217,13 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
       vsync: this,
     );
 
-    
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<CBTProvider>().loadBoards();
       await _syncTrialSettingsOnEntry();
       await _subscriptionService.setTrialStartDate();
+      if (mounted) {
+        await AdManager.instance.warmUpPracticeAds(context);
+      }
       _preloadSubscriptionStatus(); // Pre-cache subscription status
     });
   }
@@ -228,11 +246,16 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final user = cbtUserProvider.currentUser;
-        if (user != null && cbtUserProvider.hasPaid && (user.phone == null || user.phone!.trim().isEmpty)) {
+        if (user != null &&
+            cbtUserProvider.hasPaid &&
+            (user.phone == null || user.phone!.trim().isEmpty)) {
           await UserProfileUpdateModal.show(
             context,
             user: user,
-            onSave: ({required String phone, required String gender, required String birthDate}) async {
+            onSave: (
+                {required String phone,
+                required String gender,
+                required String birthDate}) async {
               final profileService = UserProfileUpdateService();
               await profileService.updateUserPhone(
                 userId: user.id!,
@@ -244,19 +267,21 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
                 gender: gender,
                 birthDate: birthDate,
               );
-              await cbtUserProvider.refreshCurrentUser();
+              await cbtUserProvider.refreshCurrentUser(forceNetwork: true);
             },
           );
         }
       });
     }
 
-
     // Listen for payment reference changes to update state
     cbtUserProvider.paymentReferenceNotifier.addListener(() async {
       final reference = cbtUserProvider.paymentReferenceNotifier.value;
       if (reference != null && reference.isNotEmpty) {
-        await cbtUserProvider.refreshCurrentUser();
+        await cbtUserProvider.refreshCurrentUser(
+          forceNetwork: true,
+          forceLicenseRefresh: true,
+        );
 
         if (!mounted) return;
         _cachedCanTakeTest = cbtUserProvider.hasPaid;
@@ -271,7 +296,10 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
             await UserProfileUpdateModal.show(
               context,
               user: user,
-              onSave: ({required String phone, required String gender, required String birthDate}) async {
+              onSave: (
+                  {required String phone,
+                  required String gender,
+                  required String birthDate}) async {
                 final profileService = UserProfileUpdateService();
                 await profileService.updateUserPhone(
                   userId: user.id!,
@@ -283,7 +311,7 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
                   gender: gender,
                   birthDate: birthDate,
                 );
-                await cbtUserProvider.refreshCurrentUser();
+                await cbtUserProvider.refreshCurrentUser(forceNetwork: true);
               },
             );
           });
@@ -305,47 +333,47 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
 
   @override
   void didPopNext() {
-    // No auto plans prompt on return; only show on card tap.
+    if (!mounted) return;
+    context.read<CBTProvider>().refreshStats();
   }
 
   Widget _buildAnimatedCard({
-  required Widget child,
-  required int index,
-}) {
-  final start = (index * 0.06).clamp(0.0, 0.85);
-  final end = (start + 0.25).clamp(0.0, 1.0);
+    required Widget child,
+    required int index,
+  }) {
+    final start = (index * 0.06).clamp(0.0, 0.85);
+    final end = (start + 0.25).clamp(0.0, 1.0);
 
-  final fadeAnim = CurvedAnimation(
-    parent: _fadeController,
-    curve: Interval(start, end, curve: Curves.easeOut),
-  );
+    final fadeAnim = CurvedAnimation(
+      parent: _fadeController,
+      curve: Interval(start, end, curve: Curves.easeOut),
+    );
 
-  final slideAnim = CurvedAnimation(
-    parent: _slideController,
-    curve: Interval(start, end, curve: Curves.elasticOut),
-  );
+    final slideAnim = CurvedAnimation(
+      parent: _slideController,
+      curve: Interval(start, end, curve: Curves.elasticOut),
+    );
 
-  final bounceAnim = CurvedAnimation(
-    parent: _bounceController,
-    curve: Interval(start, end, curve: Curves.elasticOut),
-  );
+    final bounceAnim = CurvedAnimation(
+      parent: _bounceController,
+      curve: Interval(start, end, curve: Curves.elasticOut),
+    );
 
-  return FadeTransition(
-    opacity: fadeAnim,
-    child: SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.12),
-        end: Offset.zero,
-      ).animate(slideAnim),
-      child: ScaleTransition(
-        // Increase scale delta so the bounce is visible
-        scale: Tween<double>(begin: 0.8, end: 1.0).animate(bounceAnim),
-        child: child,
+    return FadeTransition(
+      opacity: fadeAnim,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.12),
+          end: Offset.zero,
+        ).animate(slideAnim),
+        child: ScaleTransition(
+          // Increase scale delta so the bounce is visible
+          scale: Tween<double>(begin: 0.8, end: 1.0).animate(bounceAnim),
+          child: child,
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   /// 🔥 PRE-LOAD subscription status to avoid UI blocking
   Future<void> _preloadSubscriptionStatus() async {
@@ -359,7 +387,7 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
         });
       }
     } catch (e) {
-      print('❌ Error preloading subscription: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -368,41 +396,8 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
       final settings = await CbtSettingsHelper.getSettings();
       await _subscriptionService.setMaxFreeTests(settings.freeTrialDays);
     } catch (e) {
-      print('Error syncing trial settings: $e');
+      // Intentionally ignored.
     }
-  }
-
-  Future<void> _maybeShowEntryPaymentPrompt() async {
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
-    if (cbtUserProvider.hasPaid == true) return;
-
-    if (_isShowingEntryPrompt) return;
-    _isShowingEntryPrompt = true;
-
-    final settings = await CbtSettingsHelper.getSettings();
-    final remainingDays = await _subscriptionService.getRemainingFreeTests();
-    final trialExpired = await _subscriptionService.isTrialExpired();
-    if (!mounted) return;
-
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => SubscriptionEnforcementDialog(
-        isHardBlock: trialExpired,
-        remainingTests: remainingDays,
-        amount: settings.amount,
-        discountRate: settings.discountRate,
-        onSubscribed: () {
-          if (mounted) {
-            setState(() {
-              _cachedCanTakeTest = true;
-            });
-          }
-        },
-      ),
-    );
-    _isShowingEntryPrompt = false;
   }
 
   Future<void> _maybeShowEntryPlans() async {
@@ -410,7 +405,9 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
         Provider.of<CbtUserProvider>(context, listen: false);
     final canShowPlans = await _ensureSignedInForPlans();
     if (!canShowPlans) return;
+    await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
     if (cbtUserProvider.hasPaid == true) return;
+    if (cbtUserProvider.isOnFreeTrial) return;
     if (_isShowingEntryPrompt) return;
     _isShowingEntryPrompt = true;
 
@@ -443,7 +440,10 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
     );
 
     if (signedIn == true) {
-      await cbtUserProvider.refreshCurrentUser();
+      await cbtUserProvider.refreshCurrentUser(
+        forceNetwork: false,
+        forceLicenseRefresh: false,
+      );
       return true;
     }
     return false;
@@ -461,7 +461,6 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
       if (!authenticated || !mounted) return false;
       return true;
     } catch (e) {
-      print('Subscription check error: $e');
       if (!mounted) return false;
       return await _showPlansAndReturn();
     } finally {
@@ -472,26 +471,29 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
   }
 
   Future<bool> _showPlansAndReturn() async {
-    print('[CBT_FLOW] Opening plans screen...');
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    if (cbtUserProvider.currentUser?.id != null) {
+      await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+    }
+    if (cbtUserProvider.hasPaid || cbtUserProvider.isOnFreeTrial) {
+      return true;
+    }
+
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
     );
-    print('[CBT_FLOW] Plans closed result=$result');
     if (result == 'continue_ads') {
       await _subscriptionService.setContinueWithAds(true);
       return true;
     }
     if (result != true) return false;
 
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
     final userId = cbtUserProvider.currentUser?.id;
-    print('[CBT_FLOW] Checking license after plans userId=$userId');
     if (userId == null) return false;
 
-    final isActive =
-        await _licenseService.isLicenseActive(userId: userId, forceRefresh: true);
-    print('[CBT_FLOW] License active after plans=$isActive');
+    final isActive = await _licenseService.isLicenseActive(
+        userId: userId, forceRefresh: true);
     return isActive;
   }
 
@@ -523,47 +525,44 @@ Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
           : null,
       body: Consumer<CBTProvider>(
         builder: (context, provider, child) {
-        if (provider.error != null && provider.error!.isNotEmpty) {
-          _showNetworkMessage(provider.error!);
-        }
+          if (provider.error != null && provider.error!.isNotEmpty) {
+            _showNetworkMessage(provider.error!);
+          }
 
-        final loading = provider.isLoading;
+          final loading = provider.isLoading;
 
 // If we enter loading again, allow replay next time
-if (!_wasLoading && loading) {
-  _animationTriggered = false;
+          if (!_wasLoading && loading) {
+            _animationTriggered = false;
 
-  // Optional: reset controllers so they don't stay at 1.0 during loading
-  _fadeController.reset();
-  _slideController.reset();
-  _bounceController.reset();
-}
+            // Optional: reset controllers so they don't stay at 1.0 during loading
+            _fadeController.reset();
+            _slideController.reset();
+            _bounceController.reset();
+          }
 
 // When loading finishes, start animations AFTER the first real-content frame
-if (_wasLoading && !loading && !_animationTriggered) {
-  _animationTriggered = true;
+          if (_wasLoading && !loading && !_animationTriggered) {
+            _animationTriggered = true;
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (!mounted) return;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
 
-    _fadeController
-      ..reset()
-      ..forward();
+              _fadeController
+                ..reset()
+                ..forward();
 
-    _slideController
-      ..reset()
-      ..forward();
+              _slideController
+                ..reset()
+                ..forward();
 
-    _bounceController
-      ..reset()
-      ..forward();
-  });
-}
+              _bounceController
+                ..reset()
+                ..forward();
+            });
+          }
 
-_wasLoading = loading;
-
-
-         
+          _wasLoading = loading;
 
           return Skeletonizer(
             enabled: provider.isLoading,
@@ -596,8 +595,8 @@ _wasLoading = loading;
       ]);
     }
 
-    // Add resume test banner only if there are incomplete tests
-    if (provider.incompleteTest != null) {
+    // Add resume test banner when there is a live saved session or incomplete test
+    if (provider.activeSession != null || provider.incompleteTest != null) {
       slivers.addAll([
         SliverToBoxAdapter(child: _buildResumeTestBanner()),
         const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
@@ -671,196 +670,192 @@ _wasLoading = loading;
                 backgroundColor: Colors.transparent, // Not used anymore
                 provider: provider,
               ),
-
-              
             );
-
-            
           }),
         ],
       ),
     );
   }
 
- Widget _buildBoardCard({
-  required dynamic board,
-  required Color backgroundColor,
-  required CBTProvider provider,
-}) {
-  final boardColor = _getBoardColor(board.boardCode);
-  final shortName = board.shortName ?? board.boardCode;
+  Widget _buildBoardCard({
+    required dynamic board,
+    required Color backgroundColor,
+    required CBTProvider provider,
+  }) {
+    final boardColor = _getBoardColor(board.boardCode);
+    final shortName = board.shortName ?? board.boardCode;
 
-  final isPressed = _pressedBoardCode == board.boardCode;
+    final isPressed = _pressedBoardCode == board.boardCode;
 
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 12.0),
-    child: Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias, // ✅ important for ripple + overlay
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        splashColor: boardColor.withOpacity(0.18),
-        highlightColor: boardColor.withOpacity(0.10),
-        onTap: () async {
-          // ✅ instant visual feedback
-          setState(() => _pressedBoardCode = board.boardCode);
+        clipBehavior: Clip.antiAlias, // ✅ important for ripple + overlay
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: boardColor.withValues(alpha: 0.18),
+          highlightColor: boardColor.withValues(alpha: 0.10),
+          onTap: () async {
+            // ✅ instant visual feedback
+            setState(() => _pressedBoardCode = board.boardCode);
 
-          // short delay so user sees it before modal/navigation
-          await Future.delayed(const Duration(milliseconds: 120));
-          if (!mounted) return;
+            // short delay so user sees it before modal/navigation
+            await Future.delayed(const Duration(milliseconds: 120));
+            if (!mounted) return;
 
-          setState(() => _pressedBoardCode = null);
+            setState(() => _pressedBoardCode = null);
 
-          await _handleBoardTap(board, provider);
-        },
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 120),
-          scale: isPressed ? 0.98 : 1.0, // ✅ subtle press-down effect
-          child: SizedBox(
-            height: 120,
-            child: Stack(
-              children: [
-                // Background
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: boardColor.withOpacity(0.15),
-                      border: Border.all(
-                        color: boardColor.withOpacity(0.3),
-                        width: 1.5,
+            await _handleBoardTap(board, provider);
+          },
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 120),
+            scale: isPressed ? 0.98 : 1.0, // ✅ subtle press-down effect
+            child: SizedBox(
+              height: 120,
+              child: Stack(
+                children: [
+                  // Background
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: boardColor.withValues(alpha: 0.15),
+                        border: Border.all(
+                          color: boardColor.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: boardColor.withValues(alpha: 0.18),
+                            blurRadius: 18,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: boardColor.withOpacity(0.18),
-                          blurRadius: 18,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 8),
+                    ),
+                  ),
+
+                  // ✅ Press overlay (this is what makes it obvious)
+                  if (isPressed)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: boardColor.withValues(alpha: 0.12),
+                        ),
+                      ),
+                    ),
+
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: boardColor,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.school,
+                                size: 24,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              shortName,
+                              style: AppTextStyles.normal700P(
+                                fontSize: 16.0,
+                                color: boardColor,
+                                height: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              board.title,
+                              style: AppTextStyles.normal700P(
+                                fontSize: 16.0,
+                                color: AppColors.text4Light,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
 
-                // ✅ Press overlay (this is what makes it obvious)
-                if (isPressed)
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: boardColor.withOpacity(0.12),
-                      ),
-                    ),
-                  ),
+                  // Circular arrow button at top right
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: GestureDetector(
+                      onTap: () async {
+                        setState(() => _pressedBoardCode = board.boardCode);
+                        await Future.delayed(const Duration(milliseconds: 120));
+                        if (!mounted) return;
+                        setState(() => _pressedBoardCode = null);
 
-                // Content
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: boardColor,
-                              borderRadius: BorderRadius.circular(8),
+                        await _handleBoardTap(board, provider);
+                      },
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: boardColor,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: boardColor.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                            child: const Icon(
-                              Icons.school,
-                              size: 24,
-                              color: Colors.white,
-                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 24,
+                            color: Colors.white,
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            shortName,
-                            style: AppTextStyles.normal700P(
-                              fontSize: 16.0,
-                              color: boardColor,
-                              height: 1.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            board.title,
-                            style: AppTextStyles.normal700P(
-                              fontSize: 16.0,
-                              color: AppColors.text4Light,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Circular arrow button at top right
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: GestureDetector(
-                    onTap: () async {
-                      setState(() => _pressedBoardCode = board.boardCode);
-                      await Future.delayed(const Duration(milliseconds: 120));
-                      if (!mounted) return;
-                      setState(() => _pressedBoardCode = null);
-
-                      await _handleBoardTap(board, provider);
-                    },
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: boardColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: boardColor.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 24,
-                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                if (_isCheckingSubscription)
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black.withOpacity(0.3),
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
+                  if (_isCheckingSubscription)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Color _getBoardColor(String boardCode) {
     final Map<String, Color> boardColors = {
@@ -925,7 +920,7 @@ _wasLoading = loading;
               MaterialPageRoute(
                 builder: (context) => const SubjectSelectionScreen(),
               ),
-            );
+            ).then((_) => provider.refreshStats());
           },
           onStudy: () {
             Navigator.pop(context);
@@ -959,45 +954,13 @@ _wasLoading = loading;
           onChallenge: () async {
             Navigator.pop(context);
 
-            // ⚡ Challenge Module: Check if user is signed in and has paid
-            // Does NOT check free trial limits - only checks active subscription
+            // Challenge now uses the same CBT subscription/plans flow as the
+            // rest of the dashboard instead of the custom challenge dialog.
+            final canProceed = await _checkSubscriptionBeforeTest();
+            if (!canProceed || !mounted) return;
+
             final cbtuserProvider =
                 Provider.of<CbtUserProvider>(context, listen: false);
-            final portalLoggedIn = await _handlePortalLogin();
-            final isSignedIn =
-                await _authService.isUserSignedUp() || portalLoggedIn;
-            final hasPaid = cbtuserProvider.hasPaid;
-
-            print('\n🎯 Challenge Module Access Check:');
-            print('   - User signed in: $isSignedIn');
-            print('   - Has paid: $hasPaid');
-
-            // If not signed in or not paid, show enforcement dialog
-            if (!isSignedIn || (!hasPaid && !portalLoggedIn)) {
-              print('   ❌ Challenge access denied - showing enforcement dialog');
-
-              final settings = await CbtSettingsHelper.getSettings();
-              if (!mounted) return;
-
-              await showDialog(
-                context: context,
-                barrierDismissible: true,
-                builder: (context) => ChallengeAccessDialog(
-                  amount: settings.amount,
-                  discountRate: settings.discountRate,
-                  onSubscribed: () {
-                    print('✅ User subscribed for Challenge module');
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  },
-                ),
-              );
-              return;
-            }
-
-            // User is signed in and has paid, proceed to challenge
-            print('   ✅ Challenge access granted - proceeding');
             if (cbtuserProvider.currentUser == null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -1014,10 +977,8 @@ _wasLoading = loading;
                 Provider.of<CBTProvider>(context, listen: false);
             final CurrentexamTypeId = cbtProvider.selectedBoard?.id ?? 0;
 
-            String userName = cbtuserProvider.currentUser?.name ?? 'User';
+            final userName = cbtuserProvider.currentUser?.displayName ?? 'User';
             int userId = cbtuserProvider.currentUser?.id ?? 0;
-            print(
-                'userName: $userName, userId: $userId , examTypeId: $CurrentexamTypeId');
 
             Navigator.push(
               context,
@@ -1063,11 +1024,11 @@ _wasLoading = loading;
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.text6Light.withOpacity(0.3),
+                color: AppColors.text6Light.withValues(alpha: 0.3),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1081,8 +1042,8 @@ _wasLoading = loading;
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.eLearningBtnColor1.withOpacity(0.1),
-                        AppColors.eLearningBtnColor1.withOpacity(0.05),
+                        AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
+                        AppColors.eLearningBtnColor1.withValues(alpha: 0.05),
                       ],
                     ),
                     shape: BoxShape.circle,
@@ -1187,11 +1148,19 @@ _wasLoading = loading;
   Widget _buildResumeTestBanner() {
     return Consumer<CBTProvider>(
       builder: (context, provider, child) {
+        final activeSession = provider.activeSession;
         final incompleteTest = provider.incompleteTest;
 
-        if (incompleteTest == null) {
+        if (activeSession == null && incompleteTest == null) {
           return const SizedBox.shrink();
         }
+
+        final subjectLabel = activeSession != null
+            ? '${activeSession.subject ?? 'CBT Test'} (${activeSession.year ?? DateTime.now().year})'
+            : '${incompleteTest!.subject} (${incompleteTest.year})';
+        final progressLabel = activeSession != null
+            ? '${activeSession.progressPercentage.toStringAsFixed(0)}% completed'
+            : '${incompleteTest!.percentage.toStringAsFixed(0)}% completed';
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1200,7 +1169,7 @@ _wasLoading = loading;
             gradient: LinearGradient(
               colors: [
                 AppColors.eLearningBtnColor1,
-                AppColors.eLearningBtnColor1.withOpacity(0.8),
+                AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -1208,7 +1177,7 @@ _wasLoading = loading;
             borderRadius: BorderRadius.circular(12.0),
             boxShadow: [
               BoxShadow(
-                color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -1219,7 +1188,7 @@ _wasLoading = loading;
               Container(
                 padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1242,25 +1211,27 @@ _wasLoading = loading;
                     ),
                     const SizedBox(height: 4.0),
                     Text(
-                      '${incompleteTest.subject} (${incompleteTest.year})',
+                      subjectLabel,
                       style: AppTextStyles.normal500(
                         fontSize: 14.0,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                     const SizedBox(height: 4.0),
                     Text(
-                      '${incompleteTest.percentage.toStringAsFixed(0)}% completed',
+                      progressLabel,
                       style: AppTextStyles.normal400(
                         fontSize: 12.0,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
                 ),
               ),
               GestureDetector(
-                onTap: () => _handleResumeTest(incompleteTest, provider),
+                onTap: () => activeSession != null
+                    ? _handleSavedSessionResume(activeSession, provider)
+                    : _handleResumeTest(incompleteTest!, provider),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16.0,
@@ -1295,6 +1266,30 @@ _wasLoading = loading;
         );
       },
     );
+  }
+
+  Future<void> _handleSavedSessionResume(
+    CbtActiveSessionModel session,
+    CBTProvider provider,
+  ) async {
+    final canProceed = await _checkSubscriptionBeforeTest();
+    if (!canProceed || !mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TestScreen(
+          examTypeId: session.examTypeId,
+          subjectId: session.subjectId,
+          subject: session.subject,
+          year: session.year,
+          calledFrom: 'dashboard',
+          totalDurationInSeconds: session.totalDurationInSeconds,
+          questionLimit: session.questionLimit,
+          resumeSession: session,
+        ),
+      ),
+    ).then((_) => provider.refreshStats());
   }
 
   Future<void> _handleResumeTest(
@@ -1395,7 +1390,7 @@ _wasLoading = loading;
               spreadRadius: 0,
               offset: const Offset(0, 1),
               blurRadius: 2,
-              color: Colors.black.withOpacity(0.25),
+              color: Colors.black.withValues(alpha: 0.25),
             )
           ],
         ),
@@ -1663,7 +1658,7 @@ class _OptionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -1710,14 +1705,3 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-

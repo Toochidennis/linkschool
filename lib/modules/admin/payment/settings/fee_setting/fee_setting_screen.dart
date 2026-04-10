@@ -179,7 +179,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
         ),
         borderRadius: BorderRadius.circular(8),
         color: isNewlyAdded
-            ? AppColors.eLearningBtnColor1.withOpacity(0.05)
+            ? AppColors.eLearningBtnColor1.withValues(alpha: 0.05)
             : null,
       ),
       child: ListTile(

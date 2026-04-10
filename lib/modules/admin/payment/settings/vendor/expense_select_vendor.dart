@@ -160,7 +160,7 @@ class _ExpenseSelectVendorState extends State<ExpenseSelectVendor> {
                             fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     const SizedBox(height: 24),
-                    Divider(thickness: 1, color: Colors.grey.withOpacity(0.5)),
+                    Divider(thickness: 1, color: Colors.grey.withValues(alpha: 0.5)),
                     const SizedBox(height: 16),
                     _buildReceiptDetail('Date', '2023-10-23'),
                     _buildReceiptDetail('Registration number',

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/courses/category_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
@@ -69,7 +68,6 @@ class CourseService {
       });
 
 
-      print("🔔 Fetching categories and courses from: $uri");
 
       final response = await http.get(
         uri,
@@ -83,7 +81,6 @@ class CourseService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
 
-        debugPrint("🔔 CourseService Response: $jsonData");
 
         // Check if API call was successful
         if (jsonData['success'] != true) {
@@ -91,8 +88,6 @@ class CourseService {
               jsonData['message'] ?? 'Failed to load categories and courses');
         }
 
-        debugPrint(
-            "✅ Categories and courses fetched successfully: ${jsonData['message']}");
         final key = ExploreDashboardCache.coursesKey(
           profileId: profileId,
           dateOfBirth: dateOfBirth,
@@ -138,11 +133,9 @@ class CourseService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
 
-        debugPrint("Enrollment Check Response: $jsonData");
 
         final data = jsonData['data'] as Map<String, dynamic>?;
 
-        debugPrint("Is Enrolled: ${data?['is_enrolled']}");
 
         return data?['is_enrolled'] == true;
       }
@@ -153,5 +146,6 @@ class CourseService {
     }
   }
 }
+
 
 

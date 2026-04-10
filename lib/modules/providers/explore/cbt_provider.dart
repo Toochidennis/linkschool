@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
 import '../../model/explore/home/cbt_board_model.dart' as cbt_board_model;
 import '../../model/explore/home/subject_model.dart';
 import '../../model/explore/cbt_history_model.dart';
+import '../../services/cbt_active_session_service.dart';
 import '../../services/explore/cbt_service.dart';
 import '../../services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/network/connectivity_service.dart';
@@ -10,6 +12,8 @@ import 'package:linkschool/modules/services/network/connectivity_service.dart';
 class CBTProvider extends ChangeNotifier {
   final CBTService _cbtService;
   final CbtHistoryService _historyService = CbtHistoryService();
+  final CbtActiveSessionService _activeSessionService =
+      CbtActiveSessionService();
   List<cbt_board_model.CBTBoardModel> _boards = [];
   cbt_board_model.CBTBoardModel? _selectedBoard;
   bool _isLoading = false;
@@ -20,6 +24,7 @@ class CBTProvider extends ChangeNotifier {
   int _successCount = 0;
   double _averageScore = 0.0;
   List<CbtHistoryModel> _recentHistory = [];
+  CbtActiveSessionModel? _activeSession;
 
   CBTProvider(this._cbtService);
 
@@ -33,6 +38,7 @@ class CBTProvider extends ChangeNotifier {
   int get successCount => _successCount;
   double get averageScore => _averageScore;
   List<CbtHistoryModel> get recentHistory => _recentHistory;
+  CbtActiveSessionModel? get activeSession => _activeSession;
 
   // Get the most recent incomplete test
   CbtHistoryModel? get incompleteTest {
@@ -61,11 +67,8 @@ class CBTProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final isOnline = await ConnectivityService.isOnline();
-
-      // ✅ CBTService handles DB-first logic:
-      // — If SQLite has data → returns instantly, no network
-      // — If SQLite is empty → fetches from network, saves to DB
+      // Read DB-backed boards first. The service only touches network when the
+      // local SQLite cache is empty or explicitly bypassed.
       _boards = await _cbtService.fetchCBTBoards();
 
       if (_boards.isNotEmpty) {
@@ -83,18 +86,13 @@ class CBTProvider extends ChangeNotifier {
       // Load dashboard statistics
       await loadDashboardStats();
 
-      if (!isOnline && _boards.isNotEmpty) {
-        _error = 'You are offline. Showing saved CBT dashboard.';
+      if (_boards.isEmpty) {
+        final isOnline = await ConnectivityService.isOnline();
+        _error = isOnline
+            ? 'No CBT data available yet. Please try again.'
+            : 'No internet connection. Connect and try again.';
       }
-
-      if (!isOnline && _boards.isEmpty) {
-        _error = 'No internet connection. Connect and try again.';
-      }
-
-      print('✅ loadBoards complete — ${_boards.length} boards loaded');
     } catch (e) {
-      print('❌ loadBoards error: $e');
-
       // Last resort — try forcing network even if we thought we were offline
       try {
         _boards = await _cbtService.fetchCBTBoards(forceNetwork: true);
@@ -116,7 +114,6 @@ class CBTProvider extends ChangeNotifier {
         _error = isOnline
             ? 'Network error. Please try again.'
             : 'No internet connection. Connect and try again.';
-        print('❌ Fallback also failed: $e2');
       }
     } finally {
       _isLoading = false;
@@ -134,6 +131,7 @@ class CBTProvider extends ChangeNotifier {
       _successCount = stats['successCount'] ?? 0;
       _averageScore = stats['averageScore'] ?? 0.0;
       _recentHistory = stats['recentHistory'] ?? [];
+      _activeSession = await _activeSessionService.getActiveSession();
 
       final allIncompleteTests =
           stats['allIncompleteTests'] as List<CbtHistoryModel>? ?? [];
@@ -146,20 +144,27 @@ class CBTProvider extends ChangeNotifier {
         }).toList();
       }
 
-      print('🔄 CBTProvider - Stats loaded:');
-      print('   Total Tests: $_totalTests');
-      print('   Success Count: $_successCount');
-      print('   Average Score: ${_averageScore.toStringAsFixed(1)}%');
-
       notifyListeners();
     } catch (e) {
-      print('Error loading dashboard stats: $e');
+      // Intentionally ignored.
     }
   }
 
   // Refresh statistics — UNCHANGED
   Future<void> refreshStats() async {
     await loadDashboardStats();
+  }
+
+  Future<void> saveActiveSession(CbtActiveSessionModel session) async {
+    await _activeSessionService.saveSession(session);
+    _activeSession = session;
+    notifyListeners();
+  }
+
+  Future<void> clearActiveSession() async {
+    await _activeSessionService.clearActiveSession();
+    _activeSession = null;
+    notifyListeners();
   }
 
   // selectBoard — UNCHANGED
@@ -206,7 +211,10 @@ class CBTProvider extends ChangeNotifier {
       AppColors.cbtCardColor5,
     ];
 
-    return _selectedBoard!.subjects.map((subject) {
+    final subjects = List<SubjectModel>.from(_selectedBoard!.subjects);
+
+    for (var i = 0; i < subjects.length; i++) {
+      final subject = subjects[i];
       if (subjectIcons.containsKey(subject.name.toUpperCase())) {
         subject.subjectIcon = subjectIcons[subject.name.toUpperCase()];
       } else {
@@ -214,10 +222,28 @@ class CBTProvider extends ChangeNotifier {
         subject.subjectIcon = fallbackIcons[hash % fallbackIcons.length];
       }
 
-      subject.cardColor =
-          colors[_selectedBoard!.subjects.indexOf(subject) % colors.length];
-      return subject;
-    }).toList();
+      subject.cardColor = colors[i % colors.length];
+    }
+
+    subjects.sort((a, b) {
+      final priorityCompare =
+          _subjectPriority(a.name).compareTo(_subjectPriority(b.name));
+      if (priorityCompare != 0) return priorityCompare;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+
+    return subjects;
+  }
+
+  int _subjectPriority(String subjectName) {
+    final normalized = subjectName.trim().toUpperCase();
+    if (normalized == 'ENGLISH LANGUAGE' || normalized == 'ENGLISH') {
+      return 0;
+    }
+    if (normalized == 'MATHEMATICS' || normalized == 'GENERAL MATHEMATICS') {
+      return 1;
+    }
+    return 10;
   }
 
   // getYearsForSubject — UNCHANGED
@@ -235,8 +261,6 @@ class CBTProvider extends ChangeNotifier {
       (subject) => subject.name == subjectName,
       orElse: () => SubjectModel(id: '', name: subjectName, years: []),
     );
-    debugPrint(
-        'Year models for $subjectName: ${subject.years?.map((y) => y.year).join(', ')}');
     return subject.years ?? [];
   }
 
@@ -246,10 +270,6 @@ class CBTProvider extends ChangeNotifier {
       (subject) => subject.name == subjectName,
       orElse: () => SubjectModel(id: '', name: subjectName, years: []),
     );
-
-    print('Finding exam ID for Subject: $subjectName, Year: $year');
-    print(
-        'Available years for $subjectName: ${subject.years?.map((y) => y.id).join(', ')}');
 
     final yearModel = subject.years?.firstWhere(
       (y) => y.year == year,

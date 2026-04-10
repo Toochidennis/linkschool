@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:linkschool/config/env_config.dart';
 
 import '../../model/explore/home/subject_model2.dart';
@@ -21,7 +20,6 @@ class SubjectService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      debugPrint('🌐 Making request to: $_subjectsUrl');
 
       final response = await http.get(
         Uri.parse(_subjectsUrl),
@@ -32,11 +30,9 @@ class SubjectService {
         },
       );
 
-      debugPrint('📡 Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        debugPrint('📊 Response Body Type: ${decoded.runtimeType}');
 
         if (decoded is Map<String, dynamic>) {
           final data = decoded['data'];
@@ -47,13 +43,10 @@ class SubjectService {
 
         throw Exception('Unexpected response format');
       } else {
-        debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');
         throw Exception(
             'Failed to load subjects: ${response.statusCode} ${response.reasonPhrase}');
       }
-    } catch (e, stackTrace) {
-      debugPrint('💥 Service Error: $e');
-      debugPrint(stackTrace.toString());
+    } catch (e) {
       throw Exception('Error fetching subjects: $e');
     }
   }
@@ -65,7 +58,6 @@ class SubjectService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      debugPrint('🌐 Making request to: $_levelsUrl');
 
       final response = await http.get(
         Uri.parse(_levelsUrl),
@@ -76,11 +68,9 @@ class SubjectService {
         },
       );
 
-      debugPrint('📡 Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        debugPrint('📊 Response Body Type: ${decoded.runtimeType}');
 
         if (decoded is Map<String, dynamic>) {
           final data = decoded['data'];
@@ -91,13 +81,10 @@ class SubjectService {
 
         throw Exception('Unexpected response format');
       } else {
-        debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');
         throw Exception(
             'Failed to load levels: ${response.statusCode} ${response.reasonPhrase}');
       }
-    } catch (e, stackTrace) {
-      debugPrint('💥 Service Error: $e');
-      debugPrint(stackTrace.toString());
+    } catch (e) {
       throw Exception('Error fetching levels: $e');
     }
   }
@@ -110,7 +97,6 @@ class SubjectService {
       }
 
       final url = '$_dashboardUrl?level_id=$levelId';
-      debugPrint('🌐 Making request to: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -121,21 +107,16 @@ class SubjectService {
         },
       );
 
-      debugPrint('📡 Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        debugPrint('📊 Response Body Type: ${decoded.runtimeType}');
 
         return DashboardResponseModel.fromJson(decoded);
       } else {
-        debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');
         throw Exception(
             'Failed to load dashboard data: ${response.statusCode} ${response.reasonPhrase}');
       }
-    } catch (e, stackTrace) {
-      debugPrint('💥 Service Error: $e');
-      debugPrint(stackTrace.toString());
+    } catch (e) {
       throw Exception('Error fetching dashboard data: $e');
     }
   }

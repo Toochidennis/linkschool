@@ -85,7 +85,6 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
         }
       }
     } catch (e) {
-      debugPrint('Error loading course videos: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load videos: $e')),
@@ -112,7 +111,6 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
       _videoController!.play();
       _hideControlsAfterDelay();
     } catch (e) {
-      debugPrint('Error initializing video: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load video: $e')),
@@ -303,7 +301,7 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
               left: 16,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -336,7 +334,7 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
           VideoPlayer(_videoController!),
           if (_showControls) ...[
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
             ),
             // Play/Pause button
             IconButton(
@@ -361,7 +359,7 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.7),
+                      Colors.black.withValues(alpha: 0.7),
                       Colors.transparent,
                     ],
                   ),
@@ -437,7 +435,7 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.white,
+              color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? Colors.blue : Colors.grey[300]!,

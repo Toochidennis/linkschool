@@ -323,10 +323,6 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                       child: CustomLongElevatedButton(
                         text: 'Start Exam',
                         onPressed: () {
-                          print("🚀 Starting exam with:");
-                          print("  - Exam ID: $selectedExamId");
-                          print("  - Subject: $selectedSubject");
-                          print("  - Year: $selectedYear");
                           
                           Navigator.push(
                             context,

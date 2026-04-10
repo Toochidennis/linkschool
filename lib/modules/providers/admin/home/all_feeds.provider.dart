@@ -57,7 +57,6 @@ class FeedsPaginationProvider with ChangeNotifier {
       _message = "Feeds loaded successfully";
     } catch (e) {
       _error = "Failed to load feeds: $e";
-      debugPrint("Feed fetch error: $e");
     } finally {
       _isLoading = false;
       _isLoadingMore = false;
@@ -137,7 +136,6 @@ class FeedsPaginationProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = "Failed to load feeds: $e";
-      debugPrint("Feed load more error: $e");
     } finally {
       _isLoadingMore = false;
       notifyListeners();

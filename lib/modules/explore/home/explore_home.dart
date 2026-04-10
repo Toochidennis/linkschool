@@ -257,7 +257,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               border: Border.all(color: borderColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withOpacity(0.3),
+                  color: backgroundColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -567,7 +567,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.text2Light.withOpacity(0.1),
+                          color: AppColors.text2Light.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -634,7 +634,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.text2Light.withOpacity(0.1),
+                            color: AppColors.text2Light.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -794,7 +794,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.text2Light.withOpacity(0.1),
+                                color: AppColors.text2Light.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -919,7 +919,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -1103,7 +1103,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                           child: Icon(
                             Icons.campaign_rounded,
                             size: 60,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
                       );
@@ -1271,15 +1271,15 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               decoration: BoxDecoration(
                 color: _pressedButtonIndex == index
                     ? backgroundColor
-                        .withOpacity(0.7) // Darker color when pressed
+                        .withValues(alpha: 0.7) // Darker color when pressed
                     : backgroundColor,
                 borderRadius: BorderRadius.circular(16.0),
                 border: Border.all(color: borderColor, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: _pressedButtonIndex == index
-                        ? backgroundColor.withOpacity(0.5)
-                        : backgroundColor.withOpacity(0.3),
+                        ? backgroundColor.withValues(alpha: 0.5)
+                        : backgroundColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -1356,7 +1356,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

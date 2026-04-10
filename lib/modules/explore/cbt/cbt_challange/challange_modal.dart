@@ -1,6 +1,7 @@
 // challenge_model.dart
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/create_challenge.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 
 class ChallengeModel {
   final String? id;
@@ -59,40 +60,143 @@ class ChallengeModel {
   factory ChallengeModel.fromJson(Map<String, dynamic> json) {
     List<String> examIds = [];
     List<SelectedSubject> subjects = [];
+    final groupedSubjects = <String, Map<String, dynamic>>{};
 
-    // === Parse `details` field (most important!) ===
-    if (json['details'] is List) {
+    void addGroupedSubject({
+      required String subjectName,
+      required String subjectId,
+      required String yearValue,
+      required String? examId,
+      required int questionCount,
+    }) {
+      final key = '${subjectId}__$subjectName';
+      final group = groupedSubjects.putIfAbsent(
+        key,
+        () => <String, dynamic>{
+          'subjectName': subjectName,
+          'subjectId': subjectId,
+          'firstExamId': examId,
+          'questionCount': questionCount,
+          'years': <YearModel>[],
+        },
+      );
+
+      (group['years'] as List<YearModel>).add(
+        YearModel(
+          id: examId ?? yearValue,
+          year: yearValue,
+        ),
+      );
+      group['firstExamId'] ??= examId ?? yearValue;
+      group['questionCount'] ??= questionCount;
+    }
+
+    // Preferred formats: subjects, then items
+    final sourceSubjects = json['subjects'] is List
+        ? json['subjects']
+        : json['items'] is List
+            ? json['items']
+            : null;
+
+    if (sourceSubjects is List) {
+      for (var item in sourceSubjects) {
+        if (item is Map<String, dynamic>) {
+          final courseName =
+              (item['course_name'] ?? item['subject_name'] ?? 'Unknown Subject')
+                  .toString();
+          final courseId =
+              (item['course_id'] ?? item['subject_id'] ?? '').toString();
+          final questionCount =
+              item['question_count'] ?? item['question_limit'] ?? item['count_per_exam'] ?? json['count_per_exam'] ?? 40;
+          final parsedQuestionCount = questionCount is int
+              ? questionCount
+              : int.tryParse(questionCount.toString()) ?? 40;
+          final years = (item['years'] is List)
+              ? (item['years'] as List).map((year) => year.toString()).toList()
+              : <String>[];
+
+          if (years.isNotEmpty) {
+            for (final year in years) {
+              final examId = year;
+              examIds.add(examId);
+              addGroupedSubject(
+                subjectName: courseName,
+                subjectId: courseId,
+                yearValue: year,
+                examId: examId,
+                questionCount: parsedQuestionCount,
+              );
+            }
+          } else {
+            addGroupedSubject(
+              subjectName: courseName,
+              subjectId: courseId,
+              yearValue: '2024',
+              examId: null,
+              questionCount: parsedQuestionCount,
+            );
+          }
+        }
+      }
+    }
+
+    // Legacy fallback: details
+    if (groupedSubjects.isEmpty && json['details'] is List) {
       for (var item in json['details']) {
         if (item is Map<String, dynamic>) {
           final examId = (item['exam_id'] ?? item['id'])?.toString();
           final courseName = (item['course_name'] ?? item['subject_name'] ?? 'Unknown Subject').toString();
           final courseId = (item['course_id'] ?? item['subject_id'] ?? '').toString();
           final year = (item['year'] ?? '2024').toString();
+          final questionCount = item['question_limit'] ?? item['count_per_exam'] ?? json['count_per_exam'] ?? 40;
+          final parsedQuestionCount = questionCount is int
+              ? questionCount
+              : int.tryParse(questionCount.toString()) ?? 40;
 
           if (examId != null && examId.isNotEmpty) {
             examIds.add(examId);
-
-            subjects.add(SelectedSubject(
+            addGroupedSubject(
               subjectName: courseName,
               subjectId: courseId,
-              year: year,
+              yearValue: year,
               examId: examId,
-              icon: _mapSubjectToIcon(courseName),
-            ));
+              questionCount: parsedQuestionCount,
+            );
           }
         } else if (item is String) {
           // Legacy: details: ["57", "105"]
           examIds.add(item);
-          // Optional: create placeholder subject
-          subjects.add(SelectedSubject(
+          addGroupedSubject(
             subjectName: 'Subject ${subjects.length + 1}',
             subjectId: '',
-            year: '2024',
+            yearValue: item,
             examId: item,
-            icon: 'default',
-          ));
+            questionCount: json['count_per_exam'] is int
+                ? json['count_per_exam']
+                : int.tryParse(json['count_per_exam']?.toString() ?? '') ?? 40,
+          );
         }
       }
+    }
+
+    if (groupedSubjects.isNotEmpty) {
+      subjects = groupedSubjects.values.map((group) {
+        final selectedYears = group['years'] as List<YearModel>;
+        final firstYear = selectedYears.isNotEmpty ? selectedYears.first.year : '2024';
+        final firstExamId = (group['firstExamId'] ?? '').toString();
+
+        return SelectedSubject(
+          subjectName: group['subjectName']?.toString() ?? 'Unknown Subject',
+          subjectId: group['subjectId']?.toString() ?? '',
+          year: firstYear,
+          examId: firstExamId,
+          icon: _mapSubjectToIcon(group['subjectName']?.toString() ?? 'Unknown Subject'),
+          questionCount: (group['questionCount'] is int)
+              ? group['questionCount'] as int
+              : int.tryParse(group['questionCount']?.toString() ?? '') ?? 40,
+          selectedYears: selectedYears,
+        );
+      }).toList();
     }
 
     // Fallback to exam_ids if details is missing
@@ -100,7 +204,18 @@ class ChallengeModel {
       examIds = (json['exam_ids'] as List).map((e) => e.toString()).toList();
     }
 
-    final timeLimit = json['time_limit'] is int ? json['time_limit'] : null;
+    final timeLimit = json['time_limit'] is int
+        ? json['time_limit']
+        : json['duration'] is int
+            ? json['duration']
+            : int.tryParse(json['time_limit']?.toString() ?? '') ??
+                int.tryParse(json['duration']?.toString() ?? '');
+    final totalQuestionCount = subjects.fold<int>(
+      0,
+      (sum, subject) => sum + subject.questionCount,
+    );
+
+    final authorName = _extractAuthorName(json);
 
     return ChallengeModel(
       id: json['id']?.toString(),
@@ -115,17 +230,60 @@ class ChallengeModel {
       endDate: DateTime.tryParse(json['end_date']?.toString() ?? '') ?? DateTime.now().add(const Duration(days: 1)),
       progress: 0.0,
       timeInMinutes: timeLimit,
-      questionLimit: json['count_per_exam'],
+      questionLimit: json['count_per_exam'] is int
+          ? json['count_per_exam']
+          : totalQuestionCount > 0
+              ? totalQuestionCount
+              : null,
       examIds: examIds.isNotEmpty ? examIds : null,
-      details: json['details'],
+      details: json['items'] ?? json['details'],
       status: json['status']?.toString(),
       authorId: json['author_id'] is int ? json['author_id'] : int.tryParse(json['author_id']?.toString() ?? ''),
-      authorName: json['author_name']?.toString(),
+      authorName: authorName,
       isActive: json['is_active']?.toString(),
       challengers: json['challengers'],
       isCustomChallenge: json['author_id'] != null, // All personal = custom
       subjects: subjects.isNotEmpty ? subjects : null,
     );
+  }
+
+  static String? _extractAuthorName(Map<String, dynamic> json) {
+    final directKeys = [
+      json['author_name'],
+      json['authorName'],
+      json['username'],
+      json['created_by'],
+    ];
+
+    for (final value in directKeys) {
+      final text = value?.toString().trim();
+      if (text != null && text.isNotEmpty) {
+        return text;
+      }
+    }
+
+    final author = json['author'];
+    if (author is Map<String, dynamic>) {
+      final nestedKeys = [
+        author['name'],
+        author['username'],
+        author['full_name'],
+        author['first_name'],
+      ];
+      for (final value in nestedKeys) {
+        final text = value?.toString().trim();
+        if (text != null && text.isNotEmpty) {
+          return text;
+        }
+      }
+
+      final first = author['first_name']?.toString().trim() ?? '';
+      final last = author['last_name']?.toString().trim() ?? '';
+      final combined = '$first $last'.trim();
+      if (combined.isNotEmpty) return combined;
+    }
+
+    return null;
   }
 
   static String _calculateDifficulty(int? timeLimit) {
@@ -158,17 +316,25 @@ class ChallengeModel {
       'id': id,
       'title': title,
       'description': description,
-      'score': xp,
       'start_date': startDate.toIso8601String(),
       'end_date': endDate.toIso8601String(),
       'time_limit': timeInMinutes,
-      'count_per_exam': questionLimit,
-      'exam_ids': examIds,
-      'details': subjects?.map((s) => {
-        'exam_id': s.examId,
-        'course_name': s.subjectName,
-        'course_id': s.subjectId,
-        'year': s.year,
+      'items': subjects?.map((s) {
+        final years = s.selectedYears.isNotEmpty
+            ? s.selectedYears
+            : [
+                YearModel(
+                  id: s.examId,
+                  year: s.year,
+                ),
+              ];
+
+        return {
+          'course_name': s.subjectName,
+          'course_id': s.subjectId,
+          'years': years.map((year) => int.tryParse(year.year) ?? year.year).toList(),
+          'question_count': s.questionCount,
+        };
       }).toList(),
       'status': status,
       'author_id': authorId,

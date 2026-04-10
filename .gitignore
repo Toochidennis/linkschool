@@ -25,9 +25,12 @@ doc/api/
 .flutter-plugins
 .flutter-plugins-dependencies
 .env
+.vscode/dart_defines.json
+dart_defines.json
 
 
 
 # Firebase config files to ignore
 android/app/google-services.json
-lib/config/env_config.dart
+android/app/services-account.json
+ios/Runner/GoogleService-Info.plist

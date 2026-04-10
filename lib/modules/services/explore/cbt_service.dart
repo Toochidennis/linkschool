@@ -1,18 +1,15 @@
 import 'dart:convert';
-import 'package:linkschool/database/cbt_db-helper.dart';
+import 'package:linkschool/database/cbt_db_helper.dart';
 import 'package:linkschool/modules/model/explore/home/cbt_board_model.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/config/env_config.dart';
-
 
 class CBTService {
   static const String _endpoint =
       'https://linkskool.net/api/v3/public/cbt/exams-courses';
 
   final CbtDbHelper _db = CbtDbHelper.instance;
-
- 
 
   Future<List<CBTBoardModel>> fetchCBTBoards({
     bool forceNetwork = false,
@@ -21,13 +18,11 @@ class CBTService {
     if (!forceNetwork) {
       final localBoards = await _loadFromDb();
       if (localBoards.isNotEmpty) {
-        print('✅ Loaded ${localBoards.length} boards from local DB');
         return localBoards;
       }
     }
 
     // 2. Fetch from network
-    print('🌐 Fetching CBT boards from network...');
     return await _fetchFromNetwork();
   }
 
@@ -37,33 +32,57 @@ class CBTService {
 
   Future<List<CBTBoardModel>> _loadFromDb() async {
     try {
+      final db = await _db.database;
       final examTypes = await _db.getExamTypes();
       if (examTypes.isEmpty) return [];
+
+      final courseRows = await db.rawQuery('''
+        SELECT
+          etc.exam_type_id,
+          c.id,
+          c.name AS course_name
+        FROM courses c
+        INNER JOIN exam_type_courses etc ON c.id = etc.course_id
+      ''');
+
+      final yearRows = await db.query(
+        'exams',
+        columns: ['id', 'exam_type_id', 'course_id', 'year'],
+        orderBy: 'year DESC',
+      );
+
+      final Map<int, List<Map<String, dynamic>>> coursesByExamType = {};
+      for (final row in courseRows) {
+        final examTypeId = row['exam_type_id'] as int;
+        coursesByExamType
+            .putIfAbsent(examTypeId, () => <Map<String, dynamic>>[])
+            .add(Map<String, dynamic>.from(row));
+      }
+
+      final Map<String, List<Map<String, dynamic>>> yearsByCourseKey = {};
+      for (final row in yearRows) {
+        final examTypeId = row['exam_type_id'] as int;
+        final courseId = row['course_id'] as int;
+        final key = '$examTypeId:$courseId';
+        yearsByCourseKey
+            .putIfAbsent(key, () => <Map<String, dynamic>>[])
+            .add(Map<String, dynamic>.from(row));
+      }
 
       final List<CBTBoardModel> boards = [];
 
       for (final examType in examTypes) {
         final examTypeId = examType['id'] as int;
+        final courses = coursesByExamType[examTypeId] ?? const [];
 
-        // Get all courses for this exam type
-        final courses = await _db.getCoursesForExamType(examTypeId);
-
-        // For each course, get any downloaded years
         final List<SubjectModel> subjects = [];
         for (final course in courses) {
           final courseId = course['id'] as int;
-
-          final years = await _db.getYearsForCourse(
-            examTypeId: examTypeId,
-            courseId: courseId,
-          );
-
+          final years = yearsByCourseKey['$examTypeId:$courseId'] ?? const [];
           subjects.add(
             SubjectModel.fromDb(
               course,
-              years: years
-                  .map((y) => YearModel.fromDb(y))
-                  .toList(),
+              years: years.map((y) => YearModel.fromDb(y)).toList(),
             ),
           );
         }
@@ -73,7 +92,6 @@ class CBTService {
 
       return boards;
     } catch (e) {
-      print('⚠️ Error reading from local DB: $e');
       return [];
     }
   }
@@ -109,9 +127,6 @@ class CBTService {
     } else {
       throw Exception('Unexpected response format');
     }
-
- 
-    print('✅ Fetched and saved ${rawList.length} boards from network');
 
     return rawList
         .map((e) => CBTBoardModel.fromJson(e as Map<String, dynamic>))

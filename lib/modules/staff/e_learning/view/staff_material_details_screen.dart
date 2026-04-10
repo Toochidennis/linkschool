@@ -127,12 +127,8 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
           academicTerm = settings['term'] as int?;
         });
       }
-      print('Creator ID: $creatorId');
-      print('Creator Name: $creatorName');
-      print('Academic Year: $academicYear');
-      print('Academic Term: $academicTerm');
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -163,7 +159,6 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
             icon:
                 const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
             onSelected: (String result) {
-              print('mmmmmmmmmmmmmmmm ${widget.material.title}');
               switch (result) {
                 case 'edit':
                   Navigator.push(
@@ -277,7 +272,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
           context, 'Success', 'Material deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error deleting material: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -303,7 +298,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(color: Colors.grey.withOpacity(0.5)),
+      child: Divider(color: Colors.grey.withValues(alpha: 0.5)),
     );
   }
 
@@ -540,13 +535,13 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12.0),
           border: Border.all(
-            color: _getFileColor(fileType).withOpacity(0.3),
+            color: _getFileColor(fileType).withValues(alpha: 0.3),
             width: 1.5,
           ),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 2),
@@ -564,7 +559,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
                     topLeft: Radius.circular(12.0),
                     topRight: Radius.circular(12.0),
                   ),
-                  color: _getFileColor(fileType).withOpacity(0.1),
+                  color: _getFileColor(fileType).withValues(alpha: 0.1),
                 ),
                 child: _buildPreviewContent(fileType, fileUrl, fileName),
               ),
@@ -899,7 +894,6 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
-          print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
           CustomToaster.toastSuccess(
               context, 'Success', 'Comment updated successfully');
@@ -939,7 +933,6 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
   void _deleteComment(Comment comment) async {
     final commentProvider =
         Provider.of<CommentProvider>(context, listen: false);
-    print('Setting up delete for comment ID: ${comment.id}');
     final commentId = comment.id.toString();
     try {
       await commentProvider.DeleteComment(commentId);
@@ -956,7 +949,6 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
           context, 'Error', 'Comment text cannot be empty');
       return;
     }
-    print('Setting up edit for comment ID: ${comment.id}');
     _editingComment = comment;
     _commentController.text = comment.text;
     final updatedComment = {
@@ -970,15 +962,11 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
       "term": academicTerm,
       "comment_id": comment.id,
     };
-    print(
-        'Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
     setState(() {
       _isAddingComment = true;
       _isEditing = true;
       _commentFocusNode.requestFocus();
     });
-    print(
-        'Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
   }
 }
 

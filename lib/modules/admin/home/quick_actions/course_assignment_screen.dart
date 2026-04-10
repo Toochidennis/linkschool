@@ -86,7 +86,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -278,7 +278,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -302,7 +302,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
                 // Container(
                 //   padding: const EdgeInsets.all(12),
                 //   decoration: BoxDecoration(
-                //     color: AppColors.text2Light.withOpacity(0.1),
+                //     color: AppColors.text2Light.withValues(alpha: 0.1),
                 //     borderRadius: BorderRadius.circular(12),
                 //   ),
                 //   child: Icon(
@@ -331,7 +331,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.text2Light.withOpacity(0.1),
+                    color: AppColors.text2Light.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -404,7 +404,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
                           // Container(
                           //   padding: const EdgeInsets.all(8),
                           //   decoration: BoxDecoration(
-                          //     color: AppColors.text2Light.withOpacity(0.08),
+                          //     color: AppColors.text2Light.withValues(alpha: 0.08),
                           //     borderRadius: BorderRadius.circular(8),
                           //   ),
                           //   child: Icon(
@@ -501,7 +501,7 @@ class _ClassSelectionModalState extends State<_ClassSelectionModal> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.text2Light.withOpacity(0.05),
+              color: AppColors.text2Light.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
@@ -532,9 +532,9 @@ class _ClassSelectionModalState extends State<_ClassSelectionModal> {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -572,7 +572,7 @@ class _ClassSelectionModalState extends State<_ClassSelectionModal> {
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.text2Light.withOpacity(0.1)
+                        ? AppColors.text2Light.withValues(alpha: 0.1)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -597,7 +597,7 @@ class _ClassSelectionModalState extends State<_ClassSelectionModal> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.text2Light
-                            : AppColors.text2Light.withOpacity(0.1),
+                            : AppColors.text2Light.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -647,7 +647,7 @@ class _ClassSelectionModalState extends State<_ClassSelectionModal> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withValues(alpha: 0.2),
                     spreadRadius: 1,
                     blurRadius: 5,
                     offset: const Offset(0, -2),
@@ -732,7 +732,7 @@ class _CourseSelectionModalState extends State<_CourseSelectionModal> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.text2Light.withOpacity(0.05),
+              color: AppColors.text2Light.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
@@ -772,7 +772,7 @@ class _CourseSelectionModalState extends State<_CourseSelectionModal> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.text2Light.withOpacity(0.3),
+                        color: AppColors.text2Light.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -799,7 +799,7 @@ class _CourseSelectionModalState extends State<_CourseSelectionModal> {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.text2Light.withOpacity(0.1),
+                                      color: AppColors.text2Light.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -840,7 +840,7 @@ class _CourseSelectionModalState extends State<_CourseSelectionModal> {
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.text2Light.withOpacity(0.1)
+                        ? AppColors.text2Light.withValues(alpha: 0.1)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -901,7 +901,7 @@ class _CourseSelectionModalState extends State<_CourseSelectionModal> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withValues(alpha: 0.2),
                     spreadRadius: 1,
                     blurRadius: 5,
                     offset: const Offset(0, -2),

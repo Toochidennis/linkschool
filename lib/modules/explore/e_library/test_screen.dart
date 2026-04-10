@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/timer_widget.dart';
+import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
@@ -11,6 +12,7 @@ import 'package:linkschool/modules/explore/e_library/backward_slash_clipper.dart
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
+import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -33,6 +35,7 @@ class TestScreen extends StatefulWidget {
   final Map<String, Map<int, int>>? allAnswers;
   final Map<String, List<QuestionModel>>? allQuestions;
   final bool preferTrialLabel;
+  final CbtActiveSessionModel? resumeSession;
 
   const TestScreen({
     super.key,
@@ -50,6 +53,7 @@ class TestScreen extends StatefulWidget {
     this.allAnswers,
     this.allQuestions,
     this.preferTrialLabel = false,
+    this.resumeSession,
   });
 
   @override
@@ -57,8 +61,7 @@ class TestScreen extends StatefulWidget {
 }
 
 class _TestScreenState extends State<TestScreen>
-    with SingleTickerProviderStateMixin {
-      
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late double opacity;
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
@@ -71,16 +74,25 @@ class _TestScreenState extends State<TestScreen>
   final int _lastDisplayedQuestionIndex =
       -1; // Track which question's instruction/passage was shown
   bool _isCountdownActive = false;
+  bool _isSubmittingResult = false;
+  bool _isRestoringSession = false;
+  bool _hasLoadedInitialSession = false;
+  bool _shouldShowAdOnResume = false;
+  bool _isHandlingBackExit = false;
+  int? _lastPersistedRemainingSeconds;
 
   // Animation controller for bouncing arrow
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
-final TimerController _timerController = TimerController();
+  final TimerController _timerController = TimerController();
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     remainingSeconds = widget.totalDurationInSeconds;
+    _isRestoringSession = widget.resumeSession != null;
     AdManager.instance.preload();
+    AdManager.instance.warmUpPracticeAds(context);
     _loadAdMode();
 
     // Initialize bounce animation for Read More arrow
@@ -96,12 +108,21 @@ final TimerController _timerController = TimerController();
     );
     _bounceController.repeat(reverse: true);
 
-    // Increment test count when test starts (only for single subject or first exam in multi-subject)
-    if (widget.calledFrom != 'multi-subject' || widget.currentExamIndex == 0) {
+    // Increment test count only for a brand-new session.
+    if (!_isRestoringSession &&
+        (widget.calledFrom != 'multi-subject' ||
+            widget.currentExamIndex == 0)) {
       _subscriptionService.incrementTestCount();
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      if (widget.resumeSession != null) {
+        await _restoreSavedSession(widget.resumeSession!);
+        return;
+      }
+
       // Show countdown dialog before fetching data (only for single subject or first exam in multi-subject)
       if (widget.calledFrom != 'multi-subject' ||
           widget.currentExamIndex == 0) {
@@ -109,28 +130,128 @@ final TimerController _timerController = TimerController();
       } else {
         // For subsequent exams in multi-subject, fetch directly
         final provider = Provider.of<ExamProvider>(context, listen: false);
-        provider.fetchExamData(
-          widget.examTypeId,
-          limit: widget.questionLimit,
-          randomizeQuestions: true,
-        );
-        print("Fetching exam data for examTypeId: ${widget.examTypeId}");
-        print(
-            "SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
-        print("Question Limit: ${widget.questionLimit ?? 'All'}");
-        if (widget.totalDurationInSeconds != null) {
-          print(
-              "⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
-        }
+        provider
+            .fetchExamData(
+              widget.examTypeId,
+              limit: widget.questionLimit,
+              randomizeQuestions: true,
+            )
+            .then((_) => _saveActiveSession(provider, force: true));
       }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _textController.dispose();
     _bounceController.dispose();
     super.dispose();
+  }
+
+  bool get _shouldPersistSession =>
+      widget.onExamComplete == null && widget.calledFrom != 'multi-subject';
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused &&
+        !AdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAdOnResume = true;
+      final provider = Provider.of<ExamProvider>(context, listen: false);
+      _saveActiveSession(provider, force: true);
+    } else if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _shouldShowAdOnResume = false;
+      AdManager.instance.showAppOpenIfEligible(context: context);
+    }
+  }
+
+  Future<void> _restoreSavedSession(CbtActiveSessionModel session) async {
+    if (session.questions.isEmpty) {
+      _isRestoringSession = false;
+      _showLoadingCountdown();
+      return;
+    }
+
+    final provider = Provider.of<ExamProvider>(context, listen: false);
+    provider.restoreExamState(
+      restoredExamInfo: session.examInfo,
+      restoredQuestions: session.questions,
+      restoredCurrentQuestionIndex: session.currentQuestionIndex,
+      restoredUserAnswers: session.userAnswers,
+    );
+    _attemptedQuestionIndexes
+      ..clear()
+      ..addAll(session.attemptedQuestionIndexes);
+    _lastGateAtAttemptCount = session.lastGateAtAttemptCount;
+    _adsGatePending = session.adsGatePending;
+    remainingSeconds = session.remainingSeconds;
+
+    if (!mounted) return;
+    setState(() {
+      _isContinueWithAds = session.isContinueWithAds;
+      _isCountdownActive = false;
+      _hasLoadedInitialSession = true;
+      _lastPersistedRemainingSeconds = session.remainingSeconds;
+    });
+  }
+
+  Future<void> _saveActiveSession(
+    ExamProvider provider, {
+    bool force = false,
+  }) async {
+    if (!_shouldPersistSession ||
+        _isSubmittingResult ||
+        provider.questions.isEmpty ||
+        !mounted) {
+      return;
+    }
+
+    final currentRemaining = remainingSeconds ??
+        widget.totalDurationInSeconds ??
+        provider.questions.length * 60;
+    if (!force &&
+        _lastPersistedRemainingSeconds != null &&
+        currentRemaining == _lastPersistedRemainingSeconds) {
+      return;
+    }
+
+    final session = CbtActiveSessionModel(
+      examTypeId: widget.examTypeId,
+      subjectId: widget.subjectId,
+      subject: widget.subject ?? provider.examInfo?.courseName,
+      year: widget.year,
+      calledFrom: widget.calledFrom,
+      totalDurationInSeconds: widget.totalDurationInSeconds,
+      questionLimit: widget.questionLimit,
+      remainingSeconds: currentRemaining,
+      currentQuestionIndex: provider.currentQuestionIndex,
+      userAnswers: Map<int, int>.from(provider.userAnswers),
+      attemptedQuestionIndexes: Set<int>.from(_attemptedQuestionIndexes),
+      lastGateAtAttemptCount: _lastGateAtAttemptCount,
+      adsGatePending: _adsGatePending,
+      isContinueWithAds: _isContinueWithAds,
+      updatedAt: DateTime.now(),
+      examInfo: provider.examInfo,
+      questions: List<QuestionModel>.from(provider.questions),
+    );
+
+    final cbtProvider = context.read<CBTProvider>();
+    await cbtProvider.saveActiveSession(session);
+    _lastPersistedRemainingSeconds = currentRemaining;
+    if (!_hasLoadedInitialSession && mounted) {
+      setState(() {
+        _hasLoadedInitialSession = true;
+      });
+    }
+  }
+
+  Future<void> _clearActiveSession() async {
+    _lastPersistedRemainingSeconds = null;
+    _hasLoadedInitialSession = false;
+    if (!mounted) return;
+    await context.read<CBTProvider>().clearActiveSession();
   }
 
   Future<bool> _isContinueWithAdsActive() async {
@@ -138,13 +259,110 @@ final TimerController _timerController = TimerController();
     if (hasPaid) return false;
     final mode = await _subscriptionService.getAdMode();
     final isActive = mode == 'continue_with_ads';
-    print('[_isContinueWithAdsActive] adMode: $mode, isActive: $isActive');
     return isActive;
+  }
+
+  bool _looksLikeHtml(String content) {
+    return RegExp(r'<[^>]+>').hasMatch(content);
+  }
+
+  String _normalizeRenderableContent(String? content) {
+    if (content == null || content.isEmpty) {
+      return '';
+    }
+
+    var normalized = content
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .replaceAll(
+          RegExp(
+            r'<p(?:\s[^>]*)?>\s*(?:&nbsp;|&#160;|<br\s*/?>|\s)*<\/p>',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .trim();
+
+    if (normalized.isEmpty) {
+      return '';
+    }
+
+    if (_looksLikeHtml(normalized)) {
+      return normalized
+          .replaceAll(
+            RegExp(
+              r'(<(?:p|div|li|span)(?:\s[^>]*)?>)\s+',
+              caseSensitive: false,
+            ),
+            r'$1',
+          )
+          .replaceAll(
+            RegExp(
+              r'\s+(<\/(?:p|div|li|span)>)',
+              caseSensitive: false,
+            ),
+            r'$1',
+          )
+          .trim();
+    }
+
+    return normalized
+        .replaceAll(RegExp(r'[ \t]+'), ' ')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+
+  String _prepareQuestionContent(String? content) {
+    final normalized = _normalizeRenderableContent(content);
+    if (normalized.isEmpty) {
+      return 'Question';
+    }
+
+    if (_looksLikeHtml(normalized)) {
+      return normalized;
+    }
+
+    return normalized[0].toUpperCase() + normalized.substring(1);
+  }
+
+  Map<String, Style> _buildHtmlStyles({
+    required double fontSize,
+    required Color color,
+    double lineHeight = 1.6,
+    FontWeight? fontWeight,
+    int? maxLines,
+    TextOverflow? textOverflow,
+  }) {
+    Style blockStyle() => Style(
+          fontSize: FontSize(fontSize),
+          color: color,
+          lineHeight: LineHeight(lineHeight),
+          fontWeight: fontWeight,
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+          maxLines: maxLines,
+          textOverflow: textOverflow,
+        );
+
+    return {
+      "body": blockStyle(),
+      "p": blockStyle(),
+      "div": blockStyle(),
+      "span": Style(
+        fontSize: FontSize(fontSize),
+        color: color,
+        lineHeight: LineHeight(lineHeight),
+        fontWeight: fontWeight,
+      ),
+      "figure": Style(
+        margin: Margins.zero,
+        padding: HtmlPaddings.zero,
+      ),
+    };
   }
 
   Future<void> _loadAdMode() async {
     final isActive = await _isContinueWithAdsActive();
-    print('[_loadAdMode] Loaded ad mode - isActive: $isActive');
     if (!mounted) return;
     setState(() {
       _isContinueWithAds = isActive;
@@ -153,36 +371,10 @@ final TimerController _timerController = TimerController();
 
   Future<void> _goToResultsFromGate() async {
     final provider = Provider.of<ExamProvider>(context, listen: false);
-    await AdManager.instance.showIfEligible(
-      context: context,
-      trigger: AdTrigger.resultNavigation,
+    await _submitAndNavigateToResults(
+      provider: provider,
+      isFullyCompleted: false,
     );
-
-    if (widget.onExamComplete != null && !widget.isLastInMultiSubject) {
-      _proceedToNextExam(provider);
-    } else if (widget.onExamComplete != null && widget.isLastInMultiSubject) {
-      widget.onExamComplete!(
-        provider.userAnswers,
-        remainingSeconds ?? 0,
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CbtResultScreen(
-            questions: provider.questions,
-            userAnswers: provider.userAnswers,
-            subject:
-                widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
-            year: widget.year ?? DateTime.now().year,
-            examType: provider.examInfo?.title ?? 'Test',
-            examId: widget.examTypeId,
-            calledFrom: widget.calledFrom,
-            isFullyCompleted: false,
-          ),
-        ),
-      );
-    }
   }
 
   Future<bool> _maybeShowAdsGate({required int attemptedCount}) async {
@@ -192,19 +384,12 @@ final TimerController _timerController = TimerController();
       _adsGatePending = false;
       return true;
     }
-    
+
     // Debug logging
-    print('=== ADS GATE DEBUG ===');
-    print('_isShowingAdsGate: $_isShowingAdsGate');
-    print('isActive: $isActive');
-    print('attemptedCount: $attemptedCount');
-    print('attemptedCount: $attemptedCount');
-    print('======================');
     _timerController.pause();
     _isShowingAdsGate = true;
     _adsGatePending = true;
     try {
-      print('==== Showing ADS GATE at attempt $attemptedCount ====');
       if (!mounted) return false;
 
       final result = await showDialog<String>(
@@ -215,7 +400,8 @@ final TimerController _timerController = TimerController();
           child: CbtContinueAdsDialog(
             onWatchAds: () async {
               await _subscriptionService.setAdMode('continue_with_ads');
-              final rewarded = await AdManager.instance.showRewardedForPaywall();
+              final rewarded =
+                  await AdManager.instance.showRewardedForPaywall();
               if (!rewarded) return false;
               _adsGatePending = false;
               _lastGateAtAttemptCount = attemptedCount;
@@ -274,12 +460,10 @@ final TimerController _timerController = TimerController();
 
     if (!wasAttempted) {
       _attemptedQuestionIndexes.add(questionIndex);
-      print('[_registerAttemptAndGate] Attempted count: ${_attemptedQuestionIndexes.length}');
     }
 
     final attemptedCount = _attemptedQuestionIndexes.length;
-    final justHitThreshold =
-        !wasAttempted && attemptedCount % 10 == 0;
+    final justHitThreshold = !wasAttempted && attemptedCount % 10 == 0;
     if (_adsGatePending) {
       return _maybeShowAdsGate(attemptedCount: attemptedCount);
     }
@@ -292,11 +476,9 @@ final TimerController _timerController = TimerController();
   Future<void> _handleAnswerTap(ExamProvider provider, int index) async {
     final questionIndex = provider.currentQuestionIndex;
     final wasAttempted = _attemptedQuestionIndexes.contains(questionIndex);
-    print('[_handleAnswerTap] Question $questionIndex answered. Was previously attempted: $wasAttempted');
     provider.selectAnswer(questionIndex, index);
-    if (wasAttempted) {
-      print('[_handleAnswerTap] Question already attempted');
-    }
+    await _saveActiveSession(provider, force: true);
+    if (wasAttempted) {}
   }
 
   void _showLoadingCountdown() {
@@ -333,19 +515,14 @@ final TimerController _timerController = TimerController();
 
     // Start fetching data immediately when countdown begins
     final provider = Provider.of<ExamProvider>(context, listen: false);
-    provider.fetchExamData(
-      widget.examTypeId,
-      limit: widget.questionLimit,
-      randomizeQuestions: true,
-    );
-    print("Fetching exam data for examTypeId: ${widget.examTypeId}");
-    print(
-        "SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
-    print("Question Limit: ${widget.questionLimit ?? 'All'}");
-    if (widget.totalDurationInSeconds != null) {
-      print(
-          "⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
-    }
+    provider
+        .fetchExamData(
+          widget.examTypeId,
+          limit: widget.questionLimit,
+          randomizeQuestions: true,
+        )
+        .then((_) => _saveActiveSession(provider, force: true));
+    if (widget.totalDurationInSeconds != null) {}
   }
 
   // Dialog only shows when Read More button is clicked - no auto-show
@@ -360,24 +537,153 @@ final TimerController _timerController = TimerController();
     return Consumer<ExamProvider>(
       builder: (context, examProvider, child) {
         // Show instruction/passage modal when question changes (skip while countdown active)
-
-        return Scaffold(
-          backgroundColor: AppColors.eLearningBtnColor1,
-          appBar: _buildAppBar(context, examProvider, isLandscape),
-          body: examProvider.isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-              : examProvider.questions.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No Questions Available',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            await _handleBackExit(examProvider);
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            appBar: _buildAppBar(context, examProvider, isLandscape),
+            body: Stack(
+              children: [
+                Positioned.fill(
+                  child: examProvider.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : examProvider.questions.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No Questions Available',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 18),
+                              ),
+                            )
+                          : _buildBody(examProvider, isLandscape),
+                ),
+                if (_isSubmittingResult)
+                  Positioned.fill(
+                    child: AbsorbPointer(
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        alignment: Alignment.center,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 18,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppColors.eLearningBtnColor1,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Submitting your test...',
+                                style: AppTextStyles.normal700(
+                                  fontSize: 16,
+                                  color: AppColors.text3Light,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Preparing your result summary.',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.normal500(
+                                  fontSize: 13,
+                                  color: AppColors.text7Light,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    )
-                  : _buildBody(examProvider, isLandscape),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         );
       },
+    );
+  }
+
+  Future<void> _handleBackExit(ExamProvider examProvider) async {
+    if (_isHandlingBackExit || _isSubmittingResult) return;
+
+    _isHandlingBackExit = true;
+    try {
+      await _saveActiveSession(examProvider, force: true);
+      if (!mounted) return;
+
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.testExit,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } finally {
+      _isHandlingBackExit = false;
+    }
+  }
+
+  Future<void> _submitAndNavigateToResults({
+    required ExamProvider provider,
+    required bool isFullyCompleted,
+  }) async {
+    if (_isSubmittingResult) return;
+
+    setState(() {
+      _isSubmittingResult = true;
+    });
+
+    await _clearActiveSession();
+    if (!mounted) return;
+
+    await AdManager.instance.showIfEligible(
+      context: context,
+      trigger: AdTrigger.resultNavigation,
+    );
+
+    if (!mounted) return;
+
+    if (widget.onExamComplete != null && !widget.isLastInMultiSubject) {
+      _proceedToNextExam(provider);
+      return;
+    }
+
+    if (widget.onExamComplete != null && widget.isLastInMultiSubject) {
+      widget.onExamComplete!(
+        provider.userAnswers,
+        remainingSeconds ?? 0,
+      );
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CbtResultScreen(
+          questions: provider.questions,
+          userAnswers: provider.userAnswers,
+          subject:
+              widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
+          year: widget.year ?? DateTime.now().year,
+          examType: provider.examInfo?.title ?? 'Test',
+          examId: widget.examTypeId,
+          calledFrom: widget.calledFrom,
+          isFullyCompleted: isFullyCompleted,
+        ),
+      ),
     );
   }
 
@@ -386,7 +692,9 @@ final TimerController _timerController = TimerController();
     return AppBar(
       backgroundColor: AppColors.eLearningBtnColor1,
       leading: IconButton(
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () async {
+          await _handleBackExit(examProvider);
+        },
         icon: Image.asset(
           'assets/icons/arrow_back.png',
           color: AppColors.backgroundLight,
@@ -436,6 +744,9 @@ final TimerController _timerController = TimerController();
                   _submitQuiz(examProvider, isFullyCompleted: false),
               onTick: (remaining) {
                 remainingSeconds = remaining;
+                if (remaining % 5 == 0) {
+                  _saveActiveSession(examProvider);
+                }
               },
             ),
           ),
@@ -643,7 +954,7 @@ final TimerController _timerController = TimerController();
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -661,41 +972,40 @@ final TimerController _timerController = TimerController();
                         children: [
                           Expanded(
                             child: Html(
-  data: question.content.isNotEmpty
-      ? question.content[0].toUpperCase() +
-          question.content.substring(1)
-      : 'Question',
-  style: {
-    "body": Style(
-      fontSize: FontSize(18),
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-      lineHeight: LineHeight(1.6),
-      fontWeight: FontWeight.w600,
-      color: AppColors.text3Light,
-    ),
-    "img": Style(
-      width: Width.auto(),
-      padding: HtmlPaddings.only(left: 4, right: 4),
-    ),
-  },
-  extensions: [
-    TagExtension(
-      tagsToExtend: {"img"},
-      builder: (extensionContext) {
-        final attributes = extensionContext.attributes;
-        final src = attributes['src'] ?? '';
-        
-        if (src.isEmpty) return const SizedBox.shrink();
-        
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          child: _getImageWidget(src, height: 30), // Adjust height here
-        );
-      },
-    ),
-  ],
-),
+                              data: _prepareQuestionContent(question.content),
+                              style: {
+                                ..._buildHtmlStyles(
+                                  fontSize: 18,
+                                  color: AppColors.text3Light,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                "img": Style(
+                                  width: Width.auto(),
+                                  padding: HtmlPaddings.only(left: 4, right: 4),
+                                ),
+                              },
+                              extensions: [
+                                TagExtension(
+                                  tagsToExtend: {"img"},
+                                  builder: (extensionContext) {
+                                    final attributes =
+                                        extensionContext.attributes;
+                                    final src = attributes['src'] ?? '';
+
+                                    if (src.isEmpty) {
+                                      return const SizedBox.shrink();
+                                    }
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 2),
+                                      child: _getImageWidget(src,
+                                          height: 30), // Adjust height here
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -840,7 +1150,7 @@ final TimerController _timerController = TimerController();
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -855,7 +1165,7 @@ final TimerController _timerController = TimerController();
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.15),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -886,18 +1196,14 @@ final TimerController _timerController = TimerController();
           Stack(
             children: [
               Html(
-                data: previewText,
-                style: {
-                  "body": Style(
-                    fontSize: FontSize(15),
-                    margin: Margins.zero,
-                    padding: HtmlPaddings.zero,
-                    lineHeight: LineHeight(1.5),
-                    color: Colors.black87,
-                    maxLines: 4,
-                    textOverflow: TextOverflow.ellipsis,
-                  ),
-                },
+                data: _normalizeRenderableContent(previewText),
+                style: _buildHtmlStyles(
+                  fontSize: 15,
+                  color: Colors.black87,
+                  lineHeight: 1.5,
+                  maxLines: 4,
+                  textOverflow: TextOverflow.ellipsis,
+                ),
               ),
               // White gradient fade overlay at bottom (only if text is long)
               if (isLongText)
@@ -912,8 +1218,8 @@ final TimerController _timerController = TimerController();
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withOpacity(0),
-                          Colors.white.withOpacity(0.7),
+                          Colors.white.withValues(alpha: 0),
+                          Colors.white.withValues(alpha: 0.7),
                           Colors.white,
                         ],
                         stops: const [0.0, 0.5, 1.0],
@@ -982,7 +1288,7 @@ final TimerController _timerController = TimerController();
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1123,16 +1429,11 @@ final TimerController _timerController = TimerController();
     final isSelected = selectedAnswer == index;
 
     Widget optionContent = Html(
-      data: option,
-      style: {
-        "body": Style(
-          fontSize: FontSize(16),
-          margin: Margins.zero,
-          padding: HtmlPaddings.zero,
-          lineHeight: LineHeight(1.6),
-          color: isSelected ? Colors.white : Colors.black87,
-        ),
-      },
+      data: _normalizeRenderableContent(option),
+      style: _buildHtmlStyles(
+        fontSize: 16,
+        color: isSelected ? Colors.white : Colors.black87,
+      ),
     );
 
     // If there's an option image URL, show it alongside the text
@@ -1160,7 +1461,7 @@ final TimerController _timerController = TimerController();
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 2,
             offset: const Offset(0, 1),
@@ -1235,14 +1536,14 @@ final TimerController _timerController = TimerController();
       }
       return null;
     } catch (e) {
-      print('Error extracting file URL: $e');
       return null;
     }
   }
 
   Widget _getImageWidget(String url, {double? width, double? height}) {
     if (url.isEmpty) {
-      return Container(width: width, height: height, color: Colors.grey.shade200);
+      return Container(
+          width: width, height: height, color: Colors.grey.shade200);
     }
 
     // ── 1. Base64 inline image ─────────────────────────────────────
@@ -1254,11 +1555,12 @@ final TimerController _timerController = TimerController();
           width: width,
           height: height,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              Container(width: width, height: height, color: Colors.grey.shade200),
+          errorBuilder: (_, __, ___) => Container(
+              width: width, height: height, color: Colors.grey.shade200),
         );
       } catch (e) {
-        return Container(width: width, height: height, color: Colors.grey.shade200);
+        return Container(
+            width: width, height: height, color: Colors.grey.shade200);
       }
     }
 
@@ -1271,8 +1573,8 @@ final TimerController _timerController = TimerController();
         width: width,
         height: height,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            Container(width: width, height: height, color: Colors.grey.shade200),
+        errorBuilder: (_, __, ___) => Container(
+            width: width, height: height, color: Colors.grey.shade200),
       );
     }
 
@@ -1434,16 +1736,13 @@ final TimerController _timerController = TimerController();
 
                                 // Section content (HTML)
                                 Html(
-                                  data: sectionContent,
-                                  style: {
-                                    "body": Style(
-                                      fontSize: FontSize(19),
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
-                                      lineHeight: LineHeight(1.6),
-                                      color: AppColors.text3Light,
-                                    ),
-                                  },
+                                  data: _normalizeRenderableContent(
+                                    sectionContent,
+                                  ),
+                                  style: _buildHtmlStyles(
+                                    fontSize: 19,
+                                    color: AppColors.text3Light,
+                                  ),
                                 ),
 
                                 // Add spacing between sections
@@ -1540,7 +1839,10 @@ final TimerController _timerController = TimerController();
           Expanded(
             child: OutlinedButton(
               onPressed: provider.currentQuestionIndex > 0
-                  ? () => provider.previousQuestion()
+                  ? () async {
+                      provider.previousQuestion();
+                      await _saveActiveSession(provider, force: true);
+                    }
                   : null,
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.white),
@@ -1580,6 +1882,7 @@ final TimerController _timerController = TimerController();
                           await _registerAttemptAndGate(provider);
                       if (!canContinue) return;
                       provider.nextQuestion();
+                      await _saveActiveSession(provider, force: true);
                     }
                   : (widget.onExamComplete != null && !isLastSubject)
                       ? () async {
@@ -1936,45 +2239,10 @@ final TimerController _timerController = TimerController();
                         child: ElevatedButton(
                           onPressed: () async {
                             Navigator.of(context).pop();
-
-                            await AdManager.instance.showIfEligible(
-                              context: context,
-                              trigger: AdTrigger.resultNavigation,
+                            await _submitAndNavigateToResults(
+                              provider: provider,
+                              isFullyCompleted: isFullyCompleted,
                             );
-
-                            // After dialog closes, handle the navigation based on context
-                            if (widget.onExamComplete != null &&
-                                !widget.isLastInMultiSubject) {
-                              // Multi-subject mode (not last): proceed to next subject
-                              _proceedToNextExam(provider);
-                            } else if (widget.onExamComplete != null &&
-                                widget.isLastInMultiSubject) {
-                              // Multi-subject mode (last subject): call callback for final submission
-                              widget.onExamComplete!(
-                                provider.userAnswers,
-                                remainingSeconds ?? 0,
-                              );
-                            } else {
-                              // Single subject mode: navigate to result screen
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CbtResultScreen(
-                                    questions: provider.questions,
-                                    userAnswers: provider.userAnswers,
-                                    subject: widget.subject ??
-                                        provider.examInfo?.courseName ??
-                                        'CBT Test',
-                                    year: widget.year ?? DateTime.now().year,
-                                    examType:
-                                        provider.examInfo?.title ?? 'Test',
-                                    examId: widget.examTypeId,
-                                    calledFrom: widget.calledFrom,
-                                    isFullyCompleted: isFullyCompleted,
-                                  ),
-                                ),
-                              );
-                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.eLearningBtnColor1,
@@ -2088,7 +2356,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2096,7 +2364,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2109,7 +2377,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2138,7 +2406,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontFamily: 'Urbanist',
               ),
             ),
@@ -2153,7 +2421,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2184,7 +2452,7 @@ class _CountdownDialogState extends State<_CountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -2269,7 +2537,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2277,7 +2545,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2290,7 +2558,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2334,7 +2602,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2365,7 +2633,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
               'Get ready...',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -2376,7 +2644,6 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
     );
   }
 }
-
 
 // // ignore_for_file: deprecated_member_use
 // import 'package:flutter/material.dart';
@@ -2396,9 +2663,9 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //   final String? subject;
 //   final int? year;
 //   final String calledFrom; // Track where screen is called from
-  
+
 //   const TestScreen({
-//     super.key, 
+//     super.key,
 //     required this.examTypeId,
 //     this.subjectId,
 //     this.subject,
@@ -2422,8 +2689,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
 //       final provider = Provider.of<ExamProvider>(context, listen: false);
 //       provider.fetchExamData(widget.examTypeId);
-//       print("Fetching exam data for examTypeId: ${widget.examTypeId}");
-//       print("SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
+
 //     });
 //   }
 
@@ -2437,7 +2703,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //   Widget build(BuildContext context) {
 //     final Brightness brightness = Theme.of(context).brightness;
 //     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
 //     return Consumer<ExamProvider>(
 //       builder: (context, examProvider, child) {
 //         return Scaffold(
@@ -2481,14 +2747,14 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //                     color: Colors.white,
 //                   ),
 //                 ) :
-          
+
 //           examProvider.questions.isEmpty
 //               ? const Center(
 //                   child:Text(
 //                     'No Questions Available',
 //                     style: TextStyle(color: Colors.white, fontSize: 18),
 //                   ),
-//                 )  
+//                 )
 //               : Padding(
 //                   padding: const EdgeInsets.symmetric( horizontal: 16.0),
 //                   child: Column(
@@ -2520,7 +2786,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //     return Container(
 //       width: 400,
-      
+
 //       padding: const EdgeInsets.all(8),
 //       decoration: BoxDecoration(
 //         color: AppColors.eLearningContColor1,
@@ -2543,7 +2809,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           // Text overlay inside progress bar
 //           Center(
 //             child: Positioned(
-              
+
 //               child: Text(
 //                 '$answeredQuestions of $total Completed',
 //                 style: const TextStyle(
@@ -2561,7 +2827,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //   Widget _buildQuestionCard(ExamProvider provider) {
 //     final question = provider.currentQuestion;
-    
+
 //     if (question == null) {
 //       return SingleChildScrollView(
 //         child: Container(
@@ -2610,7 +2876,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //               borderRadius: BorderRadius.circular(8),
 //               boxShadow: [
 //                 BoxShadow(
-//                   color: Colors.black.withOpacity(0.1),
+//                   color: Colors.black.withValues(alpha: 0.1),
 //                   blurRadius: 4,
 //                   offset: const Offset(0, 2),
 //                 ),
@@ -2640,7 +2906,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //                     ],
 //                   ),
 //                 ),
-                
+
 //                 // Top-left curved badge with backward slash shape
 //                 Positioned(
 //                   top: -26,
@@ -2674,7 +2940,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //             ),
 //           ),
 //           const SizedBox(height: 16),
-          
+
 //           // Options/Input Card
 //           _buildOptionsOrInputCard(provider, question),
 //         ],
@@ -2684,7 +2950,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //   Widget _buildOptionsOrInputCard(ExamProvider provider, QuestionModel question) {
 //     final options = question.getOptions();
-    
+
 //     return Container(
 //       width: 400,
 //       padding: const EdgeInsets.symmetric( vertical: 16.0),
@@ -2693,13 +2959,13 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //         borderRadius: BorderRadius.circular(8),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.black.withOpacity(0.1),
+//             color: Colors.black.withValues(alpha: 0.1),
 //             blurRadius: 4,
 //             offset: const Offset(0, 2),
 //           ),
 //         ],
 //       ),
-//       child: options.isEmpty 
+//       child: options.isEmpty
 //           ? _buildTextInput(provider)
 //           : _buildOptions(provider, question),
 //     );
@@ -2762,15 +3028,15 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //       return Container(
 //         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
 //         decoration: BoxDecoration(
-//           color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.white,
+//           color: isSelected ? Colors.blue.withValues(alpha: 0.5) : Colors.white,
 //           borderRadius: BorderRadius.circular(8.0),
 //           border: Border.all(
-//             color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.grey.shade300,
+//             color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.grey.shade300,
 //             width: 1.5,
 //           ),
 //           boxShadow: [
 //             BoxShadow(
-//               color: Colors.grey.withOpacity(0.1),
+//               color: Colors.grey.withValues(alpha: 0.1),
 //               spreadRadius: 1,
 //               blurRadius: 2,
 //               offset: const Offset(0, 1),
@@ -2830,7 +3096,7 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 
 //   Widget _buildNavigationButtons(ExamProvider provider) {
 //     bool isLastQuestion = provider.currentQuestionIndex == provider.questions.length - 1;
-    
+
 //     return Row(
 //       children: [
 //         // Previous Button
@@ -2849,12 +3115,12 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           ),
 //         ),
 //         const SizedBox(width: 12),
-        
+
 //         // Submit Button (Center)
 //         Expanded(
 //           child: ElevatedButton(
 //             onPressed: () => _submitQuiz(
-//               provider, 
+//               provider,
 //               isFullyCompleted: isLastQuestion, // Completed if on last question, incomplete otherwise
 //             ),
 //             style: ElevatedButton.styleFrom(
@@ -2870,11 +3136,11 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           ),
 //         ),
 //         const SizedBox(width: 12),
-        
+
 //         // Next Button
 //         Expanded(
 //           child: OutlinedButton(
-//             onPressed: !isLastQuestion 
+//             onPressed: !isLastQuestion
 //                 ? () => provider.nextQuestion()
 //                 : null,
 //             style: OutlinedButton.styleFrom(
@@ -2912,9 +3178,9 @@ class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
 //           TextButton(
 //             onPressed: () {
 //               Navigator.of(context).pop(); // Close dialog
-              
+
 //               // Navigate to result screen
-//               print(" questions: ${provider.questions}, userAnswers: ${provider.userAnswers}, isFullyCompleted: $isFullyCompleted");
+
 //               Navigator.pushReplacement(
 //                 context,
 //                 MaterialPageRoute(

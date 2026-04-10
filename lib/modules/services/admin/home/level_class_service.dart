@@ -20,30 +20,24 @@ class LevelClassService {
 
     _apiService.setAuthToken(token);
     newLevel['_db'] = dbName;
-    print("Request Payload: $newLevel");
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/levels',
         body: newLevel,
       );
-      print("Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to create level");
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to create level: ${response.message}");
       } else {
-        print('Level created successfully.');
         SnackBar(
           content: Text('Level created successfully.'),
           backgroundColor: Colors.green,
         );
       }
     } catch (e) {
-      print("Error creating level: $e");
       throw Exception("Failed to create level: $e");
     }
   }
@@ -60,30 +54,24 @@ class LevelClassService {
 
     _apiService.setAuthToken(token);
     newClass['_db'] = dbName;
-    print("Request Payload: $newClass");
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/classes',
         body: newClass,
       );
-      print("Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to create class");
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to create class: ${response.message}");
       } else {
-        print('Class created successfully.');
         SnackBar(
           content: Text('Class created successfully.'),
           backgroundColor: Colors.green,
         );
       }
     } catch (e) {
-      print("Error creating class: $e");
       throw Exception("Failed to create class: $e");
     }
   }
@@ -101,21 +89,16 @@ class LevelClassService {
 
     _apiService.setAuthToken(token);
     updatedLevel['_db'] = dbName;
-    print("Update Request Payload: $updatedLevel");
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
         endpoint: 'portal/levels/$levelId',
         body: updatedLevel,
       );
       if (!response.success) {
-        print("Failed to update level");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to update level: ${response.message}");
       } else {
-        print('Level updated successfully.');
       }
     } catch (e) {
-      print("Error updating level: $e");
       throw Exception("Failed to update level: $e");
     }
   }
@@ -133,21 +116,16 @@ class LevelClassService {
 
     _apiService.setAuthToken(token);
     updatedClass['_db'] = dbName;
-    print("Update Request Payload: $updatedClass");
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
         endpoint: 'portal/classes/$className',
         body: updatedClass,
       );
       if (!response.success) {
-        print("Failed to update class");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to update class: ${response.message}");
       } else {
-        print('Class updated successfully.');
       }
     } catch (e) {
-      print("Error updating class: $e");
       throw Exception("Failed to update class: $e");
     }
   }
@@ -171,14 +149,10 @@ class LevelClassService {
         },
       );
       if (!response.success) {
-        print("Failed to delete level");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to delete level: ${response.message}");
       } else {
-        print('Level deleted successfully.');
       }
     } catch (e) {
-      print("Error deleting level: $e");
       throw Exception("Failed to delete level: $e");
     }
   }
@@ -202,14 +176,10 @@ class LevelClassService {
         },
       );
       if (!response.success) {
-        print("Failed to delete class");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to delete class: ${response.message}");
       } else {
-        print('Class deleted successfully.');
       }
     } catch (e) {
-      print("Error deleting class: $e");
       throw Exception("Failed to delete class: $e");
     }
   }
@@ -232,25 +202,19 @@ class LevelClassService {
           '_db': dbName,
         },
       );
-      print("Fetch Levels Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to fetch levels");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to fetch levels: ${response.message}");
       }
 
       final data = response.rawData?['data'];
       if (data is List) {
-        print('Levels fetched successfully: ${data.length} levels found.');
         return data
             .map((json) => Levels.fromJson(json as Map<String, dynamic>))
             .toList();
       } else {
-        print("Unexpected response format");
         throw Exception("Unexpected response format");
       }
     } catch (e) {
-      print("Error fetching levels: $e");
       throw Exception("Failed to fetch levels: $e");
     }
   }
@@ -273,27 +237,22 @@ class LevelClassService {
           '_db': dbName,
         },
       );
-      print("Fetch Classes Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to fetch classes");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to fetch classes: ${response.message}");
       }
 
       final data = response.rawData?['data'];
       if (data is List) {
-        print('Classes fetched successfully: ${data.length} classes found.');
         return data
             .map((json) => Class.fromJson(json as Map<String, dynamic>))
             .where((classItem) => classItem.className.isNotEmpty)
             .toList();
       } else {
-        print("Unexpected response format");
         throw Exception("Unexpected response format");
       }
     } catch (e) {
-      print("Error fetching classes: $e");
       throw Exception("Failed to fetch classes: $e");
     }
   }
 }
+

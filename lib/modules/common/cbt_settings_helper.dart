@@ -12,35 +12,26 @@ class CbtSettingsHelper {
   /// Get CBT settings (cached or fetch new)
   static Future<CbtSettingsModel> getSettings() async {
     // Return cached if still fresh
-    print('🔍 Checking CBT settings cache...');
-    print('🕒 Last fetch time: $_cachedSettings');
     if (_cachedSettings != null && _lastFetchTime != null) {
       final age = DateTime.now().difference(_lastFetchTime!);
       if (age < _cacheDuration) {
-        print('📦 Using cached CBT settings');
         return _cachedSettings!;
       }
     }
 
     try {
-      print('🔄 Fetching fresh CBT settings...');
       final settings = await _service.fetchCbtSettings();
       _cachedSettings = settings;
       _lastFetchTime = DateTime.now();
       await CbtSubscriptionService().setMaxFreeTests(settings.freeTrialDays);
-      print(
-          '✅ CBT settings loaded: amount=${settings.amount}, discount=${settings.discountRate}, trial=${settings.freeTrialDays}');
       return settings;
     } catch (e) {
-      print('❌ Error fetching CBT settings: $e');
       // If we have cached data, use it even if expired
       if (_cachedSettings != null) {
-        print('⚠️ Using expired cached settings');
         await CbtSubscriptionService().setMaxFreeTests(_cachedSettings!.freeTrialDays);
         return _cachedSettings!;
       }
       // Return default settings as fallback
-      print('⚠️ Using default fallback settings');
       final fallback = _getDefaultSettings();
       await CbtSubscriptionService().setMaxFreeTests(fallback.freeTrialDays);
       return fallback;
@@ -83,7 +74,6 @@ class CbtSettingsHelper {
   static void clearCache() {
     _cachedSettings = null;
     _lastFetchTime = null;
-    print('🗑️ CBT settings cache cleared');
   }
 
   /// Default settings as fallback

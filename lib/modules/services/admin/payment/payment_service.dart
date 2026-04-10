@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/payment_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -32,7 +31,6 @@ class PaymentService {
 
       return response.data;
     } catch (e) {
-      print('Error fetching dashboard summary: $e');
       return null;
     }
   }
@@ -68,7 +66,6 @@ class PaymentService {
 
       return response.data ?? [];
     } catch (e) {
-      print('Error fetching paid invoices: $e');
       return [];
     }
   }
@@ -104,7 +101,6 @@ class PaymentService {
 
       return response.data ?? [];
     } catch (e) {
-      print('Error fetching unpaid invoices: $e');
       return [];
     }
   }
@@ -138,7 +134,6 @@ class PaymentService {
         throw Exception('Database parameter not found. Please login again.');
       }
 
-      print('Using database parameter: $dbParam');
 
       // Convert year to integer for the API
       int yearInt = int.tryParse(year) ?? DateTime.now().year;
@@ -165,7 +160,6 @@ class PaymentService {
         '_db': dbParam, // Use dynamic database parameter
       };
 
-      print('Payment Payload: ${json.encode(payload)}');
 
       final response = await _apiService.request(
         endpoint: 'portal/students/$studentId/make-payment',
@@ -174,10 +168,6 @@ class PaymentService {
         addDatabaseParam: false, // We're manually adding _db in the payload
       );
 
-      print('Payment Response: ${response.rawData}');
-      print('Payment Success: ${response.success}');
-      print('Payment Message: ${response.message}');
-      print('Payment Status Code: ${response.statusCode}');
 
       // Check for successful status codes (200, 201)
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -191,7 +181,6 @@ class PaymentService {
 
       return response.success;
     } catch (e) {
-      print('Error making payment: $e');
       // Re-throw the exception so the UI can handle it properly
       throw Exception('Payment processing failed: $e');
     }
@@ -213,7 +202,6 @@ class PaymentService {
             .any((cls) => cls.levelId == level.id && cls.className.isNotEmpty);
       }).toList();
     } catch (e) {
-      print('Error getting available levels: $e');
       return [];
     }
   }
@@ -230,7 +218,6 @@ class PaymentService {
           .where((cls) => cls.levelId == levelId && cls.className.isNotEmpty)
           .toList();
     } catch (e) {
-      print('Error getting classes for level: $e');
       return [];
     }
   }
@@ -248,7 +235,6 @@ class PaymentService {
 
       return level.levelName.isNotEmpty ? level.levelName : null;
     } catch (e) {
-      print('Error getting level name: $e');
       return null;
     }
   }
@@ -266,7 +252,6 @@ class PaymentService {
 
       return classModel.className.isNotEmpty ? classModel.className : null;
     } catch (e) {
-      print('Error getting class name: $e');
       return null;
     }
   }
@@ -277,7 +262,6 @@ class PaymentService {
       body: params,
     );
 
-    print("me and $params");
 
     if (response.success && response.rawData != null) {
       final data = response.rawData!['data'];
@@ -287,3 +271,4 @@ class PaymentService {
     }
   }
 }
+

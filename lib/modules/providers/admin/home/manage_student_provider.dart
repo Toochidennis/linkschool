@@ -123,10 +123,8 @@ class ManageStudentProvider with ChangeNotifier {
 
     try {
       students = await _studentService.fetchStudents();
-      print("Fetched ${students.length} students");
     } catch (e) {
       error = "Failed to fetch students: $e";
-      print("Error in provider: $e");
     } finally {
       isLoading = false;
       notifyListeners();
@@ -170,11 +168,8 @@ class ManageStudentProvider with ChangeNotifier {
       totalPages = response.students.meta.lastPage;
       hasMore = response.students.meta.hasNext;
       
-      print("Fetched ${response.students.data.length} students for level $levelId, page $page");
-      print("Total students: ${response.students.meta.total}, Has more: $hasMore");
     } catch (e) {
       error = "Failed to fetch students by level: $e";
-      print("Error in provider: $e");
     } finally {
       isLoading = false;
       isLoadingMore = false;
@@ -237,11 +232,8 @@ class ManageStudentProvider with ChangeNotifier {
       totalPages = response.students.meta.lastPage;
       hasMore = response.students.meta.hasNext;
       
-      print("Fetched ${response.students.data.length} students for class $classId, page $page");
-      print("Total students: ${response.students.meta.total}, Has more: $hasMore");
     } catch (e) {
       error = "Failed to fetch students by class: $e";
-      print("Error in provider: $e");
     } finally {
       isLoading = false;
       isLoadingMore = false;
@@ -261,3 +253,4 @@ class ManageStudentProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+

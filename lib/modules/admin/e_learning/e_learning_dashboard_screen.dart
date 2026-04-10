@@ -94,8 +94,6 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen>
         }
       }
     });
-    print(
-        "total activities: ${Provider.of<OverviewProvider>(context, listen: false).recentQuizzes.length ?? 0}");
 
     // Load user data
 
@@ -105,8 +103,8 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen>
       try {
         recentProvider.fetchOverview(academicTerm); // Pass the actual term
       } catch (e) {
-        print('Error fetching dashboard data: $e');
-      }
+      // Intentionally ignored.
+    }
     });
   }
 
@@ -190,7 +188,7 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen>
               border: Border.all(color: borderColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: backgroundColor.withOpacity(0.3),
+                  color: backgroundColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -317,15 +315,12 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen>
           academicTerm = term; // Pass the actual term
         });
 
-        print('All Levels: $levelNames');
-        print('All Courses: $courseNames');
-        print('All Classes: $classNames');
 
         // Start entrance animations now that user data is ready
         _runEntranceAnimations();
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -341,8 +336,8 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen>
             await recentProvider
                 .fetchOverview(academicTerm); // Pass the actual term
           } catch (e) {
-            print('Error refreshing dashboard data: $e');
-          }
+      // Intentionally ignored.
+    }
         },
         child: Container(
           decoration: Constants.customBoxDecoration(context),
@@ -449,7 +444,6 @@ Widget _buildTopContainers(OverviewProvider overviewProvider) {
 
             return GestureDetector(
               onTap: () {
-                print("Tapped on quiz id: $quizId");
                 if (quizId.isNotEmpty) {
                   Navigator.push(
                     context,
@@ -484,11 +478,11 @@ Widget _buildTopContainers(OverviewProvider overviewProvider) {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [bg.withOpacity(0.95), bg.withOpacity(0.70)],
+                    colors: [bg.withValues(alpha: 0.95), bg.withValues(alpha: 0.70)],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
+                      color: Colors.black.withValues(alpha: 0.12),
                       blurRadius: 14,
                       offset: const Offset(0, 8),
                     ),
@@ -507,7 +501,7 @@ Widget _buildTopContainers(OverviewProvider overviewProvider) {
                           height: 150,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.10),
+                            color: Colors.white.withValues(alpha: 0.10),
                           ),
                         ),
                       ),
@@ -519,7 +513,7 @@ Widget _buildTopContainers(OverviewProvider overviewProvider) {
                           height: 180,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.08),
+                            color: Colors.white.withValues(alpha: 0.08),
                           ),
                         ),
                       ),
@@ -542,7 +536,7 @@ Column(
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
@@ -553,8 +547,8 @@ Column(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: Colors.white.withOpacity(0.18),
-            border: Border.all(color: Colors.white.withOpacity(0.22)),
+            color: Colors.white.withValues(alpha: 0.18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -609,7 +603,7 @@ Column(
                             Text(
                               "Classes",
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
+                                color: Colors.white.withValues(alpha: 0.85),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -637,9 +631,9 @@ Column(
                                       horizontal: 10, vertical: 8),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    color: Colors.white.withOpacity(0.14),
+                                    color: Colors.white.withValues(alpha: 0.14),
                                     border: Border.all(
-                                        color: Colors.white.withOpacity(0.18)),
+                                        color: Colors.white.withValues(alpha: 0.18)),
                                   ),
                                   child: const Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,9 +664,9 @@ Column(
                                       horizontal: 10, vertical: 8),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    color: Colors.white.withOpacity(0.14),
+                                    color: Colors.white.withValues(alpha: 0.14),
                                     border: Border.all(
-                                        color: Colors.white.withOpacity(0.18)),
+                                        color: Colors.white.withValues(alpha: 0.18)),
                                   ),
                                   child: const Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -799,8 +793,6 @@ Column(
                       ),
                     );
                   } else if (activity.type.toLowerCase() == 'assignment') {
-                    print(
-                        "navigating to assignment details for itemId: ${activity.id}");
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -823,7 +815,7 @@ Column(
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 12,
                         spreadRadius: 2,
                         offset: const Offset(0, 4),

@@ -20,7 +20,6 @@ class AddStaffService {
     _apiService.setAuthToken(token);
 
     newStaff['_db'] = dbName;
-    print("Request Payload: $newStaff");
 
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
@@ -28,28 +27,21 @@ class AddStaffService {
         body: newStaff,
       );
 
-      print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to create staff");
 
-        print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
           content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Create staff: ${response.message}");
       } else {
-        print('staff created successfully.');
-        print('Status Code: ${response.statusCode}');
         SnackBar(
           content: Text('staff created successfully.'),
           backgroundColor: Colors.green,
         );
-        print(response.message);
       }
     } catch (e) {
-      print("Error creating staff: $e");
       throw Exception("Failed to Create staff: $e");
     }
   }
@@ -74,11 +66,8 @@ class AddStaffService {
         },
       );
 
-      print("Fetch Staff Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to fetch staff");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to fetch staff: ${response.message}");
       }
 
@@ -86,17 +75,13 @@ class AddStaffService {
       final data = response.rawData?['response'];
 
       if (data is List) {
-        print(
-            'Staff fetched successfully: ${data.length} staff members found.');
         return data
             .map((json) => Staff.fromJson(json as Map<String, dynamic>))
             .toList();
       } else {
-        print("Unexpected response format");
         throw Exception("Unexpected response format");
       }
     } catch (e) {
-      print("Error fetching staff: $e");
       throw Exception("Failed to fetch staff: $e");
     }
   }
@@ -115,7 +100,6 @@ class AddStaffService {
     _apiService.setAuthToken(token);
 
     updatedStaff['_db'] = dbName;
-    print("Update Request Payload: $updatedStaff");
 
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
@@ -124,14 +108,10 @@ class AddStaffService {
       );
 
       if (!response.success) {
-        print("Failed to update staff");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to update staff: ${response.message}");
       } else {
-        print('Staff updated successfully.');
       }
     } catch (e) {
-      print("Error updating staff: $e");
       throw Exception("Failed to update staff: $e");
     }
   }
@@ -157,15 +137,12 @@ class AddStaffService {
       );
 
       if (!response.success) {
-        print("Failed to delete staff");
-        print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception("Failed to delete staff: ${response.message}");
       } else {
-        print('Staff deleted successfully.');
       }
     } catch (e) {
-      print("Error deleting staff: $e");
       throw Exception("Failed to delete staff: $e");
     }
   }
 }
+

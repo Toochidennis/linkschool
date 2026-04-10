@@ -64,7 +64,6 @@ class LessonProvider extends ChangeNotifier {
 
     if (profileId <= 0) {
       _error = 'Profile ID is required to load lessons';
-      print('❌ $_error');
       _isLoading = false;
       notifyListeners();
       return;
@@ -81,16 +80,11 @@ class LessonProvider extends ChangeNotifier {
         _resources = response.resources;
         _nextCourse = response.nextCourse;
         
-        print('✅ Lessons loaded successfully:');
-        print('   Total lessons: ${_lessons.length}');
-        print('   Total resources: ${_resources.length}');
       } else {
         _error = response.message;
-        print('❌ Failed to load lessons: ${response.message}');
       }
     } catch (e) {
       _error = e.toString();
-      print('❌ Error in LessonProvider: $_error');
     }
 
     _isLoading = false;
@@ -155,3 +149,4 @@ class LessonProvider extends ChangeNotifier {
   // Get past lessons - no date in new data
   List<LessonModel> get pastLessons => [];
 }
+

@@ -29,11 +29,8 @@ class StudentMetricsService {
         },
       );
 
-      print("Metrics Status Code: ${response.statusCode}");
 
       if (!response.success) {
-        print("Failed to fetch student metrics");
-        print("Error: ${response.message ?? 'No error message'}");
         throw Exception("Failed to fetch metrics: ${response.message}");
       }
 
@@ -42,12 +39,11 @@ class StudentMetricsService {
         throw Exception("Unexpected response format");
       }
 
-      print("Metrics fetched successfully.");
 
       return StudentStatsResponse.fromJson(raw);
     } catch (e) {
-      print("Error fetching metrics: $e");
       throw Exception("Failed to fetch student metrics: $e");
     }
   }
 }
+

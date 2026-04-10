@@ -106,7 +106,9 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
     };
 
     try {
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
       final provider = context.read<CreateUserProfileProvider>();
+      final cbtUserProvider = context.read<CbtUserProvider>();
       final profileToEdit = widget.profile ?? widget.existingProfile;
   //  adding user id to profile data
       final String userId = widget.userId;
@@ -119,8 +121,6 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
             )
           : await provider.createUserProfile(profileData, widget.userId);
 
-      final cbtUserProvider =
-          Provider.of<CbtUserProvider>(context, listen: false);
       if (profiles.isNotEmpty) {
         await cbtUserProvider.replaceProfiles(profiles);
       }
@@ -129,7 +129,7 @@ class _CreateUserProfileScreenState extends State<CreateUserProfileScreen> {
       final successMessage = _isEditing
           ? 'Profile updated successfully!'
           : 'Profile created successfully!';
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(successMessage),
           backgroundColor: Colors.green,

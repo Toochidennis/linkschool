@@ -20,7 +20,6 @@ class SubjectTopicsService {
       final url =
           "$_baseUrl/cbt/topics?course_id=$courseId&exam_type_id=$examTypeId";
 
-      print("📡 Fetching Topics → $url");
 
       final response = await http.get(
         Uri.parse(url),
@@ -30,8 +29,6 @@ class SubjectTopicsService {
         },
       );
 
-      print("🔔 Topics Response → ${response.statusCode}");
-      print("🔔 Topics Body → ${response.body}");
 
       if (response.statusCode != 200) {
         throw Exception("Failed: ${response.body}");
@@ -44,3 +41,4 @@ class SubjectTopicsService {
     }
   }
 }
+

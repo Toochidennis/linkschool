@@ -6,9 +6,7 @@ import 'package:linkschool/modules/services/staff/staff_dashboard_service.dart';
 class StaffDashboardProvider with ChangeNotifier {
   final StaffDashboardService _staffDashboardService;
 
-  StaffDashboardProvider(this._staffDashboardService) {
-    debugPrint("✅ StaffDashboardProvider initialized");
-  }
+  StaffDashboardProvider(this._staffDashboardService);
 
   bool _isLoading = false;
   String? _message;
@@ -53,7 +51,6 @@ class StaffDashboardProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = "Failed to load dashboard: $e";
-      debugPrint("❌ Dashboard fetch error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -170,7 +170,7 @@ class _QuizScreenState extends State<QuizScreen> {
           context, 'Success', 'quiz deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error deleting question: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -195,8 +195,6 @@ class _QuizScreenState extends State<QuizScreen> {
         CustomLongElevatedButton(
           onPressed: () {
             // Navigate to the assessment screen
-            print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.correctAnswers}");
-            print("quiz duration ${widget.question.duration}");
 
             Navigator.push(
               context,

@@ -265,7 +265,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: Offset(0, 2),
                           ),
@@ -286,7 +286,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Color(0xFF4A90E2).withOpacity(0.1),
+                                    color: Color(0xFF4A90E2).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(
@@ -344,7 +344,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Color(0xFF4A90E2).withOpacity(0.1),
+                              color: Color(0xFF4A90E2).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -457,7 +457,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Color(0xFF5CB85C).withOpacity(0.1),
+                                  color: Color(0xFF5CB85C).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -506,8 +506,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
                           final video = _watchHistory[index];
                           return GestureDetector(
                             onTap: () async {
-                              print(
-                                  'Watch history video tapped: ${video.title}');
 
                               // Convert watch history to DashboardVideoModel format
                               final DashboardVideoModel currentVideo =
@@ -546,8 +544,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                 );
                               }).toList();
 
-                              print(
-                                  'Navigating to player with ${allHistoryVideos.length} videos');
 
                               // Navigate to video player
                               await Navigator.push(
@@ -586,7 +582,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
+                                  color: Colors.blue.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(Icons.school,
@@ -724,7 +720,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -737,7 +733,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: (subject['color'] as Color).withOpacity(0.1),
+              color: (subject['color'] as Color).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -792,12 +788,12 @@ class _VideosDashboardState extends State<VideosDashboard> {
           end: Alignment.bottomRight,
           colors: [
             subject['color'],
-            (subject['color'] as Color).withOpacity(0.7),
+            (subject['color'] as Color).withValues(alpha: 0.7),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: (subject['color'] as Color).withOpacity(0.4),
+            color: (subject['color'] as Color).withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 6),
             spreadRadius: 0,
@@ -815,7 +811,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -828,7 +824,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   width: 2,
                 ),
               ),
@@ -869,7 +865,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         'Explore topic',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontWeight: FontWeight.w400,
                           fontFamily: 'Urbanist',
                         ),
@@ -922,7 +918,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.3),
+                          Colors.black.withValues(alpha: 0.3),
                         ],
                       ),
                     ),
@@ -935,7 +931,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -957,7 +953,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -1024,7 +1020,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.3),
+                          Colors.black.withValues(alpha: 0.3),
                         ],
                       ),
                     ),
@@ -1039,7 +1035,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -1088,7 +1084,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: Offset(0, 3),
           ),
@@ -1132,7 +1128,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.3),
+                          Colors.black.withValues(alpha: 0.3),
                         ],
                       ),
                     ),
@@ -1149,7 +1145,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 6,
                             offset: Offset(0, 2),
                           ),
@@ -1207,7 +1203,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Color(0xFF5CB85C).withOpacity(0.1),
+                      color: Color(0xFF5CB85C).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -1248,7 +1244,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -1292,7 +1288,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.3),
+                          Colors.black.withValues(alpha: 0.3),
                         ],
                       ),
                     ),
@@ -1304,7 +1300,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

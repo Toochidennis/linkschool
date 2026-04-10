@@ -42,7 +42,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
   @override
   void initState() {
     super.initState();
-    print('Initializing StaffViewCourseResultFixed');
     _loadSettingsFromStorage();
   }
 
@@ -68,7 +67,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
           termName = 'Term $term';
         });
 
-        print('Loaded settings from storage - Year: $year, Term: $term');
 
         // Now fetch the course results with the correct parameters
         await fetchCourseResults();
@@ -78,14 +76,12 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
           error = 'Settings not found in local storage';
           isLoading = false;
         });
-        print('No settings found in local storage');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load settings: $e';
         isLoading = false;
       });
-      print('Error loading settings: $e');
     }
   }
 
@@ -121,8 +117,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
         'level_id': levelId,
       };
 
-      print(
-          'Fetching course results from: $endpoint with params: $queryParams');
 
       final response = await apiService.get(
         endpoint: endpoint,
@@ -136,8 +130,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 
         for (var result in results) {
           final assessments = result['assessments'] as List;
-          print(
-              'Result assessments for result_id ${result['result_id']}: $assessments');
           for (var assessment in assessments) {
             uniqueAssessments.add(assessment['assessment_name'] as String);
           }
@@ -150,21 +142,17 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
           isLoading = false;
         });
 
-        print(
-            'Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
       } else {
         setState(() {
           error = response.message;
           isLoading = false;
         });
-        print('Failed to fetch results: ${response.message}');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load results: $e';
         isLoading = false;
       });
-      print('Error fetching results: $e');
     }
   }
 
@@ -183,7 +171,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
         queryParams: {'_db': dbName},
       );
 
-      print('Fetching assessments with db: $dbName');
 
       if (response.success && response.rawData != null) {
         final assessmentsData = response.rawData!['assessments'] as List;
@@ -200,13 +187,11 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
         setState(() {
           maxScores = tempMaxScores;
         });
-        print('Fetched max scores: $maxScores');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load assessments: $e';
       });
-      print('Error fetching assessments: $e');
     }
   }
 
@@ -224,7 +209,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
       }
       return 'F';
     } catch (e) {
-      print('Error calculating grade for score $totalScore: $e');
       return 'N/A';
     }
   }

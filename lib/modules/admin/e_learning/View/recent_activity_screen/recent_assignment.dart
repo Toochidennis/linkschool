@@ -109,7 +109,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
         isLoading = false;
         errorMessage = 'No assignment ID provided';
       });
-      print('Error: No itemId provided');
       CustomToaster.toastError(context, 'Error', 'No assignment ID provided');
       return;
     }
@@ -117,7 +116,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
     try {
       final singleContentProvider =
           Provider.of<SingleContentProvider>(context, listen: false);
-      print('Fetching assignment for ID: ${widget.itemId}');
       final content =
           await singleContentProvider.fetchAssignment(widget.itemId!);
       if (content == null) {
@@ -126,7 +124,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
           errorMessage =
               singleContentProvider.errorMessage ?? 'Failed to load assignment';
         });
-        print('Error: ${singleContentProvider.errorMessage}');
         CustomToaster.toastError(context, 'Error', errorMessage!);
         return;
       }
@@ -135,13 +132,11 @@ class _RecentAssignmentState extends State<RecentAssignment>
         isLoading = false;
         errorMessage = null;
       });
-      print('Fetched assignment: ${assignmentData?.toJson()}');
-    } catch (e, stackTrace) {
+    } catch (e) {
       setState(() {
         isLoading = false;
         errorMessage = 'Error fetching assignment: $e';
       });
-      print('Error fetching assignment: $e\nStackTrace: $stackTrace');
       CustomToaster.toastError(context, 'Error', errorMessage!);
     }
   }
@@ -167,12 +162,8 @@ class _RecentAssignmentState extends State<RecentAssignment>
           academicTerm = settings['term'] as int?;
         });
       }
-      print('Creator ID: $creatorId');
-      print('Creator Name: $creatorName');
-      print('Academic Year: $academicYear');
-      print('Academic Term: $academicTerm');
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -215,8 +206,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
               onSelected: (String result) {
                 switch (result) {
                   case 'edit':
-                    print(
-                        'Edit assignment123 ${assignmentData!.classes.map((c) => c.name).join(', ')}');
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -400,7 +389,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
           context, 'Success', 'Assignment deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error deleting assignment: $e');
       CustomToaster.toastError(
           context, 'Error', 'Failed to delete assignment: $e');
     }
@@ -429,7 +417,7 @@ class _RecentAssignmentState extends State<RecentAssignment>
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(color: Colors.grey.withOpacity(0.5)),
+      child: Divider(color: Colors.grey.withValues(alpha: 0.5)),
     );
   }
 
@@ -693,13 +681,13 @@ class _RecentAssignmentState extends State<RecentAssignment>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12.0),
           border: Border.all(
-            color: _getFileColor(fileType).withOpacity(0.3),
+            color: _getFileColor(fileType).withValues(alpha: 0.3),
             width: 1.5,
           ),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 2),
@@ -717,7 +705,7 @@ class _RecentAssignmentState extends State<RecentAssignment>
                     topLeft: Radius.circular(12.0),
                     topRight: Radius.circular(12.0),
                   ),
-                  color: _getFileColor(fileType).withOpacity(0.1),
+                  color: _getFileColor(fileType).withValues(alpha: 0.1),
                 ),
                 child: _buildPreviewContent(fileType, fileUrl, fileName),
               ),
@@ -1052,7 +1040,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
-          print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
           CustomToaster.toastSuccess(
               context, 'Success', 'Comment updated successfully');
@@ -1093,7 +1080,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
   void _deleteComment(Comment comment) async {
     final commentProvider =
         Provider.of<CommentProvider>(context, listen: false);
-    print('Setting up delete for comment ID: ${comment.id}');
     final commentId = comment.id.toString();
     try {
       await commentProvider.DeleteComment(commentId);
@@ -1110,7 +1096,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
           context, 'Error', 'Comment text cannot be empty');
       return;
     }
-    print('Setting up edit for comment ID: ${comment.id}');
     _editingComment = comment;
     _commentController.text = comment.text;
     final updatedComment = {
@@ -1124,8 +1109,6 @@ class _RecentAssignmentState extends State<RecentAssignment>
       "term": academicTerm,
       "comment_id": comment.id,
     };
-    print(
-        'Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
     setState(() {
       _isAddingComment = true;
       _isEditing = true;
@@ -1256,7 +1239,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
       );
       if (mounted) setState(() => _thumbnail = thumb);
     } catch (e) {
-      debugPrint("Error generating video thumbnail: $e");
+      // Intentionally ignored.
     }
   }
 
@@ -1372,7 +1355,6 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
                         );
                       }
                     } catch (e) {
-                      print(e);
                       CustomToaster.toastError(
                         context,
                         'Success',

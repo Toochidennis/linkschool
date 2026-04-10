@@ -15,24 +15,32 @@ class ChallengeService {
         throw Exception("API KEY not found");
       }
 
-      final url =
-          "$_baseUrl/cbt/challenges?author_id=$authorId &exam_type_id=$examTypeId";
-      print("📡 Fetching Challenges → $url");
+      
+
+      final url = Uri.parse("$_baseUrl/cbt/challenges").replace(
+        queryParameters: {
+          'author_id': authorId.toString(),
+          'exam_type_id': examTypeId.toString(),
+        },
+      );
+    print("Fetching Challenges from URL: $url");
+      
 
       final response = await http.get(
-        Uri.parse(url),
+        url,
         headers: {
           "Accept": "application/json",
           "X-API-KEY": apiKey,
         },
       );
 
+   
+
       if (response.statusCode != 200) {
         throw Exception("Failed: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
-
       return ChallengeResponse.fromJson(decoded);
     } catch (e) {
       throw Exception("Error: $e");
@@ -49,6 +57,8 @@ class ChallengeService {
       if (apiKey.isEmpty) {
         throw Exception("❌ API key not found in .env file");
       }
+
+      print("Creating Challenge with payload: $payload");
 
       final url = "$_baseUrl/cbt/challenges";
 
@@ -112,7 +122,6 @@ class ChallengeService {
 
       final url = "$_baseUrl/cbt/challenges/$challengeId";
 
-      print('complete url : $url');
 
       final response = await http.delete(Uri.parse(url),
           headers: {
@@ -125,7 +134,6 @@ class ChallengeService {
           }));
 
       if (response.statusCode != 200) {
-        print(response.body);
         throw Exception("Server error: ${response.body}");
       }
     } catch (e) {
@@ -156,13 +164,8 @@ class ChallengeService {
           'status': status,
         }),
       );
-      print("📡 Updating Challenge Status → $url");
-      print("this is challenge id $challengeId");
-      print("this is challenge status $status");
-      print("this is response status code ${response.statusCode}");
 
       if (response.statusCode != 200) {
-        print("this is response body ${response.body}");
         throw Exception("Server error: ${response.body}");
       }
     } catch (e) {
@@ -170,3 +173,4 @@ class ChallengeService {
     }
   }
 }
+

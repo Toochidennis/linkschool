@@ -46,7 +46,6 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
       List<dynamic> classes = levelData['classes'] ?? [];
       for (var classData in classes) {
         int classId = classData['class_id'] ?? 0;
-        print('Mapping class_id $classId to level $levelName and level_id $levelId');
         classToLevelMap[classId] = {
           'level_id': levelId,
           'level_name': levelName,
@@ -233,9 +232,9 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                                           gradient: LinearGradient(
                                             colors: [
                                               AppColors.bookText
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                               AppColors.bookText
-                                                  .withOpacity(0.05),
+                                                  .withValues(alpha: 0.05),
                                             ],
                                           ),
                                           borderRadius:
@@ -283,8 +282,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                                                           colors: [
                                                             AppColors.bookText,
                                                             AppColors.bookText
-                                                                .withOpacity(
-                                                                    0.7),
+                                                                .withValues(alpha: 0.7),
                                                           ],
                                                         ),
                                                         borderRadius:
@@ -401,8 +399,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    color.withOpacity(0.2),
-                    color.withOpacity(0.1),
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -587,7 +585,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 4,
               offset: Offset(0, 2),
@@ -628,7 +626,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 4,
               offset: Offset(0, 2),

@@ -74,8 +74,6 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
                       for (var quiz in markedQuizzes) {
                         final contentId = quiz['id'].toString();
                         final publish = quiz['published']?.toString() ?? "";
-                        print("quesssssss id $contentId");
-                        print("quesssssss id $publish");
 
                         await provider.returnQuiz(publish, contentId);
                       }
@@ -189,7 +187,9 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
         DateTime? date;
         try {
           date = DateTime.parse(dateStr ?? '');
-        } catch (_) {}
+        } catch (_) {
+      // Intentionally ignored.
+    }
 
         return GestureDetector(
           onTap: () {

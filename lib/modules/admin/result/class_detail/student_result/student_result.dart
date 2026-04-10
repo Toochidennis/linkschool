@@ -303,8 +303,6 @@ class StudentResultScreen extends StatelessWidget {
       String? classId,
       String? levelId) {
     // Log parameters for debugging
-    print(
-        'StudentResultScreen: Using levelId=$levelId, classId=$classId, studentId=$studentId');
 
     return processedTerms.entries.map((entry) {
       final year = entry.key;
@@ -334,10 +332,6 @@ class StudentResultScreen extends StatelessWidget {
 
             return GestureDetector(
               onTap: () {
-                print('Navigating to SingleTermResult with: '
-                    'studentId=$studentId, termId=${termData['term']}, '
-                    'classId=$classId, year=$year, levelId=$levelId, '
-                    'termName=${termData['termName']}');
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -447,7 +441,7 @@ class StudentResultScreen extends StatelessWidget {
             horizontalInterval: 20,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 strokeWidth: 1,
                 dashArray: [5, 5],
               );

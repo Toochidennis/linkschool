@@ -6,9 +6,7 @@ import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
 class DashboardFeedProvider with ChangeNotifier {
   final DashboardFeedService _dashboardFeedService;
 
-  DashboardFeedProvider(this._dashboardFeedService) {
-    debugPrint("✅ DashboardFeedProvider created");
-  }
+  DashboardFeedProvider(this._dashboardFeedService);
 
   bool _isLoading = false;
   String? _message;
@@ -38,7 +36,6 @@ class DashboardFeedProvider with ChangeNotifier {
       _message = "Dashboard data loaded successfully";
     } catch (e) {
       _error = "Failed to load dashboard data: $e";
-      debugPrint("Dashboard fetch error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -36,7 +36,6 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
   @override
   void initState() {
     super.initState();
-    print("leee");
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<CourseResultProvider>(context, listen: false)
           .fetchAverageScores(widget.classId, widget.year, widget.term);
@@ -150,7 +149,7 @@ final sessionTitle = '$prevYear/${widget.year} ${widget.termName}';
                                     horizontalInterval: 20,
                                     getDrawingHorizontalLine: (value) {
                                       return FlLine(
-                                        color: Colors.black.withOpacity(0.3),
+                                        color: Colors.black.withValues(alpha: 0.3),
                                         strokeWidth: 1,
                                         dashArray: [5, 5],
                                       );
@@ -179,7 +178,7 @@ final sessionTitle = '$prevYear/${widget.year} ${widget.termName}';
                         borderRadius: BorderRadius.circular(8.0),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                             spreadRadius: 1,
                             blurRadius: 5,
                             offset: const Offset(0, -3),

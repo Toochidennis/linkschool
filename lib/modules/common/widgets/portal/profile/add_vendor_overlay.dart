@@ -38,7 +38,7 @@ class _AddVendorOverlayState extends State<AddVendorOverlay> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
+              color: Colors.grey.withValues(alpha: 0.5),
               spreadRadius: 5,
               blurRadius: 7,
               offset: Offset(0, 3),
@@ -115,11 +115,6 @@ class _AddVendorOverlayState extends State<AddVendorOverlay> {
                   if (_formKey.currentState?.validate() ?? false) {
                     // Save the vendor data and close the overlay
                     // You can access the form field values using the controllers
-                    print('Vendor Name: ${_vendorNameController.text}');
-                    print('Email: ${_emailController.text}');
-                    print('Phone: ${_phoneController.text}');
-                    print('Address: ${_addressController.text}');
-                    print('Reference: ${_referenceController.text}');
                     Navigator.of(context).pop();
                   }
                 },

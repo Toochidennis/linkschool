@@ -1,9 +1,15 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/config/notification_service.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
+import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_detail_screen.dart';
+import 'package:linkschool/modules/explore/courses/course_selection_screen.dart';
+import 'package:linkschool/modules/explore/courses/explore_courses_see_all_screen.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
+import 'package:linkschool/modules/model/explore/courses/course_model.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/courses/discussion_provider.dart';
@@ -13,10 +19,6 @@ import 'package:provider/provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Background message received: ${message.data}');
-  print('Message type: ${message.data['type']}');
-  print('Notification title: ${message.notification?.title}');
-  print('Notification body: ${message.notification?.body}');
 }
 
 class NotificationNavigationService {
@@ -60,28 +62,33 @@ class NotificationNavigationService {
   }
 
   Future<void> handleDeepLink(Uri uri) async {
+    debugPrint('NotificationNavigationService.handleDeepLink: $uri');
     if (!_isSupportedDeepLink(uri)) {
-      print('Ignoring unsupported deep link: $uri');
+      debugPrint('Deep link ignored: unsupported host/scheme -> $uri');
       return;
     }
 
     final data = _payloadFromUri(uri);
     if (data.isEmpty) {
-      print('Deep link did not contain a routable payload: $uri');
+      debugPrint('Deep link ignored: empty payload -> $uri');
       return;
     }
 
+    debugPrint('Deep link payload: $data');
     await _waitForNavigatorReady();
 
     final type = _stringFrom(data, ['type']);
+    debugPrint('Deep link type: ${type.isEmpty ? '(missing)' : type}');
     switch (type) {
       case 'news_posted':
+        debugPrint('Routing deep link -> NewsDetails');
         await _navigateToNewsDetails(data);
         break;
       case 'discussion_started':
       case 'discussion_comment_added':
       case 'discussion_post_replied':
       case 'discussion_reply_replied':
+        debugPrint('Routing deep link -> TopicDetailScreen');
         await _navigateToDiscussionDetail(data);
         break;
       case 'lesson_published':
@@ -90,20 +97,49 @@ class NotificationNavigationService {
       case 'live_class_reminder':
       case 'assignment_due_reminder':
       case 'course_content':
+        debugPrint('Routing deep link -> CourseDetailScreen (content)');
         await _navigateToCourseContent(data);
         break;
       case 'course_detail':
+        debugPrint('Routing deep link -> CourseDetailScreen');
         _navigateToCourseDetail(data);
         break;
+      case 'course_description_by_ref':
+        debugPrint('Routing deep link -> CourseDescriptionScreen');
+        await _navigateToCourseDescriptionByRef(data);
+        break;
+      case 'program_enroll':
+        debugPrint('Routing deep link -> CourseSelectionScreen');
+        await _navigateToProgramEnroll(data);
+        break;
+      case 'program_courses_by_slug':
+        debugPrint('Routing deep link -> ExploreCoursesSeeAllScreen');
+        await _navigateToProgramCoursesBySlug(data);
+        break;
+      case 'cbt_payment':
+        debugPrint('Routing deep link -> CbtPlansScreen');
+        await _navigateToCbtPlans();
+        break;
+      case 'cbt_dashboard':
+        debugPrint('Routing deep link -> CBTDashboard');
+        _navigateToCbtDashboard();
+        break;
+      case 'app_home':
+        debugPrint('Deep link opened app home: $uri');
+        break;
       default:
+        debugPrint('Deep link default routing check for payload: $data');
         if (_looksLikeCourseContentPayload(data)) {
+          debugPrint('Routing deep link -> CourseDetailScreen (fallback content)');
           await _navigateToCourseContent(data);
         } else if (_looksLikeCoursePayload(data)) {
+          debugPrint('Routing deep link -> CourseDetailScreen (fallback course)');
           _navigateToCourseDetail(data);
         } else if (_intFrom(data, ['news_id', 'newsId', 'id']) != null) {
+          debugPrint('Routing deep link -> NewsDetails (fallback)');
           await _navigateToNewsDetails(data);
         } else {
-          print('Unsupported deep link payload: $data');
+          debugPrint('Deep link ignored: no matching route -> $uri');
         }
     }
   }
@@ -131,9 +167,14 @@ class NotificationNavigationService {
       case "news_posted":
         await _navigateToNewsDetails(data);
         break;
+      case 'program_enroll':
+        await _navigateToProgramEnroll(data);
+        break;
+      case 'program_courses_by_slug':
+        await _navigateToProgramCoursesBySlug(data);
+        break;
 
       default:
-        print('Unknown notification type: $type');
     }
   }
 
@@ -155,7 +196,6 @@ class NotificationNavigationService {
     final courseId = _intFrom(data, ['course_id', 'courseId']);
     final cohortId = _stringFrom(data, ['cohort_id', 'cohortId']);
     if (courseId == null || cohortId.isEmpty) {
-      print('Notification missing courseId/cohortId, cannot navigate');
       return;
     }
 
@@ -171,7 +211,6 @@ class NotificationNavigationService {
 
     final navigator = _navigatorKey?.currentState;
     if (navigator == null) {
-      print('Navigator not ready, cannot open CourseDetailScreen');
       return;
     }
 
@@ -199,13 +238,11 @@ class NotificationNavigationService {
     final authorId = _intFrom(data, ['author_id', 'authorId']);
 
     if (discussionId.isEmpty || cohortId.isEmpty) {
-      print('Notification missing discussionId/cohortId, cannot navigate');
       return;
     }
 
     final navigator = _navigatorKey?.currentState;
     if (navigator == null) {
-      print('Navigator not ready, cannot open TopicDetailScreen');
       return;
     }
 
@@ -228,14 +265,12 @@ class NotificationNavigationService {
   Future<void> _navigateToNewsDetails(Map<String, dynamic> data) async {
     final newsId = _intFrom(data, ['news_id', 'newsId', 'id']);
     if (newsId == null) {
-      print('Notification missing news_id, cannot navigate');
       return;
     }
 
     final navigator = _navigatorKey?.currentState;
     final context = _navigatorKey?.currentContext;
     if (navigator == null || context == null) {
-      print('Navigator not ready, cannot open NewsDetails');
       return;
     }
 
@@ -257,7 +292,6 @@ class NotificationNavigationService {
     }
 
     if (target == null) {
-      print('News with id $newsId not found after fetch');
       return;
     }
 
@@ -289,7 +323,6 @@ class NotificationNavigationService {
     }
 
     if (cohortId.isEmpty || lessonId == null || profileId == null) {
-      print('Missing required fields, cannot navigate');
       return;
     }
 
@@ -308,6 +341,32 @@ class NotificationNavigationService {
           profileId: profileId, // ✅ key field
           lessonId: lessonId, // ✅ key field
         ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToCbtPlans() async {
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => const CbtPlansScreen(),
+      ),
+    );
+  }
+
+  void _navigateToCbtDashboard() {
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => const CBTDashboard(),
       ),
     );
   }
@@ -346,7 +405,9 @@ class NotificationNavigationService {
     if ((first == 'course' || first == 'courses' || first == 'lesson') &&
         segments.length >= 2) {
       data.putIfAbsent('course_id', () => segments[1]);
-      if (data.containsKey('lesson_id')) {
+      if (_stringFrom(data, ['ref']).isNotEmpty) {
+        data.putIfAbsent('type', () => 'course_description_by_ref');
+      } else if (data.containsKey('lesson_id')) {
         data.putIfAbsent('type', () => 'course_content');
       } else {
         data.putIfAbsent('type', () => 'course_detail');
@@ -354,7 +415,179 @@ class NotificationNavigationService {
       return data;
     }
 
+    if (first == 'programs' && segments.length >= 2) {
+      data.putIfAbsent('program_slug', () => segments[1]);
+      if (segments.length >= 3 && segments[2].toLowerCase() == 'enroll') {
+        data.putIfAbsent('type', () => 'program_enroll');
+        return data;
+      }
+      if (segments.length == 2) {
+        data.putIfAbsent('type', () => 'program_courses_by_slug');
+        return data;
+      }
+    }
+
+    if (first == 'cbt') {
+      if (segments.length >= 3 &&
+          segments[1].toLowerCase() == 'payment' &&
+          segments[2].trim().isNotEmpty) {
+        data.putIfAbsent('type', () => 'cbt_payment');
+        data.putIfAbsent('reference', () => segments[2]);
+        return data;
+      }
+
+      data.putIfAbsent('type', () => 'cbt_dashboard');
+      return data;
+    }
+
+    if (first == 'learn' && segments.length >= 2) {
+      final second = segments[1].toLowerCase();
+      if (second == 'class-reminder' || second == 'class_reminder') {
+        data.putIfAbsent('type', () => 'class_reminder');
+        return data;
+      }
+      if (second == 'submission-result' || second == 'submission_result') {
+        data.putIfAbsent('type', () => 'submission_graded');
+        return data;
+      }
+      if (second == 'live-class' || second == 'live_class') {
+        data.putIfAbsent('type', () => 'live_class_reminder');
+        return data;
+      }
+    }
+
+    if (first == 'dashboard' || first == 'home' || first == 'app') {
+      data.putIfAbsent('type', () => 'app_home');
+      return data;
+    }
+
     return data;
+  }
+
+  Future<void> _navigateToCourseDescriptionByRef(
+    Map<String, dynamic> data,
+  ) async {
+    final ref = _stringFrom(data, ['ref']);
+    if (ref.isEmpty) {
+     
+      return;
+    }
+
+    final courseId = _intFrom(data, ['course_id', 'courseId']) ?? 0;
+    final cohortIdValue = _stringFrom(data, ['cohort_id', 'cohortId']);
+    final cohortId = cohortIdValue.isNotEmpty ? cohortIdValue : courseId.toString();
+    final categoryId = _intFrom(data, ['program_id', 'programId']) ?? 0;
+    final categoryName = _stringFrom(
+      data,
+      ['program_name', 'provider', 'course_provider', 'courseName'],
+    );
+
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => CourseDescriptionScreen(
+          course: CourseModel(
+            id: courseId,
+            programId: categoryId,
+            courseName: categoryName,
+            description: '',
+            imageUrl: '',
+            hasActiveCohort: true,
+            cohortId: int.tryParse(cohortId),
+            isFree: false,
+            trialType: null,
+            trialValue: 0,
+            cost: 0.0,
+            isEnrolled: false,
+            isCompleted: false,
+            enrollmentStatus: null,
+            paymentStatus: null,
+            lessonsTaken: null,
+            trialExpiryDate: null,
+          ),
+          provider: categoryName.isNotEmpty ? categoryName : 'Linkskool',
+          categoryName: categoryName.isNotEmpty ? categoryName : 'Linkskool',
+          categoryId: categoryId,
+          cohortId: cohortId,
+          providerSubtitle: 'Powered By Digital Dreams',
+          categoryColor: const Color(0xFF6366F1),
+          profileId: _intFrom(data, ['profile_id', 'profileId']),
+          hasEnrolled: false,
+          cohortRef: ref,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToProgramCoursesBySlug(
+    Map<String, dynamic> data,
+  ) async {
+    final slug = _stringFrom(data, ['program_slug', 'slug']);
+    if (slug.isEmpty) {
+      return;
+    }
+
+    int? profileId = _intFrom(data, ['profile_id', 'profileId']);
+    if (profileId == null || profileId <= 0) {
+      final prefs = await SharedPreferences.getInstance();
+      profileId = prefs.getInt('active_profile_id');
+    }
+
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => ExploreCoursesSeeAllScreen(
+          categoryName: _displayNameFromSlug(slug),
+          categoryColor: const Color(0xFF6366F1),
+          categoryId: _intFrom(data, ['program_id', 'programId']) ?? 0,
+          categorySlug: slug,
+          profileId: profileId,
+        ),
+      ),
+    );
+  }
+
+ Future<void> _navigateToProgramEnroll(Map<String, dynamic> data) async {
+  final slug = _stringFrom(data, ['program_slug', 'slug']);
+  if (slug.isEmpty) return;
+
+  final navigator = _navigatorKey?.currentState;
+  if (navigator == null) return;
+
+  debugPrint('Routing program_enroll push start: slug=$slug');
+  navigator.push(
+    MaterialPageRoute(
+      builder: (context) => CourseSelectionScreen(
+        slug: slug,
+        returnToExploreCourses: true,
+        onReturnToExploreCourses: () async {
+          navigator.popUntil((route) => route.isFirst);
+        },
+      ),
+    ),
+  );
+  debugPrint('Routing program_enroll push submitted: slug=$slug');
+}
+
+  String _displayNameFromSlug(String slug) {
+    final cleaned = slug.replaceAll(RegExp(r'[-_]+'), ' ').trim();
+    if (cleaned.isEmpty) return 'Program';
+
+    return cleaned
+        .split(RegExp(r'\s+'))
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1);
+        })
+        .join(' ');
   }
 
   Future<void> _waitForNavigatorReady() async {
@@ -434,3 +667,4 @@ String _formatDuration(Duration duration) {
  * assignment_due_reminder
  * lesson_published
  */
+

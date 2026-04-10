@@ -29,7 +29,6 @@ class SyllabusProvider with ChangeNotifier {
       _error = '';
     } catch (e) {
       _error = e.toString();
-      print("Fetch Error: $_error");
       // Re-throw to let the UI handle it if needed
       rethrow;
     } finally {
@@ -71,10 +70,8 @@ class SyllabusProvider with ChangeNotifier {
       await _syllabusService.addSyllabus(newSyllabus);
       await fetchSyllabus(
           levelId, term, courseId); // Refresh the list from the server
-      print("Syllabus added and list refreshed");
     } catch (e) {
       _error = e.toString();
-      print("Adddddddddddddddddddddddddd Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -105,10 +102,8 @@ class SyllabusProvider with ChangeNotifier {
 
       await _syllabusService.UpdateSyllabus(newSyllabus, syllabusId);
       // await fetchSyllabus(levelId,term); // Refresh the list from the server
-      print("Syllabus added and list refreshed");
     } catch (e) {
       _error = e.toString();
-      print("Adddddddddddddddddddddddddd Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -125,10 +120,8 @@ class SyllabusProvider with ChangeNotifier {
     try {
       await _syllabusService.deletesyllabus(syllabusId);
       await fetchSyllabus(levelId, term, courseId);
-      print("Syllabus deleted successfully");
     } catch (e) {
       _error = e.toString();
-      print("Delete Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -136,3 +129,4 @@ class SyllabusProvider with ChangeNotifier {
     }
   }
 }
+

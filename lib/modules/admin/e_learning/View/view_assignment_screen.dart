@@ -150,7 +150,7 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(color: Colors.grey.withOpacity(0.5)),
+      child: Divider(color: Colors.grey.withValues(alpha: 0.5)),
     );
   }
 

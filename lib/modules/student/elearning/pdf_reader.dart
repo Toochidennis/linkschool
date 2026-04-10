@@ -31,7 +31,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         final dir = await getTemporaryDirectory();
         final file = File("${dir.path}/temp.pdf");
         await file.writeAsBytes(response.bodyBytes, flush: true);
-        print("ssssssss ${response.body}");
         if (!mounted) return;
         setState(() {
           localPath = file.path;
@@ -41,7 +40,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         setState(() => loading = false);
       }
     } catch (e) {
-      debugPrint("PDF download error: $e");
       setState(() => loading = false);
     }
   }

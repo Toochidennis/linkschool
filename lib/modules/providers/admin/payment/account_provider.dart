@@ -230,15 +230,12 @@ class AccountProvider extends ChangeNotifier {
   // Handle authentication errors and retry using existing auth system
   Future<void> _handleAuthError() async {
     try {
-      print('Handling authentication error...');
 
       // Check if user is still logged in according to existing auth system
       final userBox = Hive.box('userData');
       final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
       final token = userBox.get('token');
 
-      print('Is logged in: $isLoggedIn');
-      print('Token exists: ${token != null && token.isNotEmpty}');
 
       if (!isLoggedIn || token == null || token.isEmpty) {
         _errorMessage = 'Authentication required. Please login again.';
@@ -247,7 +244,6 @@ class AccountProvider extends ChangeNotifier {
         _accountService.refreshAuthToken();
       }
     } catch (e) {
-      print('Error handling auth error: $e');
       _errorMessage = 'Authentication error. Please login again.';
     }
   }
@@ -301,3 +297,4 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 }
+

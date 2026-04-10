@@ -70,7 +70,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         _interstitialAd = null;
         _isInterstitialAdLoaded = false;
       }
-    } catch (_) {}
+    } catch (_) {
+      // Intentionally ignored.
+    }
     _loadAppOpenAd();
   }
 
@@ -88,7 +90,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         try {
           dob = f.parseStrict(trimmed);
           break;
-        } catch (_) {}
+        } catch (_) {
+      // Intentionally ignored.
+    }
       }
     }
     if (dob == null) return null;
@@ -246,14 +250,6 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
       
       );
 
-      print('✅ ===== data to submit quiz score: =====');
-      print('Name: ${widget.userName}');
-      print('Email: ${widget.userEmail}');
-      print('Phone: ${widget.userPhone}');
-      print('Quiz Score: $score');
-      print('Lesson ID: ${widget.lessonId}');
-      print('Cohort ID: ${widget.cohortId}');
-      print('Profile ID: ${widget.profileId}');
 
     } catch (e) {
       if (mounted) {
@@ -507,7 +503,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFF6366F1).withOpacity(0.1)
+                                    ? const Color(0xFF6366F1).withValues(alpha: 0.1)
                                     : Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
@@ -574,7 +570,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, -2),
                     ),

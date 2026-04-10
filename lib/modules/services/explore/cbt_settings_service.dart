@@ -15,7 +15,6 @@ class CbtSettingsService {
       }
 
       final url = "$_baseUrl/cbt/settings";
-      print("📡 Fetching CBT Settings → $url");
 
       final response = await http.get(
         Uri.parse(url),
@@ -28,8 +27,6 @@ class CbtSettingsService {
       if (response.statusCode != 200) {
         throw Exception("Failed: ${response.body}");
       } else {
-        print("✅ CBT Settings fetched successfully");
-        print("📦 Response: ${response.body}");
       }
 
       final decoded = json.decode(response.body);
@@ -39,3 +36,4 @@ class CbtSettingsService {
     }
   }
 }
+

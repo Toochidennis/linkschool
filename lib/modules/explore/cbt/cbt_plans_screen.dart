@@ -9,6 +9,12 @@ import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:provider/provider.dart';
 
+enum _TrialActionState {
+  startTrial,
+  continueWithAds,
+  hidden,
+}
+
 class CbtPlansScreen extends StatefulWidget {
   final bool showTrialButton;
   final bool preferTrialLabel;
@@ -26,11 +32,10 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.86);
   int _currentIndex = 0;
   bool _didLoad = false;
-  final int _remainingDays = 0;
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
-  bool _forceContinueWithAds = false;
-  bool _trialStarted = false;
+  bool _isOpeningPaymentDialog = false;
+  _TrialActionState _trialActionState = _TrialActionState.startTrial;
 
   @override
   void didChangeDependencies() {
@@ -40,6 +45,13 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     Future.microtask(() {
       if (!mounted) return;
       context.read<CbtPlanProvider>().fetchPlans();
+      if (!widget.showTrialButton) {
+        setState(() {
+          _isLoadingTrial = false;
+          _trialActionState = _TrialActionState.hidden;
+        });
+        return;
+      }
       _loadTrialState();
     });
   }
@@ -58,6 +70,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         child: Consumer<CbtPlanProvider>(
           builder: (context, provider, child) {
             final plans = provider.plans;
+            final showTrialAction = widget.showTrialButton &&
+                _trialActionState != _TrialActionState.hidden;
             return Column(
               children: [
                 Padding(
@@ -87,13 +101,13 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                         left: -80,
                         bottom: 40,
                         child: _buildGlowCircle(
-                            160, Colors.white.withOpacity(0.08)),
+                            160, Colors.white.withValues(alpha: 0.08)),
                       ),
                       Positioned(
                         right: -40,
                         top: 120,
                         child: _buildGlowCircle(
-                            120, Colors.white.withOpacity(0.12)),
+                            120, Colors.white.withValues(alpha: 0.12)),
                       ),
                       if (provider.isLoading)
                         const Center(
@@ -148,7 +162,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                   const EdgeInsets.symmetric(horizontal: 24),
                               child: Row(
                                 children: [
-                                  if (widget.showTrialButton)
+                                  if (showTrialAction)
                                     Expanded(
                                       child: SizedBox(
                                         height: 54,
@@ -164,8 +178,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                                   BorderRadius.circular(8),
                                             ),
                                             elevation: 6,
-                                            shadowColor:
-                                                Colors.black.withOpacity(0.2),
+                                            shadowColor: Colors.black
+                                                .withValues(alpha: 0.2),
                                           ),
                                           child: _isStartingTrial
                                               ? const SizedBox(
@@ -191,36 +205,15 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                         ),
                                       ),
                                     ),
-                                  if (widget.showTrialButton)
+                                  if (showTrialAction)
                                     const SizedBox(width: 12),
                                   Expanded(
                                     child: SizedBox(
                                       height: 54,
                                       child: ElevatedButton(
-                                        onPressed: () async {
-                                          final selectedPlan = plans.isNotEmpty
-                                              ? plans[_currentIndex.clamp(
-                                                  0, plans.length - 1)]
-                                              : null;
-
-                                          if (selectedPlan == null) return;
-
-                                          final result = await showDialog<bool>(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (dialogContext) =>
-                                                CbtPlanPaymentDialog(
-                                              plan: selectedPlan,
-                                            ),
-                                          );
-
-                                          if (!mounted || result != true)
-                                            return;
-
-                                          if (result == true) {
-                                            Navigator.of(context).pop(true);
-                                          }
-                                        },
+                                        onPressed: _isOpeningPaymentDialog
+                                            ? null
+                                            : () => _openPaymentDialog(plans),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.barColor3,
                                           shape: RoundedRectangleBorder(
@@ -228,8 +221,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                                 BorderRadius.circular(8),
                                           ),
                                           elevation: 8,
-                                          shadowColor:
-                                              Colors.black.withOpacity(0.25),
+                                          shadowColor: Colors.black
+                                              .withValues(alpha: 0.25),
                                         ),
                                         child: Text(
                                           'Pay Now',
@@ -280,7 +273,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
           width: isActive ? 18 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.4),
+            color:
+                isActive ? Colors.white : Colors.white.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(12),
           ),
         );
@@ -288,40 +282,98 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     );
   }
 
-  Future<void> _loadTrialState() async {
+  Future<void> _openPaymentDialog(List<CbtPlanModel> plans) async {
+    if (_isOpeningPaymentDialog) return;
+
+    final selectedPlan = plans.isNotEmpty
+        ? plans[_currentIndex.clamp(0, plans.length - 1)]
+        : null;
+    if (selectedPlan == null) return;
+
+    _isOpeningPaymentDialog = true;
     try {
-      final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-      final user = userProvider.currentUser;
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!mounted) return;
 
-      bool trialStarted = false;
-      bool forceContinue = false;
+      final result = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => CbtPlanPaymentDialog(
+          plan: selectedPlan,
+        ),
+      );
 
-      if (user?.id != null) {
-        // Check expiry date from license cache
-        final expiresAt = await CbtLicenseService().getCachedLicenseExpiresAt();
-        if (expiresAt != null) {
-          trialStarted = true;
-          // If expired, force "Continue with Ads"
-          forceContinue = DateTime.now().isAfter(expiresAt);
-        }
+      if (!mounted || result != true) {
+        return;
       }
 
-      if (mounted) {
-        setState(() {
-          _isLoadingTrial = false;
-          _trialStarted = trialStarted;
-          _forceContinueWithAds = forceContinue;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoadingTrial = false);
-      }
+      Navigator.of(context).pop(true);
+    } finally {
+      _isOpeningPaymentDialog = false;
     }
   }
 
+  Future<void> _loadTrialState() async {
+    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final initialState = _resolveTrialActionState(
+      hasValidLicense: userProvider.hasValidLicense,
+      hasPaid: userProvider.hasPaid,
+      licenseSource: userProvider.licenseSource,
+      licenseReason: userProvider.licenseReason,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoadingTrial = false;
+        _trialActionState = initialState;
+      });
+    }
+
+    try {
+      final user = userProvider.currentUser;
+      if (user?.id != null) {
+        await userProvider.syncLicenseStatus(forceRefresh: false);
+        final refreshedState = _resolveTrialActionState(
+          hasValidLicense: userProvider.hasValidLicense,
+          hasPaid: userProvider.hasPaid,
+          licenseSource: userProvider.licenseSource,
+          licenseReason: userProvider.licenseReason,
+        );
+
+        if (mounted) {
+          setState(() {
+            _trialActionState = refreshedState;
+          });
+        }
+      }
+    } catch (_) {
+      // Keep the last known local state instead of blocking the plans screen.
+    }
+  }
+
+  _TrialActionState _resolveTrialActionState({
+    required bool hasValidLicense,
+    required bool hasPaid,
+    required String? licenseSource,
+    required String? licenseReason,
+  }) {
+    if (hasPaid || licenseSource == 'payment') {
+      return _TrialActionState.hidden;
+    }
+
+    if (hasValidLicense && licenseSource == 'trial') {
+      return _TrialActionState.continueWithAds;
+    }
+
+    if (licenseReason == 'trial_expired' || licenseReason == 'expired') {
+      return _TrialActionState.continueWithAds;
+    }
+
+    return _TrialActionState.startTrial;
+  }
+
   String _trialLabel() {
-    if (_trialStarted || _forceContinueWithAds) {
+    if (_trialActionState == _TrialActionState.continueWithAds) {
       return 'Continue with Ads';
     }
     // Use selected plan's freeTrialDays, not global remaining
@@ -346,11 +398,12 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       return;
     }
 
-    // ✅ Use _trialStarted or _forceContinueWithAds, NOT _remainingDays
-    final isContinueWithAds = _trialStarted || _forceContinueWithAds;
+    final isContinueWithAds =
+        _trialActionState == _TrialActionState.continueWithAds;
 
     setState(() => _isStartingTrial = true);
     try {
+      final userProvider = context.read<CbtUserProvider>();
       if (isContinueWithAds) {
         await CbtSubscriptionService().setAdMode('continue_with_ads');
         if (mounted) {
@@ -385,6 +438,9 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         );
         return;
       }
+
+      await userProvider.syncLicenseStatus(forceRefresh: true);
+      await userProvider.syncSubscriptionService();
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -432,7 +488,7 @@ class _PlanCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(26),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 16,
               offset: const Offset(0, 10),
             ),
@@ -445,7 +501,7 @@ class _PlanCard extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: accent.withOpacity(0.12),
+                color: accent.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 40, color: accent),
@@ -604,7 +660,7 @@ extension on _CbtPlansScreenState {
               message,
               style: AppTextStyles.normal400(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),

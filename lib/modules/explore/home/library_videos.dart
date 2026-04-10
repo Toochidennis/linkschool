@@ -499,7 +499,7 @@
 //                         color: Colors.white,
 //                         boxShadow: [
 //                           BoxShadow(
-//                             color: Colors.black.withOpacity(0.1),
+//                             color: Colors.black.withValues(alpha: 0.1),
 //                             blurRadius: 10,
 //                             offset: const Offset(0, -2),
 //                           ),
@@ -678,7 +678,7 @@
 //                       alignment: Alignment.center,
 //                       child: Icon(
 //                         Icons.broken_image,
-//                         color: Colors.white.withOpacity(0.7),
+//                         color: Colors.white.withValues(alpha: 0.7),
 //                         size: 40,
 //                       ),
 //                     );
@@ -690,7 +690,7 @@
 //                   padding: const EdgeInsets.all(10.0),
 //                   decoration: BoxDecoration(
 //                     shape: BoxShape.circle,
-//                     color: Colors.black.withOpacity(0.5),
+//                     color: Colors.black.withValues(alpha: 0.5),
 //                   ),
 //                   child: const Icon(
 //                     Icons.play_arrow_rounded,

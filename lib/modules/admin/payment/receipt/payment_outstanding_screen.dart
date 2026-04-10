@@ -53,13 +53,12 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
 
   void _initializeServices() {
     _paymentService = PaymentService(locator<ApiService>());
-    print('PaymentService initialized with shared ApiService instance');
     // try {
     //   final userBox = Hive.box('userData');
     //   final token = userBox.get('token');
 
     //   if (token == null || token.toString().isEmpty) {
-    //     print('No authentication token found. User needs to login again.');
+
     //     return;
     //   }
 
@@ -67,9 +66,9 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
     //   apiService.setAuthToken(token.toString());
     //   _paymentService = PaymentService(apiService);
 
-    //   print('ApiService initialized with authentication token');
+
     // } catch (e) {
-    //   print('Error initializing services: $e');
+
     // }
   }
 
@@ -87,7 +86,6 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      print('Error loading unpaid invoices: $e');
     }
   }
 

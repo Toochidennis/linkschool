@@ -83,7 +83,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -192,7 +192,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.grey.withValues(alpha: 0.1),
                               spreadRadius: 1,
                               blurRadius: 10,
                               offset: const Offset(0, 2),
@@ -205,7 +205,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                           leading: Container(
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: AppColors.text2Light.withOpacity(0.1),
+                              color: AppColors.text2Light.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Container(
@@ -239,7 +239,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.text2Light.withOpacity(0.1),
+                                    color: AppColors.text2Light.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -257,7 +257,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                             icon: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.text2Light.withOpacity(0.1),
+                                color: AppColors.text2Light.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -708,7 +708,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.grey.withOpacity(0.1),
+                                            color: Colors.grey.withValues(alpha: 0.1),
                                             spreadRadius: 1,
                                             blurRadius: 10,
                                             offset: const Offset(0, 2),
@@ -721,7 +721,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                                         leading: Container(
                                           padding: const EdgeInsets.all(2),
                                           decoration: BoxDecoration(
-                                            color: AppColors.text2Light.withOpacity(0.1),
+                                            color: AppColors.text2Light.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
                                           child: Container(
@@ -755,7 +755,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                                                   vertical: 4,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: AppColors.text2Light.withOpacity(0.1),
+                                                  color: AppColors.text2Light.withValues(alpha: 0.1),
                                                   borderRadius: BorderRadius.circular(6),
                                                 ),
                                                 child: Text(
@@ -773,7 +773,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                                           icon: Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: AppColors.text2Light.withOpacity(0.1),
+                                              color: AppColors.text2Light.withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: const Icon(

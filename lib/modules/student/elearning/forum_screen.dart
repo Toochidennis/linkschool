@@ -124,7 +124,7 @@ class _ForumScreenState extends State<ForumScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 

@@ -70,13 +70,10 @@ class ApiService {
 
   ApiService({String? baseUrl, String? apiKey})
       : baseUrl = baseUrl ?? EnvConfig.apiBaseUrl,
-        apiKey = apiKey ?? EnvConfig.apiKey {
-    print('Initializing ApiService with baseUrl: $baseUrl');
-  }
+        apiKey = apiKey ?? EnvConfig.apiKey;
 
   void setAuthToken(String token) {
     _defaultHeaders['Authorization'] = 'Bearer $token';
-    print('Auth token set in headers');
   }
 
   // Helper method to get current database dynamically
@@ -128,7 +125,6 @@ class ApiService {
         try {
           finalQueryParams = _ensureDatabaseParam(queryParams);
         } catch (e) {
-          print('Warning: Could not add database parameter: $e');
           // Continue without database parameter for login and other auth endpoints
         }
       }
@@ -138,8 +134,6 @@ class ApiService {
             ?.map((key, value) => MapEntry(key, value.toString())),
       );
 
-      print('Making ${method.toString()} request to: ${uri.toString()}');
-      print('Headers: ${headers.keys.join(', ')}');
 
       http.Response response;
       switch (method) {
@@ -157,7 +151,6 @@ class ApiService {
                 finalBody = Map<String, dynamic>.from(body);
                 finalBody['_db'] = _getCurrentDatabase();
               } catch (e) {
-                print('Warning: Could not add database to body: $e');
                 finalBody = body;
               }
             }
@@ -179,8 +172,8 @@ class ApiService {
                 try {
                   body['_db'] = _getCurrentDatabase();
                 } catch (e) {
-                  print('Warning: Could not add database to form data: $e');
-                }
+      // Intentionally ignored.
+    }
               }
 
               body.forEach((key, value) {
@@ -212,7 +205,6 @@ class ApiService {
               finalBody = Map<String, dynamic>.from(body);
               finalBody['_db'] = _getCurrentDatabase();
             } catch (e) {
-              print('Warning: Could not add database to body: $e');
               finalBody = body;
             }
           }
@@ -233,7 +225,6 @@ class ApiService {
               finalBody = Map<String, dynamic>.from(body);
               finalBody['_db'] = _getCurrentDatabase();
             } catch (e) {
-              print('Warning: Could not add database to body: $e');
               finalBody = body;
             }
           }
@@ -254,7 +245,6 @@ class ApiService {
               finalBody = Map<String, dynamic>.from(body);
               finalBody['_db'] = _getCurrentDatabase();
             } catch (e) {
-              print('Warning: Could not add database to body: $e');
               finalBody = body;
             }
           }
@@ -267,12 +257,9 @@ class ApiService {
           break;
       }
 
-      print('Response status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-        print('Decoded JSON response: $jsonResponse');
 
         final apiResponse = ApiResponse<T>.fromJson(
           jsonResponse,
@@ -308,7 +295,6 @@ class ApiService {
         );
       }
     } catch (e) {
-      print('Network error: $e');
       return ApiResponse<T>.error('Network error: ${e.toString()}', 500);
     }
   }
@@ -383,3 +369,4 @@ class ApiService {
     );
   }
 }
+

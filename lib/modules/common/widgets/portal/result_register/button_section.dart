@@ -124,8 +124,6 @@ class ButtonSection extends StatelessWidget {
                           fontSize: 12, color: AppColors.videoColor4)),
                   onPressed: () {
                     // Pass classId directly to the showRegistrationDialog function
-                    print(
-                        'ButtonSection: Calling showRegistrationDialog with classId: $classId');
                     showRegistrationDialog(context, classId: classId);
                   },
                 ),

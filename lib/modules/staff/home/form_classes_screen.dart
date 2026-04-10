@@ -4,8 +4,9 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/staff/settings_service.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/staff_comment_result_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skills_behaviour_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/form_classes/staff_behaviour_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_attandance_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skills_screen.dart';
 import 'package:linkschool/modules/staff/home/staff_course_screen.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -241,9 +242,9 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                                           gradient: LinearGradient(
                                             colors: [
                                               AppColors.bookText
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                               AppColors.bookText
-                                                  .withOpacity(0.05),
+                                                  .withValues(alpha: 0.05),
                                             ],
                                           ),
                                           borderRadius:
@@ -360,8 +361,8 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    color.withOpacity(0.2),
-                    color.withOpacity(0.1),
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -443,31 +444,35 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
               Expanded(
                 child: ListView.separated(
                   physics: BouncingScrollPhysics(),
-                  itemCount: 4,
+                  itemCount: 5,
                   separatorBuilder: (context, index) =>
                       Divider(color: Colors.grey.shade200),
                   itemBuilder: (context, index) {
                     final icons = [
                       'assets/icons/result/comment.svg',
                       'assets/icons/result/skill.svg',
+                      'assets/icons/result/behaviour.svg',
                       'assets/icons/result/course.svg',
                       'assets/icons/result/composite_result.svg',
                     ];
                     final labels = [
                       'Comment on Results',
-                      'Skills and Behaviour',
+                      'Skills',
+                      'Behaviour',
                       'Attendance',
                       'Students',
                     ];
                     final colors = [
                       Colors.blue.shade50,
                       Colors.purple.shade50,
+                      Colors.teal.shade50,
                       Colors.orange.shade50,
                       Colors.green.shade50,
                     ];
                     final iconColors = [
                       Colors.blue.shade600,
                       Colors.purple.shade600,
+                      Colors.teal.shade600,
                       Colors.orange.shade600,
                       Colors.green.shade600,
                     ];
@@ -480,7 +485,14 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                         term: term,
                         termName: termName,
                       ),
-                      StaffSkillsBehaviourScreen(
+                      StaffSkillsScreen(
+                        classId: classId,
+                        levelId: levelId,
+                        year: year,
+                        term: term.toString(),
+                        db: dbName,
+                      ),
+                      StaffBehaviourScreen(
                         classId: classId,
                         levelId: levelId,
                         year: year,
@@ -516,7 +528,7 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.grey.withValues(alpha: 0.1),
                               spreadRadius: 1,
                               blurRadius: 4,
                               offset: Offset(0, 2),

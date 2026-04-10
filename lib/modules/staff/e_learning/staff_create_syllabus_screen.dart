@@ -118,13 +118,9 @@ class _StaffCreateSyllabusScreen extends State<StaffCreateSyllabusScreen> {
           academicYear = settings['year']?.toString();
         });
 
-        print(
-            'Loaded user data: creatorId=$creatorId, creatorName=$creatorName, '
-            'creatorRole=$creatorRole, academicTerm=$academicTerm, academicYear=$academicYear, '
-            'levelId=$levelId');
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -164,7 +160,6 @@ class _StaffCreateSyllabusScreen extends State<StaffCreateSyllabusScreen> {
             'syllabusId': syllabusId,
             'classes': widget.classList,
           };
-          print('Update Syllabus Data: $updateData');
           await syllabusProvider.updateSyllabus(
             title: _titleController.text,
             description: _descriptionController.text,
@@ -199,7 +194,7 @@ class _StaffCreateSyllabusScreen extends State<StaffCreateSyllabusScreen> {
           //   'classId': widget.classId ?? '',
           //   'creatorId': creatorId?.toString() ?? '',
           // };
-          // print('Create Syllabus Data: $createData');
+
           await syllabusProvider.addSyllabus(
             title: _titleController.text,
             description: _descriptionController.text,
@@ -232,7 +227,6 @@ class _StaffCreateSyllabusScreen extends State<StaffCreateSyllabusScreen> {
           }
         }
       } catch (e) {
-        print('Error saving syllabus: $e');
         if (mounted) {
           CustomToaster.toastError(
             context,

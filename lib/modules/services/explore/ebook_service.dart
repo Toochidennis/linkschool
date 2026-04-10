@@ -27,13 +27,11 @@ class BookService {
       );
 
       if (response.statusCode == 200) {
-        print("Books fetched successfully");
         return response.rawData?['response'] ?? {};
       }
 
       throw Exception("Failed to load books: ${response.message}");
     } catch (e) {
-      print("Error fetching books: $e");
       throw Exception("Failed to load books: $e");
     }
   }
@@ -49,3 +47,4 @@ class BookService {
     return List<String>.from(data['categories'] ?? []);
   }
 }
+

@@ -247,8 +247,8 @@ class StaffProfileScreen extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: staff.isActive
-                          ? AppColors.attCheckColor2.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? AppColors.attCheckColor2.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

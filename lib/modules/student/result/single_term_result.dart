@@ -38,10 +38,6 @@ class _SingleTermResultState extends State<SingleTermResult> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final studentProvider =
           Provider.of<StudentProvider>(context, listen: false);
-      debugPrint(
-          'SingleTermResult: Fetching term results for studentId=${widget.studentId}, '
-          'termId=${widget.termId}, classId=${widget.classId}, '
-          'year=${widget.year}, levelId=${widget.levelId}');
       studentProvider.fetchStudentTermResults(
         studentId: widget.studentId,
         termId: widget.termId,
@@ -112,10 +108,6 @@ class _SingleTermResultState extends State<SingleTermResult> {
         decoration: Constants.customBoxDecoration(context),
         child: Consumer<StudentProvider>(
           builder: (context, studentProvider, child) {
-            debugPrint(
-                'SingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
-                'errorMessage=${studentProvider.errorMessage}, '
-                'termResult=${studentProvider.studentTermResult}');
             if (studentProvider.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -539,7 +531,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //     // Fetch term results when the widget is initialized
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
 //       final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-//       print('SingleTermResult: Fetching term results for studentId=${widget.studentId}, '
+
 //             'termId=${widget.termId}, classId=${widget.classId}, '
 //             'year=${widget.year}, levelId=${widget.levelId}');
 //       studentProvider.fetchStudentTermResults(
@@ -608,7 +600,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //         decoration: Constants.customBoxDecoration(context),
 //         child: Consumer<StudentProvider>(
 //           builder: (context, studentProvider, child) {
-//             print('SingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
+
 //                   'errorMessage=${studentProvider.errorMessage}, '
 //                   'termResult=${studentProvider.studentTermResult}');
 //             if (studentProvider.isLoading) {

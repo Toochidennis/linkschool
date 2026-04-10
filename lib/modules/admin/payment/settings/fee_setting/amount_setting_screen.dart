@@ -277,11 +277,6 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
   }
 
   void _printFeesDetails() {
-    print('=== SAVED FEES DETAILS ===');
-    print('Level: $selectedLevel (ID: ${widget.levelId})');
-    print('Session: ${_getCurrentSession()}');
-    print('Total Amount: ${totalAmount.toStringAsFixed(2)}');
-    print('Individual Fees:');
 
     for (var i = 0; i < feeItems.length; i++) {
       final fee = feeItems[i];
@@ -289,10 +284,8 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
           double.tryParse(_amountControllers['amount_$i']?.text ?? '0') ?? 0;
       final mandatory = fee['is_mandatory'] == 1 ? '(Mandatory)' : '(Optional)';
 
-      print('  - ${fee['fee_name']} $mandatory: ${amount.toStringAsFixed(2)}');
     }
 
-    print('========================');
   }
 
   Future<void> _submitFees() async {
@@ -647,7 +640,7 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                   color: AppColors.backgroundLight,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       offset: const Offset(0, -2),
                       blurRadius: 4,
                     ),

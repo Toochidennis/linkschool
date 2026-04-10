@@ -70,7 +70,6 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
-  print("Loading dashboard data...");
     fetchDashboard();
   }
 
@@ -143,7 +142,6 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         );
       }
     } catch (e) {
-      print('Error handling assessment tap: $e');
       // Show error message to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load content: $e')),
@@ -225,7 +223,6 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         }
       }
     } catch (e) {
-      print('Error handling activity tap: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load content: $e')),
       );
@@ -589,9 +586,9 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 8.0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -657,11 +654,11 @@ Widget _buildStudentQuizCard({
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [bg.withOpacity(0.95), bg.withOpacity(0.70)],
+          colors: [bg.withValues(alpha: 0.95), bg.withValues(alpha: 0.70)],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -680,7 +677,7 @@ Widget _buildStudentQuizCard({
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.10),
+                  color: Colors.white.withValues(alpha: 0.10),
                 ),
               ),
             ),
@@ -692,7 +689,7 @@ Widget _buildStudentQuizCard({
                 height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                 ),
               ),
             ),
@@ -714,7 +711,7 @@ Widget _buildStudentQuizCard({
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
+                                color: Colors.white.withValues(alpha: 0.85),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.3,
@@ -726,9 +723,9 @@ Widget _buildStudentQuizCard({
                                 horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(999),
-                              color: Colors.white.withOpacity(0.18),
+                              color: Colors.white.withValues(alpha: 0.18),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.22),
+                                color: Colors.white.withValues(alpha: 0.22),
                               ),
                             ),
                             child: Row(
@@ -784,7 +781,7 @@ Widget _buildStudentQuizCard({
                   Text(
                     "Classes",
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -812,9 +809,9 @@ Widget _buildStudentQuizCard({
                             horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.white.withOpacity(0.14),
+                          color: Colors.white.withValues(alpha: 0.14),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                           ),
                         ),
                         child: Column(
@@ -846,9 +843,9 @@ Widget _buildStudentQuizCard({
                             horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.white.withOpacity(0.14),
+                          color: Colors.white.withValues(alpha: 0.14),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                           ),
                         ),
                         child: Column(

@@ -17,7 +17,7 @@ class AssessmentScreen extends StatefulWidget {
   final List<Map<String, dynamic>>? questions;
   final String? mark;
   final String? title;
-  final correctAnswer;
+  final dynamic correctAnswer;
   const AssessmentScreen(
       {super.key,
       this.timer,
@@ -75,50 +75,38 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       final prefs = await SharedPreferences.getInstance();
       final String? savedQuestions = prefs.getString('preview_questions');
 
-      print('=== ASSESSMENT LOADING QUESTIONS ===');
-      print('SavedQuestions exists: ${savedQuestions != null}');
-      print('SavedQuestions length: ${savedQuestions?.length ?? 0}');
 
       List<QuizQuestion> loadedQuestions = [];
 
       // Prefer questions passed via widget
       if (widget.questions != null && widget.questions!.isNotEmpty) {
-        print(
-            'Loading questions from widget.questions: ${widget.questions!.length}');
         for (int i = 0; i < widget.questions!.length; i++) {
           try {
             final q = widget.questions![i];
             final QuizQuestion processedQuestion = _processQuestionData(q, i);
             loadedQuestions.add(processedQuestion);
           } catch (e) {
-            print('Error processing widget question $i: $e');
             loadedQuestions.add(_createFallbackQuestion(i));
           }
         }
       } else if (savedQuestions != null && savedQuestions.isNotEmpty) {
-        print('Loading questions from SharedPreferences...');
 
         try {
           final List<dynamic> questionsJson = jsonDecode(savedQuestions);
-          print(
-              'Successfully decoded ${questionsJson.length} questions from JSON');
 
           // Process each question with better error handling
           for (int i = 0; i < questionsJson.length; i++) {
             try {
               final q = questionsJson[i] as Map<String, dynamic>;
-              print('Processing question $i: ${q['question_text']}');
 
               final QuizQuestion processedQuestion = _processQuestionData(q, i);
               loadedQuestions.add(processedQuestion);
             } catch (e) {
-              print('Error processing question $i: $e');
               // Create a fallback question to prevent complete failure
               loadedQuestions.add(_createFallbackQuestion(i));
             }
           }
         } catch (jsonError) {
-          print('JSON decode error: $jsonError');
           // Fall through to widget.questions fallback
         }
       }
@@ -134,34 +122,21 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               List<dynamic>.filled(_totalQuestions, null, growable: false);
         });
 
-        print('=== QUESTIONS LOADED SUCCESSFULLY ===');
-        print('Total questions: $_totalQuestions');
         for (int i = 0; i < questions.length; i++) {
           final q = questions[i];
-          print('Question $i: "${q.questionText}" (${q.runtimeType})');
           if (q is TypedAnswerQuestion) {
-            print('  - Type: Short Answer');
-            print('  - Correct: ${q.correctAnswer}');
           } else if (q is TextQuestion) {
-            print('  - Type: Multiple Choice');
-            print('  - Options: ${q.options.length}');
-            print('  - Correct: ${q.correctAnswers}');
           }
-          print('  - Grade: ${q.questionGrade}');
-          print('  - Has Image: ${q.imageUrl != null}');
         }
       } else {
         // No questions available at all
-        print('ERROR: No questions found from any source');
         setState(() {
           questions = [];
           _totalQuestions = 0;
           userAnswers = [];
         });
       }
-    } catch (e, stackTrace) {
-      print('Critical error in _loadQuestions: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
 
       // Set empty state to prevent crashes
       setState(() {
@@ -180,7 +155,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     final int questionGrade =
         int.tryParse(q['question_grade']?.toString() ?? '0') ?? 1;
 
-    print('  Processing: "$questionText" (Grade: $questionGrade)');
 
     // Handle question image
     String? imagePath = _processQuestionImage(q['question_files']);
@@ -231,7 +205,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 TextQuestion _createMultipleChoiceQuestion(Map<String, dynamic> q,
     String topic, String questionText, int questionGrade, String? imagePath) {
   final List<dynamic> optionsData = q['options'] as List<dynamic>? ?? [];
-  print('    Processing ${optionsData.length} options');
 
   final List<Map<String, dynamic>> options = optionsData.map((opt) {
     final optMap = opt as Map<String, dynamic>;
@@ -264,7 +237,7 @@ TextQuestion _createMultipleChoiceQuestion(Map<String, dynamic> q,
       }
     }
 
-    print('    Option: ${optMap['text']}, Image: $optionImageUrl'); // Debug log
+ // Debug log
 
     return {
       'text': optMap['text']?.toString() ?? '',
@@ -282,7 +255,6 @@ TextQuestion _createMultipleChoiceQuestion(Map<String, dynamic> q,
     correctAnswers.add(correctData.first['text']?.toString() ?? '');
   }
 
-  print('Correct answers: $correctAnswers');
 
   return TextQuestion(
     topic: topic,
@@ -306,8 +278,7 @@ TextQuestion _createMultipleChoiceQuestion(Map<String, dynamic> q,
     correctAnswer = correctData.first['text']?.toString();
   }
 
-  print('    Correct answer: $correctAnswer');
-  print('    Image path: $imagePath'); // Add debug log
+ // Add debug log
 
   return TypedAnswerQuestion(
     topic: topic,

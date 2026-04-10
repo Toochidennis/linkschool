@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
@@ -15,7 +13,8 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'package:linkschool/modules/common/ads/ad_manager.dart';
+import 'package:linkschool/modules/common/ads/cbt_scoped_ad_manager.dart';
+import 'package:linkschool/modules/explore/cbt/study_ad_manager.dart';
 
 class CBTStudyScreen extends StatefulWidget {
   final String subject;
@@ -47,12 +46,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   bool _isInitialCountdownComplete = false;
   bool _isContinueWithAds = false;
   bool _isShowingAdsGate = false;
-
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
-
-  AppOpenAd? _appOpenAd;
-  bool _isAppOpenAdLoaded = false;
 
   // Animation controller for bouncing arrow in Read More
   late AnimationController _bounceController;
@@ -62,7 +57,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    AdManager.instance.preload();
+    StudyAdManager.instance.warmUpStudyAds(context);
     _loadAdMode();
 
     // Initialize bounce animation for Read More arrow
@@ -82,18 +77,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInitialLoadingCountdown();
     });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        _loadAppOpenAd();
-      }
-    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _appOpenAd?.dispose();
     _bounceController.dispose();
     super.dispose();
   }
@@ -108,54 +96,9 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
-        _showAppOpenAd();
         _shouldShowAdOnResume = false;
+        StudyAdManager.instance.showAppOpenIfEligible(context: context);
       }
-    }
-  }
-
-  void _loadAppOpenAd() {
-    AppOpenAd.load(
-      adUnitId: EnvConfig.cbtAdsOpenApiKey,
-      request: const AdRequest(),
-      adLoadCallback: AppOpenAdLoadCallback(
-        onAdLoaded: (AppOpenAd ad) {
-          _appOpenAd = ad;
-          if (mounted) {
-            setState(() {
-              _isAppOpenAdLoaded = true;
-            });
-          }
-        },
-        onAdFailedToLoad: (LoadAdError error) {
-          if (mounted) {
-            setState(() {
-              _isAppOpenAdLoaded = false;
-            });
-          }
-        },
-      ),
-    );
-  }
-
-  void _showAppOpenAd() {
-    if (_isAppOpenAdLoaded && _appOpenAd != null) {
-      _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (AppOpenAd ad) {
-          ad.dispose();
-          _appOpenAd = null;
-          _isAppOpenAdLoaded = false;
-          _loadAppOpenAd();
-        },
-        onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
-          ad.dispose();
-          _appOpenAd = null;
-          _isAppOpenAdLoaded = false;
-          _loadAppOpenAd();
-        },
-      );
-
-      _appOpenAd!.show();
     }
   }
 
@@ -167,10 +110,10 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         onComplete: () {
           if (!mounted) return;
           Navigator.of(context).pop();
-          AdManager.instance
+          StudyAdManager.instance
               .showIfEligible(
             context: context,
-            trigger: AdTrigger.topicStart,
+            trigger: CbtScopedAdTrigger.topicStart,
           )
               .then((_) {
             if (mounted) {
@@ -195,7 +138,6 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       examTypeId: widget.examTypeId,
       topicNames: widget.topics,
     );
-    print('📚 Loaded ${provider.allQuestions.length} questions');
   }
 
   void _onAnswer(int index, Question question) async {
@@ -295,7 +237,6 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
     _isShowingAdsGate = true;
     try {
-      print('==== question $answeredCount ====');
       if (!mounted) return false;
 
       final result = await showDialog<String>(
@@ -306,7 +247,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           child: CbtContinueAdsDialog(
             onWatchAds: () async {
               await _subscriptionService.setAdMode('continue_with_ads');
-              final rewarded = await AdManager.instance.showRewardedForPaywall();
+              if (!mounted) return false;
+              final rewarded =
+                  await StudyAdManager.instance.showRewardedForPaywall(
+                context: context,
+              );
               if (!rewarded) return false;
               if (!mounted) return false;
               setState(() {
@@ -328,8 +273,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
               if (planResult == 'continue_ads') {
                 await _subscriptionService.setAdMode('continue_with_ads');
+                if (!mounted) return false;
                 final rewarded =
-                    await AdManager.instance.showRewardedForPaywall();
+                    await StudyAdManager.instance.showRewardedForPaywall(
+                  context: context,
+                );
                 if (!rewarded) return false;
                 if (!mounted) return false;
                 setState(() {
@@ -353,9 +301,9 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                   Provider.of<QuestionsProvider>(context, listen: false);
               final sessionStats =
                   provider.generateSessionStats(widget.subject);
-              await AdManager.instance.showIfEligible(
+              await StudyAdManager.instance.showIfEligible(
                 context: context,
-                trigger: AdTrigger.resultNavigation,
+                trigger: CbtScopedAdTrigger.resultNavigation,
               );
               if (!mounted) return;
               _isNavigatingAway = true;
@@ -389,9 +337,9 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
     if (isAtEndOfCurrentBatch && hasMoreTopicsToLoad) {
       // Show ad for topic completion, then countdown for next topic
-      await AdManager.instance.showIfEligible(
+      await StudyAdManager.instance.showIfEligible(
         context: context,
-        trigger: AdTrigger.topicCompletion,
+        trigger: CbtScopedAdTrigger.topicCompletion,
       );
       _showNextTopicCountdown();
       return;
@@ -402,9 +350,10 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
     if (!hasMore && provider.isLastQuestion && !provider.hasMoreTopics) {
       // Study session complete
-      await AdManager.instance.showIfEligible(
+      if (!mounted) return;
+      await StudyAdManager.instance.showIfEligible(
         context: context,
-        trigger: AdTrigger.topicCompletion,
+        trigger: CbtScopedAdTrigger.topicCompletion,
       );
       setState(() {
         _isStudyComplete = true;
@@ -426,9 +375,9 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           if (!mounted) return;
           Navigator.of(context).pop();
 
-          await AdManager.instance.showIfEligible(
+          await StudyAdManager.instance.showIfEligible(
             context: context,
-            trigger: AdTrigger.topicStart,
+            trigger: CbtScopedAdTrigger.topicStart,
           );
 
           // Now fetch the next topic's questions
@@ -481,10 +430,11 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
             onPressed: () async {
               Navigator.pop(context); // Close dialog
 
-              await AdManager.instance.showIfEligible(
+              await StudyAdManager.instance.showIfEligible(
                 context: context,
-                trigger: AdTrigger.resultNavigation,
+                trigger: CbtScopedAdTrigger.resultNavigation,
               );
+              if (!context.mounted) return;
 
               _isNavigatingAway = true;
               // Navigate to progress dashboard
@@ -594,7 +544,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -609,7 +559,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.15),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -665,8 +615,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withOpacity(0),
-                          Colors.white.withOpacity(0.7),
+                          Colors.white.withValues(alpha: 0),
+                          Colors.white.withValues(alpha: 0.7),
                           Colors.white,
                         ],
                         stops: const [0.0, 0.5, 1.0],
@@ -1119,8 +1069,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.eLearningBtnColor1.withOpacity(0.1),
+                            color: AppColors.eLearningBtnColor1
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -1146,7 +1096,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 2),
                             ),
@@ -1246,7 +1196,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                                       height: 28,
                                       decoration: BoxDecoration(
                                         color: AppColors.eLearningBtnColor1
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Center(
@@ -1326,7 +1276,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -1480,17 +1430,14 @@ class _ExplanationModalState extends State<ExplanationModal> {
     if (widget.cachedExplanation != null &&
         widget.cachedExplanation!.isNotEmpty) {
       _explanation = widget.cachedExplanation;
-      print('📖 Using cached explanation');
     } else if (widget.apiExplanation != null &&
         widget.apiExplanation!.isNotEmpty) {
       _explanation = widget.apiExplanation;
       _isApiExplanation = true;
-      print('📖 Using API explanation');
       // Cache the API explanation for future use
       widget.onExplanationGenerated(widget.apiExplanation!);
     } else {
       // Fall back to AI-generated explanation
-      print('🤖 No API explanation, fetching from AI...');
       _fetchExplanation();
     }
   }
@@ -1515,7 +1462,6 @@ class _ExplanationModalState extends State<ExplanationModal> {
           _isLoading = false;
         });
         widget.onExplanationGenerated(explanation);
-        print('✅ AI explanation generated successfully');
       }
     } catch (e) {
       if (mounted) {
@@ -1523,7 +1469,6 @@ class _ExplanationModalState extends State<ExplanationModal> {
           _error = "Failed to generate explanation. Please try again.";
           _isLoading = false;
         });
-        print('❌ AI explanation error: $e');
       }
     }
   }
@@ -1648,10 +1593,12 @@ class _ExplanationModalState extends State<ExplanationModal> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.eLearningBtnColor1.withOpacity(0.05),
+                      color:
+                          AppColors.eLearningBtnColor1.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.eLearningBtnColor1.withOpacity(0.2),
+                        color:
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.2),
                       ),
                     ),
                     child: Column(
@@ -1741,7 +1688,6 @@ class _ExplanationModalState extends State<ExplanationModal> {
                                   padding: HtmlPaddings.only(left: 4, right: 4),
                                 ),
                               },
-
                               extensions: [
                                 TagExtension(
                                   tagsToExtend: {"img"},
@@ -1798,10 +1744,7 @@ class _ExplanationModalState extends State<ExplanationModal> {
                                     padding:
                                         HtmlPaddings.only(left: 4, right: 4),
                                   ),
-                                  
                                 },
-
-
                                 extensions: [
                                   TagExtension(
                                     tagsToExtend: {"img"},
@@ -1927,7 +1870,7 @@ class _ExplanationModalState extends State<ExplanationModal> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -2080,7 +2023,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2088,7 +2031,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2101,7 +2044,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2130,7 +2073,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontFamily: 'Urbanist',
               ),
             ),
@@ -2157,7 +2100,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2188,7 +2131,7 @@ class _NextTopicCountdownDialogState extends State<_NextTopicCountdownDialog>
               'Keep learning! 📚',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),
@@ -2274,7 +2217,7 @@ class _InitialLoadingCountdownDialogState
           gradient: LinearGradient(
             colors: [
               AppColors.eLearningBtnColor1,
-              AppColors.eLearningBtnColor1.withOpacity(0.8),
+              AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -2282,7 +2225,7 @@ class _InitialLoadingCountdownDialogState
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -2295,7 +2238,7 @@ class _InitialLoadingCountdownDialogState
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -2339,7 +2282,7 @@ class _InitialLoadingCountdownDialogState
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -2370,7 +2313,7 @@ class _InitialLoadingCountdownDialogState
               'Get ready to learn! 📖',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontFamily: 'Urbanist',
                 fontStyle: FontStyle.italic,
               ),

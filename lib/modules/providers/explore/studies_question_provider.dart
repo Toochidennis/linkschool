@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
+import 'package:linkschool/modules/services/explore/offline_game_question_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
 import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 
 class QuestionsProvider extends ChangeNotifier {
   final QuestionsService _service;
+  final OfflineGameQuestionService _offlineGameService =
+      OfflineGameQuestionService();
 
   QuestionsResponse? questionsData;
   List<Question> allQuestions = [];
@@ -42,6 +45,77 @@ class QuestionsProvider extends ChangeNotifier {
   int get totalQuestions => allQuestions.length;
   int get currentTopicIndex => _currentTopicIndex;
   int get totalTopics => _topicIds.length;
+
+  Future<void> initializeOfflineSession({
+    required int courseId,
+    required int examTypeId,
+    int questionLimit = OfflineGameQuestionService.defaultQuestionLimit,
+  }) async {
+    _topicIds = [];
+    _currentTopicIndex = 0;
+    _courseId = courseId;
+    _examTypeId = examTypeId;
+    _topicNames = [];
+    allQuestions = [];
+    currentQuestionIndex = 0;
+    loading = true;
+    loadingMore = false;
+    error = null;
+    _sessionStartTime = DateTime.now();
+    _topicStats.clear();
+    _topicStartTimes.clear();
+    _correctAnswersPerTopic.clear();
+    _wrongAnswersPerTopic.clear();
+    _questionsAnsweredPerTopic.clear();
+    notifyListeners();
+
+    try {
+      questionsData = await _offlineGameService.fetchQuestions(
+        courseId: courseId,
+        examTypeId: examTypeId,
+        limit: questionLimit,
+      );
+      allQuestions = questionsData?.data ?? [];
+    } catch (e) {
+      error = e.toString();
+      allQuestions = [];
+    }
+
+    loading = false;
+    notifyListeners();
+  }
+
+  Future<void> reloadOfflineSession({
+    required int courseId,
+    required int examTypeId,
+    int questionLimit = OfflineGameQuestionService.defaultQuestionLimit,
+    int startIndex = 0,
+  }) async {
+    loading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      questionsData = await _offlineGameService.fetchQuestions(
+        courseId: courseId,
+        examTypeId: examTypeId,
+        limit: questionLimit,
+      );
+      allQuestions = questionsData?.data ?? [];
+      if (allQuestions.isEmpty) {
+        currentQuestionIndex = 0;
+      } else {
+        currentQuestionIndex = startIndex.clamp(0, allQuestions.length - 1);
+      }
+    } catch (e) {
+      error = e.toString();
+      allQuestions = [];
+      currentQuestionIndex = 0;
+    }
+
+    loading = false;
+    notifyListeners();
+  }
 
   /// Initialize study session with selected topics
   Future<void> initializeStudySession({
@@ -82,12 +156,10 @@ class QuestionsProvider extends ChangeNotifier {
   /// Load questions for the current topic
   Future<void> _loadNextTopicQuestions() async {
     if (_currentTopicIndex >= _topicIds.length) {
-      print('📚 All topics completed!');
       return;
     }
 
     final topicId = _topicIds[_currentTopicIndex];
-    print('📡 Loading questions for topic $_currentTopicIndex: $topicId');
 
     loading = allQuestions.isEmpty;
     loadingMore = allQuestions.isNotEmpty;
@@ -103,16 +175,11 @@ class QuestionsProvider extends ChangeNotifier {
 
       if (questionsData != null && questionsData!.data.isNotEmpty) {
         allQuestions.addAll(questionsData!.data);
-        print(
-            '✅ Loaded ${questionsData!.data.length} questions. Total: ${allQuestions.length}');
-      } else {
-        print('⚠️ No questions found for topic $topicId');
-      }
+      } else {}
 
       _currentTopicIndex++;
     } catch (e) {
       error = e.toString();
-      print('❌ Error loading questions: $error');
     }
 
     loading = false;
@@ -195,9 +262,6 @@ class QuestionsProvider extends ChangeNotifier {
       _wrongAnswersPerTopic[topicId] =
           (_wrongAnswersPerTopic[topicId] ?? 0) + 1;
     }
-
-    print(
-        '📊 Answer recorded for topic $topicId: ${isCorrect ? "Correct" : "Wrong"}');
   }
 
   /// Find which topic a question belongs to

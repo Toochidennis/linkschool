@@ -17,7 +17,6 @@ class OverviewService {
     }
 
     final token = loginData['token'] as String;
-    print("Set token: $token");
     _apiService.setAuthToken(token);
     final response = await _apiService.get<Map<String, dynamic>>(
       endpoint: 'portal/elearning/overview',
@@ -53,3 +52,4 @@ class OverviewService {
     return response.data ?? {};
   }
 }
+

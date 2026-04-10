@@ -127,7 +127,6 @@ class _VideoWatchScreenState extends State<VideoWatchScreen>
         }
       }
     } catch (e) {
-      debugPrint('Error loading course videos: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load videos: $e')),
@@ -201,8 +200,8 @@ Future<void> _initializeVideo(String url) async {
       _youtubeController = null;
     }
   } catch (e) {
-    debugPrint('Error disposing in _initializeVideo: $e');
-  }
+      // Intentionally ignored.
+    }
 
   if (!mounted) return;
 
@@ -225,7 +224,6 @@ Future<void> _initializeVideo(String url) async {
       await _addToWatchHistory();
     }
   } catch (e) {
-    debugPrint('Error initializing video: $e');
     if (mounted) {
       setState(() {
         _errorMessage = 'Failed to load video: $e';
@@ -296,7 +294,7 @@ Future<void> _initializeVideo(String url) async {
         playedColor: const Color(0xFF6366F1),
         handleColor: const Color(0xFF6366F1),
         backgroundColor: Colors.grey,
-        bufferedColor: Colors.grey.withOpacity(0.5),
+        bufferedColor: Colors.grey.withValues(alpha: 0.5),
       ),
     );
 
@@ -332,7 +330,7 @@ Future<void> _initializeVideo(String url) async {
         await WatchHistoryService.addToWatchHistory(historyVideo);
       }
     } catch (e) {
-      debugPrint('Error adding to watch history: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -520,7 +518,7 @@ Future<void> _initializeVideo(String url) async {
       _chewieController?.dispose();
       _youtubeController?.dispose();
     } catch (e) {
-      debugPrint('Error disposing during video switch: $e');
+      // Intentionally ignored.
     }
     
     setState(() {
@@ -1412,7 +1410,7 @@ class _VideoPlayerFullscreenScreenState
                                       Text(
                                         ' / ${_formatDuration(widget.controller.value.duration)}',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(alpha: 0.7),
                                           fontSize: 14,
                                         ),
                                       ),
@@ -1440,7 +1438,7 @@ class _VideoPlayerFullscreenScreenState
                                               horizontal: 12, vertical: 6),
                                           decoration: BoxDecoration(
                                             color:
-                                                Colors.white.withOpacity(0.2),
+                                                Colors.white.withValues(alpha: 0.2),
                                             borderRadius:
                                                 BorderRadius.circular(6),
                                           ),

@@ -18,7 +18,6 @@ class UpcomingCohortService {
 
       final safeSlug = slug.trim();
       final uri = Uri.parse("$_baseUrl/$profileId/upcoming-cohorts/$safeSlug");
-      print("Fetching upcoming cohort -> $uri");
 
       final response = await http.get(
         uri,
@@ -34,12 +33,10 @@ class UpcomingCohortService {
         return UpcomingCohortResponseModel.fromJson(decoded);
       }
 
-      print("Failed to fetch upcoming cohort: ${response.statusCode}");
-      print("Body: ${response.body}");
       throw Exception('Failed to fetch upcoming cohort: ${response.statusCode}');
     } catch (e) {
-      print('Error fetching upcoming cohort: $e');
       rethrow;
     }
   }
 }
+

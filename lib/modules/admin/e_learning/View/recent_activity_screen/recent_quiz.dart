@@ -59,7 +59,6 @@ class _RecentQuizState extends State<RecentQuiz> {
     try {
       final singleContentProvider =
           Provider.of<SingleContentProvider>(context, listen: false);
-      print('Fetching quiz for ID: ${widget.quizId}');
 
       final content =
           await singleContentProvider.fetchQuiz(int.parse(widget.quizId));
@@ -70,7 +69,6 @@ class _RecentQuizState extends State<RecentQuiz> {
           errorMessage =
               singleContentProvider.errorMessage ?? 'Failed to load quiz';
         });
-        print('Error: ${singleContentProvider.errorMessage}');
         CustomToaster.toastError(context, 'Error', errorMessage!);
         return;
       }
@@ -82,15 +80,11 @@ class _RecentQuizState extends State<RecentQuiz> {
         errorMessage = null;
       });
 
-      print('Fetched quiz: ${quizData?.title}');
-      print('Questions count: ${questions?.length ?? 0}');
-      print('Correct answers count: ${correctAnswers?.length ?? 0}');
-    } catch (e, stackTrace) {
+    } catch (e) {
       setState(() {
         isLoading = false;
         errorMessage = 'Error fetching quiz: $e';
       });
-      print('Error fetching quiz: $e\nStackTrace: $stackTrace');
       CustomToaster.toastError(context, 'Error', errorMessage!);
     }
   }
@@ -231,7 +225,6 @@ bool _isBase64(String str) {
         appBar: AppBar(
           leading: IconButton(
             onPressed: () {
-              print("Popping back to dashboard...");
               Navigator.pop(context);
             },
             icon: Image.asset(
@@ -384,7 +377,6 @@ bool _isBase64(String str) {
           context, 'Success', 'Quiz deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error deleting quiz: $e');
       CustomToaster.toastError(context, 'Error', 'Failed to delete quiz: $e');
     }
   }
@@ -431,14 +423,6 @@ bool _isBase64(String str) {
               return;
             }
 
-            print("Navigating to AssessmentScreen with:");
-            print("Questions: ${questions!.length}");
-            print("Correct Answers: ${correctAnswers!.length}");
-            print("Quiz duration: $duration");
-            print(
-                "Sample question: ${questions!.isNotEmpty ? questions!.first : 'None'}");
-            print(
-                "Sample correct answer: ${correctAnswers!.isNotEmpty ? correctAnswers!.first : 'None'}");
 
             Navigator.push(
               context,

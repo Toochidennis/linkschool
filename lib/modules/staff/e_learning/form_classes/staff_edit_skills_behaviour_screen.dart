@@ -43,6 +43,7 @@ class _StaffEditSkillsBehaviourScreenState
       term: widget.term,
       year: widget.year,
       db: widget.db,
+      type: 0,
     );
   }
 
@@ -184,6 +185,7 @@ class _StaffEditSkillsBehaviourScreenState
         term: widget.term,
         year: widget.year,
         db: widget.db,
+        type: 0,
       );
 
       if (success && mounted) {

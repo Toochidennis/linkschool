@@ -31,6 +31,22 @@ class ExamModel {
     );
   }
 
+  Map<String, dynamic> toStorageJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'course_name': courseName,
+      'course_id': courseId,
+      'body': body,
+      'url': url,
+    };
+  }
+
+  factory ExamModel.fromStorageJson(Map<String, dynamic> json) {
+    return ExamModel.fromJson(json);
+  }
+
   // Helper method to safely convert any type to String
   static String _safeToString(dynamic value) {
     if (value == null) return '';
@@ -131,6 +147,44 @@ class QuestionModel {
     }
   }
 
+  Map<String, dynamic> toStorageJson() {
+    return {
+      'id': id,
+      'parent': parent,
+      'content': content,
+      'title': title,
+      'type': type,
+      'answer': answer,
+      'correct': correct,
+      'question_image': questionImage,
+      'instruction': instruction,
+      'passage': passage,
+      'options': options,
+      'correctAnswer': correctAnswer,
+    };
+  }
+
+  factory QuestionModel.fromStorageJson(Map<String, dynamic> json) {
+    return QuestionModel(
+      id: json['id']?.toString() ?? '',
+      parent: json['parent']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      answer: json['answer']?.toString() ?? '',
+      correct: json['correct']?.toString() ?? '',
+      questionImage: json['question_image']?.toString() ?? '',
+      instruction: json['instruction']?.toString() ?? '',
+      passage: json['passage']?.toString() ?? '',
+      options: (json['options'] as List<dynamic>?)
+          ?.map((option) => Map<String, dynamic>.from(option as Map))
+          .toList(),
+      correctAnswer: json['correctAnswer'] is Map
+          ? Map<String, dynamic>.from(json['correctAnswer'] as Map)
+          : null,
+    );
+  }
+
   List<String> getOptions() {
     try {
       // If we have the new format options, use them
@@ -144,7 +198,6 @@ class QuestionModel {
       final List<dynamic> parsedAnswer = json.decode(answer);
       return parsedAnswer.map((option) => option['text'] as String).toList();
     } catch (e) {
-      print('⚠️ Error parsing options: $e');
       return [];
     }
   }
@@ -157,55 +210,60 @@ class QuestionModel {
       }
       return null;
     } catch (e) {
-      print('⚠️ Error getting option with image: $e');
       return null;
     }
   }
   
   int? getCorrectAnswerIndex() {
-  try {
-    int? orderValue;
-    
-    // Get the order value from correctAnswer or correct field
-    if (correctAnswer != null) {
-      orderValue = _parseOrderValue(correctAnswer!['order']);
-    } else {
-      orderValue = int.tryParse(correct);
-    }
-    
-    // If we got a valid order value
-    if (orderValue != null) {
-      // API sends 1-based (1,2,3,4), convert to 0-based (0,1,2,3)
-      final zeroBasedIndex = orderValue - 1;
-      
-      // Validate that the index is within the options range
-      final optionCount = getOptions().length;
-      if (zeroBasedIndex >= 0 && zeroBasedIndex < optionCount) {
-        return zeroBasedIndex;
-      } else {
-        print('⚠️ Warning: Correct answer index $zeroBasedIndex out of range (0-${optionCount-1})');
-        print('   Original API order value: $orderValue (1-based)');
-        
-        // Fallback: try to find by text matching
-        final correctText = correctAnswer?['text']?.toString();
-        if (correctText != null && correctText.isNotEmpty) {
-          final options = getOptions();
-          for (int i = 0; i < options.length; i++) {
-            if (options[i].contains(correctText) || correctText.contains(options[i])) {
-              print('   ✅ Found match by text at index $i');
-              return i;
-            }
+    try {
+      final options = getOptions();
+
+      // First try to resolve by answer text, because some payloads use
+      // inconsistent 0-based/1-based order values.
+      final correctText = correctAnswer?['text']?.toString();
+      if (correctText != null && correctText.trim().isNotEmpty) {
+        final normalizedCorrect = _normalizeAnswerText(correctText);
+        for (int i = 0; i < options.length; i++) {
+          final normalizedOption = _normalizeAnswerText(options[i]);
+          if (normalizedOption == normalizedCorrect) {
+            return i;
           }
         }
       }
+
+      int? orderValue;
+
+      // Get the order value from correctAnswer or correct field
+      if (correctAnswer != null) {
+        orderValue = _parseOrderValue(correctAnswer!['order']);
+      } else {
+        orderValue = int.tryParse(correct);
+      }
+
+      if (orderValue == null || options.isEmpty) return null;
+
+      // Support both 0-based and 1-based payloads.
+      if (orderValue >= 0 && orderValue < options.length) {
+        return orderValue;
+      }
+      if (orderValue > 0 && orderValue <= options.length) {
+        return orderValue - 1;
+      }
+
+      return null;
+    } catch (e) {
+      return null;
     }
-    
-    return null;
-  } catch (e) {
-    print('❌ Error in getCorrectAnswerIndex: $e');
-    return null;
   }
-}
+
+  static String _normalizeAnswerText(String value) {
+    final withoutTags = value.replaceAll(RegExp(r'<[^>]*>'), ' ');
+    return withoutTags
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .toLowerCase();
+  }
 
 // Also update _parseOrderValue to handle potential string values better
 static int? _parseOrderValue(dynamic value) {

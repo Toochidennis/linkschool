@@ -27,7 +27,6 @@ class StaffSyllabusProvider with ChangeNotifier {
       _error = '';
     } catch (e) {
       _error = e.toString();
-      print("Fetch Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -72,10 +71,8 @@ class StaffSyllabusProvider with ChangeNotifier {
 
       await _staffSyllabusService.addSyllabus(newSyllabus);
       await fetchSyllabus(levelId, term, courseId, classId);
-      print("Syllabus added and list refreshed");
     } catch (e) {
       _error = e.toString();
-      print("Add Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -113,10 +110,8 @@ class StaffSyllabusProvider with ChangeNotifier {
       );
 
       await _staffSyllabusService.UpdateSyllabus(updatedSyllabus, syllabusId);
-      print("Syllabus updated and list refreshed");
     } catch (e) {
       _error = e.toString();
-      print("Update Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -133,10 +128,8 @@ class StaffSyllabusProvider with ChangeNotifier {
     try {
       await _staffSyllabusService.deletesyllabus(syllabusId);
       await fetchSyllabus(levelId, term, courseId, classId);
-      print("Syllabus deleted successfully");
     } catch (e) {
       _error = e.toString();
-      print("Delete Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -144,3 +137,4 @@ class StaffSyllabusProvider with ChangeNotifier {
     }
   }
 }
+

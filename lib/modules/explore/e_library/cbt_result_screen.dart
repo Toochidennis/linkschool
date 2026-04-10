@@ -9,18 +9,14 @@ import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
-import 'package:linkschool/modules/auth/provider/auth_provider.dart';
+import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
-import 'package:linkschool/modules/explore/e_library/widgets/google_signup_dialog.dart';
-// import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 
 class CbtResultScreen extends StatefulWidget {
   final List<QuestionModel> questions;
@@ -54,13 +50,13 @@ class CbtResultScreen extends StatefulWidget {
 class _CbtResultScreenState extends State<CbtResultScreen> {
   late double opacity;
   final CbtHistoryService _historyService = CbtHistoryService();
-  final _authService = FirebaseAuthService();
   final _subscriptionService = CbtSubscriptionService();
   bool _isSaved = false;
-  bool _userSignedIn = false;
   bool _showUnansweredQuestions = true;
+  bool _isHandlingBackNavigation = false;
   late PageController _pageController;
   int _currentSubjectIndex = 0;
+  Future<void>? _saveResultFuture;
 
   // Cache for AI-generated explanations (keyed by question index and subject)
   final Map<String, String> _explanationCache = {};
@@ -71,25 +67,59 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     _pageController = PageController();
     _loadQuestionListVisibility();
 
-    // Check if user is signed in on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkUserSigninStatus();
+      context.read<CBTProvider>().clearActiveSession();
+      _saveResultFuture = _saveTestResult();
+      _checkSubscriptionStatus();
     });
   }
 
-  void _navigateBackFromResults() {
-    context.read<CBTProvider>().refreshStats();
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-      return;
+  Future<void> _navigateBackFromResults() async {
+    if (_isHandlingBackNavigation || !mounted) return;
+    _isHandlingBackNavigation = true;
+    final cbtProvider = context.read<CBTProvider>();
+
+    if (_saveResultFuture != null) {
+      await _saveResultFuture;
+      if (!mounted) return;
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const CBTDashboard(),
-        settings: const RouteSettings(name: '/cbt_dashboard'),
-      ),
-    );
+    await cbtProvider.refreshStats();
+    if (!mounted) return;
+
+    try {
+      await AdManager.instance.showIfEligible(
+        context: context,
+        trigger: AdTrigger.resultNavigation,
+      );
+      if (!mounted) return;
+
+      if (widget.calledFrom == 'multi-subject') {
+        var popsRemaining = 2;
+        Navigator.of(context).popUntil((route) {
+          if (popsRemaining > 0) {
+            popsRemaining--;
+            return false;
+          }
+          return true;
+        });
+        return;
+      }
+
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+        return;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const CBTDashboard(),
+          settings: const RouteSettings(name: '/cbt_dashboard'),
+        ),
+      );
+    } finally {
+      _isHandlingBackNavigation = false;
+    }
   }
 
   @override
@@ -107,86 +137,14 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     });
   }
 
-  /// Check if user is already signed in
-  Future<void> _checkUserSigninStatus() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
-
-    if (cbtUserProvider.currentUser != null) {
-      await _subscriptionService.setAdMode('continue_with_ads');
-      if (mounted) {
-        setState(() {
-          _userSignedIn = true;
-          _showUnansweredQuestions = false;
-        });
-      }
-      _saveTestResult();
-      _showScorePopup();
-      return;
-    }
-
-    if (authProvider.isLoggedIn) {
-      final portalEmail = authProvider.user?.email.trim() ?? '';
-      if (portalEmail.isNotEmpty) {
-        await cbtUserProvider.tryLinkPortalUser(email: portalEmail);
-      }
-
-      if (cbtUserProvider.currentUser != null) {
-        await _subscriptionService.setAdMode('continue_with_ads');
-        if (mounted) {
-          setState(() {
-            _userSignedIn = true;
-            _showUnansweredQuestions = false;
-          });
-        }
-        _saveTestResult();
-        _showScorePopup();
-        return;
-      }
-    }
-
-    final isSignedIn = await _authService.isUserSignedUp();
-
-    if (isSignedIn) {
-      final firebaseEmail = _authService.getCurrentUserEmail()?.trim() ?? '';
-      if (firebaseEmail.isNotEmpty) {
-        await cbtUserProvider.fetchUserByEmail(firebaseEmail);
-      }
-    }
-
-    if (!isSignedIn && mounted) {
-      // Show persistent Google sign-in dialog
-      _showGoogleSigninDialog();
-    } else if (cbtUserProvider.currentUser != null && mounted) {
-      setState(() {
-        _userSignedIn = true;
-      });
-      // Save test result only after user is signed in
-      _saveTestResult();
-      // Check subscription status before showing score popup
-      await _checkSubscriptionStatus();
-    } else if (mounted) {
-      _showGoogleSigninDialog();
-    }
-  }
-
   /// Check subscription status and show appropriate dialog
   Future<void> _checkSubscriptionStatus() async {
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
-    final testCount = await _subscriptionService.getTestCount();
     final hasPaid = cbtUserProvider.hasPaid;
     final remainingDays = await _subscriptionService.getRemainingFreeTests();
     final trialExpired = await _subscriptionService.isTrialExpired();
     final canTakeTest = await _subscriptionService.canTakeTest();
-
-    print('\n📊 Subscription Status Check:');
-    print('   Test Count: $testCount');
-    print('   Has Paid (provider): $hasPaid');
-    print('   Remaining Trial Days: $remainingDays');
-    print('   Trial Expired: $trialExpired');
-    print('   Can Take Test: $canTakeTest');
 
     if (!mounted) return;
 
@@ -196,12 +154,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
       _showScorePopup();
     } else if (!canTakeTest || trialExpired) {
       // Trial expired - MUST pay (hard block)
-      print('   🔒 Enforcing payment (trial expired)');
       _showSubscriptionPrompt(isHardBlock: true, remainingTests: 0);
     } else if (remainingDays <= 2 && remainingDays > 0) {
       // Show soft prompt when trial is about to expire (last 2 days)
-      print(
-          '   ⚠️ Showing soft subscription prompt ($remainingDays days remaining)');
       _showScorePopup();
       // Show subscription prompt after score popup is dismissed
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -224,42 +179,42 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   }
 
   /// Show persistent Google Sign-in dialog
-  void _showGoogleSigninDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevent dismissing by tapping outside
-      barrierColor: Colors.black54,
-      builder: (context) => GoogleSignupDialog(
-        onSignupSuccess: () {
-          print('✅ User signed in successfully');
-          setState(() {
-            _userSignedIn = true;
-          });
-          // Save test result after successful signup
-          _saveTestResult();
-          // Check subscription status
-          _checkSubscriptionStatus();
-        },
-        onSkip: () {
-          print('🔙 User skipped signin - going back to dashboard');
-          _navigateBackFromResults();
-        },
-      ),
-    );
-  }
+  // void _showGoogleSigninDialog() {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false, // Prevent dismissing by tapping outside
+  //     barrierColor: Colors.black54,
+  //     builder: (context) => GoogleSignupDialog(
+  //       onSignupSuccess: () {
+
+  //         setState(() {
+  //           _userSignedIn = true;
+  //         });
+  //         // Save test result after successful signup
+  //         _saveTestResult();
+  //         // Check subscription status
+  //         _checkSubscriptionStatus();
+  //       },
+  //       onSkip: () {
+
+  //         _navigateBackFromResults();
+  //       },
+  //     ),
+  //   );
+  // }
 
   // Save test result to shared preferences
   Future<void> _saveTestResult() async {
-    if (_isSaved || !_userSignedIn) {
-      return; // Prevent duplicate saves and ensure user is signed in
+    if (_isSaved) {
+      return; // Prevent duplicate saves.
     }
 
     try {
+      final cbtProvider = context.read<CBTProvider>();
       // Check if this is a multi-subject test
       if (widget.allSubjectsData != null &&
           widget.allSubjectsData!.isNotEmpty) {
         // Save ALL subjects in multi-subject test
-        print('\n🔄 Saving Multi-Subject Test Results:');
         for (int i = 0; i < widget.allSubjectsData!.length; i++) {
           final subjectData = widget.allSubjectsData![i];
           final questions = subjectData['questions'] as List<QuestionModel>;
@@ -283,10 +238,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
           );
 
           await _historyService.saveTestResult(historyModel);
-          print(
-              '   ✅ Subject ${i + 1}/${widget.allSubjectsData!.length}: $subject - ${historyModel.percentage.toStringAsFixed(1)}%');
         }
-        print('✅ All subjects saved successfully!\n');
       } else {
         // Save single subject test
         final score = _calculateScore(widget.questions, widget.userAnswers);
@@ -305,15 +257,15 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
         );
 
         await _historyService.saveTestResult(historyModel);
-        print(
-            '✅ Test result saved: ${historyModel.subject} - ${historyModel.percentage.toStringAsFixed(1)}% (Completed: ${historyModel.isFullyCompleted})');
       }
 
+      await cbtProvider.refreshStats();
+      if (!mounted) return;
       setState(() {
         _isSaved = true;
       });
     } catch (e) {
-      print('❌ Error saving test result: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -375,37 +327,25 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     final bool isMultiSubject =
         widget.allSubjectsData != null && widget.allSubjectsData!.isNotEmpty;
 
-    return WillPopScope(
-      // Prevent back navigation if user hasn't signed in
-      onWillPop: () async {
-        if (!_userSignedIn) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please sign in first to save your scores'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return false;
-        }
-
-        _navigateBackFromResults();
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _navigateBackFromResults();
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: _userSignedIn
-              ? IconButton(
-                  onPressed: () {
-                    _navigateBackFromResults();
-                  },
-                  icon: Image.asset(
-                    'assets/icons/arrow_back.png',
-                    color: AppColors.primaryLight,
-                    width: 34.0,
-                    height: 34.0,
-                  ),
-                )
-              : null, // Hide back button until signed in
+          leading: IconButton(
+            onPressed: () async {
+              await _navigateBackFromResults();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
+          ),
           title:
               Text(isMultiSubject ? 'Multi-Subject Results' : 'Test Summary'),
           centerTitle: true,
@@ -426,16 +366,12 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             ),
           ),
         ),
-        body: !_userSignedIn
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : Container(
-                decoration: Constants.customBoxDecoration(context),
-                child: isMultiSubject
-                    ? _buildMultiSubjectView()
-                    : _buildSingleSubjectView(),
-              ),
+        body: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: isMultiSubject
+              ? _buildMultiSubjectView()
+              : _buildSingleSubjectView(),
+        ),
       ),
     );
   }
@@ -444,180 +380,211 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     final questionIndexes =
         _visibleQuestionIndexes(widget.questions, widget.userAnswers);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.examType,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color.fromARGB(255, 74, 72, 72),
-            ),
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _buildSingleSubjectHeader(),
           ),
-          Text(
-            ' ${widget.subject}',
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Color.fromARGB(255, 115, 114, 114),
-            ),
-          ),
-          Text(
-            widget.year.toString(),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildScoreCard(widget.questions, widget.userAnswers),
-          const SizedBox(height: 16),
-          // Dynamic question list
-          ...questionIndexes.map((index) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildQuestionCard(
-                  index, widget.questions, widget.userAnswers),
-            );
-          }),
-        ],
-      ),
+        ),
+        _buildQuestionSliver(
+          questionIndexes: questionIndexes,
+          questions: widget.questions,
+          userAnswers: widget.userAnswers,
+          topPadding: 16,
+          bottomPadding: 16,
+        ),
+      ],
     );
   }
 
   Widget _buildMultiSubjectView() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Swipeable score cards
-          SizedBox(
-            height: 380,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: widget.allSubjectsData!.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentSubjectIndex = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                final subjectData = widget.allSubjectsData![index];
-                final questions =
-                    subjectData['questions'] as List<QuestionModel>;
-                final userAnswers = subjectData['userAnswers'] as Map<int, int>;
-                final subject = subjectData['subject'] as String;
-                final year = subjectData['year'] as int;
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  subject,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.normal600(
-                                    fontSize: 18,
-                                    color: AppColors.text3Light,
-                                  ),
-                                ),
-                                Text(
-                                  'Year: $year',
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 14,
-                                    color: AppColors.text7Light,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Page indicator
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.eLearningBtnColor1,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${index + 1} / ${widget.allSubjectsData!.length}',
-                              style: AppTextStyles.normal600(
-                                fontSize: 12,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: _buildScoreCard(questions, userAnswers),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          // Swipe indicator
-          if (widget.allSubjectsData!.length > 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.swipe, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Swipe to see other subjects',
-                    style: AppTextStyles.normal500(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 16),
-          // Question details for current subject
-          _buildQuestionsListForSubject(_currentSubjectIndex),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuestionsListForSubject(int subjectIndex) {
-    final subjectData = widget.allSubjectsData![subjectIndex];
+    final subjectData = widget.allSubjectsData![_currentSubjectIndex];
     final questions = subjectData['questions'] as List<QuestionModel>;
     final userAnswers = subjectData['userAnswers'] as Map<int, int>;
     final questionIndexes = _visibleQuestionIndexes(questions, userAnswers);
 
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _buildMultiSubjectHeader(),
+          ),
+        ),
+        _buildQuestionSliver(
+          questionIndexes: questionIndexes,
+          questions: questions,
+          userAnswers: userAnswers,
+          topPadding: 16,
+          bottomPadding: 16,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSingleSubjectHeader() {
     return Column(
-      children: questionIndexes
-          .map(
-            (index) => Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildQuestionCard(index, questions, userAnswers),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.examType,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color.fromARGB(255, 74, 72, 72),
+          ),
+        ),
+        Text(
+          ' ${widget.subject}',
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color.fromARGB(255, 115, 114, 114),
+          ),
+        ),
+        Text(
+          widget.year.toString(),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildScoreCard(widget.questions, widget.userAnswers),
+      ],
+    );
+  }
+
+  Widget _buildMultiSubjectHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 380,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.allSubjectsData!.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentSubjectIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final subjectData = widget.allSubjectsData![index];
+              final questions = subjectData['questions'] as List<QuestionModel>;
+              final userAnswers = subjectData['userAnswers'] as Map<int, int>;
+              final subject = subjectData['subject'] as String;
+              final year = subjectData['year'] as int;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                subject,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.normal600(
+                                  fontSize: 18,
+                                  color: AppColors.text3Light,
+                                ),
+                              ),
+                              Text(
+                                'Year: $year',
+                                style: AppTextStyles.normal500(
+                                  fontSize: 14,
+                                  color: AppColors.text7Light,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.eLearningBtnColor1,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${index + 1} / ${widget.allSubjectsData!.length}',
+                            style: AppTextStyles.normal600(
+                              fontSize: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: _buildScoreCard(questions, userAnswers),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        if (widget.allSubjectsData!.length > 1)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.swipe, size: 16, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text(
+                  'Swipe to see other subjects',
+                  style: AppTextStyles.normal500(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
             ),
-          )
-          .toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildQuestionSliver({
+    required List<int> questionIndexes,
+    required List<QuestionModel> questions,
+    required Map<int, int> userAnswers,
+    double topPadding = 0,
+    double bottomPadding = 0,
+  }) {
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
+      sliver: SliverList.builder(
+        itemCount: questionIndexes.length,
+        itemBuilder: (context, listIndex) {
+          final questionIndex = questionIndexes[listIndex];
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: listIndex == questionIndexes.length - 1 ? 0 : 16,
+            ),
+            child: _buildQuestionCard(questionIndex, questions, userAnswers),
+          );
+        },
+      ),
     );
   }
 
@@ -651,7 +618,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -709,7 +676,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: totalQuestions > 0 ? correctAnswers / totalQuestions : 0,
-              backgroundColor: Colors.white.withOpacity(0.3),
+              backgroundColor: Colors.white.withValues(alpha: 0.3),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
               minHeight: 10,
             ),
@@ -729,7 +696,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.3),
+                color: color.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -782,12 +749,12 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -809,10 +776,12 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                      color:
+                          AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                        color:
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -846,7 +815,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: statusColor, width: 1),
                 ),
@@ -1022,7 +991,8 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: optionColor?.withOpacity(0.1) ?? Colors.grey.shade50,
+                  color: optionColor?.withValues(alpha: 0.1) ??
+                      Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: optionColor ?? Colors.grey.shade300,
@@ -1106,7 +1076,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.eLearningBtnColor1,
                 side: BorderSide(
-                  color: AppColors.eLearningBtnColor1.withOpacity(0.5),
+                  color: AppColors.eLearningBtnColor1.withValues(alpha: 0.5),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -1543,7 +1513,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
             gradient: LinearGradient(
               colors: [
                 AppColors.eLearningBtnColor1,
-                AppColors.eLearningBtnColor1.withOpacity(0.8),
+                AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -1551,7 +1521,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -1564,7 +1534,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1593,7 +1563,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
                     : 'Here\'s how you performed',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontFamily: 'Urbanist',
                 ),
               ),
@@ -1610,7 +1580,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
                         height: 120,
                         width: 120,
                         child: CircularProgressIndicator(
-                          backgroundColor: Colors.white.withOpacity(0.3),
+                          backgroundColor: Colors.white.withValues(alpha: 0.3),
                           color: Colors.white,
                           value: scoreValue * _progressAnimation.value,
                           strokeWidth: 12,
@@ -1631,7 +1601,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
                             '%',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontFamily: 'Urbanist',
                             ),
                           ),
@@ -1679,7 +1649,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
                         borderRadius: BorderRadius.circular(10),
                         child: LinearProgressIndicator(
                           value: scoreValue * _progressAnimation.value,
-                          backgroundColor: Colors.white.withOpacity(0.3),
+                          backgroundColor: Colors.white.withValues(alpha: 0.3),
                           valueColor:
                               const AlwaysStoppedAnimation<Color>(Colors.white),
                           minHeight: 12,
@@ -1690,7 +1660,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
                         '${widget.totalScore} / ${widget.totalQuestions} Questions',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontFamily: 'Urbanist',
                         ),
                       ),
@@ -1741,7 +1711,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.3),
+                color: color.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1767,7 +1737,7 @@ class _ScorePopupDialogState extends State<_ScorePopupDialog>
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontFamily: 'Urbanist',
           ),
         ),
@@ -1818,15 +1788,12 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
     if (widget.cachedExplanation != null &&
         widget.cachedExplanation!.isNotEmpty) {
       _explanation = widget.cachedExplanation;
-      print('📖 Using cached explanation');
     } else if (widget.apiExplanation != null &&
         widget.apiExplanation!.isNotEmpty) {
       _explanation = widget.apiExplanation;
       _isApiExplanation = true;
-      print('📖 Using API explanation');
       widget.onExplanationGenerated(widget.apiExplanation!);
     } else {
-      print('🤖 No API explanation, fetching from AI...');
       _fetchExplanation();
     }
   }
@@ -1851,7 +1818,6 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
           _isLoading = false;
         });
         widget.onExplanationGenerated(explanation);
-        print('✅ AI explanation generated successfully');
       }
     } catch (e) {
       if (mounted) {
@@ -1859,7 +1825,6 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
           _error = "Failed to generate explanation. Please try again.";
           _isLoading = false;
         });
-        print('❌ AI explanation error: $e');
       }
     }
   }
@@ -1897,8 +1862,9 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: widget.isCorrect
-                              ? AppColors.attCheckColor2.withOpacity(0.1)
-                              : AppColors.eLearningRedBtnColor.withOpacity(0.1),
+                              ? AppColors.attCheckColor2.withValues(alpha: 0.1)
+                              : AppColors.eLearningRedBtnColor
+                                  .withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -1955,8 +1921,9 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: widget.isCorrect
-                          ? AppColors.attCheckColor2.withOpacity(0.1)
-                          : AppColors.eLearningRedBtnColor.withOpacity(0.1),
+                          ? AppColors.attCheckColor2.withValues(alpha: 0.1)
+                          : AppColors.eLearningRedBtnColor
+                              .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: widget.isCorrect
@@ -1988,7 +1955,7 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.attCheckColor2.withOpacity(0.1),
+                        color: AppColors.attCheckColor2.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AppColors.attCheckColor2),
                       ),
@@ -2028,8 +1995,8 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.eLearningBtnColor1.withOpacity(0.1),
+                            color: AppColors.eLearningBtnColor1
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -2148,7 +2115,7 @@ class _ResultExplanationModalState extends State<_ResultExplanationModal> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),

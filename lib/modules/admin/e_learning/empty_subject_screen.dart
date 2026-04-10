@@ -118,7 +118,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
   Future<void> _loadSyllabusContents() async {
     try {
       final contentProvider = locator<SyllabusContentProvider>();
-      print("syllabus content ${contentProvider.contents}");
 
       final userBox = Hive.box('userData');
       final storedUserData =
@@ -140,7 +139,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
         CustomToaster.toastError(context, 'Error', contentProvider.error);
       }
     } catch (e) {
-      print('Error loading syllabus contents: $e');
       CustomToaster.toastError(
           context, 'Error', 'Failed to load syllabus contents: $e');
     }
@@ -248,7 +246,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     String text,
     String iconPath,
   ) {
-  print("Addingffffffffffffff new ${widget.courseId} syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.courseName}");
   
     return InkWell(
       onTap: () {
@@ -652,7 +649,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
               height: 40,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: SvgPicture.asset(
@@ -843,7 +840,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
             : 'https://yourserver.com/${file.fileName}', // Replace with your base URL
       );
     }).toList();
-print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
+ // Debug log
     final questionData = {
     'id': item.id, 
     'title': item.title,
@@ -1127,7 +1124,6 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
           context, 'Success', '"${item.title}" has been deleted.');
       _loadSyllabusContents(); // This is where the page is refreshed
         } catch (e) {
-      print('Error during deletion: $e');
       CustomToaster.toastError(context, 'Error', 'An unexpected error occurred.');
     }
   }
@@ -1177,7 +1173,6 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
 
     switch (item.type.toLowerCase()) {
       case 'assignment':
-      print('Navigating to assignment details for: ${item.id}');
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1232,8 +1227,6 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
     'creator_name': null, // Add logic to fetch creator_name if available
     'term': widget.term,
   };
-        print(correctAnswers);
-        print("${item.id}");
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1835,7 +1828,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
 //                         height: 40,
 //                         padding: const EdgeInsets.all(8),
 //                         decoration: BoxDecoration(
-//                           color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+//                           color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
 //                           borderRadius: BorderRadius.circular(8),
 //                         ),
 //                         child: SvgPicture.asset(
@@ -1907,7 +1900,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
 //                         height: 40,
 //                         padding: const EdgeInsets.all(8),
 //                         decoration: BoxDecoration(
-//                           color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+//                           color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
 //                           borderRadius: BorderRadius.circular(8),
 //                         ),
 //                         child: SvgPicture.asset(
@@ -1979,7 +1972,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
 //                         height: 40,
 //                         padding: const EdgeInsets.all(8),
 //                         decoration: BoxDecoration(
-//                           color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+//                           color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
 //                           borderRadius: BorderRadius.circular(8),
 //                         ),
 //                         child: SvgPicture.asset(
@@ -2224,7 +2217,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
 //         CustomToaster.toastError(context, 'Error', contentProvider.error);
 //       }
 //     } catch (e) {
-//       print('Error loading syllabus contents: $e');
+
 //       CustomToaster.toastError(
 //           context, 'Error', 'Failed to load syllabus contents: $e');
 //     }
@@ -2704,7 +2697,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
 //               height: 40,
 //               padding: const EdgeInsets.all(8),
 //               decoration: BoxDecoration(
-//                 color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+//                 color: AppColors.eLearningBtnColor1.withValues(alpha: 0.1),
 //                 borderRadius: BorderRadius.circular(8),
 //               ),
 //               child: SvgPicture.asset(

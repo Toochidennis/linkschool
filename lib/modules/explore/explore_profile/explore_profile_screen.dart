@@ -21,9 +21,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: AppSettingsScreen(),
-    );
+    return const AppSettingsScreen();
   }
 }
 
@@ -31,17 +29,13 @@ class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
 
   @override
-  _AppSettingsScreenState createState() => _AppSettingsScreenState();
+  State<AppSettingsScreen> createState() => _AppSettingsScreenState();
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late AnimationController _bounceController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _bounceAnimation;
 
   final FirebaseAuthService _authService = FirebaseAuthService();
 
@@ -53,48 +47,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
-    );
-
-    _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
-    );
-
     // Add mounted checks
     _fadeController.forward();
-
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) _slideController.forward();
-    });
-
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _bounceController.forward();
-    });
-
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
-    _slideController.dispose();
-    _bounceController.dispose();
     super.dispose();
   }
 
@@ -123,31 +87,35 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       );
 
       if (signedIn == true) {
+        if (!mounted) return;
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
         if (cbtUserProvider.currentUser == null) {
           await cbtUserProvider.initialize();
         }
-        await cbtUserProvider.refreshCurrentUser();
+        if (!mounted) return;
         final updatedUser = cbtUserProvider.currentUser;
 
         if (updatedUser != null) {
           try {
             final profileProvider =
                 Provider.of<CreateUserProfileProvider>(context, listen: false);
-            final profiles = await profileProvider
-                .fetchUserProfiles(updatedUser.id.toString());
-            if (profiles.isNotEmpty) {
-              await cbtUserProvider.replaceProfiles(profiles);
+            if (updatedUser.profiles.isEmpty) {
+              final profiles = await profileProvider
+                  .fetchUserProfiles(updatedUser.id.toString());
+              if (profiles.isNotEmpty) {
+                await cbtUserProvider.replaceProfiles(profiles);
+              }
             }
           } catch (e) {
-            debugPrint("Failed to fetch profiles after sign-in: $e");
+            // Intentionally ignored.
           }
         }
 
         if (!mounted) return;
 
-        final profiles = cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+        final profiles =
+            cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
         CbtUserProfile? activeProfile =
             profiles.isNotEmpty ? profiles.first : null;
 
@@ -202,20 +170,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     if (confirm == true) {
       try {
         // Clear app-specific user data FIRST before Firebase signout
+        if (!mounted) return;
         final cbtUserProvider =
             Provider.of<CbtUserProvider>(context, listen: false);
 
         // Clear provider state and persisted CBT user data
         await cbtUserProvider.logout();
-        print('✅ CbtUserProvider logout completed');
 
         // Clear commonly used auth/shared keys
         await _clearAllUserSharedPrefs();
-        print('✅ SharedPreferences cleared');
 
         // Sign out from Firebase LAST
         await _authService.signOut();
-        print('✅ Firebase signout completed');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -226,7 +192,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
           );
         }
       } catch (e) {
-        print('❌ Error during logout: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -258,17 +223,37 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       }
 
       // Optionally clear any other known flags
-      print('✅ Cleared user-related SharedPreferences keys');
     } catch (e) {
-      print('❌ Error clearing SharedPreferences on logout: $e');
+      // Intentionally ignored.
     }
   }
 
   // Add this method to handle the payment flow
   Future<void> _handleSubscribeNow() async {
     if (!mounted) return;
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
+    await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+    if (!mounted) return;
+
+    if (cbtUserProvider.isOnFreeTrial) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Your free trial is active. Plans will be available after it expires.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final didProceed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
+      MaterialPageRoute(
+        builder: (_) => const CbtPlansScreen(
+          showTrialButton: false,
+          preferTrialLabel: false,
+        ),
+      ),
     );
     if (didProceed == true && mounted) {
       setState(() {});
@@ -279,44 +264,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     required Widget child,
     required int index,
   }) {
-    // Calculate interval with proper bounds
-    final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
-    final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
-
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: _slideController,
-              curve: Interval(
-                intervalStart,
-                intervalEnd,
-                curve: Curves.elasticOut,
-              ),
-            )),
-            // Add ScaleTransition to make the bounce visible using elastic curve
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                CurvedAnimation(
-                  parent: _bounceController,
-                  curve: Interval(
-                    intervalStart,
-                    intervalEnd,
-                    curve: Curves.elasticOut,
-                  ),
-                ),
-              ),
-              child: child,
-            ),
-          ),
-        );
-      },
+    return FadeTransition(
+      opacity: _fadeAnimation,
       child: child,
     );
   }
@@ -351,7 +300,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                         padding: const EdgeInsets.all(12.0),
                         child: Row(
                           children: [
-                            const Icon(Icons.info_outline, color: Colors.orange),
+                            const Icon(Icons.info_outline,
+                                color: Colors.orange),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -373,8 +323,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                 if (isSignedIn)
                   _buildAnimatedCard(
                     index: 1,
-                    child:
-                        _buildProfileHeader(settings, subscriptionStatus, cbtUser),
+                    child: _buildProfileHeader(
+                        settings, subscriptionStatus, cbtUser),
                   ),
                 if (isSignedIn) const SizedBox(height: 24),
 
@@ -486,7 +436,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                             title: 'Logout',
                             subtitle: 'Sign out of your account',
                             settings: settings,
-                            trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                            trailing:
+                                Icon(Icons.chevron_right, color: Colors.grey),
                             onTap: _handleLogout,
                           ),
                         ], settings),
@@ -512,51 +463,78 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
   ) {
     if (user == null) return const SizedBox.shrink();
 
-    // Show static subscription expiry message if user has paid
-    String timeLeft = '';
-    if (subscriptionStatus['hasPaid'] == true) {
-      timeLeft = 'Subscription expires in 1 year';
-    }
+    final hasValidLicense = subscriptionStatus['hasValidLicense'] == true;
+    final hasPaid = subscriptionStatus['hasPaid'] == true;
+    final licenseSource = subscriptionStatus['licenseSource']?.toString();
+    final licenseReason = subscriptionStatus['licenseReason']?.toString();
+    final isFreeTrial = hasValidLicense && licenseSource == 'trial';
+    final isExpiredTrial =
+        !hasValidLicense && !hasPaid && licenseReason == 'trial_expired';
+    final timeLeft = _buildLicenseExpiryText(subscriptionStatus);
+    final shouldHighlightExpiry =
+        (isFreeTrial || isExpiredTrial) && timeLeft.isNotEmpty;
+    final surfaceColor = settings.isDarkMode ? Colors.grey[850]! : Colors.white;
+    final subtleBorderColor = settings.isDarkMode
+        ? Colors.white.withValues(alpha: 0.08)
+        : AppColors.textFieldBorderLight.withValues(alpha: 0.55);
+    final secondaryTextColor =
+        settings.isDarkMode ? Colors.grey[300]! : Colors.grey[600]!;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: settings.isDarkMode ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: subtleBorderColor),
         boxShadow: [
           BoxShadow(
             color: settings.isDarkMode
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+                ? Colors.black.withValues(alpha: 0.22)
+                : Colors.grey.withValues(alpha: 0.08),
+            spreadRadius: 0,
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Profile Picture
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.text2Light.withOpacity(0.2),
-                backgroundImage: (user.profilePicture != null &&
-                        user.profilePicture!.trim().isNotEmpty)
-                    ? NetworkImage(user.profilePicture!)
-                    : null,
-                child: (user.profilePicture == null ||
-                        user.profilePicture!.trim().isEmpty)
-                    ? Icon(
-                        Icons.person,
-                        size: 40,
-                        color: AppColors.text2Light,
-                      )
-                    : null,
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.text2Light.withValues(alpha: 0.18),
+                      AppColors.secondaryLight.withValues(alpha: 0.12),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Colors.transparent,
+                  backgroundImage: (user.profilePicture != null &&
+                          user.profilePicture!.trim().isNotEmpty)
+                      ? NetworkImage(user.profilePicture!)
+                      : null,
+                  child: (user.profilePicture == null ||
+                          user.profilePicture!.trim().isEmpty)
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: 34,
+                          color: AppColors.text2Light,
+                        )
+                      : null,
+                ),
               ),
-              const SizedBox(width: 16),
-              // User Info
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -575,72 +553,51 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
                       user.email,
                       style: AppTextStyles.normal400(
                         fontSize: 14,
-                        color: settings.isDarkMode
-                            ? Colors.grey[300]!
-                            : Colors.grey[600]!,
+                        color: secondaryTextColor,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          subscriptionStatus['hasPaid'] == true
-                              ? Icons.verified
-                              : Icons.warning,
-                          color: subscriptionStatus['hasPaid'] == true
-                              ? Colors.green
-                              : Colors.orange,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          subscriptionStatus['hasPaid'] == true
-                              ? 'Subscribed'
-                              : 'Not Subscribed',
-                          style: AppTextStyles.normal500(
-                            fontSize: 14,
-                            color: subscriptionStatus['hasPaid'] == true
-                                ? Colors.green
-                                : Colors.orange,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (timeLeft.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          timeLeft,
-                          style: AppTextStyles.normal400(
-                            fontSize: 13,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
             ],
           ),
+          if (timeLeft.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _buildExpiryCallout(
+              settings: settings,
+              text: timeLeft,
+              icon: shouldHighlightExpiry
+                  ? (isExpiredTrial
+                      ? Icons.warning_amber_rounded
+                      : Icons.local_fire_department_outlined)
+                  : Icons.schedule_outlined,
+              color: shouldHighlightExpiry
+                  ? (isExpiredTrial
+                      ? const Color(0xFFB91C1C)
+                      : const Color(0xFFD97706))
+                  : AppColors.text2Light,
+              emphasize: shouldHighlightExpiry,
+            ),
+          ],
 
-          // Payment Button (only show if not subscribed)
-          if (subscriptionStatus['hasPaid'] != true) ...[
-            const SizedBox(height: 20),
+          // Payment Button (only show when the user has no active CBT access)
+          if (subscriptionStatus['hasValidLicense'] != true) ...[
+            const SizedBox(height: 16),
             Container(
               width: double.infinity,
-              height: 40,
+              height: 44,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     AppColors.eLearningBtnColor1,
-                    AppColors.eLearningBtnColor1.withOpacity(0.8),
+                    AppColors.eLearningBtnColor1.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.eLearningBtnColor1.withOpacity(0.3),
+                    color: AppColors.eLearningBtnColor1.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -691,6 +648,117 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     return 'User';
   }
 
+  Widget _buildExpiryCallout({
+    required AppSettingsProvider settings,
+    required String text,
+    required IconData icon,
+    required Color color,
+    required bool emphasize,
+  }) {
+    final backgroundColor = settings.isDarkMode
+        ? color.withValues(alpha: emphasize ? 0.18 : 0.12)
+        : color.withValues(alpha: emphasize ? 0.14 : 0.08);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: emphasize
+                  ? AppTextStyles.normal700(
+                      fontSize: 14,
+                      color: color,
+                    )
+                  : AppTextStyles.normal500(
+                      fontSize: 13,
+                      color: color,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _buildLicenseExpiryText(Map<String, dynamic> subscriptionStatus) {
+    final hasValidLicense = subscriptionStatus['hasValidLicense'] == true;
+    final hasPaid = subscriptionStatus['hasPaid'] == true;
+    final licenseReason = subscriptionStatus['licenseReason']?.toString();
+    final licenseSource = subscriptionStatus['licenseSource']?.toString();
+
+    final rawExpiresAt = subscriptionStatus['licenseExpiresAt']?.toString();
+    final expiresAt = (rawExpiresAt == null || rawExpiresAt.isEmpty)
+        ? null
+        : _parseLicenseDate(rawExpiresAt);
+    final formattedDate = expiresAt == null ? null : _formatDate(expiresAt);
+
+    if (!hasValidLicense) {
+      if (!hasPaid && licenseReason == 'trial_expired') {
+        if (formattedDate != null) {
+          return 'Free trial expired on $formattedDate';
+        }
+        return 'Your free trial has expired';
+      }
+      return '';
+    }
+
+    if (licenseSource == 'trial') {
+      if (expiresAt == null) return '';
+      final daysLeft = _daysLeftUntil(expiresAt);
+      if (daysLeft <= 0) {
+        return 'Free trial ends today';
+      }
+      final dayLabel = daysLeft == 1 ? 'day' : 'days';
+      return 'Free trial ends in $daysLeft $dayLabel';
+    }
+    if (licenseSource == 'payment') {
+      if (formattedDate == null) return '';
+      return 'Subscription expires $formattedDate';
+    }
+    if (formattedDate == null) return '';
+    return 'Access expires $formattedDate';
+  }
+
+  DateTime? _parseLicenseDate(String value) {
+    final normalized =
+        value.contains(' ') ? value.replaceFirst(' ', 'T') : value;
+    return DateTime.tryParse(normalized);
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  int _daysLeftUntil(DateTime expiry) {
+    final now = DateTime.now();
+    final difference = expiry.difference(now);
+    if (difference.isNegative) return 0;
+    return difference.inHours <= 24 ? 1 : (difference.inHours / 24).ceil();
+  }
+
   Widget _buildSectionHeader(String title, AppSettingsProvider settings) {
     return Text(
       title,
@@ -712,8 +780,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
         boxShadow: [
           BoxShadow(
             color: settings.isDarkMode
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: Offset(0, 2),
@@ -737,7 +805,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.text2Light.withOpacity(0.1),
+          color: AppColors.text2Light.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
@@ -997,7 +1065,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //   @override
 //   Widget build(BuildContext context) {
 //     final settings = Provider.of<AppSettingsProvider>(context);
-    
+
 //     final cbtUserProvider = Provider.of<CbtUserProvider>(context);
 //     final subscriptionStatus = cbtUserProvider.subscriptionStatus;
 //     return MediaQuery(
@@ -1038,7 +1106,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //                 // Profile Header Section
 //                 if (_isSignedIn) _buildProfileHeader(settings, subscriptionStatus),
 //                 if (_isSignedIn) const SizedBox(height: 24),
-              
+
 //               // App Preferences Section
 //               _buildSectionHeader('App Preferences', settings),
 //               const SizedBox(height: 12),
@@ -1075,7 +1143,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //                 //   onTap: () => _showTextSizeDialog(),
 //                 // ),
 //               ], settings),
-
 
 //               const SizedBox(height: 24),
 
@@ -1118,7 +1185,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //               //     ),
 //               //   ),
 //               //   _buildDivider(),
-              
+
 //               // ], settings),
 
 //               // const SizedBox(height: 24),
@@ -1225,9 +1292,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //         borderRadius: BorderRadius.circular(16),
 //         boxShadow: [
 //           BoxShadow(
-//             color: settings.isDarkMode 
-//                 ? Colors.black.withOpacity(0.3) 
-//                 : Colors.grey.withOpacity(0.1),
+//             color: settings.isDarkMode
+//                 ? Colors.black.withValues(alpha: 0.3)
+//                 : Colors.grey.withValues(alpha: 0.1),
 //             spreadRadius: 1,
 //             blurRadius: 10,
 //             offset: const Offset(0, 2),
@@ -1241,11 +1308,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //             height: 50,
 //             child: CircleAvatar(
 //               radius: 40,
-//               backgroundColor: AppColors.text2Light.withOpacity(0.2),
-//               backgroundImage: user.photoURL != null 
-//                   ? NetworkImage(user.photoURL!) 
+//               backgroundColor: AppColors.text2Light.withValues(alpha: 0.2),
+//               backgroundImage: user.photoURL != null
+//                   ? NetworkImage(user.photoURL!)
 //                   : null,
-//               child: user.photoURL == null 
+//               child: user.photoURL == null
 //                   ? Icon(
 //                       Icons.person,
 //                       size: 40,
@@ -1272,8 +1339,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //                   user.email ?? '',
 //                   style: AppTextStyles.normal400(
 //                     fontSize: 14,
-//                     color: settings.isDarkMode 
-//                         ? Colors.grey[300]! 
+//                     color: settings.isDarkMode
+//                         ? Colors.grey[300]!
 //                         : Colors.grey[600]!,
 //                   ),
 //                   overflow: TextOverflow.ellipsis,
@@ -1329,14 +1396,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 
 //   Widget _buildSettingsCard(List<Widget> children, AppSettingsProvider settings) {
 //     final cardColor = settings.isDarkMode ? Colors.grey[800] : Colors.white;
-    
+
 //     return Container(
 //       decoration: BoxDecoration(
 //         color: cardColor,
 //         borderRadius: BorderRadius.circular(16),
 //         boxShadow: [
 //           BoxShadow(
-//             color: settings.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+//             color: settings.isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
 //             spreadRadius: 1,
 //             blurRadius: 10,
 //             offset: Offset(0, 2),
@@ -1360,7 +1427,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
 //       leading: Container(
 //         padding: const EdgeInsets.all(8),
 //         decoration: BoxDecoration(
-//           color: AppColors.text2Light.withOpacity(0.1),
+//           color: AppColors.text2Light.withValues(alpha: 0.1),
 //           borderRadius: BorderRadius.circular(8),
 //         ),
 //         child: Icon(

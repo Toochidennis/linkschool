@@ -164,7 +164,7 @@ class _InfoCardState extends State<InfoCard> {
         return classes.first['class_name'] ?? 'Unknown Class';
       }
     } catch (e) {
-      print('Error getting class name from Hive: $e');
+      // Intentionally ignored.
     }
 
     return 'Unknown Class';
@@ -193,7 +193,7 @@ class _InfoCardState extends State<InfoCard> {
         }
       }
     } catch (e) {
-      print('Error getting term from Hive: $e');
+      // Intentionally ignored.
     }
 
     return 'Third Term'; // Fallback to original dummy data
@@ -217,7 +217,7 @@ class _InfoCardState extends State<InfoCard> {
         }
       }
     } catch (e) {
-      print('Error getting year from Hive: $e');
+      // Intentionally ignored.
     }
 
     return '2015/2016 Academic session'; // Fallback to original dummy data
@@ -230,7 +230,6 @@ class _InfoCardState extends State<InfoCard> {
       final formatter = DateFormat('d MMMM, yyyy');
       return formatter.format(now);
     } catch (e) {
-      print('Error formatting current date: $e');
       return '20 July, 2024'; // Fallback to original dummy data
     }
   }

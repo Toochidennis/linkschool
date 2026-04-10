@@ -17,10 +17,8 @@ class DeleteQuestionProvider with ChangeNotifier {
     try {
       await _deleteQuestionService.deleteQuestion(id, settingId);
 
-      print("Question deleted successfully");
     } catch (e) {
       _error = e.toString();
-      print("Delete Error: $_error");
       rethrow;
     } finally {
       _isLoading = false;
@@ -28,3 +26,4 @@ class DeleteQuestionProvider with ChangeNotifier {
     }
   }
 }
+

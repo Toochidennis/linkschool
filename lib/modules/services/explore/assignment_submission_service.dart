@@ -34,7 +34,6 @@ class AssignmentSubmissionService {
 
       final url = "$_baseUrl/learning/lessons/$lessonId/assignments";
 
-      print("📡 Submitting assignment → $url");
 
       final payload = <String, dynamic>{
         "name": name,
@@ -60,12 +59,9 @@ class AssignmentSubmissionService {
       
 
       // Encode JSON in background isolate to avoid blocking UI
-      print("🔄 Encoding payload to JSON in background...");
-     //  print("✅ JSON encoding complete, size: ${jsonBody.length} bytes");
       final jsonBody = await compute(_encodePayloadToJson, payload);
      
 
-      print("📤 Sending HTTP request...");
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -76,35 +72,29 @@ class AssignmentSubmissionService {
         body: jsonBody,
       );
 
-      print("📥 Response Status: ${response.statusCode}");
-      print("📥 Response Body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
-        print("✅ Assignment submitted successfully");
         return {
           'success': true,
           'message': decoded['message'] ?? 'Assignment submitted successfully',
           'data': decoded['data'] ?? {},
         };
       } else {
-        print("❌ Server returned error status: ${response.statusCode}");
         try {
           final errorBody = json.decode(response.body);
-          print("❌ Error response body: $errorBody");
           throw Exception(
             errorBody['message'] ?? "Server error: ${response.statusCode}",
           );
         } catch (jsonError) {
-          print("❌ Could not parse error response: $jsonError");
           throw Exception(
               "Server error: ${response.statusCode} - ${response.body}");
         }
       }
-    } catch (e, stackTrace) {
-      print("❌ Error submitting assignment: $e");
-      print("❌ Stack trace: $stackTrace");
+    } catch (e) {
       rethrow; // ✅ Rethrow to let provider handle it
     }
   }
 }
+
+

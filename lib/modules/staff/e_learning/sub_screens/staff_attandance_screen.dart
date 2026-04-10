@@ -109,7 +109,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
         dbName: dbName,
       );
     } catch (e) {
-      debugPrint('Error loading attendance: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -522,7 +522,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),

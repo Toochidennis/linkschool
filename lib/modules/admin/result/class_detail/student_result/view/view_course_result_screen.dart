@@ -42,7 +42,6 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
   @override
   void initState() {
     super.initState();
-    print('Initializing ViewCourseResultScreen');
     fetchCourseResults();
     fetchAssessments();
   }
@@ -76,8 +75,6 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
         'level_id': levelId,
       };
 
-      print(
-          'Fetching course results from: $endpoint with params: $queryParams');
 
       final response = await apiService.get(
         endpoint: endpoint,
@@ -91,8 +88,6 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
         final uniqueAssessments = <String>{};
         for (var result in results) {
           final assessments = result['assessments'] as List;
-          print(
-              'Result assessments for result_id ${result['result_id']}: $assessments');
           for (var assessment in assessments) {
             uniqueAssessments.add(assessment['assessment_name'] as String);
           }
@@ -104,21 +99,17 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
           assessmentNames = uniqueAssessments.toList();
           isLoading = false;
         });
-        print(
-            'Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
       } else {
         setState(() {
           error = response.message;
           isLoading = false;
         });
-        print('Failed to fetch results: ${response.message}');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load results: $e';
         isLoading = false;
       });
-      print('Error fetching results: $e');
     }
   }
 
@@ -136,7 +127,6 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
         queryParams: {'_db': dbName},
       );
 
-      print('Fetching assessments with db: $dbName');
 
       if (response.success && response.rawData != null) {
         final assessmentsData = response.rawData!['assessments'] as List;
@@ -151,13 +141,11 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
         setState(() {
           maxScores = tempMaxScores;
         });
-        print('Fetched max scores: $maxScores');
       }
     } catch (e) {
       setState(() {
         error = 'Failed to load assessments: $e';
       });
-      print('Error fetching assessments: $e');
     }
   }
 
@@ -174,7 +162,6 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
       }
       return 'F';
     } catch (e) {
-      print('Error calculating grade for score $totalScore: $e');
       return 'N/A';
     }
   }

@@ -21,13 +21,9 @@ class TopicProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('TopicProvider: Fetching topics for syllabusId: $syllabusId');
       _topics = await topicService.FetchTopic(syllabusId: syllabusId);
-      print('TopicProvider: Successfully fetched ${_topics.length} topics');
       _error = '';
-    } catch (e, stackTrace) {
-      print('TopicProvider: Error fetching topics: $e');
-      print('TopicProvider: Stack trace: $stackTrace');
+    } catch (e) {
       _error = e.toString();
       _topics = [];
     } finally {
@@ -69,7 +65,6 @@ class TopicProvider extends ChangeNotifier {
       // Refresh the topics list after adding
       await fetchTopic(syllabusId: syllabusId);
     } catch (e) {
-      print('TopicProvider: Error adding topic: $e');
       _error = e.toString();
     } finally {
       _isLoading = false;
@@ -112,7 +107,6 @@ class TopicProvider extends ChangeNotifier {
       // Refresh the topics list after adding
       await fetchTopic(syllabusId: syllabusId);
     } catch (e) {
-      print('TopicProvider: Error adding topic: $e');
       _error = e.toString();
     } finally {
       _isLoading = false;
@@ -131,3 +125,4 @@ class TopicProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+

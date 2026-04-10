@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
 import 'package:linkschool/modules/model/staff/dashboard_model.dart';
@@ -42,7 +41,6 @@ class StaffDashboardService {
         },
       );
 
-      debugPrint("📦 Dashboard response: ${response.rawData}");
 
       if (!response.success) {
         throw Exception("Failed to fetch dashboard data: ${response.message}");
@@ -54,7 +52,6 @@ class StaffDashboardService {
       // Parse directly into RecentActivityResponse
       return RecentActivityResponse.fromJson(data);
     } catch (e) {
-      debugPrint("❌ Error fetching dashboard data: $e");
       throw Exception("Failed to fetch dashboard data: $e");
     }
   }
@@ -83,7 +80,6 @@ class StaffDashboardService {
         throw Exception("Failed to create feed: ${response.message}");
       }
     } catch (e) {
-      debugPrint("❌ Error creating feed: $e");
       throw Exception("Failed to create feed: $e");
     }
   }
@@ -113,7 +109,6 @@ class StaffDashboardService {
         throw Exception("Failed to update feed: ${response.message}");
       }
     } catch (e) {
-      debugPrint("❌ Error updating feed: $e");
       throw Exception("Failed to update feed: $e");
     }
   }
@@ -141,7 +136,6 @@ class StaffDashboardService {
         throw Exception("Failed to delete feed: ${response.message}");
       }
     } catch (e) {
-      debugPrint("❌ Error deleting feed: $e");
       throw Exception("Failed to delete feed: $e");
     }
   }

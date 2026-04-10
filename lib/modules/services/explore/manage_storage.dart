@@ -16,8 +16,6 @@ class ChallengeService {
     // Save back to SharedPreferences
     await prefs.setString(_challengesKey, json.encode(existingChallenges));
     
-    print('💾 Challenge saved: ${challenge['title']}');
-    print('📋 Total challenges: ${existingChallenges.length}');
   }
   
   // Get all saved challenges
@@ -33,7 +31,6 @@ class ChallengeService {
       final List<dynamic> challengesList = json.decode(challengesJson);
       return challengesList.map((item) => Map<String, dynamic>.from(item)).toList();
     } catch (e) {
-      print('Error parsing challenges: $e');
       return [];
     }
   }

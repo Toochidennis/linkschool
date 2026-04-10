@@ -41,6 +41,7 @@ class _AdminSkillsBehaviourScreenState
       term: widget.term,
       year: widget.year,
       db: widget.db,
+      type: 0,
     );
   }
 

@@ -94,7 +94,7 @@ class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -157,7 +157,6 @@ class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
         'course_id': widget.courseId
       };
 
-      print("AAAAAAAAAAAAAAAA$topicData");
       await topicProvider.addTopic(
         syllabusId: widget.syllabusId ?? 0,
         topic: _titleController.text,
@@ -173,12 +172,9 @@ class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
             .toList(),
       );
 
-      print(
-          'Topieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeec Data to POST: $topicData');
 
       Navigator.of(context).pop();
     } catch (e) {
-      print('Error packaging topic data: $e');
       CustomToaster.toastError(
         context,
         'Error',
@@ -354,7 +350,7 @@ class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
               Container(
                 padding: const EdgeInsets.all(4.0),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundLight.withOpacity(0.1),
+                  color: AppColors.backgroundLight.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
@@ -404,7 +400,7 @@ class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Divider(color: Colors.grey.withOpacity(0.5)),
+        Divider(color: Colors.grey.withValues(alpha: 0.5)),
         const SizedBox(height: 8.0),
       ],
     );

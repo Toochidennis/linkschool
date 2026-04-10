@@ -36,7 +36,6 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
       if (widget.classId.isNotEmpty) {
         _fetchRegisteredStudents();
       } else {
-        debugPrint('Error: Missing classId parameter');
       }
     });
   }
@@ -79,8 +78,6 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
             ? 2
             : 3;
 
-    debugPrint(
-        'Fetching students with classId: ${widget.classId}, term: $termNumber, year: ${_settings['year'] ?? '2023'}');
 
     Provider.of<CourseRegistrationProvider>(context, listen: false)
         .fetchRegisteredCourses(

@@ -67,7 +67,6 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
 
       return pdf.save();
     } catch (e) {
-      debugPrint("Error generating receipt PDF: $e");
       return null;
     }
   }
@@ -171,7 +170,9 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                                 schoolName =
                                     settings['school_name']?.toString() ??
                                         "School Name";
-                              } catch (e) {}
+                              } catch (e) {
+      // Intentionally ignored.
+    }
                               return Text(
                                 schoolName,
                                 style: const TextStyle(

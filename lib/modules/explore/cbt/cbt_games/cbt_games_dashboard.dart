@@ -1,13 +1,18 @@
-import 'dart:math';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:gif_view/gif_view.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_modal.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_download_screen.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/services/explore/gamify_leaderboard_service.dart';
+import 'package:provider/provider.dart';
 
 class GameDashboardScreen extends StatefulWidget {
   final List<SubjectModel> subjects;
   final int examTypeId;
+
   const GameDashboardScreen({
     super.key,
     required this.subjects,
@@ -19,395 +24,625 @@ class GameDashboardScreen extends StatefulWidget {
 }
 
 class _GameDashboardScreenState extends State<GameDashboardScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _rotation;
-  late PageController _pageController;
-  int _currentPage = 0;
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  static const int _startingLives = 5;
 
-  final bool fromGameDashboard = true;
+  final GamifyLeaderboardService _leaderboardService =
+      GamifyLeaderboardService();
 
-  // Sample subject leaderboard data
-  final List<Map<String, dynamic>> _subjectLeaderboards = [
-    {
-      'subject': 'Mathematics',
-      'icon': Icons.calculate,
-      'color': const Color(0xFF6366F1),
-      'leaders': [
-        {'name': 'David Chen', 'points': 2400, 'rank': 1},
-        {'name': 'Sarah Johnson', 'points': 2200, 'rank': 2},
-        {'name': 'Emma Wilson', 'points': 2100, 'rank': 3},
-        {'name': 'Michael Brown', 'points': 1950, 'rank': 4},
-      ],
-    },
-    {
-      'subject': 'English',
-      'icon': Icons.menu_book,
-      'color': const Color(0xFF10B981),
-      'leaders': [
-        {'name': 'Emma Wilson', 'points': 2300, 'rank': 1},
-        {'name': 'Lisa Anderson', 'points': 2150, 'rank': 2},
-        {'name': 'James Thompson', 'points': 2000, 'rank': 3},
-        {'name': 'Maria Garcia', 'points': 1880, 'rank': 4},
-      ],
-    },
-    {
-      'subject': 'Physics',
-      'icon': Icons.science,
-      'color': const Color(0xFFF59E0B),
-      'leaders': [
-        {'name': 'Robert Kim', 'points': 2500, 'rank': 1},
-        {'name': 'David Chen', 'points': 2350, 'rank': 2},
-        {'name': 'Michael Brown', 'points': 2100, 'rank': 3},
-        {'name': 'Sarah Johnson', 'points': 1990, 'rank': 4},
-      ],
-    },
-    {
-      'subject': 'Chemistry',
-      'icon': Icons.biotech,
-      'color': const Color(0xFFEC4899),
-      'leaders': [
-        {'name': 'Lisa Anderson', 'points': 2280, 'rank': 1},
-        {'name': 'Emma Wilson', 'points': 2180, 'rank': 2},
-        {'name': 'Robert Kim', 'points': 2050, 'rank': 3},
-        {'name': 'James Thompson', 'points': 1920, 'rank': 4},
-      ],
-    },
-  ];
+  late final AnimationController _ambientController;
+  late final AnimationController _startCardController;
+
+  bool _shouldShowAppOpenOnResume = false;
+  bool _loading = true;
+
+  String _playerName = 'Player';
+  int _playerScore = 0;
+  int _gamesPlayed = 0;
+  int _playerRank = 0;
+  List<GamifyLeaderboardEntry> _leaderboardEntries = const [];
+  List<_SubjectArenaCardData> _subjectCards = const [];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
-    // Lanyard swing animation
-    _controller = AnimationController(
+    _ambientController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300), // fast swing
+      duration: const Duration(seconds: 10),
+    )..repeat();
+
+    _startCardController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
     )..repeat(reverse: true);
 
-    _rotation = Tween<double>(begin: -0.10, end: 0.10).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await GamifyAdManager.instance.preloadAll(context);
+      await _loadDashboardData();
+    });
+  }
 
-    // Initialize PageController for swipeable cards
-    _pageController = PageController(initialPage: 0);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        !GamifyAdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAppOpenOnResume = true;
+    } else if (state == AppLifecycleState.resumed &&
+        _shouldShowAppOpenOnResume) {
+      _shouldShowAppOpenOnResume = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await GamifyAdManager.instance.showAppOpenIfEligible(context: context);
+      });
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    _pageController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _ambientController.dispose();
+    _startCardController.dispose();
     super.dispose();
   }
 
-  // ---------------------------------------------------------
+  Future<void> _loadDashboardData() async {
+    final playerName = _resolvePlayerName();
+    final entries = await _leaderboardService.getEntries();
+
+    if (!mounted) return;
+
+    final playerIndex = entries.indexWhere(
+      (entry) => _normalized(entry.playerName) == _normalized(playerName),
+    );
+    final playerEntry = playerIndex >= 0 ? entries[playerIndex] : null;
+
+    setState(() {
+      _playerName = playerName;
+      _leaderboardEntries = entries;
+      _playerScore = playerEntry?.score ?? 0;
+      _gamesPlayed = playerEntry?.gamesPlayed ?? 0;
+      _playerRank = playerIndex >= 0 ? playerIndex + 1 : 0;
+      _subjectCards = _buildSubjectCards(entries);
+      _loading = false;
+    });
+  }
+
+  String _resolvePlayerName() {
+    final user =
+        Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+    return user?.displayName ?? 'Player';
+  }
+
+  String _normalized(String value) => value.trim().toLowerCase();
+
+  List<_SubjectArenaCardData> _buildSubjectCards(
+    List<GamifyLeaderboardEntry> entries,
+  ) {
+    final subjectScores = <String, List<int>>{};
+
+    for (final entry in entries) {
+      final scoreMap = entry.subjectScores.isNotEmpty
+          ? entry.subjectScores
+          : <String, int>{entry.subject: entry.score};
+
+      for (final item in scoreMap.entries) {
+        final subject = item.key.trim();
+        if (subject.isEmpty) continue;
+        subjectScores.putIfAbsent(subject, () => <int>[]).add(item.value);
+      }
+    }
+
+    final subjectNames = <String>{
+      ...widget.subjects.map((subject) => subject.name.trim()).where(
+            (value) => value.isNotEmpty,
+          ),
+      ...subjectScores.keys,
+    }.toList(growable: false);
+
+    final cards = subjectNames.map((subject) {
+      final scores = List<int>.from(subjectScores[subject] ?? const <int>[])
+        ..sort((a, b) => b.compareTo(a));
+      final theme = _subjectTheme(subject);
+
+      return _SubjectArenaCardData(
+        subject: subject,
+        color: theme.color,
+        icon: theme.icon,
+        topScores: List<int?>.generate(
+          3,
+          (index) => index < scores.length ? scores[index] : null,
+          growable: false,
+        ),
+        championScore: scores.isEmpty ? 0 : scores.first,
+        contenders: scores.length,
+      );
+    }).toList(growable: false)
+      ..sort((a, b) {
+        if (a.hasLeaderboardData != b.hasLeaderboardData) {
+          return a.hasLeaderboardData ? -1 : 1;
+        }
+        return a.subject.toLowerCase().compareTo(b.subject.toLowerCase());
+      });
+
+    return cards;
+  }
+
+  _SubjectTheme _subjectTheme(String subject) {
+    final value = subject.toLowerCase();
+
+    if (value.contains('math')) {
+      return const _SubjectTheme(Icons.calculate_rounded, Color(0xFF4F46E5));
+    }
+    if (value.contains('english')) {
+      return const _SubjectTheme(Icons.menu_book_rounded, Color(0xFF059669));
+    }
+    if (value.contains('physics')) {
+      return const _SubjectTheme(Icons.science_rounded, Color(0xFFF59E0B));
+    }
+    if (value.contains('chem')) {
+      return const _SubjectTheme(Icons.biotech_rounded, Color(0xFFEC4899));
+    }
+    if (value.contains('bio')) {
+      return const _SubjectTheme(Icons.eco_rounded, Color(0xFF22C55E));
+    }
+    if (value.contains('government')) {
+      return const _SubjectTheme(
+          Icons.account_balance_rounded, Color(0xFF0EA5E9));
+    }
+    if (value.contains('econ')) {
+      return const _SubjectTheme(Icons.attach_money_rounded, Color(0xFF14B8A6));
+    }
+    if (value.contains('history')) {
+      return const _SubjectTheme(Icons.history_edu_rounded, Color(0xFFF97316));
+    }
+
+    return const _SubjectTheme(
+        Icons.videogame_asset_rounded, Color(0xFF8B5CF6));
+  }
+
+  Future<void> _openLeaderboard() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LeaderboardScreen(fromGameDashboard: true),
+      ),
+    );
+
+    if (!mounted) return;
+    await _loadDashboardData();
+  }
+
+  Future<void> _openStartGame() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GameSubjectDownloadScreen(
+          subjects: widget.subjects,
+          examTypeId: widget.examTypeId,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    await _loadDashboardData();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF5F6FA),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ---------------- HEADER ----------------
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // morden back button
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new,
-                          size: 30, color: Colors.black87),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                    _buildCoinCard(),
-                    _buildLanyardStreak(),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // ---------------- MAIN BANNER (SWIPEABLE) ----------------
-                _buildSwipeableBanner(),
-
-                const SizedBox(height: 25),
-
-                // ---------------- GENERAL LEADERBOARD HEADER ----------------
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.emoji_events,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "General Leaderboard",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // ---------------- General Leaderboard Card ----------------
-                _buildGeneralLeaderboard(),
-
-                // _buildMissionTile(
-                //     title: "Complete 3 questions",
-                //     xp: 20,
-                //     progress: 0.33,
-                //     icon: Icons.check_circle,
-                //     missionColor: const Color(0xFF6366F1)),
-                // _buildMissionTile(
-                //     title: "Earn 10 XP today",
-                //     xp: 10,
-                //     progress: 0.5,
-                //     icon: Icons.bolt,
-                //     missionColor: const Color(0xFF10B981)),
-                // _buildMissionTile(
-                //     title: "Review one wrong answer",
-                //     xp: 15,
-                //     progress: 0.1,
-                //     icon: Icons.refresh,
-                //     missionColor: const Color(0xFFF59E0B)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================
-  //                     WIDGETS
-  // ==========================================================
-
-  Widget _buildCoinCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: const [
-          Icon(Icons.monetization_on, color: Colors.amber, size: 26),
-          SizedBox(width: 6),
-          Text(
-            "250",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  // ---------------- LANYARD STREAK ----------------
-
-  Widget _buildLanyardStreak() {
-    return AnimatedBuilder(
-      animation: _rotation,
-      builder: (_, child) {
-        return Transform.rotate(
-          angle: _rotation.value,
-          alignment: Alignment.topCenter,
-          child: child,
-        );
-      },
-      child: Column(
-        children: [
-          Container(
-            width: 3,
-            height: 26,
-            color: Colors.deepOrangeAccent,
-          ),
-          const SizedBox(height: 2),
-          Container(
-            width: 3,
-            height: 26,
-            color: Colors.deepOrangeAccent,
-          ),
-          const SizedBox(height: 6),
-
-          // Badge circle
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.orange.shade400,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.orange.withOpacity(0.4),
-                  blurRadius: 14,
-                  offset: const Offset(0, 5),
-                )
-              ],
-            ),
-            child: const Text(
-              "🔥 4",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------- MAIN START BANNER ----------------
-
-  Widget _buildSwipeableBanner() {
-    return Column(
-      children: [
-        SizedBox(
-          height: 220,
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            children: [
-              _buildStartBanner(),
-              ..._subjectLeaderboards
-                  .map((subjectData) =>
-                      _buildSubjectLeaderboardCard(subjectData))
-                  ,
+      backgroundColor: const Color(0xFFF8F5EF),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFFFAF4),
+              Color(0xFFF8F5EF),
+              Color(0xFFF4F8FF),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        // Page indicator dots
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(1 + _subjectLeaderboards.length, (index) {
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: _currentPage == index ? 24 : 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: _currentPage == index
-                    ? Colors.deepPurple
-                    : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+                child: _buildHeader(),
               ),
-            );
-          }),
+              const SizedBox(height: 22),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadDashboardData,
+                  color: const Color(0xFFFBBF24),
+                  backgroundColor: const Color(0xFF132238),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeroSection(),
+                        const SizedBox(height: 20),
+                        _buildStartGameCard(),
+                        const SizedBox(height: 28),
+                        _buildSectionHeader(
+                          title: 'Top Podium',
+                          subtitle:
+                              'Trophy slots light up from real gamify scores.',
+                          actionLabel: 'Full leaderboard',
+                          onTap: _openLeaderboard,
+                        ),
+                        const SizedBox(height: 14),
+                        _buildTopPodium(),
+                        const SizedBox(height: 28),
+                        _buildSectionHeader(
+                          title: 'Subject Arenas',
+                          subtitle:
+                              'Each card uses your actual downloaded subjects.',
+                        ),
+                        const SizedBox(height: 14),
+                        if (_loading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else
+                          _buildSubjectArenaGrid(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _buildGlassButton(
+          icon: Icons.arrow_back_ios_new_rounded,
+          onTap: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            'Gamify Arena',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: const Color(0xFF1F2937),
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ),
+        _buildPlayerBadge(),
       ],
     );
   }
 
-  Widget _buildStartBanner() {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            /// --- GIF BACKGROUND ---
-            GifView.asset(
-              'assets/images/Gaming.gif',
-              fit: BoxFit.cover,
-              imageRepeat: ImageRepeat.noRepeat,
-              frameRate: 30,
-              loop: false,
+  Widget _buildHeroSection() {
+    return AnimatedBuilder(
+      animation: _ambientController,
+      builder: (context, child) {
+        final glow =
+            0.55 + (math.sin(_ambientController.value * math.pi * 2) * 0.12);
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFFF0DF),
+                Color(0xFFFDE7EF),
+                Color(0xFFEAF3FF),
+              ],
             ),
-            // Image.asset(
-            //   "assets/images/Gaming.gif",
-            //   fit: BoxFit.cover,
-            // ),
-
-            /// --- DARK OVERLAY (optional for readability) ---
-            Container(
-              color: Colors.blue.withOpacity(0.35),
+            border: Border.all(
+              color: Color(0xFFECD9C7),
             ),
-
-            /// --- CONTENT ---
-
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Start Your Daily Game!",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFF59E0B)
+                    .withValues(alpha: 0.08 + glow * 0.04),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: -20,
+                  top: -18,
+                  child: _buildGlowOrb(
+                    diameter: 140,
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                  ),
+                ),
+                Positioned(
+                  right: -35,
+                  bottom: -42,
+                  child: _buildGlowOrb(
+                    diameter: 170,
+                    color: const Color(0xFF60A5FA).withValues(alpha: 0.12),
+                  ),
+                ),
+                Positioned(
+                  right: 22,
+                  top: 18,
+                  child: Transform.rotate(
+                    angle: _ambientController.value * math.pi * 2,
+                    child: Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: const Color(0xFFE5D5C6),
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Row(
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Spacer(),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.deepPurple,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.86),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.bolt_rounded,
+                              size: 16,
+                              color: Color(0xFFFBBF24),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _gamesPlayed == 0
+                                  ? 'First run waiting'
+                                  : '$_gamesPlayed runs completed',
+                              style: const TextStyle(
+                                color: Color(0xFF92400E),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildPrimaryStatCard(
+                              icon: Icons.stars_rounded,
+                              label: 'Score',
+                              value: '$_playerScore',
+                              accent: const Color(0xFFFBBF24),
+                              helper: _gamesPlayed == 0
+                                  ? 'Finish a run to bank points'
+                                  : 'All saved gamify points',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildCompactStatCard(
+                                  icon: Icons.favorite_rounded,
+                                  label: 'Lives',
+                                  value: '$_startingLives',
+                                  accent: const Color(0xFFFB7185),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildCompactStatCard(
+                                  icon: Icons.emoji_events_rounded,
+                                  label: 'Rank',
+                                  value:
+                                      _playerRank == 0 ? '--' : '#$_playerRank',
+                                  accent: const Color(0xFF60A5FA),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStartGameCard() {
+    return AnimatedBuilder(
+      animation: _startCardController,
+      builder: (context, child) {
+        final bob = math.sin(_startCardController.value * math.pi) * 7;
+        final glow =
+            0.26 + (math.sin(_startCardController.value * math.pi) * 0.12);
+
+        return Transform.translate(
+          offset: Offset(0, -bob),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(28),
+            onTap: _openStartGame,
+            child: Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF7C3AED),
+                    Color(0xFFDB2777),
+                    Color(0xFFF97316),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFDB2777).withValues(alpha: glow),
+                    blurRadius: 26,
+                    offset: const Offset(0, 16),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -18,
+                    top: -18,
+                    child: _buildGlowOrb(
+                      diameter: 120,
+                      color: Colors.white.withValues(alpha: 0.16),
+                    ),
+                  ),
+                  Positioned(
+                    right: 28,
+                    bottom: 20,
+                    child: Transform.rotate(
+                      angle: -0.18,
+                      child: Icon(
+                        Icons.sports_esports_rounded,
+                        size: 92,
+                        color: Colors.white.withValues(alpha: 0.18),
+                      ),
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.20),
                           ),
                         ),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => GameSubjectModal(
-                              subjects: widget.subjects,
-                              examTypeId: widget.examTypeId,
-                            ),
-                          );
-                        },
                         child: const Text(
-                          " Start",
+                          'START GAME',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                            fontSize: 16,
+                            fontSize: 11,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF7C2D12),
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'Drop into a new run',
+                        style: TextStyle(
+                          fontSize: 28,
+                          height: 1.08,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFFFF8F1),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.subjects.isEmpty
+                            ? 'No downloaded subjects found yet.'
+                            : 'Pick from ${widget.subjects.length} downloaded subjects, build streaks, and feed the leaderboard.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          fontSize: 14,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          _buildStartChip(
+                            icon: Icons.grid_view_rounded,
+                            label: '${widget.subjects.length} subjects ready',
+                          ),
+                          _buildStartChip(
+                            icon: Icons.favorite_rounded,
+                            label: '$_startingLives lives per run',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.subjects.isEmpty
+                                    ? 'Download subjects to unlock the arena'
+                                    : 'Choose a subject and launch',
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            Transform.scale(
+                              scale: 0.9 +
+                                  (math.sin(_startCardController.value *
+                                          math.pi) *
+                                      0.08),
+                              child: Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F172A),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -415,499 +650,272 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                 ],
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  // ---------------- MISSION TILE ----------------
+  Widget _buildTopPodium() {
+    final topThree = List<GamifyLeaderboardEntry?>.generate(
+      3,
+      (index) => index < _leaderboardEntries.length
+          ? _leaderboardEntries[index]
+          : null,
+      growable: false,
+    );
 
-  Widget _buildMissionTile({
-    required String title,
-    required int xp,
-    required double progress,
-    required IconData icon,
-    required Color missionColor,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: _buildPodiumCard(
+            rank: 2,
+            height: 168,
+            entry: topThree[1],
+            trophyColor: const Color(0xFFD1D5DB),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildPodiumCard(
+            rank: 1,
+            height: 196,
+            entry: topThree[0],
+            trophyColor: const Color(0xFFFBBF24),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildPodiumCard(
+            rank: 3,
+            height: 148,
+            entry: topThree[2],
+            trophyColor: const Color(0xFFFB923C),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPodiumCard({
+    required int rank,
+    required double height,
+    required GamifyLeaderboardEntry? entry,
+    required Color trophyColor,
   }) {
+    final hasEntry = entry != null;
+    final compactCard = height <= 168;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+      height: height,
+      padding: EdgeInsets.fromLTRB(
+        compactCard ? 10 : 14,
+        compactCard ? 12 : 18,
+        compactCard ? 10 : 14,
+        compactCard ? 10 : 16,
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: missionColor,
-            ),
-            child: Center(
-              child: Icon(icon, color: Colors.white, size: 28),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Text + Progress
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.grey.shade200,
-                  color: missionColor,
-                  minHeight: 6,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // XP Label
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: missionColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              "+$xp XP",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: missionColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------- SUBJECT LEADERBOARD CARD ----------------
-
-  Widget _buildSubjectLeaderboardCard(Map<String, dynamic> subjectData) {
-    return Container(
-      height: 220,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: [
-            subjectData['color'] as Color,
-            (subjectData['color'] as Color).withOpacity(0.7),
+            trophyColor.withValues(alpha: 0.16),
+            Colors.white,
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: trophyColor.withValues(alpha: 0.30),
+          width: 1.4,
         ),
         boxShadow: [
           BoxShadow(
-            color: (subjectData['color'] as Color).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: trophyColor.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with subject name and icon
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    subjectData['icon'] as IconData,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${subjectData['subject']} Leaders',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Top performers this week',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const LeaderboardScreen(fromGameDashboard: true),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'View All',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: subjectData['color'] as Color,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Top 3 leaders
-            Expanded(
-              child: ListView.builder(
-                // physics: FixedExtentScrollPhysics(),
-                itemCount: min(3, (subjectData['leaders'] as List).length),
-                itemBuilder: (context, index) {
-                  final leader = (subjectData['leaders'] as List)[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        // Rank badge
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${leader['rank']}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: subjectData['color'] as Color,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Avatar
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          child: Text(
-                            (leader['name'] as String)
-                                .split(' ')
-                                .map((e) => e[0])
-                                .join(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Name
-                        Expanded(
-                          child: Text(
-                            leader['name'] as String,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-
-                        // Points
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.star,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${leader['points']}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ---------------- GENERAL LEADERBOARD (TOP 3 STYLE) ----------------
-
-  Widget _buildGeneralLeaderboard() {
-    // Sample general leaderboard data
-    final List<Map<String, dynamic>> topPlayers = [
-      {
-        'name': 'David Chen',
-        'points': 7200,
-        'avatar': '🏆',
-        'rank': 1,
-        'color': const Color(0xFFFFD700), // Gold
-      },
-      {
-        'name': 'Emma Wilson',
-        'points': 6800,
-        'avatar': '🥈',
-        'rank': 2,
-        'color': const Color(0xFFC0C0C0), // Silver
-      },
-      {
-        'name': 'Robert Kim',
-        'points': 6500,
-        'avatar': '🥉',
-        'rank': 3,
-        'color': const Color(0xFFCD7F32), // Bronze
-      },
-    ];
-
-    final List<Map<String, dynamic>> otherPlayers = [
-      {'name': 'Sarah Johnson', 'points': 6200, 'rank': 4},
-      {'name': 'Michael Brown', 'points': 5950, 'rank': 5},
-      {'name': 'Lisa Anderson', 'points': 5800, 'rank': 6},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top 3 Winners Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final small = constraints.maxHeight < 132;
+          return Column(
             children: [
-              // 2nd Place
-              _buildTopWinner(
-                rank: 2,
-                name: topPlayers[1]['name'] as String,
-                points: '${topPlayers[1]['points']} pts',
-                avatar: topPlayers[1]['avatar'] as String,
-                borderColor: topPlayers[1]['color'] as Color,
-                isFirst: false,
+              Icon(
+                Icons.emoji_events_rounded,
+                color: trophyColor,
+                size: small ? (rank == 1 ? 24 : 22) : (rank == 1 ? 34 : 30),
               ),
-              // 1st Place (larger)
-              _buildTopWinner(
-                rank: 1,
-                name: topPlayers[0]['name'] as String,
-                points: '${topPlayers[0]['points']} pts',
-                avatar: topPlayers[0]['avatar'] as String,
-                borderColor: topPlayers[0]['color'] as Color,
-                isFirst: true,
+              SizedBox(height: small ? 4 : 10),
+              Text(
+                '#$rank',
+                style: TextStyle(
+                  color: const Color(0xFF1F2937),
+                  fontSize:
+                      small ? (rank == 1 ? 18 : 16) : (rank == 1 ? 24 : 20),
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-              // 3rd Place
-              _buildTopWinner(
-                rank: 3,
-                name: topPlayers[2]['name'] as String,
-                points: '${topPlayers[2]['points']} pts',
-                avatar: topPlayers[2]['avatar'] as String,
-                borderColor: topPlayers[2]['color'] as Color,
-                isFirst: false,
+              const Spacer(),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  hasEntry ? '${entry.score}' : '--',
+                  style: TextStyle(
+                    color: trophyColor,
+                    fontSize:
+                        small ? (rank == 1 ? 22 : 20) : (rank == 1 ? 28 : 24),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              SizedBox(height: small ? 2 : 4),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    hasEntry ? 'points' : 'open slot',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: const Color(0xFF6B7280),
+                      fontSize: small ? 10 : 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
             ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSubjectArenaGrid() {
+    if (_subjectCards.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE7DFD3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Text(
+          'No subject arenas available yet. Download a subject and start your first run.',
+          style: TextStyle(
+            color: const Color(0xFF6B7280),
+            fontSize: 14,
+            height: 1.45,
           ),
-          const SizedBox(height: 24),
+        ),
+      );
+    }
 
-          // Divider
-          Divider(color: Colors.grey.shade200, thickness: 1),
-          const SizedBox(height: 16),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 680;
+        final columns = isWide ? 2 : 1;
+        const spacing = 14.0;
+        final itemWidth =
+            (constraints.maxWidth - (spacing * (columns - 1))) / columns;
 
-          // Other Players Section
-          ...otherPlayers.map((player) {
-            return TweenAnimationBuilder(
-              duration:
-                  Duration(milliseconds: 400 + (player['rank'] as int) * 50),
-              tween: Tween<double>(begin: 0, end: 1),
-              builder: (context, double value, child) {
-                return Transform.translate(
-                  offset: Offset(0, 20 * (1 - value)),
-                  child: Opacity(
-                    opacity: value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: _subjectCards.map((card) {
+            return SizedBox(
+              width: itemWidth,
+              child: _buildSubjectArenaCard(card),
+            );
+          }).toList(growable: false),
+        );
+      },
+    );
+  }
+
+  Widget _buildSubjectArenaCard(_SubjectArenaCardData card) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            card.color.withValues(alpha: 0.14),
+            Colors.white,
+          ],
+        ),
+        border: Border.all(
+          color: card.color.withValues(alpha: 0.22),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: card.color.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 360;
+
+          return Padding(
+            padding: EdgeInsets.all(compact ? 14 : 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    // Rank badge
                     Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${player['rank']}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6366F1),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Avatar
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.white,
-                      child: Text(
-                        (player['name'] as String)
-                            .split(' ')
-                            .map((e) => e[0])
-                            .join(),
-                        style: const TextStyle(
-                          color: Color(0xFF6366F1),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Name
-                    Expanded(
-                      child: Text(
-                        player['name'] as String,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-
-                    // Points with star icon
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                      width: compact ? 40 : 46,
+                      height: compact ? 40 : 46,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(compact ? 14 : 16),
+                        color: card.color.withValues(alpha: 0.20),
                       ),
-                      child: Row(
+                      child: Icon(
+                        card.icon,
+                        color: card.color,
+                        size: compact ? 20 : 24,
+                      ),
+                    ),
+                    SizedBox(width: compact ? 10 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
                           Text(
-                            '${player['points']}',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            card.subject,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: const Color(0xFF1F2937),
+                              fontSize: compact ? 15 : 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            card.hasLeaderboardData
+                                ? '${card.contenders} players have posted here'
+                                : 'No scores saved for this arena yet',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: const Color(0xFF6B7280),
+                              fontSize: compact ? 11 : 12,
                               fontWeight: FontWeight.w600,
-                              fontSize: 14,
                             ),
                           ),
                         ],
@@ -915,47 +923,163 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                     ),
                   ],
                 ),
-              ),
-            );
-          }),
-
-          const SizedBox(height: 16),
-
-          // Small "View All" button at bottom right
-          Align(
-            alignment: Alignment.bottomRight,
-            child: SizedBox(
-              height: 36,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const LeaderboardScreen(fromGameDashboard: true),
+                SizedBox(height: compact ? 12 : 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildArenaMetaCard(
+                        label: 'Champion',
+                        value: card.hasLeaderboardData
+                            ? '${card.championScore}'
+                            : '--',
+                        compact: compact,
+                      ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  minimumSize: const Size(0, 36),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 2,
+                    SizedBox(width: compact ? 8 : 10),
+                    Expanded(
+                      child: _buildArenaMetaCard(
+                        label: 'Contenders',
+                        value: '${card.contenders}',
+                        compact: compact,
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  'View All',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                SizedBox(height: compact ? 10 : 14),
+                Row(
+                  children: List<Widget>.generate(3, (index) {
+                    final medalColor = switch (index) {
+                      0 => const Color(0xFFFBBF24),
+                      1 => const Color(0xFFD1D5DB),
+                      _ => const Color(0xFFFB923C),
+                    };
+
+                    return Expanded(
+                      child: Container(
+                        margin: EdgeInsets.only(
+                          right: index == 2 ? 0 : (compact ? 6 : 8),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: compact ? 8 : 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: medalColor.withValues(alpha: 0.10),
+                          borderRadius:
+                              BorderRadius.circular(compact ? 12 : 16),
+                          border: Border.all(
+                            color: medalColor.withValues(alpha: 0.18),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.emoji_events_rounded,
+                              color: medalColor,
+                              size: compact ? 16 : 20,
+                            ),
+                            SizedBox(height: compact ? 4 : 6),
+                            Text(
+                              card.topScores[index]?.toString() ?? '--',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFF1F2937),
+                                fontSize: compact ? 11 : 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+    String? actionLabel,
+    VoidCallback? onTap,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF1F2937),
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: const Color(0xFF6B7280),
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (actionLabel != null && onTap != null)
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFFBBF24),
+            ),
+            child: Text(
+              actionLabel,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPlayerBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE7DFD3)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: const Color(0xFFFFB86C),
+            child: Text(
+              _initials(_playerName),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            _firstName(_playerName),
+            style: const TextStyle(
+              color: Color(0xFF1F2937),
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -963,102 +1087,264 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     );
   }
 
-  Widget _buildTopWinner({
-    required int rank,
-    required String name,
-    required String points,
-    required String avatar,
-    required Color borderColor,
-    required bool isFirst,
+  Widget _buildGlassButton({
+    required IconData icon,
+    required VoidCallback onTap,
   }) {
-    final double size = isFirst ? 80.0 : 70.0;
-    final double fontSize = isFirst ? 15.0 : 13.0;
-
-    return Column(
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            TweenAnimationBuilder(
-              duration: Duration(milliseconds: 600 + (rank * 150)),
-              tween: Tween<double>(begin: 0, end: 1),
-              builder: (context, double value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: Opacity(
-                    opacity: value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: borderColor, width: 3),
-                  gradient: LinearGradient(
-                    colors: [
-                      borderColor,
-                      borderColor.withOpacity(0.7),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: borderColor.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    avatar,
-                    style: TextStyle(fontSize: isFirst ? 32 : 28),
-                  ),
-                ),
-              ),
-            ),
-            if (isFirst)
-              Positioned(
-                top: -8,
-                right: size / 2 - 12,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.amber,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.star,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          name.split(' ')[0], // First name only
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE7DFD3)),
           ),
-          textAlign: TextAlign.center,
+          child: Icon(icon, color: const Color(0xFF1F2937)),
         ),
-        const SizedBox(height: 2),
-        Text(
-          points,
-          style: TextStyle(
-            fontSize: fontSize - 2,
-            color: borderColor,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+      ),
     );
   }
+
+  Widget _buildPrimaryStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color accent,
+    required String helper,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: accent, size: 24),
+          const SizedBox(height: 14),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF1F2937),
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            helper,
+            style: TextStyle(
+              color: const Color(0xFF9CA3AF),
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color accent,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: accent, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF1F2937),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStartChip({
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: const Color(0xFF7C2D12), size: 16),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF7C2D12),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildArenaMetaCard({
+    required String label,
+    required String value,
+    bool compact = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 12,
+        vertical: compact ? 8 : 10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(compact ? 12 : 16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: const Color(0xFF1F2937),
+              fontSize: compact ? 15 : 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: compact ? 1 : 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFF6B7280),
+              fontSize: compact ? 9 : 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlowOrb({
+    required double diameter,
+    required Color color,
+  }) {
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+    );
+  }
+
+  String _initials(String value) {
+    final parts = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList(growable: false);
+
+    if (parts.isEmpty) return 'PL';
+    if (parts.length == 1) {
+      return parts.first
+          .substring(0, math.min(2, parts.first.length))
+          .toUpperCase();
+    }
+    return '${parts.first[0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  String _firstName(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 'Player';
+    return trimmed.split(RegExp(r'\s+')).first;
+  }
+}
+
+class _SubjectTheme {
+  final IconData icon;
+  final Color color;
+
+  const _SubjectTheme(this.icon, this.color);
+}
+
+class _SubjectArenaCardData {
+  final String subject;
+  final Color color;
+  final IconData icon;
+  final List<int?> topScores;
+  final int championScore;
+  final int contenders;
+
+  const _SubjectArenaCardData({
+    required this.subject,
+    required this.color,
+    required this.icon,
+    required this.topScores,
+    required this.championScore,
+    required this.contenders,
+  });
+
+  bool get hasLeaderboardData => topScores.any((score) => score != null);
 }

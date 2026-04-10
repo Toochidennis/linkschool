@@ -97,7 +97,7 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                       height: 50,
                       decoration: BoxDecoration(
                         color: const Color.fromRGBO(209, 219, 255, 1)
-                            .withOpacity(0.35),
+                            .withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -20,6 +20,9 @@ class CbtSubscriptionService {
       'cbt_continue_with_ads'; // Legacy flag
   static const String _keyAdMode =
       'cbt_ad_mode'; // continue_with_ads | free_trial
+  static const String _keyEntitlementStorageVersion =
+      'cbt_entitlement_storage_version';
+  static const int _currentEntitlementStorageVersion = 2;
 
   // Dynamic values from API (with fallbacks)
   static int _freeTrialDays = 7; // Default 7 days
@@ -30,7 +33,6 @@ class CbtSubscriptionService {
     _freeTrialDays = normalized;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyFreeTrialDays, normalized);
-    print('Free trial period set to: $_freeTrialDays days');
   }
 
   /// Get the current free trial days
@@ -41,8 +43,30 @@ class CbtSubscriptionService {
     final stored = prefs.getInt(_keyFreeTrialDays);
     if (stored != null && stored > 0 && stored != _freeTrialDays) {
       _freeTrialDays = stored;
-      print('Loaded free trial days from cache: $_freeTrialDays');
     }
+  }
+
+  Future<bool> migrateLegacyEntitlementStorageIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentVersion = prefs.getInt(_keyEntitlementStorageVersion) ?? 0;
+    if (currentVersion >= _currentEntitlementStorageVersion) {
+      return false;
+    }
+
+    final legacyContinueWithAds = prefs.getBool(_keyContinueWithAds) ?? false;
+    final adMode = prefs.getString(_keyAdMode);
+    if (adMode == null && legacyContinueWithAds) {
+      await prefs.setString(_keyAdMode, 'continue_with_ads');
+    }
+
+    await prefs.remove(_keyContinueWithAds);
+    await prefs.remove(_keyHasPaid);
+    await prefs.remove(_keyPaymentDate);
+    await prefs.setInt(
+      _keyEntitlementStorageVersion,
+      _currentEntitlementStorageVersion,
+    );
+    return true;
   }
 
   /// Get the trial start date
@@ -66,7 +90,6 @@ class CbtSubscriptionService {
       // Store the original duration (from plan) so expiration checks don't break if API value changes
       final durationToStore = originalDuration ?? _freeTrialDays;
       await prefs.setInt(_keyTrialOriginalDuration, durationToStore);
-      print('🎬 Trial started: $now with $durationToStore days duration');
     }
   }
 
@@ -77,14 +100,12 @@ class CbtSubscriptionService {
 
     final now = DateTime.now();
     final daysPassed = now.difference(startDate).inDays;
-    
+
     // Use original trial duration stored at start time, not current API value
     final prefs = await SharedPreferences.getInstance();
     final originalDuration = prefs.getInt(_keyTrialOriginalDuration) ?? 7;
     final expired = daysPassed >= originalDuration;
 
-    print(
-        '📅 Trial days passed: $daysPassed/$originalDuration (expired: $expired)');
     return expired;
   }
 
@@ -102,8 +123,6 @@ class CbtSubscriptionService {
 
     // Start trial on first test
     await setTrialStartDate();
-
-    print('🔢 Test count incremented to: ${currentCount + 1}');
   }
 
   /// Check if user has paid for subscription (from local storage)
@@ -120,7 +139,6 @@ class CbtSubscriptionService {
     await prefs.setString(_keyUserEmail, userEmail);
     await prefs.remove(_keyContinueWithAds);
     await prefs.remove(_keyAdMode);
-    print('✅ User marked as paid subscriber: $userEmail');
   }
 
   /// Sync payment status from CbtUserProvider
@@ -135,24 +153,22 @@ class CbtSubscriptionService {
 
     // If different user, clear old data
     if (storedEmail != null && storedEmail != userEmail) {
-      print('🔄 Different user detected, clearing old subscription data');
       await clearUserData();
     }
 
     // Update payment status based on backend data
     final isPaid = hasReference;
+    final wasPaid = prefs.getBool(_keyHasPaid) ?? false;
     await prefs.setBool(_keyHasPaid, isPaid);
     await prefs.setString(_keyUserEmail, userEmail);
 
-    if (isPaid && !await hasPaid()) {
+    if (isPaid && !wasPaid) {
       await prefs.setString(_keyPaymentDate, DateTime.now().toIso8601String());
     }
     if (isPaid) {
       await prefs.remove(_keyContinueWithAds);
       await prefs.remove(_keyAdMode);
     }
-
-    print('✅ Payment status synced for $userEmail: paid=$isPaid');
   }
 
   /// Clear user-specific data (for logout or user switch)
@@ -164,10 +180,10 @@ class CbtSubscriptionService {
     await prefs.remove(_keySignupPromptShown);
     await prefs.remove(_keyPaymentDialogDismissed);
     await prefs.remove(_keyTrialStartDate);
+    await prefs.remove(_keyTrialOriginalDuration);
     await prefs.remove(_keyContinueWithAds);
     await prefs.remove(_keyAdMode);
     // Keep test count as it's device-specific, not user-specific
-    print('🗑️ User subscription data cleared');
   }
 
   /// Get payment date
@@ -240,16 +256,16 @@ class CbtSubscriptionService {
     await prefs.remove(_keyPaymentDialogDismissed);
     await prefs.remove(_keyUserEmail);
     await prefs.remove(_keyTrialStartDate);
+    await prefs.remove(_keyTrialOriginalDuration);
     await prefs.remove(_keyContinueWithAds);
     await prefs.remove(_keyAdMode);
-    print('🔄 Subscription data reset');
   }
 
   Future<void> setContinueWithAds(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     if (value) {
-      await prefs.setBool(_keyContinueWithAds, true);
       await prefs.setString(_keyAdMode, 'continue_with_ads');
+      await prefs.remove(_keyContinueWithAds);
     } else {
       await prefs.remove(_keyContinueWithAds);
       await prefs.remove(_keyAdMode);
@@ -258,17 +274,20 @@ class CbtSubscriptionService {
 
   Future<bool> shouldContinueWithAds() async {
     final prefs = await SharedPreferences.getInstance();
+    final adMode = prefs.getString(_keyAdMode);
+    if (adMode == 'continue_with_ads') {
+      return true;
+    }
     return prefs.getBool(_keyContinueWithAds) ?? false;
   }
 
   Future<void> setAdMode(String mode) async {
     final prefs = await SharedPreferences.getInstance();
     if (mode == 'continue_with_ads') {
-      await prefs.setBool(_keyContinueWithAds, true);
       await prefs.setString(_keyAdMode, 'continue_with_ads');
+      await prefs.remove(_keyContinueWithAds);
       // Ensure hasPaid is false when on continue_with_ads
       await prefs.setBool(_keyHasPaid, false);
-      print('[setAdMode] Set mode to continue_with_ads and hasPaid to false');
       return;
     }
     if (mode == 'free_trial') {
@@ -276,7 +295,6 @@ class CbtSubscriptionService {
       await prefs.setString(_keyAdMode, 'free_trial');
       // Ensure hasPaid is false when on free_trial
       await prefs.setBool(_keyHasPaid, false);
-      print('[setAdMode] Set mode to free_trial and hasPaid to false');
       return;
     }
     await prefs.remove(_keyContinueWithAds);
@@ -304,7 +322,6 @@ class CbtSubscriptionService {
     final remainingDays =
         (_freeTrialDays - daysPassed).clamp(0, _freeTrialDays);
 
-    print('📊 Remaining trial days: $remainingDays');
     return remainingDays;
   }
 
@@ -327,6 +344,3 @@ class CbtSubscriptionService {
     };
   }
 }
-
-
-

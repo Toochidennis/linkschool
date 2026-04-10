@@ -152,7 +152,7 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
                 Container(
                   padding: const EdgeInsets.symmetric(
                       vertical: 8.0, horizontal: 16.0),
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   child: const Row(
                     children: [
                       Icon(Icons.info_outline, color: Colors.green),
@@ -226,7 +226,7 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
                         Icons.check_circle,
                         color: student.isMarkedPresent
                             ? AppColors.attCheckColor2
-                            : Colors.grey.withOpacity(0.5),
+                            : Colors.grey.withValues(alpha: 0.5),
                       ),
                       onTap: () => provider.toggleStudentSelection(index),
                     );

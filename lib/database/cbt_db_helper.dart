@@ -30,14 +30,12 @@ class CbtDbHelper {
   // ─────────────────────────────────────────
   Future<void> _onCreate(Database db, int version) async {
     await _createAllTables(db);
-    print('✅ CBT local database created (v$version)');
   }
 
   // ─────────────────────────────────────────
   // Existing install — add tables that are missing
   // ─────────────────────────────────────────
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    print('🔄 Upgrading CBT DB from v$oldVersion → v$newVersion');
 
     if (oldVersion < 2) {
       // Version 1 was missing: images, questions, options tables
@@ -89,7 +87,6 @@ class CbtDbHelper {
         'CREATE INDEX IF NOT EXISTS idx_options_question ON options(question_id)'
       );
 
-      print('✅ Upgrade v1→v2: added images, questions, options tables');
     }
   }
 
@@ -288,7 +285,6 @@ class CbtDbHelper {
       }
     });
 
-    print('✅ Saved ${rawData.length} exam types with courses to local DB');
   }
 
   // ─────────────────────────────────────────
@@ -368,6 +364,5 @@ class CbtDbHelper {
       await txn.delete('exams');
       await txn.delete('seed_meta');
     });
-    print('🗑️ All CBT local data cleared');
   }
 }

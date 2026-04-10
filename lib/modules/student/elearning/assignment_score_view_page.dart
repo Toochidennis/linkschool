@@ -73,7 +73,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -253,7 +253,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
           // Divider
           Container(
             height: 1,
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
           ),
 
           // Content Section
@@ -298,7 +298,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade900.withOpacity(0.4),
+                      color: Colors.grey.shade900.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -323,7 +323,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
@@ -348,11 +348,11 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.grey.withOpacity(0.2),
+                        color: Colors.grey.withValues(alpha: 0.2),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -364,7 +364,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                           width: 40,
                           height: 15,
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -455,7 +455,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -487,7 +487,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
@@ -575,7 +575,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                           width: 24,
                                           height: 24,
                                           decoration: BoxDecoration(
-                                            color: Colors.grey.withOpacity(0.2),
+                                            color: Colors.grey.withValues(alpha: 0.2),
                                             borderRadius:
                                                 BorderRadius.circular(4),
                                           ),
@@ -633,7 +633,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                           ),
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: Colors.grey.withOpacity(0.3),
+                              color: Colors.grey.withValues(alpha: 0.3),
                             ),
                             borderRadius: BorderRadius.circular(24),
                           ),
@@ -668,7 +668,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: Colors.grey.withOpacity(0.3),
+                                  color: Colors.grey.withValues(alpha: 0.3),
                                 ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
@@ -779,7 +779,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Intentionally ignored.
     }
   }
 
@@ -792,7 +792,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -924,7 +924,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(color: Colors.grey.withOpacity(0.5)),
+      child: Divider(color: Colors.grey.withValues(alpha: 0.5)),
     );
   }
 
@@ -1041,7 +1041,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1173,10 +1173,10 @@ class _AddCommentModalState extends State<AddCommentModal> {
                               margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.05),
+                                color: Colors.grey.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.grey.withOpacity(0.2),
+                                  color: Colors.grey.withValues(alpha: 0.2),
                                 ),
                               ),
                               child: TextField(

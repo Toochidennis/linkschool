@@ -139,7 +139,6 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
         }
       }
     });
-    print("Init ManageStudentsScreen with levelId: ${widget.levelId}, classId: ${widget.classId}");
   }
 
   void _onScroll() {
@@ -390,7 +389,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.text2Light.withOpacity(0.1) : Colors.transparent,
+          color: isSelected ? AppColors.text2Light.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -581,10 +580,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 16, vertical: 16),
                                           decoration: BoxDecoration(
-                                            color: AppColors.text2Light.withOpacity(0.1),
+                                            color: AppColors.text2Light.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(12),
                                             border: Border.all(
-                                                color: AppColors.text2Light.withOpacity(0.3)),
+                                                color: AppColors.text2Light.withValues(alpha: 0.3)),
                                           ),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -721,10 +720,6 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                       onTap: () {
                                         final fullName =
                                             '${student.firstName} ${student.surname}';
-                                        print(fullName);
-                                        print(student.levelId);
-                                        print(className);
-                                        print(student.classId);
 
                                         Navigator.push(
                                           context,
@@ -747,7 +742,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                           borderRadius: BorderRadius.circular(16),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.grey.withOpacity(0.1),
+                                              color: Colors.grey.withValues(alpha: 0.1),
                                               spreadRadius: 1,
                                               blurRadius: 10,
                                               offset: const Offset(0, 2),
@@ -760,7 +755,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                           leading: Container(
                                             padding: const EdgeInsets.all(2),
                                             decoration: BoxDecoration(
-                                              color: AppColors.text2Light.withOpacity(0.1),
+                                              color: AppColors.text2Light.withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: CircleAvatar(
@@ -830,7 +825,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                             icon: Container(
                                               padding: const EdgeInsets.all(8),
                                               decoration: BoxDecoration(
-                                                color: AppColors.text2Light.withOpacity(0.1),
+                                                color: AppColors.text2Light.withValues(alpha: 0.1),
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: const Icon(
@@ -915,7 +910,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                   });
                 },
                 child: Container(
-                  color: Colors.white.withOpacity(0.95),
+                  color: Colors.white.withValues(alpha: 0.95),
                   child: Column(
                     children: [
                       // Search bar replica for the overlay
@@ -925,7 +920,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                           color: Colors.grey[50],
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.grey.withValues(alpha: 0.1),
                               spreadRadius: 1,
                               blurRadius: 5,
                               offset: const Offset(0, 2),
@@ -1071,11 +1066,11 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
-                                          color: AppColors.text2Light.withOpacity(0.2),
+                                          color: AppColors.text2Light.withValues(alpha: 0.2),
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.grey.withOpacity(0.1),
+                                            color: Colors.grey.withValues(alpha: 0.1),
                                             spreadRadius: 1,
                                             blurRadius: 10,
                                             offset: const Offset(0, 2),
@@ -1088,7 +1083,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                         leading: Container(
                                           padding: const EdgeInsets.all(2),
                                           decoration: BoxDecoration(
-                                            color: AppColors.text2Light.withOpacity(0.1),
+                                            color: AppColors.text2Light.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
                                           child: CircleAvatar(
@@ -1580,10 +1575,10 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.2)),
+        border: Border.all(color: AppColors.text2Light.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.1),
+            color: AppColors.text2Light.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -1890,7 +1885,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -1904,7 +1899,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(

@@ -86,7 +86,7 @@ class _GameDetailsState extends State<GameDetails> {
                     children: [
                       Expanded(
                           child: reviewText(
-                        image: 'assets/icons/gamesicon/stars.png',
+                        image: 'assets/icons/game-icons/stars.png',
                         reviews: widget.game.rating.toString(),
                         reviewDes: '1k reviews',
                       )),

@@ -74,7 +74,6 @@ class _CourseVideosScreenState extends State<CourseVideosScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error loading course videos: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load videos: $e')),
@@ -201,7 +200,7 @@ class _CourseVideosScreenState extends State<CourseVideosScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                        color: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -262,7 +261,7 @@ class _CourseVideosScreenState extends State<CourseVideosScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -304,7 +303,7 @@ class _CourseVideosScreenState extends State<CourseVideosScreen> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.3),
+                            Colors.black.withValues(alpha: 0.3),
                           ],
                         ),
                       ),
@@ -315,7 +314,7 @@ class _CourseVideosScreenState extends State<CourseVideosScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
