@@ -236,60 +236,71 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF06111F),
+      backgroundColor: const Color(0xFFF8F5EF),
       body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFF081120),
-              Color(0xFF0C1830),
-              Color(0xFF09101C),
+              Color(0xFFFFFAF4),
+              Color(0xFFF8F5EF),
+              Color(0xFFF4F8FF),
             ],
           ),
         ),
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _loadDashboardData,
-            color: const Color(0xFFFBBF24),
-            backgroundColor: const Color(0xFF132238),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 22),
-                  _buildHeroSection(),
-                  const SizedBox(height: 20),
-                  _buildStartGameCard(),
-                  const SizedBox(height: 28),
-                  _buildSectionHeader(
-                    title: 'Top Podium',
-                    subtitle: 'Trophy slots light up from real gamify scores.',
-                    actionLabel: 'Full leaderboard',
-                    onTap: _openLeaderboard,
-                  ),
-                  const SizedBox(height: 14),
-                  _buildTopPodium(),
-                  const SizedBox(height: 28),
-                  _buildSectionHeader(
-                    title: 'Subject Arenas',
-                    subtitle: 'Each card uses your actual downloaded subjects.',
-                  ),
-                  const SizedBox(height: 14),
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else
-                    _buildSubjectArenaGrid(),
-                ],
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+                child: _buildHeader(),
               ),
-            ),
+              const SizedBox(height: 22),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadDashboardData,
+                  color: const Color(0xFFFBBF24),
+                  backgroundColor: const Color(0xFF132238),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeroSection(),
+                        const SizedBox(height: 20),
+                        _buildStartGameCard(),
+                        const SizedBox(height: 28),
+                        _buildSectionHeader(
+                          title: 'Top Podium',
+                          subtitle:
+                              'Trophy slots light up from real gamify scores.',
+                          actionLabel: 'Full leaderboard',
+                          onTap: _openLeaderboard,
+                        ),
+                        const SizedBox(height: 14),
+                        _buildTopPodium(),
+                        const SizedBox(height: 28),
+                        _buildSectionHeader(
+                          title: 'Subject Arenas',
+                          subtitle:
+                              'Each card uses your actual downloaded subjects.',
+                        ),
+                        const SizedBox(height: 14),
+                        if (_loading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else
+                          _buildSubjectArenaGrid(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -298,6 +309,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
   Widget _buildHeader() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _buildGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
@@ -305,25 +317,12 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Gamify Arena',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              Text(
-                'Play offline. Climb the local board.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.68),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+          child: Text(
+            'Gamify Arena',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: const Color(0xFF1F2937),
+                  fontWeight: FontWeight.w900,
                 ),
-              ),
-            ],
           ),
         ),
         _buildPlayerBadge(),
@@ -345,20 +344,20 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF12233A),
-                Color(0xFF10213C),
-                Color(0xFF191A39),
+                Color(0xFFFFF0DF),
+                Color(0xFFFDE7EF),
+                Color(0xFFEAF3FF),
               ],
             ),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: Color(0xFFECD9C7),
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF38BDF8)
-                    .withValues(alpha: 0.10 + glow * 0.10),
-                blurRadius: 32,
-                offset: const Offset(0, 16),
+                color: const Color(0xFFF59E0B)
+                    .withValues(alpha: 0.08 + glow * 0.04),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
               ),
             ],
           ),
@@ -371,7 +370,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                   top: -18,
                   child: _buildGlowOrb(
                     diameter: 140,
-                    color: const Color(0xFF38BDF8).withValues(alpha: 0.18),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                   ),
                 ),
                 Positioned(
@@ -379,7 +378,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                   bottom: -42,
                   child: _buildGlowOrb(
                     diameter: 170,
-                    color: const Color(0xFFF472B6).withValues(alpha: 0.16),
+                    color: const Color(0xFF60A5FA).withValues(alpha: 0.12),
                   ),
                 ),
                 Positioned(
@@ -393,7 +392,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.10),
+                          color: const Color(0xFFE5D5C6),
                         ),
                       ),
                     ),
@@ -410,7 +409,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: Colors.white.withValues(alpha: 0.86),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(
@@ -427,7 +426,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                                   ? 'First run waiting'
                                   : '$_gamesPlayed runs completed',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Color(0xFF92400E),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -435,28 +434,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                           ],
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      Text(
-                        _gamesPlayed == 0
-                            ? 'Let us get your first streak started.'
-                            : 'Welcome back, ${_firstName(_playerName)}.',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          height: 1.15,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Score and life stats stay pinned up top while the arena cards below pull from your real gamify data.',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.72),
-                          fontSize: 14,
-                          height: 1.45,
-                        ),
-                      ),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 16),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -570,7 +548,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.16),
+                          color: Colors.white.withValues(alpha: 0.28),
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
                             color: Colors.white.withValues(alpha: 0.20),
@@ -582,7 +560,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                             fontSize: 11,
                             letterSpacing: 1.2,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: Color(0xFF7C2D12),
                           ),
                         ),
                       ),
@@ -593,7 +571,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                           fontSize: 28,
                           height: 1.08,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white,
+                          color: Color(0xFFFFF8F1),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -602,7 +580,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                             ? 'No downloaded subjects found yet.'
                             : 'Pick from ${widget.subjects.length} downloaded subjects, build streaks, and feed the leaderboard.',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.84),
+                          color: Colors.white.withValues(alpha: 0.92),
                           fontSize: 14,
                           height: 1.45,
                         ),
@@ -646,16 +624,22 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                                 ),
                               ),
                             ),
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0F172A),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.arrow_forward_rounded,
-                                color: Colors.white,
+                            Transform.scale(
+                              scale: 0.9 +
+                                  (math.sin(_startCardController.value *
+                                          math.pi) *
+                                      0.08),
+                              child: Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F172A),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ],
@@ -721,61 +705,89 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     required Color trophyColor,
   }) {
     final hasEntry = entry != null;
+    final compactCard = height <= 168;
 
     return Container(
       height: height,
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 16),
+      padding: EdgeInsets.fromLTRB(
+        compactCard ? 10 : 14,
+        compactCard ? 12 : 18,
+        compactCard ? 10 : 14,
+        compactCard ? 10 : 16,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            trophyColor.withValues(alpha: 0.22),
-            const Color(0xFF101C2D),
+            trophyColor.withValues(alpha: 0.16),
+            Colors.white,
           ],
         ),
         border: Border.all(
           color: trophyColor.withValues(alpha: 0.30),
           width: 1.4,
         ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.emoji_events_rounded,
-            color: trophyColor,
-            size: rank == 1 ? 34 : 30,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '#$rank',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.96),
-              fontSize: rank == 1 ? 24 : 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            hasEntry ? '${entry.score}' : '--',
-            style: TextStyle(
-              color: trophyColor,
-              fontSize: rank == 1 ? 28 : 24,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            hasEntry ? 'points' : 'open slot',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.68),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: trophyColor.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final small = constraints.maxHeight < 132;
+          return Column(
+            children: [
+              Icon(
+                Icons.emoji_events_rounded,
+                color: trophyColor,
+                size: small ? (rank == 1 ? 24 : 22) : (rank == 1 ? 34 : 30),
+              ),
+              SizedBox(height: small ? 4 : 10),
+              Text(
+                '#$rank',
+                style: TextStyle(
+                  color: const Color(0xFF1F2937),
+                  fontSize:
+                      small ? (rank == 1 ? 18 : 16) : (rank == 1 ? 24 : 20),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Spacer(),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  hasEntry ? '${entry.score}' : '--',
+                  style: TextStyle(
+                    color: trophyColor,
+                    fontSize:
+                        small ? (rank == 1 ? 22 : 20) : (rank == 1 ? 28 : 24),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              SizedBox(height: small ? 2 : 4),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    hasEntry ? 'points' : 'open slot',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: const Color(0xFF6B7280),
+                      fontSize: small ? 10 : 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -786,14 +798,21 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         width: double.infinity,
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: const Color(0xFFE7DFD3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Text(
           'No subject arenas available yet. Download a subject and start your first run.',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.78),
+            color: const Color(0xFF6B7280),
             fontSize: 14,
             height: 1.45,
           ),
@@ -804,19 +823,20 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 680;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _subjectCards.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isWide ? 2 : 1,
-            crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
-            mainAxisExtent: 196,
-          ),
-          itemBuilder: (context, index) {
-            return _buildSubjectArenaCard(_subjectCards[index]);
-          },
+        final columns = isWide ? 2 : 1;
+        const spacing = 14.0;
+        final itemWidth =
+            (constraints.maxWidth - (spacing * (columns - 1))) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: _subjectCards.map((card) {
+            return SizedBox(
+              width: itemWidth,
+              child: _buildSubjectArenaCard(card),
+            );
+          }).toList(growable: false),
         );
       },
     );
@@ -830,125 +850,156 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            card.color.withValues(alpha: 0.28),
-            const Color(0xFF0E182A),
+            card.color.withValues(alpha: 0.14),
+            Colors.white,
           ],
         ),
         border: Border.all(
           color: card.color.withValues(alpha: 0.22),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: card.color.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: card.color.withValues(alpha: 0.20),
-                  ),
-                  child: Icon(card.icon, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        card.subject,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        card.hasLeaderboardData
-                            ? '${card.contenders} players have posted here'
-                            : 'No scores saved for this arena yet',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.66),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildArenaMetaCard(
-                    label: 'Champion',
-                    value: card.hasLeaderboardData
-                        ? '${card.championScore}'
-                        : '--',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildArenaMetaCard(
-                    label: 'Contenders',
-                    value: '${card.contenders}',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: List<Widget>.generate(3, (index) {
-                final medalColor = switch (index) {
-                  0 => const Color(0xFFFBBF24),
-                  1 => const Color(0xFFD1D5DB),
-                  _ => const Color(0xFFFB923C),
-                };
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 360;
 
-                return Expanded(
-                  child: Container(
-                    margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: medalColor.withValues(alpha: 0.18),
+          return Padding(
+            padding: EdgeInsets.all(compact ? 14 : 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: compact ? 40 : 46,
+                      height: compact ? 40 : 46,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(compact ? 14 : 16),
+                        color: card.color.withValues(alpha: 0.20),
+                      ),
+                      child: Icon(
+                        card.icon,
+                        color: card.color,
+                        size: compact ? 20 : 24,
                       ),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.emoji_events_rounded,
-                          color: medalColor,
-                          size: 20,
+                    SizedBox(width: compact ? 10 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            card.subject,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: const Color(0xFF1F2937),
+                              fontSize: compact ? 15 : 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            card.hasLeaderboardData
+                                ? '${card.contenders} players have posted here'
+                                : 'No scores saved for this arena yet',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: const Color(0xFF6B7280),
+                              fontSize: compact ? 11 : 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: compact ? 12 : 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildArenaMetaCard(
+                        label: 'Champion',
+                        value: card.hasLeaderboardData
+                            ? '${card.championScore}'
+                            : '--',
+                        compact: compact,
+                      ),
+                    ),
+                    SizedBox(width: compact ? 8 : 10),
+                    Expanded(
+                      child: _buildArenaMetaCard(
+                        label: 'Contenders',
+                        value: '${card.contenders}',
+                        compact: compact,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: compact ? 10 : 14),
+                Row(
+                  children: List<Widget>.generate(3, (index) {
+                    final medalColor = switch (index) {
+                      0 => const Color(0xFFFBBF24),
+                      1 => const Color(0xFFD1D5DB),
+                      _ => const Color(0xFFFB923C),
+                    };
+
+                    return Expanded(
+                      child: Container(
+                        margin: EdgeInsets.only(
+                          right: index == 2 ? 0 : (compact ? 6 : 8),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          card.topScores[index]?.toString() ?? '--',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                        padding: EdgeInsets.symmetric(
+                          vertical: compact ? 8 : 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: medalColor.withValues(alpha: 0.10),
+                          borderRadius:
+                              BorderRadius.circular(compact ? 12 : 16),
+                          border: Border.all(
+                            color: medalColor.withValues(alpha: 0.18),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.emoji_events_rounded,
+                              color: medalColor,
+                              size: compact ? 16 : 20,
+                            ),
+                            SizedBox(height: compact ? 4 : 6),
+                            Text(
+                              card.topScores[index]?.toString() ?? '--',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFF1F2937),
+                                fontSize: compact ? 11 : 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -969,7 +1020,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1F2937),
                   fontSize: 21,
                   fontWeight: FontWeight.w900,
                 ),
@@ -978,7 +1029,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.64),
+                  color: const Color(0xFF6B7280),
                   fontSize: 13,
                   height: 1.35,
                 ),
@@ -1005,15 +1056,15 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: const Color(0xFFE7DFD3)),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: const Color(0xFF60A5FA),
+            backgroundColor: const Color(0xFFFFB86C),
             child: Text(
               _initials(_playerName),
               style: const TextStyle(
@@ -1027,7 +1078,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           Text(
             _firstName(_playerName),
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFF1F2937),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -1049,11 +1100,11 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(color: const Color(0xFFE7DFD3)),
           ),
-          child: Icon(icon, color: Colors.white),
+          child: Icon(icon, color: const Color(0xFF1F2937)),
         ),
       ),
     );
@@ -1069,9 +1120,9 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1081,7 +1132,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFF1F2937),
               fontSize: 34,
               fontWeight: FontWeight.w900,
             ),
@@ -1090,7 +1141,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: const Color(0xFF6B7280),
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -1099,7 +1150,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
           Text(
             helper,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.54),
+              color: const Color(0xFF9CA3AF),
               fontSize: 12,
               height: 1.35,
             ),
@@ -1119,9 +1170,9 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white),
       ),
       child: Row(
         children: [
@@ -1142,7 +1193,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                 Text(
                   value,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF1F2937),
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1150,7 +1201,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.62),
+                    color: const Color(0xFF6B7280),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1170,7 +1221,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.18),
+        color: Colors.white.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.18),
@@ -1179,12 +1230,12 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 16),
+          Icon(icon, color: const Color(0xFF7C2D12), size: 16),
           const SizedBox(width: 8),
           Text(
             label,
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFF7C2D12),
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -1197,30 +1248,35 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
   Widget _buildArenaMetaCard({
     required String label,
     required String value,
+    bool compact = false,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 12,
+        vertical: compact ? 8 : 10,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(compact ? 12 : 16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
+            style: TextStyle(
+              color: const Color(0xFF1F2937),
+              fontSize: compact ? 15 : 18,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: compact ? 1 : 2),
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.60),
-              fontSize: 11,
+              color: const Color(0xFF6B7280),
+              fontSize: compact ? 9 : 11,
               fontWeight: FontWeight.w600,
             ),
           ),

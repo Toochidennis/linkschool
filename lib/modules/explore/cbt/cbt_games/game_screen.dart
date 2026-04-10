@@ -755,7 +755,7 @@ class _GameTestScreenState extends State<GameTestScreen>
                             child: ElevatedButton(
                               onPressed: () async {
                                 Navigator.pop(context);
-                                await _finishQuiz();
+                                await _endRunToLeaderboard();
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey.shade200,
@@ -856,7 +856,7 @@ class _GameTestScreenState extends State<GameTestScreen>
                   icon: Icon(Icons.close, color: Colors.grey.shade600),
                   onPressed: () async {
                     Navigator.pop(context);
-                    await _finishQuiz();
+                    await _endRunToLeaderboard();
                   },
                 ),
               ),
@@ -886,7 +886,7 @@ class _GameTestScreenState extends State<GameTestScreen>
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _finishQuiz();
+              await _endRunToLeaderboard();
             },
             child: Text(
               'End Run',
@@ -1045,6 +1045,25 @@ class _GameTestScreenState extends State<GameTestScreen>
       onRewardEarned: () async {
         await _moveToNextQuestion();
       },
+    );
+  }
+
+  Future<void> _endRunToLeaderboard() async {
+    if (_score > 0 || _correctAnswers > 0) {
+      await _saveScoreIfNeeded();
+    }
+    if (!mounted) return;
+
+    await GamifyAdManager.instance.showInterstitialIfEligible(
+      context: context,
+    );
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LeaderboardScreen(fromGameDashboard: true),
+      ),
     );
   }
 
