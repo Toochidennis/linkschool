@@ -136,6 +136,11 @@ class EnvConfig {
         defaultValue: _unsetValue,
       );
 
+  static String get homeBannerAdKey => const String.fromEnvironment(
+        'HOME_BANNER_AD_KEY',
+        defaultValue: _unsetValue,
+      );
+
   // Dynamic database name - gets from current user session
   static String get dbName {
     try {

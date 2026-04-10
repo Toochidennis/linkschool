@@ -32,6 +32,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
   late final AnimationController _ambientController;
   late final AnimationController _startCardController;
+  late final AnimationController _startButtonConfettiController;
 
   bool _shouldShowAppOpenOnResume = false;
   bool _loading = true;
@@ -57,6 +58,11 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2400),
     )..repeat(reverse: true);
+
+    _startButtonConfettiController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
@@ -88,6 +94,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     WidgetsBinding.instance.removeObserver(this);
     _ambientController.dispose();
     _startCardController.dispose();
+    _startButtonConfettiController.dispose();
     super.dispose();
   }
 
@@ -542,29 +549,6 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.20),
-                          ),
-                        ),
-                        child: const Text(
-                          'START GAME',
-                          style: TextStyle(
-                            fontSize: 11,
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF7C2D12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
                       const Text(
                         'Drop into a new run',
                         style: TextStyle(
@@ -585,66 +569,8 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                           height: 1.45,
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          _buildStartChip(
-                            icon: Icons.grid_view_rounded,
-                            label: '${widget.subjects.length} subjects ready',
-                          ),
-                          _buildStartChip(
-                            icon: Icons.favorite_rounded,
-                            label: '$_startingLives lives per run',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 22),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.subjects.isEmpty
-                                    ? 'Download subjects to unlock the arena'
-                                    : 'Choose a subject and launch',
-                                style: const TextStyle(
-                                  color: Color(0xFF0F172A),
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                            Transform.scale(
-                              scale: 0.9 +
-                                  (math.sin(_startCardController.value *
-                                          math.pi) *
-                                      0.08),
-                              child: Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0F172A),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_forward_rounded,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 74),
+                      _buildStartGameButton(),
                     ],
                   ),
                 ],
@@ -1214,34 +1140,102 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     );
   }
 
-  Widget _buildStartChip({
-    required IconData icon,
-    required String label,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.28),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.18),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: const Color(0xFF7C2D12), size: 16),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF7C2D12),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+  Widget _buildStartGameButton() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        _startCardController,
+        _startButtonConfettiController,
+      ]),
+      builder: (context, child) {
+        final pulse = 1 + (math.sin(_startCardController.value * math.pi) * 0.03);
+        final iconShift = math.sin(_startCardController.value * math.pi) * 3;
+
+        return Transform.scale(
+          scale: pulse,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _openStartGame,
+              borderRadius: BorderRadius.circular(24),
+              child: Ink(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBBF24),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFFFBBF24).withValues(alpha: 0.85),
+                    width: 1.4,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFBBF24).withValues(alpha: 0.35),
+                      blurRadius: 32,
+                      offset: const Offset(0, 16),
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                      blurRadius: 48,
+                      offset: const Offset(0, 24),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: CustomPaint(
+                            painter: _StartButtonConfettiPainter(
+                              progress: _startButtonConfettiController.value,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Start Game',
+                                style: TextStyle(
+                                  color: Color(0xFF78350F),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 26,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ),
+                            Transform.translate(
+                              offset: Offset(iconShift, 0),
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF78350F),
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Color(0xFFFBBF24),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1347,4 +1341,49 @@ class _SubjectArenaCardData {
   });
 
   bool get hasLeaderboardData => topScores.any((score) => score != null);
+}
+
+class _StartButtonConfettiPainter extends CustomPainter {
+  final double progress;
+
+  const _StartButtonConfettiPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+    final colors = [
+      const Color(0xFFF59E0B),
+      const Color(0xFFF97316),
+      const Color(0xFFDB2777),
+      const Color(0xFF7C3AED),
+    ];
+
+    for (int i = 0; i < 16; i++) {
+      final lane = i % 8;
+      final x = ((lane + 0.5) / 8) * size.width;
+      final offset = (i * 0.13) % 1.0;
+      final y = ((progress + offset) % 1.0) * (size.height + 28) - 20;
+      final drift = math.sin((progress * math.pi * 2) + i) * 8;
+      final alpha = (0.18 + ((i % 4) * 0.08)).clamp(0.0, 1.0);
+
+      paint.color = colors[i % colors.length].withValues(alpha: alpha);
+
+      canvas.save();
+      canvas.translate(x + drift, y);
+      canvas.rotate((progress * math.pi * 2) + (i * 0.35));
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-3, -6, 6, 12),
+          const Radius.circular(3),
+        ),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StartButtonConfettiPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
 }
