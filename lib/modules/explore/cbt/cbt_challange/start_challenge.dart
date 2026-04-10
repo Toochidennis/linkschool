@@ -341,7 +341,7 @@ class _StartChallengeState extends State<StartChallenge>
   void _playWrongSound() async {
     try {
       await _wrongSoundPlayer.stop();
-      await _wrongSoundPlayer.play(AssetSource('sounds/wrong.mp3.mpeg'));
+      await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
       //await _wrongSoundPlayer.play(AssetSource('sounds/wrong.wav'));
     } catch (e) {
       // Intentionally ignored.

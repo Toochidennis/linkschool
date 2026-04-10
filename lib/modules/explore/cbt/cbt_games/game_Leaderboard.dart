@@ -211,7 +211,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  entry.subject,
+                  entry.subjectSummary,
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey.shade700,
@@ -222,9 +222,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _buildMetaChip('Score ${entry.score}'),
+                    _buildMetaChip('Overall ${entry.score}'),
                     _buildMetaChip('Level ${entry.levelReached}'),
                     _buildMetaChip('Correct ${entry.correctAnswers}'),
+                    _buildMetaChip('Subjects ${entry.subjectsPlayedCount}'),
                   ],
                 ),
               ],

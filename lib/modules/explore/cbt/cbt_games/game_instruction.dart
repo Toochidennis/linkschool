@@ -665,7 +665,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          player.subject,
+                          player.subjectSummary,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,

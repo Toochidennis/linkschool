@@ -71,6 +71,15 @@ class _GameSubjectDownloadScreenState extends State<GameSubjectDownloadScreen> {
     });
   }
 
+  String? _firstDownloadedSubjectId(Iterable<String> downloadedIds) {
+    for (final subject in _sortedSubjects) {
+      if (downloadedIds.contains(subject.id)) {
+        return subject.id;
+      }
+    }
+    return null;
+  }
+
   Future<void> _checkDownloadedSubjects() async {
     final downloadedIds = await _downloadService.getDownloadedCourseIds(
       examTypeId: _examTypeIdAsString,
@@ -79,9 +88,15 @@ class _GameSubjectDownloadScreenState extends State<GameSubjectDownloadScreen> {
 
     if (!mounted) return;
 
+    final autoSelectedSubjectId = _firstDownloadedSubjectId(downloadedIds);
+
     setState(() {
       for (final subject in widget.subjects) {
         _isDownloaded[subject.id] = downloadedIds.contains(subject.id);
+      }
+      if (_selectedSubjectId == null ||
+          !downloadedIds.contains(_selectedSubjectId)) {
+        _selectedSubjectId = autoSelectedSubjectId;
       }
       _checkingDownloads = false;
     });
