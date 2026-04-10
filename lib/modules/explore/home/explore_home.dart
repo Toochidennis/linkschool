@@ -23,6 +23,7 @@ import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../../modules/explore/cbt/cbt_dashboard.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'home_carousel_banner_ad_cache.dart';
 
 class ExploreHome extends StatefulWidget {
   final Function(bool) onSearchIconVisibilityChanged;
@@ -35,6 +36,8 @@ class ExploreHome extends StatefulWidget {
 
 class _ExploreHomeState extends State<ExploreHome>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+  static const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
+
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _bounceController;
@@ -47,6 +50,8 @@ class _ExploreHomeState extends State<ExploreHome>
   bool _isInitialContentLoading = true;
 
   final Map<int, NativeAd?> _nativeAds = {};
+  final Set<int> _loadingNativeAdPositions = <int>{};
+  final Set<int> _loadedNativeAdPositions = <int>{};
   final List<int> _adPositions = [];
   int _lastAdNewsCount = -1;
 
@@ -197,6 +202,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     _controller.removeListener(_onScroll);
     _controller.dispose();
     _disposeAds();
+    HomeCarouselBannerAdCache().dispose();
     super.dispose();
   }
 
@@ -407,7 +413,12 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     }
 
     for (int position in positions) {
-      if (_nativeAds.containsKey(position)) continue;
+      if (_loadingNativeAdPositions.contains(position) ||
+          _loadedNativeAdPositions.contains(position)) {
+        continue;
+      }
+
+      _loadingNativeAdPositions.add(position);
       _adPositions.add(position);
       final nativeAd = NativeAd(
         adUnitId: EnvConfig.newsNativeAds,
@@ -415,6 +426,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           onAdLoaded: (ad) {
             if (mounted) {
               setState(() {
+                _loadingNativeAdPositions.remove(position);
+                _loadedNativeAdPositions.add(position);
                 _nativeAds[position] = ad as NativeAd;
               });
             }
@@ -423,6 +436,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             ad.dispose();
             if (mounted) {
               setState(() {
+                _loadingNativeAdPositions.remove(position);
+                _loadedNativeAdPositions.remove(position);
                 _nativeAds[position] = null;
               });
             }
@@ -446,6 +461,88 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
       ad?.dispose();
     }
     _nativeAds.clear();
+    _loadingNativeAdPositions.clear();
+    _loadedNativeAdPositions.clear();
+  }
+
+  bool get _hasHomeBannerAdUnitId {
+    final adUnitId = EnvConfig.homeBannerAdKey;
+    return adUnitId.isNotEmpty && adUnitId != _unsetEnvValue;
+  }
+
+  List<Widget> _buildAnnouncementCarouselItems(List announcements) {
+    if (announcements.isEmpty) {
+      return const [];
+    }
+
+    final items = <Widget>[];
+    final insertIndex = announcements.length > 1 ? 1 : announcements.length;
+
+    for (int index = 0; index < announcements.length; index++) {
+      if (_hasHomeBannerAdUnitId && index == insertIndex) {
+        items.add(_buildHomeBannerCarouselCard());
+      }
+
+      items.add(
+        _buildAnnouncementCard(
+          announcement: announcements[index],
+        ),
+      );
+    }
+
+    if (_hasHomeBannerAdUnitId && insertIndex >= announcements.length) {
+      items.add(_buildHomeBannerCarouselCard());
+    }
+
+    return items;
+  }
+
+  Widget _buildHomeBannerCarouselCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+      child: Container(
+        height: 265.0,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12.0),
+          child: Stack(
+            children: [
+              Center(
+                child: _ExploreCarouselBannerAd(
+                  adUnitId: EnvConfig.homeBannerAdKey,
+                  size: AdSize.mediumRectangle,
+                ),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Sponsored',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Urbanist',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   int _getListItemCount(int newsCount) {
@@ -535,6 +632,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
       //   subtitle: 'Fun learning',
       // ),
     ];
+    final announcementCarouselItems = _buildAnnouncementCarouselItems(
+      announcementProvider.publishedAnnouncements,
+    );
 
     return Container(
       decoration: Constants.customBoxDecoration(context),
@@ -757,20 +857,15 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                 child: _buildAnimatedCard(
                   index: 4,
                   child: CarouselSlider(
-                    items: announcementProvider.publishedAnnouncements
-                        .map((announcement) {
-                      return _buildAnnouncementCard(
-                        announcement: announcement,
-                      );
-                    }).toList(),
+                    items: announcementCarouselItems,
                     options: CarouselOptions(
                       height: 265.0,
                       padEnds: false,
                       viewportFraction: 0.95,
                       autoPlay: true,
+                      autoPlayInterval: const Duration(seconds: 15),
                       enableInfiniteScroll:
-                          announcementProvider.publishedAnnouncements.length >
-                              1,
+                          announcementCarouselItems.length > 1,
                       scrollDirection: Axis.horizontal,
                     ),
                   ),
@@ -794,7 +889,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.text2Light.withValues(alpha: 0.1),
+                                color:
+                                    AppColors.text2Light.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -841,7 +937,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                     if (_shouldShowAdAtPosition(
                         index, newsProvider.latestNews.length)) {
                       final ad = _nativeAds[index];
-                      if (ad != null) {
+                      final isLoaded = ad != null &&
+                          _loadedNativeAdPositions.contains(index);
+                      if (isLoaded) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16.0, vertical: 4.0),
@@ -1270,8 +1368,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
               padding: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
                 color: _pressedButtonIndex == index
-                    ? backgroundColor
-                        .withValues(alpha: 0.7) // Darker color when pressed
+                    ? backgroundColor.withValues(
+                        alpha: 0.7) // Darker color when pressed
                     : backgroundColor,
                 borderRadius: BorderRadius.circular(16.0),
                 border: Border.all(color: borderColor, width: 2),
@@ -1502,6 +1600,79 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ExploreCarouselBannerAd extends StatefulWidget {
+  final String adUnitId;
+  final AdSize size;
+
+  const _ExploreCarouselBannerAd({
+    required this.adUnitId,
+    required this.size,
+  });
+
+  @override
+  State<_ExploreCarouselBannerAd> createState() =>
+      _ExploreCarouselBannerAdState();
+}
+
+class _ExploreCarouselBannerAdState extends State<_ExploreCarouselBannerAd> {
+  late HomeCarouselBannerAdCache _adCache;
+
+  @override
+  void initState() {
+    super.initState();
+    _adCache = HomeCarouselBannerAdCache();
+    _adCache.loadAd(adUnitId: widget.adUnitId);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<BannerAd?>(
+      valueListenable: _adCache.adNotifier,
+      builder: (context, ad, _) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: _adCache.loadedNotifier,
+          builder: (context, isLoaded, _) {
+            if (!isLoaded || ad == null) {
+              return Container(
+                width: widget.size.width.toDouble(),
+                height: widget.size.height.toDouble(),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.text2Light.withValues(alpha: 0.10),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'Loading sponsor card...',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
+                  ),
+                ),
+              );
+            }
+
+            return SizedBox(
+              width: ad.size.width.toDouble(),
+              height: ad.size.height.toDouble(),
+              child: AdWidget(ad: ad),
+            );
+          },
+        );
+      },
     );
   }
 }

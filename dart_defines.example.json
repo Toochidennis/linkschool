@@ -14,5 +14,8 @@
   "_newsnativeadsApiKey": "__SET_ME__",
   "DEEP_SEEK_API_KEY": "__SET_ME__",
   "DEEP_SEEK_URL": "https://api.deepseek.com/v1/chat/completions",
-  "PAYSTACK_SECRET_KEY": "__BACKEND_ONLY_DO_NOT_SHIP_IN_APP__"
+  "PAYSTACK_SECRET_KEY": "__BACKEND_ONLY_DO_NOT_SHIP_IN_APP__",
+  "LINKSKOOL_AI_HOME_BANNER_AD_KEY": "__SET_ME__",
+  "LINKSKOOL_AI_INTERSTITIAL_AD_KEY": "__SET_ME__",
+  "LINKSKOOL_AI_AD_OPEN_KEY": "__SET_ME__"
 }

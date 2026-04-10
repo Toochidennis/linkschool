@@ -136,6 +136,27 @@ class EnvConfig {
         defaultValue: _unsetValue,
       );
 
+  static String get homeBannerAdKey => const String.fromEnvironment(
+        'HOME_BANNER_AD_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get linkSkoolAiHomeBannerAdKey => const String.fromEnvironment(
+        'LINKSKOOL_AI_HOME_BANNER_AD_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get linkSkoolAiInterstitialAdKey =>
+      const String.fromEnvironment(
+        'LINKSKOOL_AI_INTERSTITIAL_AD_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get linkSkoolAiAdOpenKey => const String.fromEnvironment(
+        'LINKSKOOL_AI_AD_OPEN_KEY',
+        defaultValue: _unsetValue,
+      );
+
   // Dynamic database name - gets from current user session
   static String get dbName {
     try {

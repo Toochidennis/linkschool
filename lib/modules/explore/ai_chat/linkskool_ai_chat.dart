@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive/hive.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:linkschool/config/env_config.dart';
@@ -51,7 +52,8 @@ class LinkSkoolAIChatPage extends StatefulWidget {
   State<LinkSkoolAIChatPage> createState() => _LinkSkoolAIChatPageState();
 }
 
-class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
+class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage>
+    with WidgetsBindingObserver {
   final List<types.Message> _messages = [];
   final _user = const types.User(id: 'user');
   final _ai = const types.User(id: 'ai', firstName: 'LinkSkool AI');
@@ -64,11 +66,248 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
   String? _currentSessionId;
   late Box _chatBox;
   bool _isInitialized = false;
+  BannerAd? _bannerAd;
+  bool _isBannerAdLoaded = false;
+  InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdLoaded = false;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
+  bool _isNavigatingAway = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeChatHistory();
+    _loadBannerAd();
+    _loadInterstitialAd();
+    _loadAppOpenAd();
+  }
+
+  bool _isAdUnitConfigured(String adUnitId) =>
+      adUnitId.isNotEmpty && adUnitId != '__SET_VIA_DART_DEFINE__';
+
+  void _loadBannerAd() {
+    final adUnitId = EnvConfig.linkSkoolAiHomeBannerAdKey;
+    if (!_isAdUnitConfigured(adUnitId)) return;
+
+    _bannerAd?.dispose();
+    _bannerAd = BannerAd(
+      adUnitId: adUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (!mounted) return;
+          setState(() {
+            _bannerAd = ad as BannerAd;
+            _isBannerAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (!mounted) return;
+          setState(() {
+            _bannerAd = null;
+            _isBannerAdLoaded = false;
+          });
+        },
+      ),
+    )..load();
+  }
+
+  void _loadInterstitialAd() {
+    final adUnitId = EnvConfig.linkSkoolAiInterstitialAdKey;
+    if (!_isAdUnitConfigured(adUnitId)) return;
+
+    InterstitialAd.load(
+      adUnitId: adUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+          if (!mounted) return;
+          setState(() {
+            _isInterstitialAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (error) {
+          if (!mounted) return;
+          setState(() {
+            _isInterstitialAdLoaded = false;
+          });
+        },
+      ),
+    );
+  }
+
+  void _loadAppOpenAd() {
+    final adUnitId = EnvConfig.linkSkoolAiAdOpenKey;
+    if (!_isAdUnitConfigured(adUnitId)) return;
+
+    AppOpenAd.load(
+      adUnitId: adUnitId,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _appOpenAd = ad;
+          if (!mounted) return;
+          setState(() {
+            _isAppOpenAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (error) {
+          if (!mounted) return;
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    final ad = _appOpenAd;
+    if (!_isAppOpenAdLoaded || ad == null) return;
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+    ad.show();
+  }
+
+  Future<bool> _handleBackNavigation() async {
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
+      return false;
+    }
+
+    final ad = _interstitialAd;
+    if (_isInterstitialAdLoaded && ad != null) {
+      _isNavigatingAway = true;
+      ad.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          _loadInterstitialAd();
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdLoaded = false;
+          _loadInterstitialAd();
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        },
+      );
+      ad.show();
+      return false;
+    }
+
+    _isNavigatingAway = true;
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+    return false;
+  }
+
+  Widget _buildAppBarTitle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'LinkSkool AI',
+          style: AppTextStyles.normal600(
+            fontSize: 18,
+            color: Colors.white,
+          ),
+        ),
+        Text(
+          'Your AI study companion',
+          style: AppTextStyles.normal400(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.9),
+          ),
+        ),
+      ],
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppColors.eLearningBtnColor1,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: _handleBackNavigation,
+      ),
+      title: _buildAppBarTitle(),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.add_comment_outlined, color: Colors.white),
+          onPressed: _startNewChat,
+          tooltip: 'New Chat',
+        ),
+        IconButton(
+          icon: const Icon(Icons.history, color: Colors.white),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          tooltip: 'Chat History',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBannerAd() {
+    final ad = _bannerAd;
+    if (!_isBannerAdLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _shouldShowAdOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _showAppOpenAd();
+        _shouldShowAdOnResume = false;
+      }
+      _isNavigatingAway = false;
+    }
   }
 
   Future<void> _initializeChatHistory() async {
@@ -307,6 +546,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
         ) ??
         false;
 
+    if (!mounted) return;
     if (shouldDelete) {
       Navigator.pop(context); // Close the drawer
       await _deleteSession(session.id);
@@ -337,6 +577,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
         ) ??
         false;
 
+    if (!mounted) return;
     if (shouldClear) {
       Navigator.pop(context); // Close the drawer
       await _clearAllHistory();
@@ -352,7 +593,11 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
 
   @override
   void dispose() {
-    _dio.close();
+    WidgetsBinding.instance.removeObserver(this);
+    _bannerAd?.dispose();
+    _interstitialAd?.dispose();
+    _appOpenAd?.dispose();
+    _dio.close(force: true);
     super.dispose();
   }
 
@@ -457,138 +702,6 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
     } catch (e) {
       return 'Error: ${e.toString()}';
     }
-  }
-
-  void _showAboutDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Drag handle
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.eLearningBtnColor1,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'About LinkSkool AI',
-                      style: AppTextStyles.normal700(
-                        fontSize: 20,
-                        color: AppColors.text4Light,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoCard(
-                      'What I can do',
-                      'I\'m here to help with your studies! Ask me questions about any subject, get explanations, practice problems, or study tips.',
-                      Icons.psychology_outlined,
-                      AppColors.eLearningBtnColor1,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildInfoCard(
-                      'How to use',
-                      'Simply type your question in the chat box below. I\'ll do my best to provide clear and helpful answers.',
-                      Icons.chat_bubble_outline,
-                      Colors.orange,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildInfoCard(
-                      'Tips for best results',
-                      'Be specific with your questions. The more details you provide, the better I can help you understand.',
-                      Icons.lightbulb_outline,
-                      Colors.green,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(
-      String title, String content, IconData icon, Color color) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            content,
-            style: AppTextStyles.normal400(
-              fontSize: 14,
-              color: AppColors.text4Light,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Convert markdown to HTML
@@ -953,138 +1066,127 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: AppColors.eLearningBtnColor1,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            'LinkSkool AI',
-            style: AppTextStyles.normal600(
-              fontSize: 18,
-              color: Colors.white,
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _handleBackNavigation();
+        },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: _handleBackNavigation,
             ),
-          ),
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.white,
-      drawer: _buildChatHistoryDrawer(),
-      appBar: AppBar(
-        backgroundColor: AppColors.eLearningBtnColor1,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+            title: Text(
               'LinkSkool AI',
               style: AppTextStyles.normal600(
                 fontSize: 18,
                 color: Colors.white,
               ),
             ),
-            Text(
-              'Your AI study companion',
-              style: AppTextStyles.normal400(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // New chat button
-          IconButton(
-            icon: const Icon(Icons.add_comment_outlined, color: Colors.white),
-            onPressed: _startNewChat,
-            tooltip: 'New Chat',
           ),
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {
-              _showAboutDialog();
-            },
-          ),
-        ],
-      ),
-      body: Chat(
-        messages: _messages,
-        onSendPressed: _handleSendPressed,
-        user: _user,
-        showUserAvatars: true,
-        showUserNames: true,
-        textMessageBuilder: _buildTextMessage,
-        typingIndicatorOptions: TypingIndicatorOptions(
-          typingUsers: _isTyping ? [_ai] : [],
-        ),
-        theme: DefaultChatTheme(
-          backgroundColor: Colors.grey.shade50,
-          primaryColor: AppColors.eLearningBtnColor1,
-          secondaryColor: Colors.grey.shade200,
-          inputBackgroundColor: Colors.white,
-          inputTextColor: AppColors.text4Light,
-          inputBorderRadius: BorderRadius.circular(24),
-          messageBorderRadius: 16,
-          sentMessageBodyTextStyle: AppTextStyles.normal400(
-            fontSize: 15,
-            color: Colors.white,
-          ),
-          receivedMessageBodyTextStyle: AppTextStyles.normal400(
-            fontSize: 15,
-            color: AppColors.text4Light,
-          ),
-          inputTextStyle: AppTextStyles.normal400(
-            fontSize: 15,
-            color: AppColors.text4Light,
-          ),
-        ),
-        inputOptions: InputOptions(
-          sendButtonVisibilityMode: SendButtonVisibilityMode.always,
-        ),
-        emptyState: Container(
-          alignment: Alignment.center,
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          body: Column(
             children: [
-              Icon(
-                Icons.smart_toy_rounded,
-                size: 64,
-                color: AppColors.eLearningBtnColor1.withValues(alpha: 0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Start a conversation',
-                style: AppTextStyles.normal600(
-                  fontSize: 18,
-                  color: AppColors.text4Light,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Ask me anything about your studies and I\'ll help you understand it better!',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.normal400(
-                  fontSize: 14,
-                  color: AppColors.text7Light,
+              _buildBannerAd(),
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(),
                 ),
               ),
             ],
           ),
+        ),
+      );
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: Colors.white,
+        drawer: _buildChatHistoryDrawer(),
+        appBar: _buildAppBar(),
+        body: Column(
+          children: [
+            _buildBannerAd(),
+            Expanded(
+              child: Chat(
+                messages: _messages,
+                onSendPressed: _handleSendPressed,
+                user: _user,
+                showUserAvatars: true,
+                showUserNames: true,
+                textMessageBuilder: _buildTextMessage,
+                typingIndicatorOptions: TypingIndicatorOptions(
+                  typingUsers: _isTyping ? [_ai] : [],
+                ),
+                theme: DefaultChatTheme(
+                  backgroundColor: Colors.grey.shade50,
+                  primaryColor: AppColors.eLearningBtnColor1,
+                  secondaryColor: Colors.grey.shade200,
+                  inputBackgroundColor: Colors.white,
+                  inputTextColor: AppColors.text4Light,
+                  inputBorderRadius: BorderRadius.circular(24),
+                  messageBorderRadius: 16,
+                  sentMessageBodyTextStyle: AppTextStyles.normal400(
+                    fontSize: 15,
+                    color: Colors.white,
+                  ),
+                  receivedMessageBodyTextStyle: AppTextStyles.normal400(
+                    fontSize: 15,
+                    color: AppColors.text4Light,
+                  ),
+                  inputTextStyle: AppTextStyles.normal400(
+                    fontSize: 15,
+                    color: AppColors.text4Light,
+                  ),
+                ),
+                inputOptions: InputOptions(
+                  sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+                ),
+                emptyState: Container(
+                  alignment: Alignment.center,
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.smart_toy_rounded,
+                        size: 64,
+                        color:
+                            AppColors.eLearningBtnColor1.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Start a conversation',
+                        style: AppTextStyles.normal600(
+                          fontSize: 18,
+                          color: AppColors.text4Light,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ask me anything about your studies and I\'ll help you understand it better!',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.normal400(
+                          fontSize: 14,
+                          color: AppColors.text7Light,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
