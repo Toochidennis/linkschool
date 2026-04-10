@@ -50,6 +50,8 @@ class _ExploreHomeState extends State<ExploreHome>
   bool _isInitialContentLoading = true;
 
   final Map<int, NativeAd?> _nativeAds = {};
+  final Set<int> _loadingNativeAdPositions = <int>{};
+  final Set<int> _loadedNativeAdPositions = <int>{};
   final List<int> _adPositions = [];
   int _lastAdNewsCount = -1;
 
@@ -411,7 +413,12 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     }
 
     for (int position in positions) {
-      if (_nativeAds.containsKey(position)) continue;
+      if (_loadingNativeAdPositions.contains(position) ||
+          _loadedNativeAdPositions.contains(position)) {
+        continue;
+      }
+
+      _loadingNativeAdPositions.add(position);
       _adPositions.add(position);
       final nativeAd = NativeAd(
         adUnitId: EnvConfig.newsNativeAds,
@@ -419,6 +426,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           onAdLoaded: (ad) {
             if (mounted) {
               setState(() {
+                _loadingNativeAdPositions.remove(position);
+                _loadedNativeAdPositions.add(position);
                 _nativeAds[position] = ad as NativeAd;
               });
             }
@@ -427,6 +436,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             ad.dispose();
             if (mounted) {
               setState(() {
+                _loadingNativeAdPositions.remove(position);
+                _loadedNativeAdPositions.remove(position);
                 _nativeAds[position] = null;
               });
             }
@@ -450,6 +461,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
       ad?.dispose();
     }
     _nativeAds.clear();
+    _loadingNativeAdPositions.clear();
+    _loadedNativeAdPositions.clear();
   }
 
   bool get _hasHomeBannerAdUnitId {
@@ -924,7 +937,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                     if (_shouldShowAdAtPosition(
                         index, newsProvider.latestNews.length)) {
                       final ad = _nativeAds[index];
-                      if (ad != null) {
+                      final isLoaded = ad != null &&
+                          _loadedNativeAdPositions.contains(index);
+                      if (isLoaded) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16.0, vertical: 4.0),

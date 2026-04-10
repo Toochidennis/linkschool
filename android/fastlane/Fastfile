@@ -27,4 +27,17 @@ platform :android do
       skip_upload_screenshots: true
       )
   end
+
+  desc "Promote the current internal testing release to production without rebuilding"
+  lane :promote_internal_to_production do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "production",
+      track_promote_release_status: "completed",
+      json_key: ENV["PLAY_STORE_JSON_KEY_PATH"],
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
 end

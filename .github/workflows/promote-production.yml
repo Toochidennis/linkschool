@@ -1,0 +1,31 @@
+name: Promote Internal to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0.1'
+          bundler-cache: true
+
+      - name: Decode Play Store key
+        run: |
+          echo "${{ secrets.PLAY_STORE_JSON_KEY_BASE64 }}" | base64 --decode > android/key.json
+
+      - name: Promote Internal Release to Production
+        working-directory: android
+        run: |
+          bundle install
+          PLAY_STORE_JSON_KEY_PATH=key.json bundle exec fastlane promote_internal_to_production
