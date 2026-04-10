@@ -240,74 +240,87 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     await _loadDashboardData();
   }
 
+  Future<void> _handleBackNavigation() async {
+    await GamifyAdManager.instance.showInterstitialIfEligible(context: context);
+    if (!mounted) return;
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F5EF),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFFFAF4),
-              Color(0xFFF8F5EF),
-              Color(0xFFF4F8FF),
-            ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F5EF),
+        body: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFFFAF4),
+                Color(0xFFF8F5EF),
+                Color(0xFFF4F8FF),
+              ],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
-                child: _buildHeader(),
-              ),
-              const SizedBox(height: 22),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadDashboardData,
-                  color: const Color(0xFFFBBF24),
-                  backgroundColor: const Color(0xFF132238),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeroSection(),
-                        const SizedBox(height: 20),
-                        _buildStartGameCard(),
-                        const SizedBox(height: 28),
-                        _buildSectionHeader(
-                          title: 'Top Podium',
-                          subtitle:
-                              'Trophy slots light up from real gamify scores.',
-                          actionLabel: 'Full leaderboard',
-                          onTap: _openLeaderboard,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildTopPodium(),
-                        const SizedBox(height: 28),
-                        _buildSectionHeader(
-                          title: 'Subject Arenas',
-                          subtitle:
-                              'Each card uses your actual downloaded subjects.',
-                        ),
-                        const SizedBox(height: 14),
-                        if (_loading)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32),
-                            child: Center(child: CircularProgressIndicator()),
-                          )
-                        else
-                          _buildSubjectArenaGrid(),
-                      ],
+          child: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+                  child: _buildHeader(),
+                ),
+                const SizedBox(height: 22),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadDashboardData,
+                    color: const Color(0xFFFBBF24),
+                    backgroundColor: const Color(0xFF132238),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeroSection(),
+                          const SizedBox(height: 20),
+                          _buildStartGameCard(),
+                          const SizedBox(height: 28),
+                          _buildSectionHeader(
+                            title: 'Top Podium',
+                            subtitle:
+                                'Trophy slots light up from real gamify scores.',
+                            actionLabel: 'Full leaderboard',
+                            onTap: _openLeaderboard,
+                          ),
+                          const SizedBox(height: 14),
+                          _buildTopPodium(),
+                          const SizedBox(height: 28),
+                          _buildSectionHeader(
+                            title: 'Subject Arenas',
+                            subtitle:
+                                'Each card uses your actual downloaded subjects.',
+                          ),
+                          const SizedBox(height: 14),
+                          if (_loading)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          else
+                            _buildSubjectArenaGrid(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -320,7 +333,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
       children: [
         _buildGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
-          onTap: () => Navigator.pop(context),
+          onTap: _handleBackNavigation,
         ),
         const SizedBox(width: 14),
         Expanded(
