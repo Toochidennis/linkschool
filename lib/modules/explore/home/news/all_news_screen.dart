@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -26,7 +27,10 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   int _lastAdNewsCount = -1;
   AppOpenAd? _appOpenAd;
   bool _isAppOpenAdLoaded = false;
+  bool _isAppOpenAdLoading = false;
+  bool _isAppOpenAdShowing = false;
   bool _shouldShowAdOnResume = false;
+  bool _pendingAppOpenAfterResume = false;
 
   @override
   void initState() {
@@ -35,7 +39,8 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     _scrollController = ScrollController();
     _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<NewsProvider>(context, listen: false).fetchAllNews(refresh: true);
+      Provider.of<NewsProvider>(context, listen: false)
+          .fetchAllNews(refresh: true);
     });
     _loadAppOpenAd();
   }
@@ -48,6 +53,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
       _shouldShowAdOnResume = true;
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
+        _pendingAppOpenAfterResume = true;
         _showAppOpenAd();
         _shouldShowAdOnResume = false;
       }
@@ -55,51 +61,47 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   }
 
   void _loadNativeAds(int newsCount) {
-  // Calculate ad positions in the list (ads after every 5 news items)
-  final listItemCount = _getListItemCount(newsCount);
-  final positions = <int>[];
-  for (int position = 5; position < listItemCount; position += 6) {
-    positions.add(position);
-  }
+    // Calculate ad positions in the list (ads after every 5 news items)
+    final listItemCount = _getListItemCount(newsCount);
+    final positions = <int>[];
+    for (int position = 5; position < listItemCount; position += 6) {
+      positions.add(position);
+    }
 
-  // Load native ads only for newly added positions
-  for (int position in positions) {
-    if (_nativeAds.containsKey(position)) continue;
-    _adPositions.add(position);
-    final nativeAd = NativeAd(
-      
-      adUnitId: EnvConfig.newsNativeAds,
-      
-      listener: NativeAdListener(
-        onAdLoaded: (ad) {
-          if (mounted) {
-            setState(() {
-              _nativeAds[position] = ad as NativeAd;
-            });
-          }
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-          if (mounted) {
-            setState(() {
-              _nativeAds[position] = null;
-            });
-          }
-        },
-      ),
-      request: const AdRequest(),
-     // factoryId: 'newsCardAdFactory',
-      nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.small
-      )
-    );
-    nativeAd.load();
-  }
+    // Load native ads only for newly added positions
+    for (int position in positions) {
+      if (_nativeAds.containsKey(position)) continue;
+      _adPositions.add(position);
+      final nativeAd = NativeAd(
+          adUnitId: EnvConfig.newsNativeAds,
+          listener: NativeAdListener(
+            onAdLoaded: (ad) {
+              if (mounted) {
+                setState(() {
+                  _nativeAds[position] = ad as NativeAd;
+                });
+              }
+            },
+            onAdFailedToLoad: (ad, error) {
+              ad.dispose();
+              if (mounted) {
+                setState(() {
+                  _nativeAds[position] = null;
+                });
+              }
+            },
+          ),
+          request: const AdRequest(),
+          // factoryId: 'newsCardAdFactory',
+          nativeTemplateStyle:
+              NativeTemplateStyle(templateType: TemplateType.small));
+      nativeAd.load();
+    }
 
-  if (mounted) {
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
-}
 
   void _disposeAds() {
     for (var ad in _nativeAds.values) {
@@ -109,19 +111,32 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   }
 
   void _loadAppOpenAd() {
+    if (_isAppOpenAdLoading) return;
+    _isAppOpenAdLoading = true;
+
     AppOpenAd.load(
       adUnitId: EnvConfig.newsAdsOpenApiKey,
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (AppOpenAd ad) {
+          _isAppOpenAdLoading = false;
+          _appOpenAd?.dispose();
           _appOpenAd = ad;
           if (mounted) {
             setState(() {
               _isAppOpenAdLoaded = true;
             });
           }
+          if (_pendingAppOpenAfterResume && !_isAppOpenAdShowing) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _showAppOpenAd();
+            });
+          }
         },
         onAdFailedToLoad: (LoadAdError error) {
+          _appOpenAd = null;
+          _isAppOpenAdLoading = false;
           if (mounted) {
             setState(() {
               _isAppOpenAdLoaded = false;
@@ -133,23 +148,52 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   }
 
   void _showAppOpenAd() {
-    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+    final ad = _appOpenAd;
+    if (_isAppOpenAdShowing) return;
+    if (!_isAppOpenAdLoaded || ad == null) {
+      _pendingAppOpenAfterResume = true;
+      _loadAppOpenAd();
+      return;
+    }
 
-    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+    _isAppOpenAdShowing = true;
+    _pendingAppOpenAfterResume = false;
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (AppOpenAd ad) {
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
         _loadAppOpenAd();
       },
     );
-    _appOpenAd!.show();
+    try {
+      ad.show();
+    } on PlatformException catch (error) {
+      debugPrint(
+        'All news app-open ad failed to show: ${error.code} ${error.message}',
+      );
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    } catch (error) {
+      debugPrint('All news app-open ad threw while showing: $error');
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    }
   }
 
   Color getCategoryColor(String category) {
@@ -168,7 +212,8 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     }
   }
 
-  List<NewsModel> getFilteredNews(List<NewsModel> allNews, NewsProvider provider) {
+  List<NewsModel> getFilteredNews(
+      List<NewsModel> allNews, NewsProvider provider) {
     if (selectedCategories.isEmpty) {
       return allNews;
     }
@@ -231,14 +276,20 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                           setState(() {});
                         },
                         backgroundColor: Colors.grey.shade100,
-                        selectedColor: getCategoryColor(category).withValues(alpha: 0.2),
+                        selectedColor:
+                            getCategoryColor(category).withValues(alpha: 0.2),
                         labelStyle: TextStyle(
-                          color: isSelected ? getCategoryColor(category) : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected
+                              ? getCategoryColor(category)
+                              : Colors.black87,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
                           fontFamily: 'Urbanist',
                         ),
                         side: BorderSide(
-                          color: isSelected ? getCategoryColor(category) : Colors.grey.shade300,
+                          color: isSelected
+                              ? getCategoryColor(category)
+                              : Colors.grey.shade300,
                           width: isSelected ? 2 : 1,
                         ),
                       );
@@ -301,7 +352,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
     final allNews = getFilteredNews(newsProvider.newsmodel, newsProvider);
-    
+
     if (newsProvider.isLoading && allNews.isEmpty) {
       return Scaffold(
         appBar: Constants.customAppBar(
@@ -323,7 +374,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     final headlineNews = allNews.first;
     // Remaining news for Latest News section
     final latestNews = allNews.skip(1).toList();
-    
+
     // Load ads when news list changes
     if (latestNews.length != _lastAdNewsCount) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -333,7 +384,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
         }
       });
     }
-    
+
     return Scaffold(
       appBar: Constants.customAppBar(
           context: context, title: 'All News', centerTitle: true),
@@ -350,189 +401,188 @@ class _AllnewsScreenState extends State<AllnewsScreen>
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Headline News Card
-            GestureDetector(
-              onTap: () {
-                Duration difference = detemethods(headlineNews.date_posted);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => NewsDetails(
-                      news: headlineNews,
-                      time: formatDuration(difference),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Headline News Card
+              GestureDetector(
+                onTap: () {
+                  Duration difference = detemethods(headlineNews.date_posted);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewsDetails(
+                        news: headlineNews,
+                        time: formatDuration(difference),
+                      ),
                     ),
-                  ),
-                );
-              },
-              child: _buildHeadlineCard(
-                headlineNews,
-                formatDuration(detemethods(headlineNews.date_posted)),
+                  );
+                },
+                child: _buildHeadlineCard(
+                  headlineNews,
+                  formatDuration(detemethods(headlineNews.date_posted)),
+                ),
               ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Latest News Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                       Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.text2Light.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.article_rounded,
-                              color: AppColors.text2Light,
-                              size: 20,
-                            ),
+
+              const SizedBox(height: 16),
+
+              // Latest News Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.text2Light.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: 8),
-                      Text(
-                        'Latest News',
-                        style: AppTextStyles.normal700(
-                          fontSize: 20.0,
-                          color: AppColors.text2Light,
+                          child: Icon(
+                            Icons.article_rounded,
+                            color: AppColors.text2Light,
+                            size: 20,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Stack(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.filter_list,
-                          size: 35,
-                          color: AppColors.text2Light,
+                        const SizedBox(width: 8),
+                        Text(
+                          'Latest News',
+                          style: AppTextStyles.normal700(
+                            fontSize: 20.0,
+                            color: AppColors.text2Light,
+                          ),
                         ),
-                        onPressed: _showFilterBottomSheet,
-                      ),
-                      if (selectedCategories.isNotEmpty)
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${selectedCategories.length}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                      ],
+                    ),
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.filter_list,
+                            size: 35,
+                            color: AppColors.text2Light,
+                          ),
+                          onPressed: _showFilterBottomSheet,
+                        ),
+                        if (selectedCategories.isNotEmpty)
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${selectedCategories.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 8),
-            
-            // Latest News List with Ads
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _getListItemCount(latestNews.length),
-              itemBuilder: (context, index) {
-                // Check if this position should show an ad
-                if (_shouldShowAdAtPosition(index, latestNews.length)) {
-                  final ad = _nativeAds[index];
-                
-                  if (ad != null) {
-                 
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                      height: 100,
-                      child: AdWidget(ad: ad),
-                    );
-                  }else{
-                  }
-                  // Return empty container if ad hasn't loaded yet
-                  return const SizedBox.shrink();
-                }
-                
-                // Calculate the actual news index (accounting for ads)
-                final newsIndex = _getNewsIndex(index, latestNews.length);
-                if (newsIndex >= latestNews.length) {
-                  return const SizedBox.shrink();
-                }
-                
-                final news = latestNews[newsIndex];
-                Duration difference = detemethods(news.date_posted);
-                return GestureDetector(
-                    onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NewsDetails(
-                                news: news, time: formatDuration(difference)),
-                          ),
-                        ),
-                  child: allNwesSections(
-                      news, formatDuration(difference)),
-                );
-              },
-            ),
-
-            if (newsProvider.isLoadingMore)
-              Center(
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20.0),
-                  child: CircularProgressIndicator(),
+                      ],
+                    ),
+                  ],
                 ),
               ),
 
-            if (!newsProvider.hasNextPage && newsProvider.newsmodel.isNotEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(
-                    'No more news to load',
-                    style: TextStyle(
-                      fontFamily: 'Urbanist',
-                      fontSize: 14,
-                      color: Colors.grey[500],
+              const SizedBox(height: 8),
+
+              // Latest News List with Ads
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _getListItemCount(latestNews.length),
+                itemBuilder: (context, index) {
+                  // Check if this position should show an ad
+                  if (_shouldShowAdAtPosition(index, latestNews.length)) {
+                    final ad = _nativeAds[index];
+
+                    if (ad != null) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 4.0),
+                        height: 100,
+                        child: AdWidget(ad: ad),
+                      );
+                    } else {}
+                    // Return empty container if ad hasn't loaded yet
+                    return const SizedBox.shrink();
+                  }
+
+                  // Calculate the actual news index (accounting for ads)
+                  final newsIndex = _getNewsIndex(index, latestNews.length);
+                  if (newsIndex >= latestNews.length) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final news = latestNews[newsIndex];
+                  Duration difference = detemethods(news.date_posted);
+                  return GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NewsDetails(
+                            news: news, time: formatDuration(difference)),
+                      ),
+                    ),
+                    child: allNwesSections(news, formatDuration(difference)),
+                  );
+                },
+              ),
+
+              if (newsProvider.isLoadingMore)
+                Center(
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+
+              if (!newsProvider.hasNextPage &&
+                  newsProvider.newsmodel.isNotEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      'No more news to load',
+                      style: TextStyle(
+                        fontFamily: 'Urbanist',
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   String stripHtml(String html) {
-  return html
-    .replaceAll(RegExp(r'<[^>]*>'), '')
-    .replaceAll('&amp;', '&')
-    .replaceAll('&nbsp;', ' ')
-    .replaceAll('&#39;', "'")
-    .replaceAll('&quot;', '"')
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .trim();
-}
+    return html
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&quot;', '"')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .trim();
+  }
 
   // Calculate total item count including ads
   int _getListItemCount(int newsCount) {
@@ -601,7 +651,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     final newsProvider = Provider.of<NewsProvider>(context, listen: false);
     final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
     final categoryColor = getCategoryColor(category);
-    
+
     return Container(
       margin: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -637,7 +687,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                 );
               },
             ),
-            
+
             // Gradient overlay
             Positioned.fill(
               child: Container(
@@ -655,7 +705,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                 ),
               ),
             ),
-            
+
             // Content overlay
             Positioned(
               bottom: 0,
@@ -671,7 +721,8 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: categoryColor,
                             borderRadius: BorderRadius.circular(20),
@@ -707,9 +758,9 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Title
                     Text(
                       news.title,
@@ -723,13 +774,13 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                         height: 1.3,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // Description
                     Text(
                       stripHtml(news.content),
-                     // news.content,
+                      // news.content,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -754,7 +805,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
     final newsProvider = Provider.of<NewsProvider>(context, listen: false);
     final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
     final categoryColor = getCategoryColor(category);
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       padding: const EdgeInsets.all(12.0),
@@ -795,7 +846,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Content on the right
           Expanded(
             child: Column(
@@ -803,7 +854,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
               children: [
                 // Title
                 Text(
-                 stripHtml(news.title),
+                  stripHtml(news.title),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal600(
@@ -812,11 +863,11 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                   ),
                 ),
                 const SizedBox(height: 8.0),
-                
+
                 // Description
                 Text(
                   stripHtml(news.content),
-                //  news.content,
+                  //  news.content,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.normal400(
@@ -825,12 +876,13 @@ class _AllnewsScreenState extends State<AllnewsScreen>
                   ),
                 ),
                 const SizedBox(height: 8.0),
-                
+
                 // Category badge and time
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: categoryColor,
                         borderRadius: BorderRadius.circular(12),
@@ -875,11 +927,11 @@ class _AllnewsScreenState extends State<AllnewsScreen>
 }
 
 Duration detemethods(String dopString) {
-    // String dopString = "2024-02-15T12:00:00.000Z"; // Example value from API
-    DateTime dop = DateTime.parse(dopString); // Convert to DateTime
-    DateTime nowDateTime = DateTime.now();
-    // Duration difference = nowDateTime.difference(dop);
-    // DateTime nowDateTime = DateTime.now();
-    Duration difference = nowDateTime.difference(dop);
-    return difference;
-  }
+  // String dopString = "2024-02-15T12:00:00.000Z"; // Example value from API
+  DateTime dop = DateTime.parse(dopString); // Convert to DateTime
+  DateTime nowDateTime = DateTime.now();
+  // Duration difference = nowDateTime.difference(dop);
+  // DateTime nowDateTime = DateTime.now();
+  Duration difference = nowDateTime.difference(dop);
+  return difference;
+}

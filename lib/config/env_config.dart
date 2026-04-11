@@ -141,6 +141,11 @@ class EnvConfig {
         defaultValue: _unsetValue,
       );
 
+  static String get homeAdsOpenKey => const String.fromEnvironment(
+        'HOME_ADS_OPEN_KEY',
+        defaultValue: _unsetValue,
+      );
+
   static String get linkSkoolAiHomeBannerAdKey => const String.fromEnvironment(
         'LINKSKOOL_AI_HOME_BANNER_AD_KEY',
         defaultValue: _unsetValue,
@@ -154,6 +159,21 @@ class EnvConfig {
 
   static String get linkSkoolAiAdOpenKey => const String.fromEnvironment(
         'LINKSKOOL_AI_AD_OPEN_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get discussionBannerAdKey => const String.fromEnvironment(
+        'DISCUSSION_BANNER_AD_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get discussionAdsOpenKey => const String.fromEnvironment(
+        'DISCUSSION_ADS_OPEN_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get discussionInterstitialAdKey => const String.fromEnvironment(
+        'DISCUSSION_INTERSTITIAL_AD_KEY',
         defaultValue: _unsetValue,
       );
 

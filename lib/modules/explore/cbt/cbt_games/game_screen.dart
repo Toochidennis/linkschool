@@ -10,6 +10,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'dart:convert';
 
+import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_session_controller.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
@@ -66,6 +67,7 @@ class _GameTestScreenState extends State<GameTestScreen>
   bool _fiftyFiftyUsed = false;
   bool _askComputerUsed = false;
   bool _isExitingToDashboard = false;
+  bool _allowRoutePop = false;
   final Map<int, Set<int>> _hiddenOptionsPerQuestion =
       {}; // For 50:50 lifeline - stores hidden options per question index
   int? _computerSuggestion; // For Ask Computer lifeline
@@ -1227,11 +1229,18 @@ class _GameTestScreenState extends State<GameTestScreen>
       if (_score > 0 || _correctAnswers > 0) {
         await _finishQuiz();
       } else {
-        await GamifyAdManager.instance.showInterstitialIfEligible(
-          context: context,
+        if (mounted) {
+          setState(() => _allowRoutePop = true);
+        } else {
+          _allowRoutePop = true;
+        }
+        await popThenShowInterstitial(
+          popNavigation: () => Navigator.pop(context),
+          showInterstitial: (targetContext) =>
+              GamifyAdManager.instance.showInterstitialIfEligible(
+            context: targetContext,
+          ),
         );
-        if (!mounted) return;
-        Navigator.pop(context);
       }
     } finally {
       if (mounted) {
@@ -1254,9 +1263,9 @@ class _GameTestScreenState extends State<GameTestScreen>
         // Loading state
         if (session.loading) {
           return PopScope(
-            canPop: false,
+            canPop: _allowRoutePop,
             onPopInvokedWithResult: (didPop, _) async {
-              if (didPop) return;
+              if (didPop || _allowRoutePop) return;
               await _handleExitToDashboard();
             },
             child: Scaffold(
@@ -1286,9 +1295,9 @@ class _GameTestScreenState extends State<GameTestScreen>
         // Error state
         if (session.error != null) {
           return PopScope(
-            canPop: false,
+            canPop: _allowRoutePop,
             onPopInvokedWithResult: (didPop, _) async {
-              if (didPop) return;
+              if (didPop || _allowRoutePop) return;
               await _handleExitToDashboard();
             },
             child: Scaffold(
@@ -1348,9 +1357,9 @@ class _GameTestScreenState extends State<GameTestScreen>
         // No questions available
         if (session.questions.isEmpty) {
           return PopScope(
-            canPop: false,
+            canPop: _allowRoutePop,
             onPopInvokedWithResult: (didPop, _) async {
-              if (didPop) return;
+              if (didPop || _allowRoutePop) return;
               await _handleExitToDashboard();
             },
             child: Scaffold(
@@ -1389,9 +1398,9 @@ class _GameTestScreenState extends State<GameTestScreen>
         // Countdown not complete - show empty container
         if (!_isCountdownComplete) {
           return PopScope(
-            canPop: false,
+            canPop: _allowRoutePop,
             onPopInvokedWithResult: (didPop, _) async {
-              if (didPop) return;
+              if (didPop || _allowRoutePop) return;
               await _handleExitToDashboard();
             },
             child: Scaffold(
@@ -1408,9 +1417,9 @@ class _GameTestScreenState extends State<GameTestScreen>
         _ensureQuestionPresentation(question: question);
 
         return PopScope(
-          canPop: false,
+          canPop: _allowRoutePop,
           onPopInvokedWithResult: (didPop, _) async {
-            if (didPop) return;
+            if (didPop || _allowRoutePop) return;
             await _handleExitToDashboard();
           },
           child: Scaffold(

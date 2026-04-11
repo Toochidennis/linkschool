@@ -27,9 +27,7 @@ class CbtPlanPaymentDialog extends StatefulWidget {
 
 class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     with SingleTickerProviderStateMixin {
-  static final Uri _whatsappHelpUri = Uri.parse(
-    'https://wa.me/2349047697293',
-  );
+  static const String _whatsAppPhoneNumber = '2349047697293';
   static const String _supportPhoneDisplay = '+234 904 769 7293';
   static const String _supportPhoneCopy = '+2349047697293';
   static const String _accountName = 'Linkskool Online Ventures';
@@ -62,34 +60,53 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     return PopScope(
       canPop: !_isProcessing,
       child: Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8FAFC),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         insetPadding: EdgeInsets.symmetric(
-          horizontal: 24,
+          horizontal: 12,
           vertical: keyboardHeight > 0 ? 8 : 24,
         ),
         child: Stack(
           children: [
-            SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 340),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 14),
-                      _buildTabSwitcher(),
-                      const SizedBox(height: 16),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: _tabController.index == 0
-                            ? _buildPayOnlineTab()
-                            : _buildVoucherTab(),
-                      ),
-                    ],
+            Positioned.fill(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 76, 18, 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTabSwitcher(),
+                        const SizedBox(height: 12),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: _tabController.index == 0
+                              ? _buildPayOnlineTab()
+                              : _buildVoucherTab(),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildManualPaymentSupportBody(showIntro: true),
+                      ],
+                    ),
                   ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 6),
+                  child: _buildHeader(),
                 ),
               ),
             ),
@@ -105,41 +122,14 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   Widget _buildHeader() {
     return Row(
       children: [
-        Expanded(
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF2F4F7),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.credit_card, color: Color(0xFF0D1426)),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Payment Method',
-                    style: AppTextStyles.normal500(
-                      fontSize: 12,
-                      color: AppColors.text7Light,
-                    ),
-                  ),
-                  Text(
-                    _tabController.index == 0 ? 'Pay Online' : 'Voucher',
-                    style: AppTextStyles.normal700(
-                      fontSize: 20,
-                      color: AppColors.text4Light,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+        Text(
+          'Payment',
+          style: AppTextStyles.normal700(
+            fontSize: 18,
+            color: AppColors.text4Light,
           ),
         ),
+        const Spacer(),
         IconButton(
           onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close),
@@ -157,8 +147,9 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F4F7),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Row(
         children: [
@@ -181,8 +172,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color:
-                isSelected ? AppColors.eLearningBtnColor1 : Colors.transparent,
+            color: isSelected ? AppColors.eLearningBtnColor1 : Colors.white,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Text(
@@ -222,13 +212,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             label: 'Pay Now',
             onPressed: _isProcessing ? null : _handlePayOnline,
           ),
-          const SizedBox(height: 38),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              _buildFootnote(),
-            ],
-          ),
         ],
       ),
     );
@@ -259,12 +242,6 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             label: 'Verify Voucher',
             onPressed: _isProcessing ? null : _handleVoucherVerify,
           ),
-          const SizedBox(height: 24),
-          Column(
-            children: [
-              _buildFootnote(),
-            ],
-          ),
         ],
       ),
     );
@@ -274,10 +251,11 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
 
   Widget _buildContent({required Widget body}) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: body,
     );
@@ -485,37 +463,132 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     );
   }
 
-  Widget _buildFootnote() {
+  Widget _buildManualPaymentSupportBody({
+    required bool showIntro,
+    String? message,
+  }) {
+    final trimmedMessage = message?.trim() ?? '';
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (showIntro) ...[
+          Text(
+            'Pay to the account details below',
+            style: AppTextStyles.normal600(
+              fontSize: 14,
+              color: AppColors.text4Light,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         Text(
-          'Need help?',
-          style: AppTextStyles.normal400(
-            fontSize: 13,
+          'Account details',
+          style: AppTextStyles.normal700(
+            fontSize: 14,
             color: AppColors.text4Light,
           ),
-          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 14),
-        ElevatedButton.icon(
-          onPressed: _openWhatsAppHelp,
-          icon: Image.asset(
-            'assets/images/whatsapp-logo.png',
-            width: 20,
-            height: 20,
+        const SizedBox(height: 10),
+        _buildInlineDetailRow(
+          label: 'Account Name',
+          value: _accountName,
+        ),
+        const SizedBox(height: 8),
+        _buildInlineDetailRow(
+          label: 'Account Number',
+          value: _accountNumber,
+          isCopyable: true,
+          onCopy: () => _copyText(
+            value: _accountNumber,
+            label: 'Account number',
           ),
-          label: const Text('Chat us on WhatsApp'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            shape: RoundedRectangleBorder(
-              side: const BorderSide(color: Color(0xFF25D366), width: 1.5),
-              borderRadius: BorderRadius.circular(999),
+        ),
+        const SizedBox(height: 8),
+        _buildInlineDetailRow(
+          label: 'Bank Name',
+          value: _bankName,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Send receipt on WhatsApp',
+          style: AppTextStyles.normal700(
+            fontSize: 14,
+            color: AppColors.text4Light,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: SelectableText(
+                _supportPhoneDisplay,
+                style: AppTextStyles.normal700(
+                  fontSize: 18,
+                  color: AppColors.text4Light,
+                ),
+              ),
             ),
-            textStyle:
-                AppTextStyles.normal600(fontSize: 13, color: Colors.black),
+            IconButton(
+              onPressed: () => _copyText(
+                value: _supportPhoneCopy,
+                label: 'Phone number',
+              ),
+              icon: const Icon(
+                Icons.copy_rounded,
+                color: AppColors.text4Light,
+              ),
+              tooltip: 'Copy phone number',
+              splashRadius: 18,
+            ),
+          ],
+        ),
+        if (trimmedMessage.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.boxColor1,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.barColor3.withValues(
+                  alpha: 0.6,
+                ),
+              ),
+            ),
+            child: Text(
+              trimmedMessage,
+              style: AppTextStyles.normal500(
+                fontSize: 12,
+                color: AppColors.barTextGray,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _openWhatsAppHelp,
+            icon: Image.asset(
+              'assets/images/whatsapp-logo.png',
+              width: 20,
+              height: 20,
+            ),
+            label: Text(
+              'Chat us on WhatsApp',
+              style: AppTextStyles.normal700(
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
           ),
         ),
       ],
@@ -622,6 +695,37 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                   ),
                 ),
               ),
+              if (state == PaymentDialogState.failed) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: _openWhatsAppHelpForFailure,
+                    icon: Image.asset(
+                      'assets/images/whatsapp-logo.png',
+                      width: 20,
+                      height: 20,
+                    ),
+                    label: Text(
+                      'Chat us on WhatsApp',
+                      style: AppTextStyles.normal600(
+                        fontSize: 14,
+                        color: const Color(0xFF25D366),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(
+                        color: Color(0xFF25D366),
+                        width: 1.4,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -937,7 +1041,19 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   }
 
   Future<void> _openWhatsAppHelp() async {
-    final uri = _whatsappHelpUri;
+    final uri = _buildWhatsAppHelpUri(
+      message:
+          'Hi, my name is ${_currentUserDisplayName()}. I made a CBT payment for the ${widget.plan.name} plan and here is my receipt. Please help me confirm it. Thank you.',
+    );
+    if (!await canLaunchUrl(uri)) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _openWhatsAppHelpForFailure() async {
+    final uri = _buildWhatsAppHelpUri(
+      message:
+          'Hi, my name is ${_currentUserDisplayName()}. I made a CBT payment for the ${widget.plan.name} plan, but it could not be confirmed in the app. Here is my receipt. Please help me confirm it. Thank you.',
+    );
     if (!await canLaunchUrl(uri)) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
@@ -956,6 +1072,30 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
     );
   }
 
+  Uri _buildWhatsAppHelpUri({required String message}) {
+    return Uri.parse(
+      'https://wa.me/$_whatsAppPhoneNumber?text=${Uri.encodeComponent(message)}',
+    );
+  }
+
+  String _currentUserDisplayName() {
+    final user =
+        Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+    final fullName = [
+      user?.first_name?.toString().trim(),
+      user?.last_name?.toString().trim(),
+    ].whereType<String>().where((part) => part.isNotEmpty).join(' ').trim();
+
+    if (fullName.isNotEmpty) return fullName;
+
+    final fallbackName = user?.name?.toString().trim();
+    if (fallbackName != null && fallbackName.isNotEmpty) {
+      return fallbackName;
+    }
+
+    return 'a Linkskool user';
+  }
+
   Future<void> _showManualPaymentHelpDialog({
     required String backendMessage,
   }) async {
@@ -970,7 +1110,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
       barrierDismissible: true,
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -1066,161 +1206,9 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: AppColors.eLearningBtnColor2,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: AppColors.eLearningContColor1.withValues(
-                                alpha: 0.28,
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Account details',
-                                style: AppTextStyles.normal700(
-                                  fontSize: 14,
-                                  color: AppColors.text4Light,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              _buildInlineDetailRow(
-                                label: 'Account Name',
-                                value: _accountName,
-                              ),
-                              const SizedBox(height: 8),
-                              _buildInlineDetailRow(
-                                label: 'Account Number',
-                                value: _accountNumber,
-                                isCopyable: true,
-                                onCopy: () => _copyText(
-                                  value: _accountNumber,
-                                  label: 'Account number',
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              _buildInlineDetailRow(
-                                label: 'Bank Name',
-                                value: _bankName,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: AppColors.eLearningBtnColor6,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: AppColors.paymentTxtColor4.withValues(
-                                alpha: 0.45,
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Send receipt on WhatsApp',
-                                style: AppTextStyles.normal700(
-                                  fontSize: 14,
-                                  color: AppColors.text4Light,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Phone Number',
-                                style: AppTextStyles.normal500(
-                                  fontSize: 11,
-                                  color: AppColors.text7Light,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SelectableText(
-                                      _supportPhoneDisplay,
-                                      style: AppTextStyles.normal700(
-                                        fontSize: 17,
-                                        color: AppColors.paymentTxtColor2,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () => _copyText(
-                                      value: _supportPhoneCopy,
-                                      label: 'Phone number',
-                                    ),
-                                    icon: const Icon(
-                                      Icons.copy_rounded,
-                                      color: AppColors.paymentTxtColor2,
-                                    ),
-                                    tooltip: 'Copy phone number',
-                                    splashRadius: 18,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (message.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.boxColor1,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.barColor3.withValues(
-                                  alpha: 0.6,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              message,
-                              style: AppTextStyles.normal500(
-                                fontSize: 12,
-                                color: AppColors.barTextGray,
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            onPressed: _openWhatsAppHelp,
-                            icon: Image.asset(
-                              'assets/images/whatsapp-logo.png',
-                              width: 20,
-                              height: 20,
-                            ),
-                            label: Text(
-                              'Open WhatsApp',
-                              style: AppTextStyles.normal700(
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.paymentTxtColor2,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: _buildManualPaymentSupportBody(
+                      showIntro: false,
+                      message: message,
                     ),
                   ),
                 ],

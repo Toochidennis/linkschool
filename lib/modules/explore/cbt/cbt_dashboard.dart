@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart';
 import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_discussion_screen.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
@@ -13,7 +14,6 @@ import 'package:linkschool/modules/explore/cbt/all_test_history_screen.dart';
 import 'package:linkschool/modules/explore/cbt/subject_selection_screen.dart';
 import 'package:linkschool/modules/explore/cbt/widgets/cbt_auth_dialog.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
-import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
 import 'package:linkschool/modules/common/ads/ad_manager.dart';
 import 'package:provider/provider.dart';
@@ -43,18 +43,18 @@ class CBTDashboard extends StatefulWidget {
 }
 
 class _CBTDashboardState extends State<CBTDashboard>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin, RouteAware {
+    with
+        AutomaticKeepAliveClientMixin,
+        TickerProviderStateMixin,
+        WidgetsBindingObserver,
+        RouteAware {
   final _subscriptionService = CbtSubscriptionService();
-  final _authService = FirebaseAuthService();
   final _licenseService = CbtLicenseService();
 
   bool _wasLoading = true;
 
-  // 🚀 Cache subscription status to avoid repeated checks
-  bool? _cachedCanTakeTest;
   bool _isCheckingSubscription = false;
   bool _didCheckProfileModal = false;
-  bool _isShowingEntryPrompt = false;
 
   // Animation controllers for card animations
   late AnimationController _fadeController;
@@ -65,8 +65,8 @@ class _CBTDashboardState extends State<CBTDashboard>
   String? _pressedBoardCode;
   String? _lastNetworkMessage;
   bool _didSubscribeToRoute = false;
-  bool _skipNextPlanPrompt = false;
   bool _isHandlingBoardTap = false;
+  bool _shouldShowAdOnResume = false;
 
   Future<bool> _handlePortalLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -202,6 +202,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     // Initialize animation controllers
     _fadeController = AnimationController(
@@ -224,7 +225,6 @@ class _CBTDashboardState extends State<CBTDashboard>
       if (mounted) {
         await AdManager.instance.warmUpPracticeAds(context);
       }
-      _preloadSubscriptionStatus(); // Pre-cache subscription status
     });
   }
 
@@ -284,7 +284,6 @@ class _CBTDashboardState extends State<CBTDashboard>
         );
 
         if (!mounted) return;
-        _cachedCanTakeTest = cbtUserProvider.hasPaid;
         setState(() {});
 
         final user = cbtUserProvider.currentUser;
@@ -322,6 +321,7 @@ class _CBTDashboardState extends State<CBTDashboard>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_didSubscribeToRoute) {
       routeObserver.unsubscribe(this);
     }
@@ -335,6 +335,22 @@ class _CBTDashboardState extends State<CBTDashboard>
   void didPopNext() {
     if (!mounted) return;
     context.read<CBTProvider>().refreshStats();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused &&
+        !AdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAdOnResume = true;
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _shouldShowAdOnResume = false;
+      AdManager.instance.showAppOpenIfEligible(context: context);
+    }
   }
 
   Widget _buildAnimatedCard({
@@ -375,22 +391,6 @@ class _CBTDashboardState extends State<CBTDashboard>
     );
   }
 
-  /// 🔥 PRE-LOAD subscription status to avoid UI blocking
-  Future<void> _preloadSubscriptionStatus() async {
-    try {
-      final hasPaid = await _subscriptionService.hasPaid();
-      final canTakeTest = await _subscriptionService.canTakeTest();
-
-      if (mounted) {
-        setState(() {
-          _cachedCanTakeTest = hasPaid || canTakeTest;
-        });
-      }
-    } catch (e) {
-      // Intentionally ignored.
-    }
-  }
-
   Future<void> _syncTrialSettingsOnEntry() async {
     try {
       final settings = await CbtSettingsHelper.getSettings();
@@ -398,55 +398,6 @@ class _CBTDashboardState extends State<CBTDashboard>
     } catch (e) {
       // Intentionally ignored.
     }
-  }
-
-  Future<void> _maybeShowEntryPlans() async {
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
-    final canShowPlans = await _ensureSignedInForPlans();
-    if (!canShowPlans) return;
-    await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
-    if (cbtUserProvider.hasPaid == true) return;
-    if (cbtUserProvider.isOnFreeTrial) return;
-    if (_isShowingEntryPrompt) return;
-    _isShowingEntryPrompt = true;
-
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const CbtPlansScreen(
-          preferTrialLabel: true,
-        ),
-      ),
-    );
-
-    if (mounted) {
-      _isShowingEntryPrompt = false;
-      _skipNextPlanPrompt = true;
-    }
-  }
-
-  Future<bool> _ensureSignedInForPlans() async {
-    final portalLoggedIn = await _handlePortalLogin();
-    if (portalLoggedIn) return true;
-
-    final cbtUserProvider =
-        Provider.of<CbtUserProvider>(context, listen: false);
-    if (cbtUserProvider.currentUser != null) return true;
-
-    final signedIn = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => const CbtAuthDialog(),
-    );
-
-    if (signedIn == true) {
-      await cbtUserProvider.refreshCurrentUser(
-        forceNetwork: false,
-        forceLicenseRefresh: false,
-      );
-      return true;
-    }
-    return false;
   }
 
   /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
@@ -934,6 +885,17 @@ class _CBTDashboardState extends State<CBTDashboard>
               builder: (context) => StudySubjectSelectionModal(
                 subjects: provider.currentBoardSubjects,
                 examTypeId: examTypeId,
+              ),
+            );
+          },
+          onDiscussion: () {
+            Navigator.pop(context);
+            Navigator.push(
+              this.context,
+              MaterialPageRoute(
+                builder: (context) => CbtDiscussionScreen(
+                  boardName: board.title,
+                ),
               ),
             );
           },
@@ -1530,6 +1492,7 @@ class _BoardOptionsModal extends StatelessWidget {
   final String boardName;
   final VoidCallback onPractice;
   final VoidCallback onStudy;
+  final VoidCallback onDiscussion;
   final VoidCallback onGamify;
   final VoidCallback onChallenge;
 
@@ -1537,6 +1500,7 @@ class _BoardOptionsModal extends StatelessWidget {
     required this.boardName,
     required this.onPractice,
     required this.onStudy,
+    required this.onDiscussion,
     required this.onGamify,
     required this.onChallenge,
   });
@@ -1622,6 +1586,14 @@ class _BoardOptionsModal extends StatelessWidget {
                     subtitle: 'Compete with others',
                     color: const Color(0xFFEC4899),
                     onTap: onChallenge,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.forum_rounded,
+                    title: 'Discussion',
+                    subtitle: 'Ask questions and share ideas',
+                    color: const Color(0xFF06B6D4),
+                    onTap: onDiscussion,
                   ),
                 ],
               ),

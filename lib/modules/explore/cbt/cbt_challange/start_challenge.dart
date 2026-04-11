@@ -7,6 +7,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/ads/cbt_scoped_ad_manager.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challenge_ad_manager.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challenge_leader.dart';
@@ -57,6 +58,8 @@ class _StartChallengeState extends State<StartChallenge>
   late Animation<double> _bounceAnimation;
   final int _lastDisplayedQuestionIndex = -1;
   bool _shouldShowAppOpenOnResume = false;
+  bool _allowRoutePop = false;
+  bool _isHandlingBackNavigation = false;
 
   Timer? _timer;
   int? _remainingSeconds;
@@ -449,12 +452,18 @@ class _StartChallengeState extends State<StartChallenge>
   }
 
   Future<void> _handleExitChallenge() async {
-    await ChallengeAdManager.instance.showIfEligible(
-      context: context,
-      trigger: CbtScopedAdTrigger.testExit,
+    if (_isHandlingBackNavigation) return;
+    _isHandlingBackNavigation = true;
+    if (mounted) {
+      setState(() => _allowRoutePop = true);
+    }
+    await popThenShowInterstitial(
+      popNavigation: () => Navigator.pop(context),
+      showInterstitial: (targetContext) =>
+          ChallengeAdManager.instance.showInterstitialIfEligible(
+        context: targetContext,
+      ),
     );
-    if (!mounted) return;
-    Navigator.pop(context);
   }
 
   int _calculateScore(ChallengeQuestionProvider p) {
@@ -567,9 +576,9 @@ class _StartChallengeState extends State<StartChallenge>
         // Dialog only shows when Read More button is clicked - no auto-show
 
         return PopScope(
-          canPop: false,
+          canPop: _allowRoutePop,
           onPopInvokedWithResult: (didPop, _) async {
-            if (didPop) return;
+            if (didPop || _allowRoutePop) return;
             await _handleExitChallenge();
           },
           child: Scaffold(

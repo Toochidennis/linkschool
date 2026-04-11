@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
@@ -309,7 +310,34 @@ class CbtScopedAdManager {
       },
     );
 
-    ad.show();
+    try {
+      await Future<void>.sync(() => ad.show());
+    } on PlatformException catch (error) {
+      ad.dispose();
+      if (identical(_appOpenAd, ad)) {
+        _appOpenAd = null;
+      }
+      _isAppOpenShowing = false;
+      preloadAppOpen();
+      _log(
+        'App-open show threw PlatformException: code=${error.code}, message=${error.message}',
+      );
+      if (!completer.isCompleted) {
+        completer.complete(false);
+      }
+    } catch (error) {
+      ad.dispose();
+      if (identical(_appOpenAd, ad)) {
+        _appOpenAd = null;
+      }
+      _isAppOpenShowing = false;
+      preloadAppOpen();
+      _log('App-open show threw unexpected error: $error');
+      if (!completer.isCompleted) {
+        completer.complete(false);
+      }
+    }
+
     return completer.future;
   }
 
@@ -380,7 +408,34 @@ class CbtScopedAdManager {
       },
     );
 
-    ad.show();
+    try {
+      await Future<void>.sync(() => ad.show());
+    } on PlatformException catch (error) {
+      ad.dispose();
+      if (identical(_interstitialAd, ad)) {
+        _interstitialAd = null;
+      }
+      _isInterstitialShowing = false;
+      preloadInterstitial();
+      _log(
+        'Interstitial show threw PlatformException: code=${error.code}, message=${error.message}',
+      );
+      if (!completer.isCompleted) {
+        completer.complete(false);
+      }
+    } catch (error) {
+      ad.dispose();
+      if (identical(_interstitialAd, ad)) {
+        _interstitialAd = null;
+      }
+      _isInterstitialShowing = false;
+      preloadInterstitial();
+      _log('Interstitial show threw unexpected error: $error');
+      if (!completer.isCompleted) {
+        completer.complete(false);
+      }
+    }
+
     return completer.future;
   }
 
@@ -436,11 +491,39 @@ class CbtScopedAdManager {
       },
     );
 
-    ad.show(
-      onUserEarnedReward: (_, __) {
-        rewardEarned = true;
-      },
-    );
+    try {
+      await Future<void>.sync(
+        () => ad.show(
+          onUserEarnedReward: (_, __) {
+            rewardEarned = true;
+          },
+        ),
+      );
+    } on PlatformException catch (error) {
+      ad.dispose();
+      if (identical(_rewardedAd, ad)) {
+        _rewardedAd = null;
+      }
+      _isRewardedShowing = false;
+      preloadRewarded();
+      _log(
+        'Rewarded show threw PlatformException: code=${error.code}, message=${error.message}',
+      );
+      if (!completer.isCompleted) {
+        completer.complete(false);
+      }
+    } catch (error) {
+      ad.dispose();
+      if (identical(_rewardedAd, ad)) {
+        _rewardedAd = null;
+      }
+      _isRewardedShowing = false;
+      preloadRewarded();
+      _log('Rewarded show threw unexpected error: $error');
+      if (!completer.isCompleted) {
+        completer.complete(false);
+      }
+    }
 
     return completer.future;
   }

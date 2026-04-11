@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/courses/explore_courses.dart';
 import 'package:linkschool/modules/explore/e_library/E_library_dashbord.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profile_screen.dart';
@@ -26,10 +29,138 @@ class ExploreDashboard extends StatefulWidget {
   State<ExploreDashboard> createState() => _ExploreDashboardState();
 }
 
-class _ExploreDashboardState extends State<ExploreDashboard> {
+class _ExploreDashboardState extends State<ExploreDashboard>
+    with WidgetsBindingObserver {
   bool _showSearchIcon = true; // Default to true
 
   late List<Widget> _bodyItems;
+  static const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _isAppOpenAdLoading = false;
+  bool _isAppOpenAdShowing = false;
+  bool _shouldShowAdOnResume = false;
+  bool _pendingAppOpenAfterResume = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadAppOpenAd();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
+    super.dispose();
+  }
+
+  bool get _hasExploreAppOpenAdUnitId {
+    final adUnitId = EnvConfig.homeAdsOpenKey;
+    return adUnitId.isNotEmpty && adUnitId != _unsetEnvValue;
+  }
+
+  void _loadAppOpenAd() {
+    if (!_hasExploreAppOpenAdUnitId || _isAppOpenAdLoading) return;
+    _isAppOpenAdLoading = true;
+
+    AppOpenAd.load(
+      adUnitId: EnvConfig.homeAdsOpenKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _isAppOpenAdLoading = false;
+          _appOpenAd?.dispose();
+          _appOpenAd = ad;
+          if (!mounted) return;
+          setState(() {
+            _isAppOpenAdLoaded = true;
+          });
+          if (_pendingAppOpenAfterResume && !_isAppOpenAdShowing) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _showAppOpenAd();
+            });
+          }
+        },
+        onAdFailedToLoad: (error) {
+          _isAppOpenAdLoading = false;
+          _appOpenAd = null;
+          if (!mounted) return;
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    final ad = _appOpenAd;
+    if (_isAppOpenAdShowing) return;
+    if (!_isAppOpenAdLoaded || ad == null) {
+      _pendingAppOpenAfterResume = true;
+      _loadAppOpenAd();
+      return;
+    }
+
+    _isAppOpenAdShowing = true;
+    _pendingAppOpenAfterResume = false;
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
+        _loadAppOpenAd();
+      },
+    );
+
+    try {
+      ad.show();
+    } on PlatformException catch (error) {
+      debugPrint(
+        'Explore dashboard app-open ad failed to show: ${error.code} ${error.message}',
+      );
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    } catch (error) {
+      debugPrint('Explore dashboard app-open ad threw while showing: $error');
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _pendingAppOpenAfterResume = true;
+      _shouldShowAdOnResume = false;
+      _showAppOpenAd();
+    }
+  }
 
   //   @override
   // void initState() {

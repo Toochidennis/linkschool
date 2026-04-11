@@ -49,6 +49,8 @@ Future<void> main() async {
     ),
   );
 
+  await MobileAds.instance.initialize();
+
   runApp(
     MultiProvider(
       providers: getAppProviders(),
@@ -59,7 +61,6 @@ Future<void> main() async {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     Future<void>.delayed(const Duration(seconds: 2), () {
       unawaited(CbtExamSyncService().syncOnStartup());
-      unawaited(MobileAds.instance.initialize());
       unawaited(_logFacebookAppLaunchSafely());
     });
   });
@@ -120,12 +121,10 @@ class AppInitializer extends StatefulWidget {
 
 class _AppInitializerState extends State<AppInitializer>
     with WidgetsBindingObserver {
-  bool _isInitialized = false;
-  bool _showOnboarding = false;
   Uri? _lastHandledDeepLink;
-DateTime? _lastHandledAt;
+  DateTime? _lastHandledAt;
   StreamSubscription<Uri>? _linkSub;
-   static bool _initialLinkHandled = false;
+  static bool _initialLinkHandled = false;
 
   @override
   void initState() {
@@ -143,85 +142,63 @@ DateTime? _lastHandledAt;
     debugPrint('App lifecycle: $state');
   }
 
+  Future<void> _initializeServices() async {
+    debugPrint('Notification/deeplink services initializing');
+    await NotificationNavigationService().initialize(appNavigatorKey);
 
-Future<void> _initializeServices() async {
-  debugPrint('Notification/deeplink services initializing');
-  await NotificationNavigationService().initialize(appNavigatorKey);
-
-  // Only handle initial link on true cold start (app not already running)
-  if (!_initialLinkHandled) {
-    _initialLinkHandled = true;
-    final initialLink = await _appLinks.getInitialLink();
-    if (initialLink != null) {
-      debugPrint('Deep link initial: $initialLink');
-      _recordAndHandle(initialLink);
+    // Only handle initial link on true cold start (app not already running)
+    if (!_initialLinkHandled) {
+      _initialLinkHandled = true;
+      final initialLink = await _appLinks.getInitialLink();
+      if (initialLink != null) {
+        debugPrint('Deep link initial: $initialLink');
+        _recordAndHandle(initialLink);
+      }
     }
-  }
-  debugPrint('Notification/deeplink services initialized');
-}
-
-void _initLinkListener() {
-  debugPrint('AppLinks uriLinkStream listener attached');
-  _linkSub = _appLinks.uriLinkStream.listen(
-    (uri) {
-      debugPrint('Deep link stream: $uri');
-      _recordAndHandle(uri);
-    },
-    onError: (Object error) {},
-  );
-}
-
-void _recordAndHandle(Uri uri) {
-  final now = DateTime.now();
-  
-  if (_lastHandledDeepLink == uri && _lastHandledAt != null) {
-    final diff = now.difference(_lastHandledAt!);
-    if (diff < const Duration(seconds: 2)) {
-      debugPrint('Deep link DEDUPLICATED after ${diff.inMilliseconds}ms: $uri');
-      return;
-    }
-    debugPrint('Deep link SAME URI, but ${diff.inSeconds}s elapsed — allowing: $uri');
+    debugPrint('Notification/deeplink services initialized');
   }
 
-  _lastHandledDeepLink = uri;
-  _lastHandledAt = now;
-  debugPrint('Deep link DISPATCHING: $uri');
-  unawaited(NotificationNavigationService().handleDeepLink(uri));
-}
+  void _initLinkListener() {
+    debugPrint('AppLinks uriLinkStream listener attached');
+    _linkSub = _appLinks.uriLinkStream.listen(
+      (uri) {
+        debugPrint('Deep link stream: $uri');
+        _recordAndHandle(uri);
+      },
+      onError: (Object error) {},
+    );
+  }
+
+  void _recordAndHandle(Uri uri) {
+    final now = DateTime.now();
+
+    if (_lastHandledDeepLink == uri && _lastHandledAt != null) {
+      final diff = now.difference(_lastHandledAt!);
+      if (diff < const Duration(seconds: 2)) {
+        debugPrint(
+            'Deep link DEDUPLICATED after ${diff.inMilliseconds}ms: $uri');
+        return;
+      }
+      debugPrint(
+          'Deep link SAME URI, but ${diff.inSeconds}s elapsed — allowing: $uri');
+    }
+
+    _lastHandledDeepLink = uri;
+    _lastHandledAt = now;
+    debugPrint('Deep link DISPATCHING: $uri');
+    unawaited(NotificationNavigationService().handleDeepLink(uri));
+  }
 
   Future<void> _initializeApp() async {
     try {
-      final userBox = Hive.box('userData');
-      final hasSeenOnboarding =
-          userBox.get('hasSeenOnboarding', defaultValue: false);
-
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.checkLoginStatus();
 
       final cbtUserProvider =
           Provider.of<CbtUserProvider>(context, listen: false);
       cbtUserProvider.initialize();
-
-      if (mounted) {
-        setState(() {
-          _showOnboarding = !hasSeenOnboarding && !authProvider.isLoggedIn;
-        });
-      }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          final userBox = Hive.box('userData');
-          final hasSeenOnboarding =
-              userBox.get('hasSeenOnboarding', defaultValue: false);
-          _showOnboarding = !hasSeenOnboarding;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
+      // Intentionally ignored.
     }
   }
 
