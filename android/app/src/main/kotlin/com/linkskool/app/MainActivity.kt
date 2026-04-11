@@ -17,6 +17,12 @@ import java.io.FileOutputStream
 class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.linkskool.app/downloads"
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Keep the latest deep-link intent attached to the reused activity.
+        setIntent(intent)
+    }
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 

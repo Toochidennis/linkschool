@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/config/notification_service.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_discussion_screen.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_description_screen.dart';
@@ -18,8 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
 @pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-}
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
 
 class NotificationNavigationService {
   static final NotificationNavigationService _instance =
@@ -124,16 +124,22 @@ class NotificationNavigationService {
         debugPrint('Routing deep link -> CBTDashboard');
         _navigateToCbtDashboard();
         break;
+      case 'cbt_update':
+        debugPrint('Routing deep link -> CbtDiscussionDetailScreen');
+        await _navigateToCbtDiscussionUpdate(data);
+        break;
       case 'app_home':
         debugPrint('Deep link opened app home: $uri');
         break;
       default:
         debugPrint('Deep link default routing check for payload: $data');
         if (_looksLikeCourseContentPayload(data)) {
-          debugPrint('Routing deep link -> CourseDetailScreen (fallback content)');
+          debugPrint(
+              'Routing deep link -> CourseDetailScreen (fallback content)');
           await _navigateToCourseContent(data);
         } else if (_looksLikeCoursePayload(data)) {
-          debugPrint('Routing deep link -> CourseDetailScreen (fallback course)');
+          debugPrint(
+              'Routing deep link -> CourseDetailScreen (fallback course)');
           _navigateToCourseDetail(data);
         } else if (_intFrom(data, ['news_id', 'newsId', 'id']) != null) {
           debugPrint('Routing deep link -> NewsDetails (fallback)');
@@ -173,9 +179,41 @@ class NotificationNavigationService {
       case 'program_courses_by_slug':
         await _navigateToProgramCoursesBySlug(data);
         break;
+      case 'cbt_update':
+        await _navigateToCbtDiscussionUpdate(data);
+        break;
+      case 'cbt_update_notification':
+        await _navigateToCbtDiscussionUpdate(data);
+        break;
+      case 'cbt_update_posted':
+        await _navigateToCbtDiscussionUpdate(data);
+        break;
 
       default:
+        if (_stringFrom(data, ['type']).toLowerCase() == 'cbt_update') {
+          await _navigateToCbtDiscussionUpdate(data);
+        }
     }
+  }
+
+  Future<void> _navigateToCbtDiscussionUpdate(Map<String, dynamic> data) async {
+    final updateId = _intFrom(data, ['cbt_update_id', 'cbtUpdateId', 'id']);
+    if (updateId == null) {
+      return;
+    }
+
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => CbtDiscussionDetailScreen(
+          updateId: updateId,
+        ),
+      ),
+    );
   }
 
   Map<String, String> _stringPayload(Map<String, dynamic> data) {
@@ -428,6 +466,17 @@ class NotificationNavigationService {
     }
 
     if (first == 'cbt') {
+      if (segments.length >= 2 && segments[1].toLowerCase() == 'updates') {
+        if (segments.length >= 3) {
+          data.putIfAbsent('type', () => 'cbt_update');
+          data.putIfAbsent('cbt_update_id', () => segments[2]);
+          return data;
+        }
+
+        data.putIfAbsent('type', () => 'cbt_dashboard');
+        return data;
+      }
+
       if (segments.length >= 3 &&
           segments[1].toLowerCase() == 'payment' &&
           segments[2].trim().isNotEmpty) {
@@ -437,6 +486,13 @@ class NotificationNavigationService {
       }
 
       data.putIfAbsent('type', () => 'cbt_dashboard');
+      return data;
+    }
+
+    if (first == 'cbt-updates' && segments.length >= 2) {
+      final idSegment = segments[1];
+      data.putIfAbsent('type', () => 'cbt_update');
+      data.putIfAbsent('cbt_update_id', () => idSegment);
       return data;
     }
 
@@ -469,13 +525,13 @@ class NotificationNavigationService {
   ) async {
     final ref = _stringFrom(data, ['ref']);
     if (ref.isEmpty) {
-     
       return;
     }
 
     final courseId = _intFrom(data, ['course_id', 'courseId']) ?? 0;
     final cohortIdValue = _stringFrom(data, ['cohort_id', 'cohortId']);
-    final cohortId = cohortIdValue.isNotEmpty ? cohortIdValue : courseId.toString();
+    final cohortId =
+        cohortIdValue.isNotEmpty ? cohortIdValue : courseId.toString();
     final categoryId = _intFrom(data, ['program_id', 'programId']) ?? 0;
     final categoryName = _stringFrom(
       data,
@@ -555,39 +611,36 @@ class NotificationNavigationService {
     );
   }
 
- Future<void> _navigateToProgramEnroll(Map<String, dynamic> data) async {
-  final slug = _stringFrom(data, ['program_slug', 'slug']);
-  if (slug.isEmpty) return;
+  Future<void> _navigateToProgramEnroll(Map<String, dynamic> data) async {
+    final slug = _stringFrom(data, ['program_slug', 'slug']);
+    if (slug.isEmpty) return;
 
-  final navigator = _navigatorKey?.currentState;
-  if (navigator == null) return;
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) return;
 
-  debugPrint('Routing program_enroll push start: slug=$slug');
-  navigator.push(
-    MaterialPageRoute(
-      builder: (context) => CourseSelectionScreen(
-        slug: slug,
-        returnToExploreCourses: true,
-        onReturnToExploreCourses: () async {
-          navigator.popUntil((route) => route.isFirst);
-        },
+    debugPrint('Routing program_enroll push start: slug=$slug');
+    navigator.push(
+      MaterialPageRoute(
+        builder: (context) => CourseSelectionScreen(
+          slug: slug,
+          returnToExploreCourses: true,
+          onReturnToExploreCourses: () async {
+            navigator.popUntil((route) => route.isFirst);
+          },
+        ),
       ),
-    ),
-  );
-  debugPrint('Routing program_enroll push submitted: slug=$slug');
-}
+    );
+    debugPrint('Routing program_enroll push submitted: slug=$slug');
+  }
 
   String _displayNameFromSlug(String slug) {
     final cleaned = slug.replaceAll(RegExp(r'[-_]+'), ' ').trim();
     if (cleaned.isEmpty) return 'Program';
 
-    return cleaned
-        .split(RegExp(r'\s+'))
-        .map((word) {
-          if (word.isEmpty) return word;
-          return word[0].toUpperCase() + word.substring(1);
-        })
-        .join(' ');
+    return cleaned.split(RegExp(r'\s+')).map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1);
+    }).join(' ');
   }
 
   Future<void> _waitForNavigatorReady() async {
@@ -617,18 +670,6 @@ class NotificationNavigationService {
       if (value is int) return value;
       final parsed = int.tryParse(value.toString().trim());
       if (parsed != null) return parsed;
-    }
-    return null;
-  }
-
-  bool? _boolFrom(Map<String, dynamic> data, List<String> keys) {
-    for (final key in keys) {
-      final value = data[key];
-      if (value == null) continue;
-      if (value is bool) return value;
-      final text = value.toString().trim().toLowerCase();
-      if (text == 'true' || text == '1' || text == 'yes') return true;
-      if (text == 'false' || text == '0' || text == 'no') return false;
     }
     return null;
   }
@@ -667,4 +708,3 @@ String _formatDuration(Duration duration) {
  * assignment_due_reminder
  * lesson_published
  */
-

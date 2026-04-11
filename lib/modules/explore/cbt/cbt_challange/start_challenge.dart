@@ -449,9 +449,8 @@ class _StartChallengeState extends State<StartChallenge>
   }
 
   Future<void> _handleExitChallenge() async {
-    await ChallengeAdManager.instance.showIfEligible(
+    await ChallengeAdManager.instance.showInterstitialIfEligible(
       context: context,
-      trigger: CbtScopedAdTrigger.testExit,
     );
     if (!mounted) return;
     Navigator.pop(context);

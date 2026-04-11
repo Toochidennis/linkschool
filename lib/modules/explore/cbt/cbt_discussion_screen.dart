@@ -1,9 +1,13 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:intl/intl.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/explore/cbt/discussion_ad_manager.dart';
+import 'package:linkschool/modules/explore/cbt/subject_selection_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/services/explore/cbt/cbt_updates_service.dart';
 
 class CbtDiscussionScreen extends StatefulWidget {
   final String boardName;
@@ -20,55 +24,154 @@ class CbtDiscussionScreen extends StatefulWidget {
 class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
     with WidgetsBindingObserver {
   static const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
-
-  InterstitialAd? _interstitialAd;
-  bool _isInterstitialAdLoaded = false;
-  AppOpenAd? _appOpenAd;
-  bool _isAppOpenAdLoaded = false;
+  final CbtUpdatesService _updatesService = CbtUpdatesService();
   bool _shouldShowAdOnResume = false;
   bool _isNavigatingAway = false;
-
-  final List<_DiscussionNoticeItem> _noticeItems = const [
-    _DiscussionNoticeItem(
-      title: 'CBT alerts will show here',
-      subtitle:
-          'Exam reminders, important updates, and quick notices for your study flow will appear in this space.',
-      icon: Icons.notifications_active_rounded,
-      accentColor: Color(0xFF2563EB),
-      badge: 'Soon',
-    ),
-    _DiscussionNoticeItem(
-      title: 'Keep track of important announcements',
-      subtitle:
-          'We are preparing a cleaner notification-style feed so you can catch updates without digging through screens.',
-      icon: Icons.campaign_rounded,
-      accentColor: Color(0xFF0F9D58),
-      badge: 'Preview',
-    ),
-    _DiscussionNoticeItem(
-      title: 'Need a quick heads-up?',
-      subtitle:
-          'This page will surface useful CBT activity and prompts tied to your exam journey.',
-      icon: Icons.info_outline_rounded,
-      accentColor: Color(0xFFF59E0B),
-      badge: 'Upcoming',
-    ),
-  ];
+  final List<CbtDiscussionUpdateItem> _updates = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingInitial = false;
+  bool _isLoadingMore = false;
+  int _currentPage = 1;
+  int _lastPage = 1;
+  bool _hasNextPage = false;
+  bool _isHandlingBackNavigation = false;
+  bool _allowRoutePop = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadInterstitialAd();
-    _loadAppOpenAd();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DiscussionAdManager.instance.preloadAll(context);
+      _fetchDiscussionUpdates(reset: true);
+    });
+  }
+
+  Future<void> _fetchDiscussionUpdates({required bool reset}) async {
+    if (reset) {
+      if (_isLoadingInitial) return;
+      setState(() => _isLoadingInitial = true);
+    } else {
+      if (_isLoadingMore || !_hasNextPage) return;
+      setState(() => _isLoadingMore = true);
+    }
+
+    final nextPage = reset ? 1 : _currentPage + 1;
+    final response = await _updatesService.fetchUpdates(page: nextPage);
+    if (!response.success) {
+      debugPrint('CBT updates fetch failed: ${response.message}');
+      if (!mounted) return;
+      setState(() {
+        _isLoadingInitial = false;
+        _isLoadingMore = false;
+      });
+      return;
+    }
+
+    final root = response.data ?? response.rawData ?? <String, dynamic>{};
+    final data = _asMap(root['data']);
+    final rows = _asList(data['data']);
+    final pagination = _asMap(data['pagination']);
+
+    final parsed = rows
+        .map((item) => _fromServer(_asMap(item)))
+        .whereType<CbtDiscussionUpdateItem>()
+        .toList();
+
+    if (!mounted) return;
+    setState(() {
+      if (reset) {
+        _updates
+          ..clear()
+          ..addAll(parsed);
+      } else {
+        _updates.addAll(parsed);
+      }
+
+      _currentPage = _asInt(pagination['current_page']) ?? nextPage;
+      _lastPage = _asInt(pagination['last_page']) ?? _currentPage;
+      _hasNextPage =
+          _asBool(pagination['has_next']) ?? (_currentPage < _lastPage);
+      _isLoadingInitial = false;
+      _isLoadingMore = false;
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _interstitialAd?.dispose();
-    _appOpenAd?.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
+      _fetchDiscussionUpdates(reset: false);
+    }
+  }
+
+  CbtDiscussionUpdateItem? _fromServer(Map<String, dynamic> json) {
+    final id = _asInt(json['id']);
+    final title = _asString(json['title']);
+    if (id == null || title.isEmpty) {
+      return null;
+    }
+
+    return CbtDiscussionUpdateItem(
+      id: id,
+      title: title,
+      body: _asString(json['content']),
+      icon: Icons.notifications_none_rounded,
+      accentColor: const Color(0xFF2563EB),
+      badge: _asString(json['tag']).isEmpty ? 'Update' : _asString(json['tag']),
+      timeLabel: _formatDiscussionDate(_asString(json['notified_at'])).isEmpty
+          ? 'Now'
+          : _formatDiscussionDate(_asString(json['notified_at'])),
+    );
+  }
+
+  Map<String, dynamic> _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return value.map((k, v) => MapEntry('$k', v));
+    return <String, dynamic>{};
+  }
+
+  List<dynamic> _asList(dynamic value) {
+    if (value is List) return value;
+    return const [];
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse('$value');
+  }
+
+  bool? _asBool(dynamic value) {
+    if (value is bool) return value;
+    final text = '$value'.trim().toLowerCase();
+    if (text == 'true' || text == '1' || text == 'yes') return true;
+    if (text == 'false' || text == '0' || text == 'no') return false;
+    return null;
+  }
+
+  String _asString(dynamic value) {
+    if (value == null) return '';
+    return '$value'.trim();
+  }
+
+  String _formatDiscussionDate(String raw) {
+    if (raw.isEmpty) return '';
+
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+
+    return DateFormat('d MMM yyyy, h:mm a').format(parsed.toLocal());
   }
 
   bool _isAdUnitConfigured(String adUnitId) =>
@@ -77,8 +180,9 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
   List<String> get _bannerAdUnitIds {
     final units = <String>[];
     for (final adUnitId in [
-      EnvConfig.homeBannerAdKey,
       EnvConfig.discussionBannerAdKey,
+      EnvConfig.homeBannerAdKey,
+      EnvConfig.googleBannerAdsApiKey,
     ]) {
       if (_isAdUnitConfigured(adUnitId) && !units.contains(adUnitId)) {
         units.add(adUnitId);
@@ -87,114 +191,18 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
     return units;
   }
 
-  void _loadInterstitialAd() {
-    final adUnitId = EnvConfig.discussionInterstitialAdKey;
-    if (!_isAdUnitConfigured(adUnitId)) return;
-
-    InterstitialAd.load(
-      adUnitId: adUnitId,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          _interstitialAd?.dispose();
-          _interstitialAd = ad;
-          if (!mounted) return;
-          setState(() {
-            _isInterstitialAdLoaded = true;
-          });
-        },
-        onAdFailedToLoad: (error) {
-          _interstitialAd = null;
-          if (!mounted) return;
-          setState(() {
-            _isInterstitialAdLoaded = false;
-          });
-        },
-      ),
-    );
-  }
-
-  void _loadAppOpenAd() {
-    final adUnitId = EnvConfig.discussionAdsOpenKey;
-    if (!_isAdUnitConfigured(adUnitId)) return;
-
-    AppOpenAd.load(
-      adUnitId: adUnitId,
-      request: const AdRequest(),
-      adLoadCallback: AppOpenAdLoadCallback(
-        onAdLoaded: (ad) {
-          _appOpenAd?.dispose();
-          _appOpenAd = ad;
-          if (!mounted) return;
-          setState(() {
-            _isAppOpenAdLoaded = true;
-          });
-        },
-        onAdFailedToLoad: (error) {
-          _appOpenAd = null;
-          if (!mounted) return;
-          setState(() {
-            _isAppOpenAdLoaded = false;
-          });
-        },
-      ),
-    );
-  }
-
-  void _showAppOpenAd() {
-    final ad = _appOpenAd;
-    if (!_isAppOpenAdLoaded || ad == null) return;
-
-    ad.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        ad.dispose();
-        _appOpenAd = null;
-        _isAppOpenAdLoaded = false;
-        _loadAppOpenAd();
-      },
-      onAdFailedToShowFullScreenContent: (ad, error) {
-        ad.dispose();
-        _appOpenAd = null;
-        _isAppOpenAdLoaded = false;
-        _loadAppOpenAd();
-      },
-    );
-
-    ad.show();
-  }
-
   Future<void> _handleBackNavigation() async {
-    final ad = _interstitialAd;
-    if (_isInterstitialAdLoaded && ad != null) {
-      _isNavigatingAway = true;
-      ad.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) {
-          ad.dispose();
-          _interstitialAd = null;
-          _isInterstitialAdLoaded = false;
-          _loadInterstitialAd();
-          if (mounted) {
-            Navigator.of(context).pop();
-          }
-        },
-        onAdFailedToShowFullScreenContent: (ad, error) {
-          ad.dispose();
-          _interstitialAd = null;
-          _isInterstitialAdLoaded = false;
-          _loadInterstitialAd();
-          if (mounted) {
-            Navigator.of(context).pop();
-          }
-        },
-      );
-      ad.show();
-      return;
-    }
-
+    if (_isHandlingBackNavigation) return;
+    _isHandlingBackNavigation = true;
     _isNavigatingAway = true;
+    await DiscussionAdManager.instance.showInterstitialIfEligible(
+      context: context,
+    );
     if (mounted) {
+      setState(() => _allowRoutePop = true);
       Navigator.of(context).pop();
     }
+    _isHandlingBackNavigation = false;
   }
 
   @override
@@ -207,7 +215,7 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
-        _showAppOpenAd();
+        DiscussionAdManager.instance.showAppOpenIfEligible(context: context);
         _shouldShowAdOnResume = false;
       }
       _isNavigatingAway = false;
@@ -220,91 +228,9 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
       return const SizedBox.shrink();
     }
 
-    final items = adUnitIds
-        .map(
-          (adUnitId) => _CompactSponsoredAdCard(adUnitId: adUnitId),
-        )
-        .toList();
-
-    if (items.length == 1) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: items.first,
-      );
-    }
-
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
-      child: CarouselSlider(
-        items: items,
-        options: CarouselOptions(
-          height: 118,
-          padEnds: false,
-          viewportFraction: 0.92,
-          autoPlay: true,
-          autoPlayInterval: const Duration(seconds: 15),
-          enableInfiniteScroll: items.length > 1,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderCard() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF1E3A8A),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.forum_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'CBT Discussion',
-                  style: AppTextStyles.normal700(
-                    fontSize: 20,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'A lighter notification-style space for ${widget.boardName} updates and quick heads-up.',
-                  style: AppTextStyles.normal400(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.88),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      child: _CompactSponsoredAdCard(adUnitIds: adUnitIds),
     );
   }
 
@@ -327,7 +253,7 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
           ),
           const SizedBox(width: 10),
           Text(
-            'Recent Updates',
+            'Updates',
             style: AppTextStyles.normal700(
               fontSize: 18,
               color: AppColors.text4Light,
@@ -338,7 +264,7 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
     );
   }
 
-  Widget _buildNoticeCard(_DiscussionNoticeItem item) {
+  Widget _buildUpdateCard(CbtDiscussionUpdateItem item) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(16),
@@ -407,11 +333,39 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  item.subtitle,
+                  item.previewText,
                   style: AppTextStyles.normal400(
                     fontSize: 13,
                     color: AppColors.text7Light,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text(
+                      item.timeLabel,
+                      style: AppTextStyles.normal500(
+                        fontSize: 11,
+                        color: AppColors.text8Light,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Open',
+                      style: AppTextStyles.normal600(
+                        fontSize: 12,
+                        color: item.accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 12,
+                      color: item.accentColor,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -424,10 +378,10 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleBackNavigation();
+      canPop: _allowRoutePop,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop || _allowRoutePop) return;
+        await _handleBackNavigation();
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFF6F8FC),
@@ -439,7 +393,7 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
             onPressed: _handleBackNavigation,
           ),
           title: Text(
-            'CBT Discussion',
+            'Discussion',
             style: AppTextStyles.normal600(
               fontSize: 18,
               color: Colors.white,
@@ -447,12 +401,69 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
           ),
         ),
         body: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             _buildAdsStrip(),
-            _buildHeaderCard(),
             _buildSectionLabel(),
-            ..._noticeItems.map(_buildNoticeCard),
+            if (_isLoadingInitial)
+              const Padding(
+                padding: EdgeInsets.only(top: 40),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_updates.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Text(
+                    'No updates available yet.',
+                    style: AppTextStyles.normal500(
+                      fontSize: 14,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ),
+              )
+            else ...[
+              ..._updates.map(
+                (item) => GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CbtDiscussionDetailScreen(
+                          updateId: item.id,
+                          update: item,
+                        ),
+                      ),
+                    );
+                  },
+                  child: _buildUpdateCard(item),
+                ),
+              ),
+              if (_isLoadingMore)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (_hasNextPage)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextButton(
+                    onPressed: () => _fetchDiscussionUpdates(reset: false),
+                    child: const Text('Load more updates'),
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -461,10 +472,10 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
 }
 
 class _CompactSponsoredAdCard extends StatelessWidget {
-  final String adUnitId;
+  final List<String> adUnitIds;
 
   const _CompactSponsoredAdCard({
-    required this.adUnitId,
+    required this.adUnitIds,
   });
 
   @override
@@ -505,7 +516,7 @@ class _CompactSponsoredAdCard extends StatelessWidget {
                 ),
               ),
               Center(
-                child: _CompactBannerAd(adUnitId: adUnitId),
+                child: _CompactBannerAd(adUnitIds: adUnitIds),
               ),
               Positioned(
                 top: 10,
@@ -539,10 +550,10 @@ class _CompactSponsoredAdCard extends StatelessWidget {
 }
 
 class _CompactBannerAd extends StatefulWidget {
-  final String adUnitId;
+  final List<String> adUnitIds;
 
   const _CompactBannerAd({
-    required this.adUnitId,
+    required this.adUnitIds,
   });
 
   @override
@@ -552,12 +563,16 @@ class _CompactBannerAd extends StatefulWidget {
 class _CompactBannerAdState extends State<_CompactBannerAd> {
   BannerAd? _ad;
   bool _isLoaded = false;
+  bool _hasNoFillAcrossUnits = false;
+  int _activeAdUnitIndex = 0;
+  int _retryAttempt = 0;
 
-  @override
-  void initState() {
-    super.initState();
+  String get _activeAdUnitId => widget.adUnitIds[_activeAdUnitIndex];
+
+  void _loadAd() {
+    _ad?.dispose();
     _ad = BannerAd(
-      adUnitId: widget.adUnitId,
+      adUnitId: _activeAdUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -566,18 +581,63 @@ class _CompactBannerAdState extends State<_CompactBannerAd> {
           setState(() {
             _ad = ad as BannerAd;
             _isLoaded = true;
+            _hasNoFillAcrossUnits = false;
+            _retryAttempt = 0;
           });
         },
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
           if (!mounted) return;
+
+          debugPrint(
+            'Discussion banner failed (${error.code}) on $_activeAdUnitId: ${error.message}',
+          );
+
+          // Try the next configured banner unit before delaying retries.
+          if (_activeAdUnitIndex < widget.adUnitIds.length - 1) {
+            setState(() {
+              _activeAdUnitIndex++;
+              _ad = null;
+              _isLoaded = false;
+            });
+            _loadAd();
+            return;
+          }
+
           setState(() {
             _ad = null;
             _isLoaded = false;
+            _hasNoFillAcrossUnits = true;
+          });
+
+          final retryDelaySeconds = (_retryAttempt + 1) * 8;
+          _retryAttempt++;
+          Future<void>.delayed(Duration(seconds: retryDelaySeconds), () {
+            if (!mounted) return;
+            _activeAdUnitIndex = 0;
+            _loadAd();
           });
         },
       ),
     )..load();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAd();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CompactBannerAd oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.adUnitIds.join('|') != widget.adUnitIds.join('|')) {
+      _activeAdUnitIndex = 0;
+      _retryAttempt = 0;
+      _isLoaded = false;
+      _hasNoFillAcrossUnits = false;
+      _loadAd();
+    }
   }
 
   @override
@@ -595,7 +655,9 @@ class _CompactBannerAdState extends State<_CompactBannerAd> {
         height: 50,
         alignment: Alignment.center,
         child: Text(
-          'Loading sponsor card...',
+          _hasNoFillAcrossUnits
+              ? 'No sponsor card available right now'
+              : 'Loading sponsor card...',
           style: AppTextStyles.normal600(
             fontSize: 13,
             color: Colors.grey.shade600,
@@ -612,18 +674,446 @@ class _CompactBannerAdState extends State<_CompactBannerAd> {
   }
 }
 
-class _DiscussionNoticeItem {
+class CbtDiscussionUpdateItem {
+  final int id;
   final String title;
-  final String subtitle;
+  final String body;
   final IconData icon;
   final Color accentColor;
   final String badge;
+  final String timeLabel;
 
-  const _DiscussionNoticeItem({
+  String get previewText {
+    final text = body
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    return text;
+  }
+
+  const CbtDiscussionUpdateItem({
+    required this.id,
     required this.title,
-    required this.subtitle,
+    required this.body,
     required this.icon,
     required this.accentColor,
     required this.badge,
+    required this.timeLabel,
   });
+}
+
+class CbtDiscussionDetailScreen extends StatefulWidget {
+  final CbtDiscussionUpdateItem? update;
+  final int? updateId;
+
+  const CbtDiscussionDetailScreen({
+    super.key,
+    this.update,
+    this.updateId,
+  }) : assert(update != null || updateId != null);
+
+  @override
+  State<CbtDiscussionDetailScreen> createState() =>
+      _CbtDiscussionDetailScreenState();
+}
+
+class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
+    with WidgetsBindingObserver {
+  final CbtUpdatesService _updatesService = CbtUpdatesService();
+  bool _shouldShowAdOnResume = false;
+  bool _isNavigatingAway = false;
+  bool _isHandlingBackNavigation = false;
+  bool _isLoadingDetail = false;
+  bool _allowRoutePop = false;
+  late CbtDiscussionUpdateItem _activeUpdate;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeUpdate = widget.update ?? _fallbackUpdateForId(widget.updateId ?? 0);
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DiscussionAdManager.instance.preloadAll(context);
+      _fetchDiscussionUpdateDetail();
+    });
+  }
+
+  CbtDiscussionUpdateItem _fallbackUpdateForId(int id) {
+    return CbtDiscussionUpdateItem(
+      id: id,
+      title: 'CBT Update #$id',
+      body:
+          '<p>Update details will appear here once loaded from the server.</p>',
+      icon: Icons.notifications_none_rounded,
+      accentColor: const Color(0xFF2563EB),
+      badge: 'Update',
+      timeLabel: 'Now',
+    );
+  }
+
+  Future<void> _fetchDiscussionUpdateDetail() async {
+    final id = widget.updateId;
+    if (id == null) return;
+    setState(() => _isLoadingDetail = true);
+
+    final response = await _updatesService.fetchUpdateById(id);
+    if (!response.success) {
+      debugPrint(
+          'CBT update detail fetch failed (id=$id): ${response.message}');
+      if (mounted) {
+        setState(() => _isLoadingDetail = false);
+      }
+      return;
+    }
+
+    final root = response.data ?? response.rawData ?? <String, dynamic>{};
+    final payload = _extractDetailPayload(root);
+
+    final parsed = _fromServer(payload, fallback: _activeUpdate);
+    if (!mounted) return;
+    if (parsed == null) {
+      setState(() => _isLoadingDetail = false);
+      return;
+    }
+    setState(() {
+      _activeUpdate = parsed;
+      _isLoadingDetail = false;
+    });
+  }
+
+  CbtDiscussionUpdateItem? _fromServer(
+    Map<String, dynamic> json, {
+    CbtDiscussionUpdateItem? fallback,
+  }) {
+    final id = _asInt(json['id']) ?? fallback?.id;
+    final title = _firstNonEmptyString(
+      [
+        json['title'],
+        json['name'],
+        fallback?.title,
+      ],
+    );
+    if (id == null || title.isEmpty) return null;
+
+    return CbtDiscussionUpdateItem(
+      id: id,
+      title: title,
+      body: _firstNonEmptyString(
+        [
+          json['content'],
+          json['body'],
+          json['description'],
+          json['details'],
+          fallback?.body,
+        ],
+      ),
+      icon: Icons.notifications_none_rounded,
+      accentColor: const Color(0xFF2563EB),
+      badge: _firstNonEmptyString(
+        [
+          json['tag'],
+          fallback?.badge,
+          'Update',
+        ],
+      ),
+      timeLabel: _firstNonEmptyString(
+        [
+          _formatDiscussionDate(_asString(json['notified_at'])),
+          _formatDiscussionDate(_asString(json['created_at'])),
+          fallback?.timeLabel,
+          'Now',
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic> _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return value.map((k, v) => MapEntry('$k', v));
+    return <String, dynamic>{};
+  }
+
+  List<dynamic> _asList(dynamic value) {
+    if (value is List) return value;
+    return const [];
+  }
+
+  Map<String, dynamic> _extractDetailPayload(Map<String, dynamic> root) {
+    final data = _asMap(root['data']);
+
+    // Single-detail payload is expected directly in `data`.
+    if (_asInt(data['id']) != null) {
+      return data;
+    }
+
+    final nestedMap = _asMap(data['data']);
+    if (nestedMap.isNotEmpty) {
+      return nestedMap;
+    }
+
+    final nestedList = _asList(data['data']);
+    if (nestedList.isNotEmpty) {
+      return _asMap(nestedList.first);
+    }
+
+    final rootList = _asList(root['data']);
+    if (rootList.isNotEmpty) {
+      return _asMap(rootList.first);
+    }
+
+    return root;
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse('$value');
+  }
+
+  String _asString(dynamic value) {
+    if (value == null) return '';
+    return '$value'.trim();
+  }
+
+  String _firstNonEmptyString(List<dynamic> values) {
+    for (final value in values) {
+      final text = _asString(value);
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    return '';
+  }
+
+  String _formatDiscussionDate(String raw) {
+    if (raw.isEmpty) return '';
+
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+
+    return DateFormat('d MMM yyyy, h:mm a').format(parsed.toLocal());
+  }
+
+  void _openPracticeSubjectSelection() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SubjectSelectionScreen(),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _handleBackNavigation() async {
+    if (_isHandlingBackNavigation) return;
+    _isHandlingBackNavigation = true;
+    _isNavigatingAway = true;
+    await DiscussionAdManager.instance.showInterstitialIfEligible(
+      context: context,
+    );
+    if (mounted) {
+      setState(() => _allowRoutePop = true);
+      Navigator.of(context).pop();
+    }
+    _isHandlingBackNavigation = false;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway) {
+        _shouldShowAdOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        DiscussionAdManager.instance.showAppOpenIfEligible(context: context);
+        _shouldShowAdOnResume = false;
+      }
+      _isNavigatingAway = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final update = _activeUpdate;
+    final hasBodyContent = update.previewText.isNotEmpty &&
+        !update.previewText.startsWith('Update details will appear here');
+
+    return PopScope(
+      canPop: _allowRoutePop,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop || _allowRoutePop) return;
+        await _handleBackNavigation();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 240,
+              pinned: true,
+              backgroundColor: update.accentColor,
+              leading: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.90),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
+                onPressed: _handleBackNavigation,
+              ),
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        update.accentColor,
+                        update.accentColor.withValues(alpha: 0.85),
+                        const Color(0xFF0F172A),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 92, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            update.badge,
+                            style: AppTextStyles.normal600(
+                              fontSize: 11,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          update.title,
+                          style: AppTextStyles.normal700(
+                            fontSize: 24,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: 15,
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              update.timeLabel,
+                              style: AppTextStyles.normal500(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+              sliver: SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasBodyContent)
+                      Html(
+                        data: update.body,
+                        style: {
+                          'body': Style(
+                            margin: Margins.zero,
+                            padding: HtmlPaddings.zero,
+                            fontSize: FontSize(16),
+                            color: AppColors.text4Light,
+                            lineHeight: LineHeight.number(1.6),
+                          ),
+                          'p': Style(
+                            margin: Margins.only(bottom: 14),
+                            fontSize: FontSize(16),
+                            color: AppColors.text4Light,
+                            lineHeight: LineHeight.number(1.6),
+                          ),
+                        },
+                      )
+                    else if (_isLoadingDetail)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 12),
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else
+                      Text(
+                        'This update has no content available yet.',
+                        style: AppTextStyles.normal500(
+                          fontSize: 14,
+                          color: AppColors.text7Light,
+                        ),
+                      ),
+                    const Spacer(),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _openPracticeSubjectSelection,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.eLearningBtnColor1,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: Text(
+                          'Start Practice',
+                          style: AppTextStyles.normal700(
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

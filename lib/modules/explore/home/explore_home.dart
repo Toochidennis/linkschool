@@ -2,6 +2,7 @@
 
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -78,6 +79,7 @@ class _ExploreHomeState extends State<ExploreHome>
   String? _lastNetworkMessage;
   AppOpenAd? _appOpenAd;
   bool _isAppOpenAdLoaded = false;
+  bool _isAppOpenAdShowing = false;
   bool _shouldShowAdOnResume = false;
 
   void _shareNews(String title, String content, String time, String imageUrl) {
@@ -250,24 +252,45 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
   void _showAppOpenAd() {
     final ad = _appOpenAd;
-    if (!_isAppOpenAdLoaded || ad == null) return;
+    if (!_isAppOpenAdLoaded || ad == null || _isAppOpenAdShowing) return;
+
+    _isAppOpenAdShowing = true;
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
         _loadAppOpenAd();
       },
     );
 
-    ad.show();
+    try {
+      ad.show();
+    } on PlatformException catch (error) {
+      debugPrint(
+          'Home app-open ad failed to show: ${error.code} ${error.message}');
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    } catch (error) {
+      debugPrint('Home app-open ad threw while showing: $error');
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    }
   }
 
   @override

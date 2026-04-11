@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 // import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
 // import 'package:share_plus/share_plus.dart';
@@ -29,7 +30,6 @@ class NewsDetails extends StatefulWidget {
 
 class _NewsDetailsState extends State<NewsDetails>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-
   late NewsModel currentNews;
   List<NewsModel> allNewsList = [];
   int currentIndex = 0;
@@ -44,6 +44,7 @@ class _NewsDetailsState extends State<NewsDetails>
   bool _isInterstitialAdLoaded = false;
   AppOpenAd? _appOpenAd;
   bool _isAppOpenAdLoaded = false;
+  bool _isAppOpenAdShowing = false;
   bool _shouldShowAdOnResume = false;
 
   @override
@@ -65,13 +66,14 @@ class _NewsDetailsState extends State<NewsDetails>
     ));
 
     Future.microtask(() {
-        final provider = Provider.of<NewsProvider>(context, listen: false);
-        if (provider.newsmodel.isEmpty) {
-          provider.fetchAllNews();
-        }
+      final provider = Provider.of<NewsProvider>(context, listen: false);
+      if (provider.newsmodel.isEmpty) {
+        provider.fetchAllNews();
+      }
       setState(() {
         allNewsList = provider.newsmodel;
-        currentIndex = allNewsList.indexWhere((news) => news.id == currentNews.id);
+        currentIndex =
+            allNewsList.indexWhere((news) => news.id == currentNews.id);
         // Load available categories from provider
         categories = ['All', ...provider.availableCategories];
       });
@@ -147,23 +149,45 @@ class _NewsDetailsState extends State<NewsDetails>
   }
 
   void _showAppOpenAd() {
-    if (!_isAppOpenAdLoaded || _appOpenAd == null) return;
+    final ad = _appOpenAd;
+    if (!_isAppOpenAdLoaded || ad == null || _isAppOpenAdShowing) return;
 
-    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+    _isAppOpenAdShowing = true;
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (AppOpenAd ad) {
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (AppOpenAd ad, AdError error) {
         ad.dispose();
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
+        _isAppOpenAdShowing = false;
         _loadAppOpenAd();
       },
     );
-    _appOpenAd!.show();
+    try {
+      ad.show();
+    } on PlatformException catch (error) {
+      debugPrint(
+          'News app-open ad failed to show: ${error.code} ${error.message}');
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    } catch (error) {
+      debugPrint('News app-open ad threw while showing: $error');
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _isAppOpenAdShowing = false;
+      _loadAppOpenAd();
+    }
   }
 
   void _showInterstitialAdAndNavigateBack() {
@@ -221,12 +245,11 @@ class _NewsDetailsState extends State<NewsDetails>
     return provider.getNewsByCategory(selectedCategory);
   }
 
-   void launchURL(String url) async {
+  void launchURL(String url) async {
     if (await canLaunchUrlString(url)) {
       await launchUrlString(url, mode: LaunchMode.externalApplication);
-    } else {
-    }
-  } 
+    } else {}
+  }
 
   Color getCategoryColor(String category) {
     switch (category) {
@@ -263,12 +286,9 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
 #LinkSchool #News
 ''';
-    
+
     Share.share(shareText);
   }
-
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -291,48 +311,32 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
       },
       child: Stack(
         children: [
-        // Optional: Dimmed background for popup effect
-        Positioned.fill(
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.25),
+          // Optional: Dimmed background for popup effect
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.25),
+            ),
           ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.98,
-                ),
-                child: Scaffold(
-                  backgroundColor: Colors.white,
-                  body: CustomScrollView(
-                    slivers: [
-                      // ...existing code...
-                      SliverAppBar(
-                        expandedHeight: 300,
-                        pinned: true,
-                        backgroundColor: AppColors.text2Light,
-                        leading: IconButton(
-                          icon: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.black,
-                              size: 20,
-                            ),
-                          ),
-                          onPressed: () => _showInterstitialAdAndNavigateBack(),
-                        ),
-                        actions: [
-                          IconButton(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.98,
+                  ),
+                  child: Scaffold(
+                    backgroundColor: Colors.white,
+                    body: CustomScrollView(
+                      slivers: [
+                        // ...existing code...
+                        SliverAppBar(
+                          expandedHeight: 300,
+                          pinned: true,
+                          backgroundColor: AppColors.text2Light,
+                          leading: IconButton(
                             icon: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
@@ -340,467 +344,487 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.share,
+                                Icons.arrow_back,
                                 color: Colors.black,
                                 size: 20,
                               ),
                             ),
-                            onPressed: () => _shareNews(
-                              widget.news.title,
-                              widget.news.content,
-                              widget.time.toString(),
-                              widget.news.imageUrl,
-                            ),
+                            onPressed: () =>
+                                _showInterstitialAdAndNavigateBack(),
                           ),
-                          const SizedBox(width: 8),
-                        ],
-                        flexibleSpace: FlexibleSpaceBar(
-                          background: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              // ...existing code...
-                              Image.network(
-                                widget.news.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: Colors.grey.shade300,
-                                    child: Icon(
-                                      Icons.image,
-                                      size: 80,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  );
-                                },
-                              ),
-                              // ...existing code...
-                              Container(
+                          actions: [
+                            IconButton(
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.3),
-                                      Colors.black.withValues(alpha: 0.8),
-                                    ],
-                                    stops: const [0.0, 0.5, 1.0],
-                                  ),
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.share,
+                                  color: Colors.black,
+                                  size: 20,
                                 ),
                               ),
-                              // ...existing code...
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(20.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        widget.news.title,
-                                        style: const TextStyle(
-                                          fontSize: 24.0,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                          fontFamily: 'Urbanist',
-                                          height: 1.3,
-                                        ),
+                              onPressed: () => _shareNews(
+                                widget.news.title,
+                                widget.news.content,
+                                widget.time.toString(),
+                                widget.news.imageUrl,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          flexibleSpace: FlexibleSpaceBar(
+                            background: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                // ...existing code...
+                                Image.network(
+                                  widget.news.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey.shade300,
+                                      child: Icon(
+                                        Icons.image,
+                                        size: 80,
+                                        color: Colors.grey.shade500,
                                       ),
-                                      // ...existing code...
-                                      SizedBox(height: 12),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 14, vertical: 6),
-                                            decoration: BoxDecoration(
-                                              color: categoryColor,
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              category ?? "General",
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                fontFamily: 'Urbanist',
-                                              ),
-                                            ),
+                                    );
+                                  },
+                                ),
+                                // ...existing code...
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withValues(alpha: 0.3),
+                                        Colors.black.withValues(alpha: 0.8),
+                                      ],
+                                      stops: const [0.0, 0.5, 1.0],
+                                    ),
+                                  ),
+                                ),
+                                // ...existing code...
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          widget.news.title,
+                                          style: const TextStyle(
+                                            fontSize: 24.0,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                            fontFamily: 'Urbanist',
+                                            height: 1.3,
                                           ),
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.access_time,
-                                                size: 16,
-                                                color: Colors.white,
+                                        ),
+                                        // ...existing code...
+                                        SizedBox(height: 12),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 14,
+                                                      vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: categoryColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
                                               ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                widget.time.toString(),
+                                              child: Text(
+                                                category ?? "General",
                                                 style: const TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
                                                   fontFamily: 'Urbanist',
                                                 ),
                                               ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.access_time,
+                                                  size: 16,
+                                                  color: Colors.white,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  widget.time.toString(),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontFamily: 'Urbanist',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // space before ad
-                      SliverToBoxAdapter(
-                        child: SizedBox(height:  16),
-                      ),
-
-                      // Banner Ad - Displays after the image
-                      SliverToBoxAdapter(
-                        child: _NewsBannerAd(
-                          adUnitId: EnvConfig.googleBannerAdsApiKey,
-                          size: AdSize.mediumRectangle,
-                        ),
-                      ),
-                      // ...existing code...
-                      SliverToBoxAdapter(
-                        child: Container(
-                          color: Colors.white,
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                         _buildHtmlContent(currentNews.content),
-                                const SizedBox(height: 12),
-                                _NewsBannerAd(
-                                  adUnitId: EnvConfig.googleBannerAdsApiKey,
-                                  size: AdSize.mediumRectangle,
-                                ),
-                                const SizedBox(height: 40),
-                                if (recommendedNews.isNotEmpty) ...[
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.text2Light.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          Icons.star_rounded,
-                                          color: AppColors.text2Light,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Recommended for You',
-                                        style: AppTextStyles.normal600(
-                                          fontSize: 18.0,
-                                          color: AppColors.text2Light,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ...recommendedNews.map((news) => _buildNewsCard(news, context)),
-                                  const SizedBox(height: 32),
-                                ],
-                                if (relatedNews.isNotEmpty) ...[
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.text2Light.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          Icons.article_rounded,
-                                          color: AppColors.text2Light,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Related News',
-                                        style: AppTextStyles.normal600(
-                                          fontSize: 18.0,
-                                          color: AppColors.text2Light,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ...relatedNews.map((news) => relatedCard(news, context)),
-                                ],
                               ],
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        // space before ad
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: 16),
+                        ),
+
+                        // Banner Ad - Displays after the image
+                        SliverToBoxAdapter(
+                          child: _NewsBannerAd(
+                            adUnitId: EnvConfig.googleBannerAdsApiKey,
+                            size: AdSize.mediumRectangle,
+                          ),
+                        ),
+                        // ...existing code...
+                        SliverToBoxAdapter(
+                          child: Container(
+                            color: Colors.white,
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildHtmlContent(currentNews.content),
+                                  const SizedBox(height: 12),
+                                  _NewsBannerAd(
+                                    adUnitId: EnvConfig.googleBannerAdsApiKey,
+                                    size: AdSize.mediumRectangle,
+                                  ),
+                                  const SizedBox(height: 40),
+                                  if (recommendedNews.isNotEmpty) ...[
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.text2Light
+                                                .withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.star_rounded,
+                                            color: AppColors.text2Light,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Recommended for You',
+                                          style: AppTextStyles.normal600(
+                                            fontSize: 18.0,
+                                            color: AppColors.text2Light,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ...recommendedNews.map((news) =>
+                                        _buildNewsCard(news, context)),
+                                    const SizedBox(height: 32),
+                                  ],
+                                  if (relatedNews.isNotEmpty) ...[
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.text2Light
+                                                .withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.article_rounded,
+                                            color: AppColors.text2Light,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Related News',
+                                          style: AppTextStyles.normal600(
+                                            fontSize: 18.0,
+                                            color: AppColors.text2Light,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ...relatedNews.map(
+                                        (news) => relatedCard(news, context)),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
 
-
   Widget _buildHtmlContent(String htmlData, {int depth = 0}) {
-  return Html(
-    data: htmlData,
-    style: {
-      "body": Style(
-        fontSize: FontSize(15.0),
-        lineHeight: LineHeight(1.7),
-        color: Colors.black87,
-        fontFamily: 'Urbanist',
-        margin: Margins.zero,
-        padding: HtmlPaddings.zero,
-      ),
-      "p": Style(
-        margin: Margins.only(bottom: 8, top: 0),
-        padding: HtmlPaddings.zero,
-        fontSize: FontSize(15.0),
-        color: Colors.black87,
-      ),
-      "a": Style(
-        color: AppColors.primaryLight,
-        textDecoration: TextDecoration.underline,
-        fontSize: FontSize(15.0),
-      ),
-      "strong": Style(
-        fontWeight: FontWeight.w700,
-        color: Colors.black,
-      ),
-      "em": Style(
-        fontStyle: FontStyle.italic,
-      ),
-      "ul": Style(
-        margin: Margins.only(left: 0, bottom: 8, top: 4),
-        padding: HtmlPaddings.only(left: 16),
-        listStyleType: ListStyleType.none,
-      ),
-      "ol": Style(
-        margin: Margins.only(left: 0, bottom: 8, top: 4),
-        padding: HtmlPaddings.only(left: 16),
-        listStyleType: ListStyleType.none,
-      ),
-      "li": Style(
-        margin: Margins.only(bottom: 6, top: 0),
-        padding: HtmlPaddings.zero,
-        fontSize: FontSize(15.0),
-        color: Colors.black87,
-      ),
-      "ul ul": Style(
-        margin: Margins.only(left: 0, top: 4, bottom: 4),
-        padding: HtmlPaddings.only(left: 12),
-        listStyleType: ListStyleType.none,
-      ),
-      "ol ol": Style(
-        margin: Margins.only(left: 0, top: 4, bottom: 4),
-        padding: HtmlPaddings.only(left: 12),
-        listStyleType: ListStyleType.none,
-      ),
-      "h1": Style(
-        fontSize: FontSize(22.0),
-        fontWeight: FontWeight.w700,
-        margin: Margins.only(bottom: 8, top: 16),
-        color: AppColors.text2Light,
-      ),
-      "h2": Style(
-        fontSize: FontSize(19.0),
-        fontWeight: FontWeight.w700,
-        margin: Margins.only(bottom: 6, top: 14),
-        color: AppColors.text2Light,
-      ),
-      "h3": Style(
-        fontSize: FontSize(17.0),
-        fontWeight: FontWeight.w600,
-        margin: Margins.only(bottom: 6, top: 12),
-        color: AppColors.text2Light,
-      ),
-    },
-    extensions: [
-      TagExtension(
-        tagsToExtend: {"li"},
-        builder: (extensionContext) {
-          final isNested = depth > 0;
+    return Html(
+      data: htmlData,
+      style: {
+        "body": Style(
+          fontSize: FontSize(15.0),
+          lineHeight: LineHeight(1.7),
+          color: Colors.black87,
+          fontFamily: 'Urbanist',
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+        ),
+        "p": Style(
+          margin: Margins.only(bottom: 8, top: 0),
+          padding: HtmlPaddings.zero,
+          fontSize: FontSize(15.0),
+          color: Colors.black87,
+        ),
+        "a": Style(
+          color: AppColors.primaryLight,
+          textDecoration: TextDecoration.underline,
+          fontSize: FontSize(15.0),
+        ),
+        "strong": Style(
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+        ),
+        "em": Style(
+          fontStyle: FontStyle.italic,
+        ),
+        "ul": Style(
+          margin: Margins.only(left: 0, bottom: 8, top: 4),
+          padding: HtmlPaddings.only(left: 16),
+          listStyleType: ListStyleType.none,
+        ),
+        "ol": Style(
+          margin: Margins.only(left: 0, bottom: 8, top: 4),
+          padding: HtmlPaddings.only(left: 16),
+          listStyleType: ListStyleType.none,
+        ),
+        "li": Style(
+          margin: Margins.only(bottom: 6, top: 0),
+          padding: HtmlPaddings.zero,
+          fontSize: FontSize(15.0),
+          color: Colors.black87,
+        ),
+        "ul ul": Style(
+          margin: Margins.only(left: 0, top: 4, bottom: 4),
+          padding: HtmlPaddings.only(left: 12),
+          listStyleType: ListStyleType.none,
+        ),
+        "ol ol": Style(
+          margin: Margins.only(left: 0, top: 4, bottom: 4),
+          padding: HtmlPaddings.only(left: 12),
+          listStyleType: ListStyleType.none,
+        ),
+        "h1": Style(
+          fontSize: FontSize(22.0),
+          fontWeight: FontWeight.w700,
+          margin: Margins.only(bottom: 8, top: 16),
+          color: AppColors.text2Light,
+        ),
+        "h2": Style(
+          fontSize: FontSize(19.0),
+          fontWeight: FontWeight.w700,
+          margin: Margins.only(bottom: 6, top: 14),
+          color: AppColors.text2Light,
+        ),
+        "h3": Style(
+          fontSize: FontSize(17.0),
+          fontWeight: FontWeight.w600,
+          margin: Margins.only(bottom: 6, top: 12),
+          color: AppColors.text2Light,
+        ),
+      },
+      extensions: [
+        TagExtension(
+          tagsToExtend: {"li"},
+          builder: (extensionContext) {
+            final isNested = depth > 0;
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 6.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isNested ? "◦ " : "• ",
+                    style: TextStyle(
+                      fontSize: isNested ? 16 : 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      height: 1.55,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildHtmlContent(
+                      extensionContext.innerHtml,
+                      depth: depth + 1, // increment depth for nested
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+      onLinkTap: (url, attributes, element) {
+        if (url != null) launchURL(url);
+      },
+    );
+  }
+
+  Widget relatedCard(NewsModel news, BuildContext context) {
+    final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+    final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
+    final categoryColor = getCategoryColor(category);
+    DateTime dop = DateTime.parse(news.date_posted);
+    DateTime nowDateTime = DateTime.now();
+    Duration difference = nowDateTime.difference(dop);
+    String timeAgo = formatDuration(difference);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NewsDetails(
+              news: news,
+              time: timeAgo,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16.0),
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// ---------------- IMAGE ----------------
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                news.imageUrl,
+                width: double.infinity,
+                height: 160,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: 160,
+                    color: Colors.grey.shade200,
+                    child: Icon(
+                      Icons.image,
+                      size: 40,
+                      color: Colors.grey.shade400,
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            /// ---------------- TITLE ----------------
+            Text(
+              news.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.normal600(
+                fontSize: 15.0,
+                color: AppColors.text2Light,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            /// ---------------- CATEGORY + TIME ----------------
+            Row(
               children: [
-                Text(
-                  isNested ? "◦ " : "• ",
-                  style: TextStyle(
-                    fontSize: isNested ? 16 : 20,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
-                    height: 1.55,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: categoryColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    category,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Urbanist',
+                    ),
                   ),
                 ),
-                Expanded(
-                  child: _buildHtmlContent(
-                          extensionContext.innerHtml,
-                          depth: depth + 1, // increment depth for nested
-                        ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.access_time,
+                  size: 12,
+                  color: AppColors.text4Light,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  timeAgo,
+                  style: AppTextStyles.normal400(
+                    fontSize: 11.0,
+                    color: AppColors.text4Light,
+                  ),
                 ),
               ],
             ),
-          );
-        },
-      ),
-    ],
-    onLinkTap: (url, attributes, element) {
-      if (url != null) launchURL(url);
-    },
-  );
-}
-
-
-  Widget relatedCard(NewsModel news, BuildContext context) {
-  final newsProvider = Provider.of<NewsProvider>(context, listen: false);
-  final category = newsProvider.getCategoryForNews(news.id) ?? 'General';
-  final categoryColor = getCategoryColor(category);
-  DateTime dop = DateTime.parse(news.date_posted);
-  DateTime nowDateTime = DateTime.now();
-  Duration difference = nowDateTime.difference(dop);
-  String timeAgo = formatDuration(difference);
-
-  return GestureDetector(
-    onTap: () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NewsDetails(
-            news: news,
-            time: timeAgo,
-          ),
+          ],
         ),
-      );
-    },
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// ---------------- IMAGE ----------------
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              news.imageUrl,
-              width: double.infinity,
-              height: 160,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: double.infinity,
-                  height: 160,
-                  color: Colors.grey.shade200,
-                  child: Icon(
-                    Icons.image,
-                    size: 40,
-                    color: Colors.grey.shade400,
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          /// ---------------- TITLE ----------------
-          Text(
-            news.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.normal600(
-              fontSize: 15.0,
-              color: AppColors.text2Light,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          /// ---------------- CATEGORY + TIME ----------------
-          Row(
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: categoryColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  category,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Urbanist',
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              Icon(
-                Icons.access_time,
-                size: 12,
-                color: AppColors.text4Light,
-              ),
-
-              const SizedBox(width: 4),
-
-              Text(
-                timeAgo,
-                style: AppTextStyles.normal400(
-                  fontSize: 11.0,
-                  color: AppColors.text4Light,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildNewsCard(NewsModel news, BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context, listen: false);
@@ -810,7 +834,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     DateTime nowDateTime = DateTime.now();
     Duration difference = nowDateTime.difference(dop);
     String timeAgo = formatDuration(difference);
-    
+
     return GestureDetector(
       onTap: () {
         Navigator.pushReplacement(
@@ -880,7 +904,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: categoryColor,
                           borderRadius: BorderRadius.circular(12),

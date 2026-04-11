@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -167,7 +168,7 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage>
     );
   }
 
-  void _showAppOpenAd() {
+  Future<void> _showAppOpenAd() async {
     final ad = _appOpenAd;
     if (!_isAppOpenAdLoaded || ad == null) return;
 
@@ -185,7 +186,19 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage>
         _loadAppOpenAd();
       },
     );
-    ad.show();
+    try {
+      await Future<void>.sync(() => ad.show());
+    } on PlatformException {
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _loadAppOpenAd();
+    } catch (_) {
+      ad.dispose();
+      _appOpenAd = null;
+      _isAppOpenAdLoaded = false;
+      _loadAppOpenAd();
+    }
   }
 
   Future<bool> _handleBackNavigation() async {
@@ -217,7 +230,25 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage>
           }
         },
       );
-      ad.show();
+      try {
+        await Future<void>.sync(() => ad.show());
+      } on PlatformException {
+        ad.dispose();
+        _interstitialAd = null;
+        _isInterstitialAdLoaded = false;
+        _loadInterstitialAd();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } catch (_) {
+        ad.dispose();
+        _interstitialAd = null;
+        _isInterstitialAdLoaded = false;
+        _loadInterstitialAd();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      }
       return false;
     }
 
