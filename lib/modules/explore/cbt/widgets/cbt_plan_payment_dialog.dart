@@ -222,13 +222,10 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             label: 'Pay Now',
             onPressed: _isProcessing ? null : _handlePayOnline,
           ),
-          const SizedBox(height: 38),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              _buildFootnote(),
-            ],
-          ),
+          const SizedBox(height: 18),
+          _buildOrSeparator(),
+          const SizedBox(height: 18),
+          _buildManualPaymentSupportBody(showIntro: true),
         ],
       ),
     );
@@ -516,6 +513,209 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
             ),
             textStyle:
                 AppTextStyles.normal600(fontSize: 13, color: Colors.black),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrSeparator() {
+    return Row(
+      children: [
+        Expanded(
+          child: Divider(
+            color: Colors.grey.shade300,
+            thickness: 1,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'or',
+            style: AppTextStyles.normal600(
+              fontSize: 12,
+              color: AppColors.text7Light,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Divider(
+            color: Colors.grey.shade300,
+            thickness: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildManualPaymentSupportBody({
+    required bool showIntro,
+    String? message,
+  }) {
+    final trimmedMessage = message?.trim() ?? '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showIntro) ...[
+          Text(
+            'Pay to the account details below, then send your receipt on WhatsApp for confirmation.',
+            style: AppTextStyles.normal400(
+              fontSize: 13,
+              color: AppColors.text7Light,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.eLearningBtnColor2,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.eLearningContColor1.withValues(
+                alpha: 0.28,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Account details',
+                style: AppTextStyles.normal700(
+                  fontSize: 14,
+                  color: AppColors.text4Light,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildInlineDetailRow(
+                label: 'Account Name',
+                value: _accountName,
+              ),
+              const SizedBox(height: 8),
+              _buildInlineDetailRow(
+                label: 'Account Number',
+                value: _accountNumber,
+                isCopyable: true,
+                onCopy: () => _copyText(
+                  value: _accountNumber,
+                  label: 'Account number',
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildInlineDetailRow(
+                label: 'Bank Name',
+                value: _bankName,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.eLearningBtnColor6,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.paymentTxtColor4.withValues(
+                alpha: 0.45,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Send receipt on WhatsApp',
+                style: AppTextStyles.normal700(
+                  fontSize: 14,
+                  color: AppColors.text4Light,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Phone Number',
+                style: AppTextStyles.normal500(
+                  fontSize: 11,
+                  color: AppColors.text7Light,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: SelectableText(
+                      _supportPhoneDisplay,
+                      style: AppTextStyles.normal700(
+                        fontSize: 17,
+                        color: AppColors.paymentTxtColor2,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => _copyText(
+                      value: _supportPhoneCopy,
+                      label: 'Phone number',
+                    ),
+                    icon: const Icon(
+                      Icons.copy_rounded,
+                      color: AppColors.paymentTxtColor2,
+                    ),
+                    tooltip: 'Copy phone number',
+                    splashRadius: 18,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (trimmedMessage.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.boxColor1,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.barColor3.withValues(
+                  alpha: 0.6,
+                ),
+              ),
+            ),
+            child: Text(
+              trimmedMessage,
+              style: AppTextStyles.normal500(
+                fontSize: 12,
+                color: AppColors.barTextGray,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _openWhatsAppHelp,
+            icon: Image.asset(
+              'assets/images/whatsapp-logo.png',
+              width: 20,
+              height: 20,
+            ),
+            label: Text(
+              'Chat us on WhatsApp',
+              style: AppTextStyles.normal700(
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.paymentTxtColor2,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
           ),
         ),
       ],
@@ -1066,161 +1266,9 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: AppColors.eLearningBtnColor2,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: AppColors.eLearningContColor1.withValues(
-                                alpha: 0.28,
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Account details',
-                                style: AppTextStyles.normal700(
-                                  fontSize: 14,
-                                  color: AppColors.text4Light,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              _buildInlineDetailRow(
-                                label: 'Account Name',
-                                value: _accountName,
-                              ),
-                              const SizedBox(height: 8),
-                              _buildInlineDetailRow(
-                                label: 'Account Number',
-                                value: _accountNumber,
-                                isCopyable: true,
-                                onCopy: () => _copyText(
-                                  value: _accountNumber,
-                                  label: 'Account number',
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              _buildInlineDetailRow(
-                                label: 'Bank Name',
-                                value: _bankName,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: AppColors.eLearningBtnColor6,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: AppColors.paymentTxtColor4.withValues(
-                                alpha: 0.45,
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Send receipt on WhatsApp',
-                                style: AppTextStyles.normal700(
-                                  fontSize: 14,
-                                  color: AppColors.text4Light,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Phone Number',
-                                style: AppTextStyles.normal500(
-                                  fontSize: 11,
-                                  color: AppColors.text7Light,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SelectableText(
-                                      _supportPhoneDisplay,
-                                      style: AppTextStyles.normal700(
-                                        fontSize: 17,
-                                        color: AppColors.paymentTxtColor2,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () => _copyText(
-                                      value: _supportPhoneCopy,
-                                      label: 'Phone number',
-                                    ),
-                                    icon: const Icon(
-                                      Icons.copy_rounded,
-                                      color: AppColors.paymentTxtColor2,
-                                    ),
-                                    tooltip: 'Copy phone number',
-                                    splashRadius: 18,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (message.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.boxColor1,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.barColor3.withValues(
-                                  alpha: 0.6,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              message,
-                              style: AppTextStyles.normal500(
-                                fontSize: 12,
-                                color: AppColors.barTextGray,
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            onPressed: _openWhatsAppHelp,
-                            icon: Image.asset(
-                              'assets/images/whatsapp-logo.png',
-                              width: 20,
-                              height: 20,
-                            ),
-                            label: Text(
-                              'Open WhatsApp',
-                              style: AppTextStyles.normal700(
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.paymentTxtColor2,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: _buildManualPaymentSupportBody(
+                      showIntro: false,
+                      message: message,
                     ),
                   ),
                 ],

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart';
 import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_discussion_screen.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/cbt_active_session_model.dart';
@@ -43,7 +44,11 @@ class CBTDashboard extends StatefulWidget {
 }
 
 class _CBTDashboardState extends State<CBTDashboard>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin, RouteAware {
+    with
+        AutomaticKeepAliveClientMixin,
+        TickerProviderStateMixin,
+        WidgetsBindingObserver,
+        RouteAware {
   final _subscriptionService = CbtSubscriptionService();
   final _authService = FirebaseAuthService();
   final _licenseService = CbtLicenseService();
@@ -67,6 +72,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool _didSubscribeToRoute = false;
   bool _skipNextPlanPrompt = false;
   bool _isHandlingBoardTap = false;
+  bool _shouldShowAdOnResume = false;
 
   Future<bool> _handlePortalLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -202,6 +208,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     // Initialize animation controllers
     _fadeController = AnimationController(
@@ -322,6 +329,7 @@ class _CBTDashboardState extends State<CBTDashboard>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_didSubscribeToRoute) {
       routeObserver.unsubscribe(this);
     }
@@ -335,6 +343,22 @@ class _CBTDashboardState extends State<CBTDashboard>
   void didPopNext() {
     if (!mounted) return;
     context.read<CBTProvider>().refreshStats();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused &&
+        !AdManager.instance.isPresentingFullscreenAd) {
+      _shouldShowAdOnResume = true;
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _shouldShowAdOnResume = false;
+      AdManager.instance.showAppOpenIfEligible(context: context);
+    }
   }
 
   Widget _buildAnimatedCard({
@@ -937,6 +961,17 @@ class _CBTDashboardState extends State<CBTDashboard>
               ),
             );
           },
+          onDiscussion: () {
+            Navigator.pop(context);
+            Navigator.push(
+              this.context,
+              MaterialPageRoute(
+                builder: (context) => CbtDiscussionScreen(
+                  boardName: board.title,
+                ),
+              ),
+            );
+          },
           onGamify: () {
             Navigator.pop(context);
             final examTypeId =
@@ -1530,6 +1565,7 @@ class _BoardOptionsModal extends StatelessWidget {
   final String boardName;
   final VoidCallback onPractice;
   final VoidCallback onStudy;
+  final VoidCallback onDiscussion;
   final VoidCallback onGamify;
   final VoidCallback onChallenge;
 
@@ -1537,6 +1573,7 @@ class _BoardOptionsModal extends StatelessWidget {
     required this.boardName,
     required this.onPractice,
     required this.onStudy,
+    required this.onDiscussion,
     required this.onGamify,
     required this.onChallenge,
   });
@@ -1606,6 +1643,14 @@ class _BoardOptionsModal extends StatelessWidget {
                     subtitle: 'Learn with explanations',
                     color: const Color(0xFF10B981),
                     onTap: onStudy,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.forum_rounded,
+                    title: 'CBT Discussion',
+                    subtitle: 'Ask questions and share ideas',
+                    color: const Color(0xFF06B6D4),
+                    onTap: onDiscussion,
                   ),
                   const SizedBox(height: 12),
                   _OptionTile(

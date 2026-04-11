@@ -35,7 +35,10 @@ class ExploreHome extends StatefulWidget {
 }
 
 class _ExploreHomeState extends State<ExploreHome>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+    with
+        AutomaticKeepAliveClientMixin,
+        TickerProviderStateMixin,
+        WidgetsBindingObserver {
   static const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
 
   late AnimationController _fadeController;
@@ -73,6 +76,9 @@ class _ExploreHomeState extends State<ExploreHome>
 
   bool _imagesPrecached = false;
   String? _lastNetworkMessage;
+  AppOpenAd? _appOpenAd;
+  bool _isAppOpenAdLoaded = false;
+  bool _shouldShowAdOnResume = false;
 
   void _shareNews(String title, String content, String time, String imageUrl) {
     // Format the complete news content for sharing
@@ -96,6 +102,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -158,6 +165,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //   _maybeShowPromo();
     // });
+
+    _loadAppOpenAd();
   }
 
 // Future<void> _maybeShowPromo() async {
@@ -196,14 +205,84 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fadeController.dispose();
     _slideController.dispose();
     _bounceController.dispose();
     _controller.removeListener(_onScroll);
     _controller.dispose();
     _disposeAds();
+    _appOpenAd?.dispose();
     HomeCarouselBannerAdCache().dispose();
     super.dispose();
+  }
+
+  bool get _hasHomeAppOpenAdUnitId {
+    final adUnitId = EnvConfig.homeAdsOpenKey;
+    return adUnitId.isNotEmpty && adUnitId != _unsetEnvValue;
+  }
+
+  void _loadAppOpenAd() {
+    if (!_hasHomeAppOpenAdUnitId) return;
+
+    AppOpenAd.load(
+      adUnitId: EnvConfig.homeAdsOpenKey,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _appOpenAd?.dispose();
+          _appOpenAd = ad;
+          if (!mounted) return;
+          setState(() {
+            _isAppOpenAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (error) {
+          _appOpenAd = null;
+          if (!mounted) return;
+          setState(() {
+            _isAppOpenAdLoaded = false;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showAppOpenAd() {
+    final ad = _appOpenAd;
+    if (!_isAppOpenAdLoaded || ad == null) return;
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _appOpenAd = null;
+        _isAppOpenAdLoaded = false;
+        _loadAppOpenAd();
+      },
+    );
+
+    ad.show();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      _shouldShowAdOnResume = true;
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
+      _shouldShowAdOnResume = false;
+      _showAppOpenAd();
+    }
   }
 
   Widget _buildAnimatedCard({
