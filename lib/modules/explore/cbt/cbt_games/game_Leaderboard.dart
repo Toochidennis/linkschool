@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/services/explore/gamify_leaderboard_service.dart';
 
@@ -26,6 +27,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   bool _shouldShowAppOpenOnResume = false;
   bool _loading = true;
   List<GamifyLeaderboardEntry> _entries = const [];
+  bool _allowRoutePop = false;
+  bool _isHandlingBackNavigation = false;
 
   @override
   void initState() {
@@ -66,15 +69,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Future<void> _handleBack() async {
-    await GamifyAdManager.instance.showInterstitialIfEligible(context: context);
-    if (!mounted) return;
-
-    if (widget.fromGameDashboard == true) {
-      Navigator.of(context).pop();
-      return;
+    if (_isHandlingBackNavigation) return;
+    _isHandlingBackNavigation = true;
+    if (mounted) {
+      setState(() => _allowRoutePop = true);
     }
 
-    Navigator.of(context).pop();
+    await popThenShowInterstitial(
+      popNavigation: () => Navigator.of(context).pop(),
+      showInterstitial: (targetContext) =>
+          GamifyAdManager.instance.showInterstitialIfEligible(
+        context: targetContext,
+      ),
+    );
   }
 
   @override
@@ -86,9 +93,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: _allowRoutePop,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
+        if (didPop || _allowRoutePop) return;
         await _handleBack();
       },
       child: Scaffold(

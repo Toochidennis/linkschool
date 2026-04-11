@@ -12,7 +12,7 @@ class CbtUpdatesService {
       endpoint: 'public/cbt-updates',
       queryParams: {
         'page': page,
-        'per_page': perPage,
+        'limit': perPage,
       },
       addDatabaseParam: false,
       fromJson: (json) => json,

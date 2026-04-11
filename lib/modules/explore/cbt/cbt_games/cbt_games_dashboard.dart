@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_download_screen.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
@@ -36,6 +37,8 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
   bool _shouldShowAppOpenOnResume = false;
   bool _loading = true;
+  bool _allowRoutePop = false;
+  bool _isHandlingBackNavigation = false;
 
   String _playerName = 'Player';
   int _playerScore = 0;
@@ -241,17 +244,26 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
   }
 
   Future<void> _handleBackNavigation() async {
-    await GamifyAdManager.instance.showInterstitialIfEligible(context: context);
-    if (!mounted) return;
-    Navigator.pop(context);
+    if (_isHandlingBackNavigation) return;
+    _isHandlingBackNavigation = true;
+    if (mounted) {
+      setState(() => _allowRoutePop = true);
+    }
+    await popThenShowInterstitial(
+      popNavigation: () => Navigator.pop(context),
+      showInterstitial: (targetContext) =>
+          GamifyAdManager.instance.showInterstitialIfEligible(
+        context: targetContext,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: _allowRoutePop,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
+        if (didPop || _allowRoutePop) return;
         _handleBackNavigation();
       },
       child: Scaffold(

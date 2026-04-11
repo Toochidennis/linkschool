@@ -27,8 +27,10 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   int _lastAdNewsCount = -1;
   AppOpenAd? _appOpenAd;
   bool _isAppOpenAdLoaded = false;
+  bool _isAppOpenAdLoading = false;
   bool _isAppOpenAdShowing = false;
   bool _shouldShowAdOnResume = false;
+  bool _pendingAppOpenAfterResume = false;
 
   @override
   void initState() {
@@ -51,6 +53,7 @@ class _AllnewsScreenState extends State<AllnewsScreen>
       _shouldShowAdOnResume = true;
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
+        _pendingAppOpenAfterResume = true;
         _showAppOpenAd();
         _shouldShowAdOnResume = false;
       }
@@ -108,19 +111,32 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   }
 
   void _loadAppOpenAd() {
+    if (_isAppOpenAdLoading) return;
+    _isAppOpenAdLoading = true;
+
     AppOpenAd.load(
       adUnitId: EnvConfig.newsAdsOpenApiKey,
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (AppOpenAd ad) {
+          _isAppOpenAdLoading = false;
+          _appOpenAd?.dispose();
           _appOpenAd = ad;
           if (mounted) {
             setState(() {
               _isAppOpenAdLoaded = true;
             });
           }
+          if (_pendingAppOpenAfterResume && !_isAppOpenAdShowing) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _showAppOpenAd();
+            });
+          }
         },
         onAdFailedToLoad: (LoadAdError error) {
+          _appOpenAd = null;
+          _isAppOpenAdLoading = false;
           if (mounted) {
             setState(() {
               _isAppOpenAdLoaded = false;
@@ -133,9 +149,15 @@ class _AllnewsScreenState extends State<AllnewsScreen>
 
   void _showAppOpenAd() {
     final ad = _appOpenAd;
-    if (!_isAppOpenAdLoaded || ad == null || _isAppOpenAdShowing) return;
+    if (_isAppOpenAdShowing) return;
+    if (!_isAppOpenAdLoaded || ad == null) {
+      _pendingAppOpenAfterResume = true;
+      _loadAppOpenAd();
+      return;
+    }
 
     _isAppOpenAdShowing = true;
+    _pendingAppOpenAfterResume = false;
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (AppOpenAd ad) {

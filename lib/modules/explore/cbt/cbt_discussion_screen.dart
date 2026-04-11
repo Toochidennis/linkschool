@@ -2,12 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/cbt/discussion_ad_manager.dart';
 import 'package:linkschool/modules/explore/cbt/subject_selection_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/cbt/cbt_updates_service.dart';
+
+const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
+
+bool _isDiscussionAdUnitConfigured(String adUnitId) =>
+    adUnitId.isNotEmpty && adUnitId != _unsetEnvValue;
+
+List<String> _discussionBannerAdUnitIds() {
+  final units = <String>[];
+  for (final adUnitId in [
+    EnvConfig.discussionBannerAdKey,
+    EnvConfig.homeBannerAdKey,
+    EnvConfig.googleBannerAdsApiKey,
+  ]) {
+    if (_isDiscussionAdUnitConfigured(adUnitId) && !units.contains(adUnitId)) {
+      units.add(adUnitId);
+    }
+  }
+  return units;
+}
 
 class CbtDiscussionScreen extends StatefulWidget {
   final String boardName;
@@ -23,7 +44,6 @@ class CbtDiscussionScreen extends StatefulWidget {
 
 class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
     with WidgetsBindingObserver {
-  static const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
   final CbtUpdatesService _updatesService = CbtUpdatesService();
   bool _shouldShowAdOnResume = false;
   bool _isNavigatingAway = false;
@@ -96,6 +116,10 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
       _isLoadingInitial = false;
       _isLoadingMore = false;
     });
+  }
+
+  Future<void> _refreshDiscussionUpdates() {
+    return _fetchDiscussionUpdates(reset: true);
   }
 
   @override
@@ -174,35 +198,20 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
     return DateFormat('d MMM yyyy, h:mm a').format(parsed.toLocal());
   }
 
-  bool _isAdUnitConfigured(String adUnitId) =>
-      adUnitId.isNotEmpty && adUnitId != _unsetEnvValue;
-
-  List<String> get _bannerAdUnitIds {
-    final units = <String>[];
-    for (final adUnitId in [
-      EnvConfig.discussionBannerAdKey,
-      EnvConfig.homeBannerAdKey,
-      EnvConfig.googleBannerAdsApiKey,
-    ]) {
-      if (_isAdUnitConfigured(adUnitId) && !units.contains(adUnitId)) {
-        units.add(adUnitId);
-      }
-    }
-    return units;
-  }
-
   Future<void> _handleBackNavigation() async {
     if (_isHandlingBackNavigation) return;
     _isHandlingBackNavigation = true;
     _isNavigatingAway = true;
-    await DiscussionAdManager.instance.showInterstitialIfEligible(
-      context: context,
-    );
     if (mounted) {
       setState(() => _allowRoutePop = true);
-      Navigator.of(context).pop();
     }
-    _isHandlingBackNavigation = false;
+    await popThenShowInterstitial(
+      popNavigation: () => Navigator.of(context).pop(),
+      showInterstitial: (targetContext) =>
+          DiscussionAdManager.instance.showInterstitialIfEligible(
+        context: targetContext,
+      ),
+    );
   }
 
   @override
@@ -223,7 +232,7 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
   }
 
   Widget _buildAdsStrip() {
-    final adUnitIds = _bannerAdUnitIds;
+    final adUnitIds = _discussionBannerAdUnitIds();
     if (adUnitIds.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -400,71 +409,74 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
             ),
           ),
         ),
-        body: ListView(
-          controller: _scrollController,
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            _buildAdsStrip(),
-            _buildSectionLabel(),
-            if (_isLoadingInitial)
-              const Padding(
-                padding: EdgeInsets.only(top: 40),
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else if (_updates.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Text(
-                    'No updates available yet.',
-                    style: AppTextStyles.normal500(
-                      fontSize: 14,
-                      color: AppColors.text7Light,
-                    ),
-                  ),
-                ),
-              )
-            else ...[
-              ..._updates.map(
-                (item) => GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => CbtDiscussionDetailScreen(
-                          updateId: item.id,
-                          update: item,
-                        ),
-                      ),
-                    );
-                  },
-                  child: _buildUpdateCard(item),
-                ),
-              ),
-              if (_isLoadingMore)
+        body: RefreshIndicator(
+          onRefresh: _refreshDiscussionUpdates,
+          child: ListView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 24),
+            children: <Widget>[
+              _buildAdsStrip(),
+              _buildSectionLabel(),
+              if (_isLoadingInitial)
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.only(top: 40),
                   child: Center(
                     child: CircularProgressIndicator(),
                   ),
                 )
-              else if (_hasNextPage)
+              else if (_updates.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextButton(
-                    onPressed: () => _fetchDiscussionUpdates(reset: false),
-                    child: const Text('Load more updates'),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Text(
+                      'No updates available yet.',
+                      style: AppTextStyles.normal500(
+                        fontSize: 14,
+                        color: AppColors.text7Light,
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                ..._updates.map(
+                  (item) => GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CbtDiscussionDetailScreen(
+                            updateId: item.id,
+                          ),
+                        ),
+                      );
+                    },
+                    child: _buildUpdateCard(item),
                   ),
                 ),
+                if (_isLoadingMore)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (_hasNextPage)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextButton(
+                      onPressed: () => _fetchDiscussionUpdates(reset: false),
+                      child: const Text('Load more updates'),
+                    ),
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -517,29 +529,6 @@ class _CompactSponsoredAdCard extends StatelessWidget {
               ),
               Center(
                 child: _CompactBannerAd(adUnitIds: adUnitIds),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.72),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Sponsored',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Urbanist',
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -674,6 +663,111 @@ class _CompactBannerAdState extends State<_CompactBannerAd> {
   }
 }
 
+class _DiscussionInlineBannerAd extends StatefulWidget {
+  final List<String> adUnitIds;
+  final AdSize size;
+
+  const _DiscussionInlineBannerAd({
+    required this.adUnitIds,
+    required this.size,
+  });
+
+  @override
+  State<_DiscussionInlineBannerAd> createState() =>
+      _DiscussionInlineBannerAdState();
+}
+
+class _DiscussionInlineBannerAdState extends State<_DiscussionInlineBannerAd> {
+  BannerAd? _ad;
+  bool _isLoaded = false;
+  int _activeAdUnitIndex = 0;
+
+  String get _activeAdUnitId => widget.adUnitIds[_activeAdUnitIndex];
+
+  void _loadAd() {
+    _ad?.dispose();
+    _ad = BannerAd(
+      adUnitId: _activeAdUnitId,
+      size: widget.size,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (!mounted) return;
+          setState(() {
+            _ad = ad as BannerAd;
+            _isLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (!mounted) return;
+
+          debugPrint(
+            'Discussion detail banner failed (${error.code}) on $_activeAdUnitId: ${error.message}',
+          );
+
+          if (_activeAdUnitIndex < widget.adUnitIds.length - 1) {
+            setState(() {
+              _activeAdUnitIndex++;
+              _ad = null;
+              _isLoaded = false;
+            });
+            _loadAd();
+            return;
+          }
+
+          setState(() {
+            _ad = null;
+            _isLoaded = false;
+          });
+        },
+      ),
+    )..load();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAd();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DiscussionInlineBannerAd oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.adUnitIds.join('|') != widget.adUnitIds.join('|') ||
+        oldWidget.size != widget.size) {
+      _activeAdUnitIndex = 0;
+      _isLoaded = false;
+      _loadAd();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ad = _ad;
+    if (!_isLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
+  }
+}
+
 class CbtDiscussionUpdateItem {
   final int id;
   final String title;
@@ -704,14 +798,12 @@ class CbtDiscussionUpdateItem {
 }
 
 class CbtDiscussionDetailScreen extends StatefulWidget {
-  final CbtDiscussionUpdateItem? update;
-  final int? updateId;
+  final int updateId;
 
   const CbtDiscussionDetailScreen({
     super.key,
-    this.update,
-    this.updateId,
-  }) : assert(update != null || updateId != null);
+    required this.updateId,
+  });
 
   @override
   State<CbtDiscussionDetailScreen> createState() =>
@@ -731,7 +823,7 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   @override
   void initState() {
     super.initState();
-    _activeUpdate = widget.update ?? _fallbackUpdateForId(widget.updateId ?? 0);
+    _activeUpdate = _fallbackUpdateForId(widget.updateId);
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       DiscussionAdManager.instance.preloadAll(context);
@@ -742,22 +834,23 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   CbtDiscussionUpdateItem _fallbackUpdateForId(int id) {
     return CbtDiscussionUpdateItem(
       id: id,
-      title: 'CBT Update #$id',
-      body:
-          '<p>Update details will appear here once loaded from the server.</p>',
+      title: '',
+      body: '',
       icon: Icons.notifications_none_rounded,
       accentColor: const Color(0xFF2563EB),
-      badge: 'Update',
-      timeLabel: 'Now',
+      badge: '',
+      timeLabel: '',
     );
   }
 
   Future<void> _fetchDiscussionUpdateDetail() async {
     final id = widget.updateId;
-    if (id == null) return;
     setState(() => _isLoadingDetail = true);
 
     final response = await _updatesService.fetchUpdateById(id);
+    final rawResponse =
+        response.data ?? response.rawData ?? <String, dynamic>{};
+
     if (!response.success) {
       debugPrint(
           'CBT update detail fetch failed (id=$id): ${response.message}');
@@ -767,7 +860,7 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
       return;
     }
 
-    final root = response.data ?? response.rawData ?? <String, dynamic>{};
+    final root = rawResponse;
     final payload = _extractDetailPayload(root);
 
     final parsed = _fromServer(payload, fallback: _activeUpdate);
@@ -782,6 +875,62 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
     });
   }
 
+  String _linkifyContent(String rawContent) {
+    if (rawContent.isEmpty) return rawContent;
+
+    final tagRegex = RegExp(r'(<[^>]+>)');
+    final buffer = StringBuffer();
+    var cursor = 0;
+
+    for (final match in tagRegex.allMatches(rawContent)) {
+      if (match.start > cursor) {
+        buffer.write(
+          _linkifyPlainTextSegment(rawContent.substring(cursor, match.start)),
+        );
+      }
+      buffer.write(match.group(0));
+      cursor = match.end;
+    }
+
+    if (cursor < rawContent.length) {
+      buffer.write(_linkifyPlainTextSegment(rawContent.substring(cursor)));
+    }
+
+    return buffer.toString();
+  }
+
+  String _linkifyPlainTextSegment(String text) {
+    final urlRegex = RegExp(
+      r'((https?:\/\/|www\.)[^\s<]+)',
+      caseSensitive: false,
+    );
+
+    return text.replaceAllMapped(urlRegex, (match) {
+      final rawUrl = match.group(0) ?? '';
+      if (rawUrl.isEmpty) return rawUrl;
+
+      final uriTarget =
+          rawUrl.toLowerCase().startsWith('http') ? rawUrl : 'https://$rawUrl';
+      return '<a href="$uriTarget">$rawUrl</a>';
+    });
+  }
+
+  Future<void> _openLink(String url) async {
+    final normalized =
+        url.toLowerCase().startsWith('http') ? url : 'https://$url';
+    final uri = Uri.tryParse(normalized);
+    if (uri == null) return;
+
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened) {
+      debugPrint('Unable to open link: $normalized');
+    }
+  }
+
+  Future<void> _refreshDiscussionDetail() {
+    return _fetchDiscussionUpdateDetail();
+  }
+
   CbtDiscussionUpdateItem? _fromServer(
     Map<String, dynamic> json, {
     CbtDiscussionUpdateItem? fallback,
@@ -794,7 +943,7 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
         fallback?.title,
       ],
     );
-    if (id == null || title.isEmpty) return null;
+    if (id == null) return null;
 
     return CbtDiscussionUpdateItem(
       id: id,
@@ -802,10 +951,6 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
       body: _firstNonEmptyString(
         [
           json['content'],
-          json['body'],
-          json['description'],
-          json['details'],
-          fallback?.body,
         ],
       ),
       icon: Icons.notifications_none_rounded,
@@ -843,12 +988,13 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
     final data = _asMap(root['data']);
 
     // Single-detail payload is expected directly in `data`.
-    if (_asInt(data['id']) != null) {
+    if (_asInt(data['id']) != null || _asString(data['content']).isNotEmpty) {
       return data;
     }
 
     final nestedMap = _asMap(data['data']);
-    if (nestedMap.isNotEmpty) {
+    if (_asInt(nestedMap['id']) != null ||
+        _asString(nestedMap['content']).isNotEmpty) {
       return nestedMap;
     }
 
@@ -857,11 +1003,7 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
       return _asMap(nestedList.first);
     }
 
-    final rootList = _asList(root['data']);
-    if (rootList.isNotEmpty) {
-      return _asMap(rootList.first);
-    }
-
+    if (data.isNotEmpty) return data;
     return root;
   }
 
@@ -913,14 +1055,16 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
     if (_isHandlingBackNavigation) return;
     _isHandlingBackNavigation = true;
     _isNavigatingAway = true;
-    await DiscussionAdManager.instance.showInterstitialIfEligible(
-      context: context,
-    );
     if (mounted) {
       setState(() => _allowRoutePop = true);
-      Navigator.of(context).pop();
     }
-    _isHandlingBackNavigation = false;
+    await popThenShowInterstitial(
+      popNavigation: () => Navigator.of(context).pop(),
+      showInterstitial: (targetContext) =>
+          DiscussionAdManager.instance.showInterstitialIfEligible(
+        context: targetContext,
+      ),
+    );
   }
 
   @override
@@ -943,8 +1087,8 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   @override
   Widget build(BuildContext context) {
     final update = _activeUpdate;
-    final hasBodyContent = update.previewText.isNotEmpty &&
-        !update.previewText.startsWith('Update details will appear here');
+    final hasBodyContent = update.previewText.isNotEmpty;
+    final detailBannerAdUnitIds = _discussionBannerAdUnitIds();
 
     return PopScope(
       canPop: _allowRoutePop,
@@ -954,164 +1098,204 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 240,
-              pinned: true,
-              backgroundColor: update.accentColor,
-              leading: IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.90),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.black,
-                    size: 20,
-                  ),
-                ),
-                onPressed: _handleBackNavigation,
-              ),
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        update.accentColor,
-                        update.accentColor.withValues(alpha: 0.85),
-                        const Color(0xFF0F172A),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+        body: RefreshIndicator(
+          onRefresh: _refreshDiscussionDetail,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 240,
+                pinned: true,
+                backgroundColor: update.accentColor,
+                leading: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.90),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.black,
+                      size: 20,
                     ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 92, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            update.badge,
-                            style: AppTextStyles.normal600(
-                              fontSize: 11,
-                              color: Colors.white,
+                  onPressed: _handleBackNavigation,
+                ),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          update.accentColor,
+                          update.accentColor.withValues(alpha: 0.85),
+                          const Color(0xFF0F172A),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 92, 20, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          update.title,
-                          style: AppTextStyles.normal700(
-                            fontSize: 24,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.schedule_rounded,
-                              size: 15,
-                              color: Colors.white.withValues(alpha: 0.85),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              update.timeLabel,
-                              style: AppTextStyles.normal500(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.85),
+                            child: Text(
+                              update.badge,
+                              style: AppTextStyles.normal600(
+                                fontSize: 11,
+                                color: Colors.white,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(height: 14),
+                          Flexible(
+                            child: Html(
+                              data: update.title.isEmpty && _isLoadingDetail
+                                  ? '&nbsp;'
+                                  : update.title,
+                              style: {
+                                'html': Style(
+                                  margin: Margins.zero,
+                                  padding: HtmlPaddings.zero,
+                                ),
+                                'body': Style(
+                                  margin: Margins.zero,
+                                  padding: HtmlPaddings.zero,
+                                  fontSize: FontSize(24),
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  lineHeight: LineHeight.number(1.25),
+                                ),
+                                'p': Style(
+                                  margin: Margins.zero,
+                                  padding: HtmlPaddings.zero,
+                                  fontSize: FontSize(24),
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  lineHeight: LineHeight.number(1.25),
+                                ),
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.schedule_rounded,
+                                size: 15,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                update.timeLabel,
+                                style: AppTextStyles.normal500(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-              sliver: SliverFillRemaining(
-                hasScrollBody: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (hasBodyContent)
-                      Html(
-                        data: update.body,
-                        style: {
-                          'body': Style(
-                            margin: Margins.zero,
-                            padding: HtmlPaddings.zero,
-                            fontSize: FontSize(16),
-                            color: AppColors.text4Light,
-                            lineHeight: LineHeight.number(1.6),
-                          ),
-                          'p': Style(
-                            margin: Margins.only(bottom: 14),
-                            fontSize: FontSize(16),
-                            color: AppColors.text4Light,
-                            lineHeight: LineHeight.number(1.6),
-                          ),
-                        },
-                      )
-                    else if (_isLoadingDetail)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 12),
-                        child: Center(
-                          child: CircularProgressIndicator(),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                sliver: SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (detailBannerAdUnitIds.isNotEmpty) ...[
+                        _DiscussionInlineBannerAd(
+                          adUnitIds: detailBannerAdUnitIds,
+                          size: AdSize.mediumRectangle,
                         ),
-                      )
-                    else
-                      Text(
-                        'This update has no content available yet.',
-                        style: AppTextStyles.normal500(
-                          fontSize: 14,
-                          color: AppColors.text7Light,
+                        const SizedBox(height: 18),
+                      ],
+                      if (hasBodyContent)
+                        Html(
+                          data: _linkifyContent(update.body),
+                          onLinkTap: (url, attributes, element) {
+                            if (url == null || url.trim().isEmpty) return;
+                            _openLink(url.trim());
+                          },
+                          style: {
+                            'body': Style(
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                              fontSize: FontSize(16),
+                              color: AppColors.text4Light,
+                              lineHeight: LineHeight.number(1.6),
+                            ),
+                            'p': Style(
+                              margin: Margins.only(bottom: 14),
+                              fontSize: FontSize(16),
+                              color: AppColors.text4Light,
+                              lineHeight: LineHeight.number(1.6),
+                            ),
+                          },
+                        )
+                      else if (_isLoadingDetail)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 12),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else
+                        Text(
+                          'This update has no content available yet.',
+                          style: AppTextStyles.normal500(
+                            fontSize: 14,
+                            color: AppColors.text7Light,
+                          ),
+                        ),
+                      const Spacer(),
+                      SafeArea(
+                        top: false,
+                        minimum: const EdgeInsets.only(top: 18),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _openPracticeSubjectSelection,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.eLearningBtnColor1,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              'Start Practice',
+                              style: AppTextStyles.normal700(
+                                fontSize: 15,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    const Spacer(),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _openPracticeSubjectSelection,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.eLearningBtnColor1,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: Text(
-                          'Start Practice',
-                          style: AppTextStyles.normal700(
-                            fontSize: 15,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

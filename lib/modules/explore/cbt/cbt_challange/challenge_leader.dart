@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/ads/cbt_scoped_ad_manager.dart';
+import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challenge_ad_manager.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_leader_provider.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +26,8 @@ class ChallengeLeader extends StatefulWidget {
 class _ChallengeLeaderState extends State<ChallengeLeader>
     with WidgetsBindingObserver {
   bool _shouldShowAppOpenOnResume = false;
+  bool _allowRoutePop = false;
+  bool _isHandlingBackNavigation = false;
 
   @override
   void initState() {
@@ -68,23 +70,32 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
   }
 
   Future<void> _handleBack() async {
-    await ChallengeAdManager.instance.showIfEligible(
-      context: context,
-      trigger: CbtScopedAdTrigger.testExit,
-    );
-    if (!mounted) return;
-
-    if (widget.fromChallengeCompletion == true) {
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
-    } else if (widget.fromChallenge == true) {
-      Navigator.of(context).pop();
-    } else {
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
+    if (_isHandlingBackNavigation) return;
+    _isHandlingBackNavigation = true;
+    if (mounted) {
+      setState(() => _allowRoutePop = true);
     }
+
+    final navigator = Navigator.of(context);
+    await popThenShowInterstitial(
+      popNavigation: () {
+        if (widget.fromChallengeCompletion == true) {
+          navigator.pop();
+          navigator.pop();
+          navigator.pop();
+        } else if (widget.fromChallenge == true) {
+          navigator.pop();
+        } else {
+          navigator.pop();
+          navigator.pop();
+          navigator.pop();
+        }
+      },
+      showInterstitial: (targetContext) =>
+          ChallengeAdManager.instance.showInterstitialIfEligible(
+        context: targetContext,
+      ),
+    );
   }
 
   @override
@@ -96,9 +107,9 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: _allowRoutePop,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
+        if (didPop || _allowRoutePop) return;
         await _handleBack();
       },
       child: Scaffold(
