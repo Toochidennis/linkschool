@@ -4,9 +4,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/cbt/discussion_ad_manager.dart';
-import 'package:linkschool/modules/explore/cbt/subject_selection_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/cbt/cbt_updates_service.dart';
@@ -1040,7 +1040,7 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   void _openPracticeSubjectSelection() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const SubjectSelectionScreen(),
+        builder: (_) => const CBTDashboard(),
       ),
     );
   }

@@ -295,7 +295,10 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
   Widget _buildVoucherField() {
     return TextField(
       controller: _voucherController,
-      textCapitalization: TextCapitalization.characters,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+      ],
       style: AppTextStyles.normal600(
         fontSize: 14,
         color: AppColors.text4Light,
@@ -744,7 +747,8 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
 
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
     final user = userProvider.currentUser;
-    if (user?.id == null) {
+    final userId = user?.id;
+    if (userId == null) {
       setState(() => _errorMessage = 'Please sign in to continue.');
       return;
     }
@@ -835,7 +839,8 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
 
     final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
     final user = userProvider.currentUser;
-    if (user?.id == null) {
+    final userId = user?.id;
+    if (userId == null) {
       setState(() => _errorMessage = 'Please sign in to continue.');
       return;
     }
@@ -848,7 +853,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
 
     try {
       final result = await CbtBillingService().verifyPayment(
-        userId: user?.id ?? 0,
+        userId: userId,
         planId: widget.plan.id,
         method: 'voucher',
         platform: 'mobile',
@@ -859,7 +864,7 @@ class _CbtPlanPaymentDialogState extends State<CbtPlanPaymentDialog>
       );
 
       if (result.status == BillingVerifyStatus.success) {
-        await _activateAndFinish(userId: user?.id ?? 0);
+        await _activateAndFinish(userId: userId);
       } else {
         if (mounted) {
           setState(() {

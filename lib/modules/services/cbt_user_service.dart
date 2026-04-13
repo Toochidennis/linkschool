@@ -168,6 +168,50 @@ class CbtUserService {
     }
   }
 
+  Future<void> forgotPassword({
+    required String email,
+  }) async {
+    try {
+      if (apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      final url = '$baseUrl/forgot-password';
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+        body: json.encode({
+          'email': email,
+        }),
+      );
+
+      final responseBody = response.body.trim();
+      final decoded = responseBody.isEmpty
+          ? null
+          : json.decode(responseBody) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (decoded == null || decoded['success'] != false) {
+          return;
+        }
+
+        throw Exception(
+          decoded['message'] ?? 'Unable to send password reset email.',
+        );
+      }
+
+      throw Exception(
+        decoded?['message'] ?? 'Failed to send password reset email.',
+      );
+    } catch (e) {
+      throw Exception("Error sending password reset email: $e");
+    }
+  }
+
   Future<CbtUserModel> updateUser(CbtUserModel user) async {
     try {
       if (apiKey.isEmpty) {

@@ -203,6 +203,247 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
     }
   }
 
+  Future<void> _showForgotPasswordModal() async {
+    final emailController =
+        TextEditingController(text: _loginEmailController.text.trim());
+    var isSubmitting = false;
+    String? modalErrorMessage;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: !isSubmitting,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            Future<void> submit() async {
+              if (isSubmitting) return;
+
+              final email = emailController.text.trim();
+              if (email.isEmpty) {
+                setModalState(() {
+                  modalErrorMessage = 'Please enter your email address.';
+                });
+                return;
+              }
+
+              if (!_isValidEmail(email)) {
+                setModalState(() {
+                  modalErrorMessage = 'Please enter a valid email address.';
+                });
+                return;
+              }
+
+              setModalState(() {
+                isSubmitting = true;
+                modalErrorMessage = null;
+              });
+
+              try {
+                final userProvider = Provider.of<CbtUserProvider>(
+                  dialogContext,
+                  listen: false,
+                );
+                await userProvider.forgotPassword(email: email);
+
+                if (!mounted || !dialogContext.mounted) return;
+                emailController.clear();
+                _loginEmailController.clear();
+                _loginPasswordController.clear();
+                Navigator.of(dialogContext).pop();
+                await _showForgotPasswordSuccessModal(email);
+              } catch (e) {
+                setModalState(() {
+                  modalErrorMessage = _mapAuthError(e.toString());
+                  isSubmitting = false;
+                });
+              }
+            }
+
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Forgot Password?',
+                            style: AppTextStyles.normal700(
+                              fontSize: 22,
+                              color: AppColors.text4Light,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: isSubmitting
+                              ? null
+                              : () => Navigator.of(dialogContext).pop(),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: isSubmitting
+                                  ? Colors.grey.shade400
+                                  : AppColors.text4Light,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Enter the email address linked to your account and we will send password reset instructions.',
+                      style: AppTextStyles.normal400(
+                        fontSize: 14,
+                        color: AppColors.text7Light,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildFieldLabel('Email Address'),
+                    const SizedBox(height: 8),
+                    _buildTextField(
+                      controller: emailController,
+                      hintText: 'you@example.com',
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    if (modalErrorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      _buildErrorBanner(modalErrorMessage!),
+                    ],
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: isSubmitting ? null : submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.eLearningBtnColor1,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        child: isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                'Send Reset Email',
+                                style: AppTextStyles.normal600(
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    emailController.dispose();
+  }
+
+  Future<void> _showForgotPasswordSuccessModal(String email) async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE6F4EA),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    size: 36,
+                    color: Color(0xFF2E7D32),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Email Sent',
+                  style: AppTextStyles.normal700(
+                    fontSize: 20,
+                    color: AppColors.text4Light,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'A password reset email has been sent to $email.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.normal400(
+                    fontSize: 14,
+                    color: AppColors.text7Light,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: Text(
+                      'OK',
+                      style: AppTextStyles.normal600(
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   String _deriveNameFromEmail(String email) {
     if (email.isEmpty) return 'User';
     final part = email.split('@').first.replaceAll('.', ' ').trim();
@@ -218,6 +459,10 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '${date.year}-$month-$day';
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,}$').hasMatch(email);
   }
 
   String _mapAuthError(String error) {
@@ -263,7 +508,8 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
 
   @override
   Widget build(BuildContext context) {
-    final contentWidth = MediaQuery.of(context).size.width.clamp(0, 420.0).toDouble();
+    final contentWidth =
+        MediaQuery.of(context).size.width.clamp(0, 420.0).toDouble();
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
@@ -389,72 +635,72 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
   }
 
   Widget _buildTabSwitcher() {
-  return Container(
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF2F4F7),
-      borderRadius: BorderRadius.circular(30),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              _tabController.animateTo(0);
-              setState(() {});
-            },
-            child: Container(
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _tabController.index == 0
-                    ? AppColors.eLearningBtnColor1
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Text(
-                'Login',
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F4F7),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                _tabController.animateTo(0);
+                setState(() {});
+              },
+              child: Container(
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
                   color: _tabController.index == 0
-                      ? Colors.white
-                      : AppColors.text7Light,
+                      ? AppColors.eLearningBtnColor1
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Text(
+                  'Login',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: _tabController.index == 0
+                        ? Colors.white
+                        : AppColors.text7Light,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              _tabController.animateTo(1);
-              setState(() {});
-            },
-            child: Container(
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _tabController.index == 1
-                    ? AppColors.eLearningBtnColor1
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Text(
-                'Sign Up',
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                _tabController.animateTo(1);
+                setState(() {});
+              },
+              child: Container(
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
                   color: _tabController.index == 1
-                      ? Colors.white
-                      : AppColors.text7Light,
+                      ? AppColors.eLearningBtnColor1
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Text(
+                  'Sign Up',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: _tabController.index == 1
+                        ? Colors.white
+                        : AppColors.text7Light,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildGoogleButton() {
     return SizedBox(
@@ -546,6 +792,24 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
             },
           ),
         ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: _showForgotPasswordModal,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.only(top: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              'Forgot password?',
+              style: AppTextStyles.normal600(
+                fontSize: 13,
+                color: AppColors.eLearningBtnColor1,
+              ),
+            ),
+          ),
+        ),
         const SizedBox(height: 20),
         _buildPrimaryButton(
           label: _isLoading ? 'Signing in...' : 'Sign In',
@@ -559,35 +823,36 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Column(  // This stays as Column
-        children: [
-          // Remove Expanded here
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildFieldLabel('First Name'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: _signupFirstNameController,
-                hintText: 'John',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),  // Changed from width to height
-          // Remove Expanded here too
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildFieldLabel('Last Name'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: _signupLastNameController,
-                hintText: 'Doe',
-              ),
-            ],
-          ),
-        ],
-      ),
+        Column(
+          // This stays as Column
+          children: [
+            // Remove Expanded here
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFieldLabel('First Name'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: _signupFirstNameController,
+                  hintText: 'John',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16), // Changed from width to height
+            // Remove Expanded here too
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFieldLabel('Last Name'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: _signupLastNameController,
+                  hintText: 'Doe',
+                ),
+              ],
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
         _buildFieldLabel('Email Address'),
         const SizedBox(height: 8),
@@ -624,13 +889,15 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                         final now = DateTime.now();
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: DateTime(now.year - 16, now.month, now.day),
+                          initialDate:
+                              DateTime(now.year - 16, now.month, now.day),
                           firstDate: DateTime(1950),
                           lastDate: DateTime(now.year - 3, now.month, now.day),
                         );
                         if (picked != null) {
                           setState(() {
-                            _signupBirthDateController.text = _formatDate(picked);
+                            _signupBirthDateController.text =
+                                _formatDate(picked);
                           });
                         }
                       },
@@ -658,8 +925,8 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
                         borderSide:
@@ -742,7 +1009,8 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.grey.shade300, width: 1.4),

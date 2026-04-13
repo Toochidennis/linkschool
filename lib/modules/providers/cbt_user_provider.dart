@@ -584,6 +584,25 @@ class CbtUserProvider with ChangeNotifier {
     }
   }
 
+  Future<void> forgotPassword({
+    required String email,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _userService.forgotPassword(email: email);
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = '$e';
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   // =========================================================================
   // ?? Phone check moved to UI
   // The modal prompting for phone/profile updates is now shown from UI
