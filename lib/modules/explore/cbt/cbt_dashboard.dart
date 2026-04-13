@@ -212,6 +212,11 @@ class _CBTDashboardState extends State<CBTDashboard>
       return true;
     }
 
+    final canTakeTestLocally = await _subscriptionService.canTakeTest();
+    if (canTakeTestLocally) {
+      return true;
+    }
+
     return await _showPlansAndReturn();
   }
 
@@ -453,11 +458,18 @@ class _CBTDashboardState extends State<CBTDashboard>
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute(builder: (_) => const CbtPlansScreen()),
     );
+    if (result == 'continue_free_trial') {
+      return true;
+    }
     if (result == 'continue_ads') {
       await _subscriptionService.setContinueWithAds(true);
       return true;
     }
     if (result != true) return false;
+
+    if (cbtUserProvider.isOnFreeTrial) {
+      return true;
+    }
 
     final userId = cbtUserProvider.currentUser?.id;
     if (userId == null) return false;
@@ -534,16 +546,32 @@ class _CBTDashboardState extends State<CBTDashboard>
 
           _wasLoading = loading;
 
-          return Skeletonizer(
-            enabled: provider.isLoading,
-            child: Container(
-              color: AppColors.backgroundLight,
-              // decoration: Constants.customBoxDecoration(context),
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: _buildSlivers(provider),
+          return Stack(
+            children: [
+              Skeletonizer(
+                enabled: provider.isLoading,
+                child: Container(
+                  color: AppColors.backgroundLight,
+                  // decoration: Constants.customBoxDecoration(context),
+                  child: CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: _buildSlivers(provider),
+                  ),
+                ),
               ),
-            ),
+              if (_isCheckingSubscription)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           );
         },
       ),
@@ -808,16 +836,6 @@ class _CBTDashboardState extends State<CBTDashboard>
                       ),
                     ),
                   ),
-
-                  if (_isCheckingSubscription)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        child: const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -867,10 +885,6 @@ class _CBTDashboardState extends State<CBTDashboard>
     if (_isHandlingBoardTap) return;
     _isHandlingBoardTap = true;
     try {
-      final isAuthenticated = await _ensureAuthenticated();
-      if (!isAuthenticated || !mounted) return;
-
-      // Check subscription asynchronously
       final canProceed = await _checkSubscriptionBeforeTest();
       if (!canProceed || !mounted) return;
 

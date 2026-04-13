@@ -436,7 +436,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       if (_trialActionState == _TrialActionState.continueFreeTrial) {
         await CbtSubscriptionService().setAdMode('free_trial');
         if (mounted) {
-          Navigator.of(context).pop(true);
+          Navigator.of(context).pop('continue_free_trial');
         }
         return;
       }
