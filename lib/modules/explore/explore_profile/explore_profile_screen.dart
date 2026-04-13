@@ -574,8 +574,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
             ),
           ],
 
-          // Payment Button (only show when the user has no active CBT access)
-          if (subscriptionStatus['hasValidLicense'] != true) ...[
+          // Show subscribe action when trial is active or access is no longer valid.
+          if (!hasValidLicense || isFreeTrial) ...[
             const SizedBox(height: 16),
             Container(
               width: double.infinity,
@@ -668,11 +668,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
               text,
               style: emphasize
                   ? AppTextStyles.normal700(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: color,
                     )
-                  : AppTextStyles.normal500(
-                      fontSize: 13,
+                  : AppTextStyles.normal700(
+                      fontSize: 14,
                       color: color,
                     ),
             ),

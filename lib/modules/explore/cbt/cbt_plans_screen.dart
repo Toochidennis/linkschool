@@ -40,8 +40,9 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   bool _isStartingTrial = false;
   bool _isOpeningPaymentDialog = false;
   bool _didScheduleAutoClose = false;
+  bool _isRefreshingExpiredTrial = false;
   _TrialActionState _trialActionState = _TrialActionState.startTrial;
-  int? _remainingTrialDays;
+  Duration? _remainingTrialDuration;
   Timer? _trialCountdownTimer;
 
   @override
@@ -111,14 +112,11 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                   ),
                 ),
                 if (!shouldHidePlansScreen) ...[
-                  if (_buildTrialStatusText(cbtUserProvider)
-                      case final statusText?)
+                  if (_buildTrialStatusBanner(cbtUserProvider)
+                      case final statusBanner?)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                      child: _buildStatusBanner(
-                        text: statusText,
-                        isExpired: _isTrialExpired(cbtUserProvider),
-                      ),
+                      child: statusBanner,
                     ),
                 ],
                 Expanded(
@@ -352,7 +350,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       setState(() {
         _isLoadingTrial = false;
         _trialActionState = initialState;
-        _remainingTrialDays = _remainingDaysFor(userProvider);
+        _remainingTrialDuration = _remainingDurationFor(userProvider);
       });
     }
     _syncTrialCountdown(userProvider);
@@ -371,7 +369,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         if (mounted) {
           setState(() {
             _trialActionState = refreshedState;
-            _remainingTrialDays = _remainingDaysFor(userProvider);
+            _remainingTrialDuration = _remainingDurationFor(userProvider);
           });
         }
         _syncTrialCountdown(userProvider);
@@ -529,25 +527,36 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         userProvider.licenseReason == 'expired';
   }
 
-  String? _buildTrialStatusText(CbtUserProvider userProvider) {
+  Widget? _buildTrialStatusBanner(CbtUserProvider userProvider) {
     if (userProvider.isOnFreeTrial) {
-      final daysLeft = _remainingTrialDays ?? _remainingDaysFor(userProvider);
-      if (daysLeft != null) {
-        if (daysLeft <= 0) {
-          return 'Free trial ends today';
-        }
-        final dayLabel = daysLeft == 1 ? 'day' : 'days';
-        return 'Free trial ends in $daysLeft $dayLabel';
+      final remaining =
+          _remainingTrialDuration ?? _remainingDurationFor(userProvider);
+      if (remaining != null) {
+        return _buildStatusBanner(
+          isExpired: false,
+          title: 'Your free trial ends in',
+          countdownDuration:
+              remaining <= Duration.zero ? Duration.zero : remaining,
+        );
       }
-      return 'Free trial is active';
+      return _buildStatusBanner(
+        isExpired: false,
+        title: 'Your free trial ends in',
+      );
     }
 
     if (_isTrialExpired(userProvider)) {
       final expiresAt = _parseLicenseDate(userProvider.licenseExpiresAt);
       if (expiresAt != null) {
-        return 'Free trial expired on ${_formatDate(expiresAt)}';
+        return _buildStatusBanner(
+          isExpired: true,
+          title: 'Free trial expired on ${_formatDate(expiresAt)}',
+        );
       }
-      return 'Free trial expired';
+      return _buildStatusBanner(
+        isExpired: true,
+        title: 'Free trial expired',
+      );
     }
 
     return null;
@@ -562,17 +571,20 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     }
 
     _trialCountdownTimer =
-        Timer.periodic(const Duration(minutes: 1), (_) async {
+        Timer.periodic(const Duration(seconds: 1), (_) async {
       if (!mounted) return;
 
-      final nextRemainingDays = _remainingDaysFor(userProvider);
-      if (nextRemainingDays != _remainingTrialDays) {
+      final nextRemainingDuration = _remainingDurationFor(userProvider);
+      if (nextRemainingDuration != _remainingTrialDuration) {
         setState(() {
-          _remainingTrialDays = nextRemainingDays;
+          _remainingTrialDuration = nextRemainingDuration;
         });
       }
 
-      if (nextRemainingDays == 0) {
+      if ((nextRemainingDuration == null ||
+              nextRemainingDuration <= Duration.zero) &&
+          !_isRefreshingExpiredTrial) {
+        _isRefreshingExpiredTrial = true;
         await userProvider.syncLicenseStatus(forceRefresh: true);
         if (!mounted) return;
         setState(() {
@@ -582,19 +594,20 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
             licenseSource: userProvider.licenseSource,
             licenseReason: userProvider.licenseReason,
           );
-          _remainingTrialDays = _remainingDaysFor(userProvider);
+          _remainingTrialDuration = _remainingDurationFor(userProvider);
         });
+        _isRefreshingExpiredTrial = false;
         _syncTrialCountdown(userProvider);
       }
     });
   }
 
-  int? _remainingDaysFor(CbtUserProvider userProvider) {
+  Duration? _remainingDurationFor(CbtUserProvider userProvider) {
     final expiry = _parseLicenseDate(userProvider.licenseExpiresAt);
     if (expiry == null) return null;
     final difference = expiry.difference(DateTime.now());
-    if (difference.isNegative) return 0;
-    return difference.inHours <= 24 ? 1 : (difference.inHours / 24).ceil();
+    if (difference.isNegative) return Duration.zero;
+    return difference;
   }
 
   DateTime? _parseLicenseDate(String? value) {
@@ -623,8 +636,9 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   }
 
   Widget _buildStatusBanner({
-    required String text,
     required bool isExpired,
+    required String title,
+    Duration? countdownDuration,
   }) {
     final backgroundColor =
         isExpired ? const Color(0x33FFB4B4) : const Color(0x1FFFFFFF);
@@ -634,19 +648,88 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
       ),
-      child: Text(
-        text,
-        style: AppTextStyles.normal600(
-          fontSize: 14,
-          color: Colors.white,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.normal600(
+              fontSize: 14,
+              color: Colors.white,
+            ),
+          ),
+          if (countdownDuration != null) ...[
+            const SizedBox(height: 10),
+            _buildCountdownBlocks(countdownDuration),
+          ],
+        ],
       ),
+    );
+  }
+
+  Widget _buildCountdownBlocks(Duration duration) {
+    final totalSeconds = duration.inSeconds;
+    final days = totalSeconds ~/ Duration.secondsPerDay;
+    final hours =
+        (totalSeconds % Duration.secondsPerDay) ~/ Duration.secondsPerHour;
+    final minutes =
+        (totalSeconds % Duration.secondsPerHour) ~/ Duration.secondsPerMinute;
+    final seconds = totalSeconds % Duration.secondsPerMinute;
+
+    final items = <(String value, String label)>[
+      (days.toString().padLeft(2, '0'), 'Days'),
+      (hours.toString().padLeft(2, '0'), 'Hours'),
+      (minutes.toString().padLeft(2, '0'), 'Minutes'),
+      (seconds.toString().padLeft(2, '0'), 'Seconds'),
+    ];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: items.map((item) {
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  width: 1.4,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.$1,
+                    style: AppTextStyles.normal700(
+                      fontSize: 22,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    item.$2,
+                    style: AppTextStyles.normal600(
+                      fontSize: 11,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -663,7 +746,7 @@ class _PlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -694,7 +777,7 @@ class _PlanCard extends StatelessWidget {
                 color: AppColors.text4Light,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
@@ -706,7 +789,7 @@ class _PlanCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _buildFeaturesList(plan.features),

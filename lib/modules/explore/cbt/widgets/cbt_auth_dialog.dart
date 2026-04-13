@@ -307,7 +307,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                     Text(
                       'Enter the email address linked to your account and we will send password reset instructions.',
                       style: AppTextStyles.normal400(
-                        fontSize: 14,
+                        fontSize: 15,
                         color: AppColors.text7Light,
                       ),
                     ),
@@ -350,7 +350,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                             : Text(
                                 'Send Reset Email',
                                 style: AppTextStyles.normal600(
-                                  fontSize: 15,
+                                  fontSize: 16,
                                   color: Colors.white,
                                 ),
                               ),
@@ -410,7 +410,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                   'A password reset email has been sent to $email.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.normal400(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: AppColors.text7Light,
                   ),
                 ),
@@ -430,7 +430,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                     child: Text(
                       'OK',
                       style: AppTextStyles.normal600(
-                        fontSize: 15,
+                        fontSize: 16,
                         color: Colors.white,
                       ),
                     ),
@@ -496,13 +496,40 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
   }
 
   String? _extractBackendMessage(String error) {
-    final trimmed = error.replaceFirst('Exception: ', '');
-    if (trimmed.contains('"message"')) {
-      final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(trimmed);
+    var message = error.trim();
+    while (message.startsWith('Exception: ')) {
+      message = message.replaceFirst('Exception: ', '').trim();
+    }
+
+    if (message.contains('"message"')) {
+      final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(message);
       if (match != null) {
         return match.group(1);
       }
     }
+
+    const prefixes = [
+      'Error logging in:',
+      'Error signing up:',
+      'Error sending password reset email:',
+      'Error creating user:',
+      'Failed to login:',
+      'Failed to sign up:',
+      'Failed to create user:',
+      'Failed to send password reset email:',
+    ];
+
+    for (final prefix in prefixes) {
+      final index = message.lastIndexOf(prefix);
+      if (index == -1) continue;
+
+      final extracted =
+          message.substring(index + prefix.length).replaceFirst(':', '').trim();
+      if (extracted.isNotEmpty && int.tryParse(extracted) == null) {
+        return extracted;
+      }
+    }
+
     return null;
   }
 
@@ -548,7 +575,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                     Text(
                       'Welcome back! Sign in with Google or your email and password.',
                       style: AppTextStyles.normal400(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: AppColors.text7Light,
                       ),
                     ),
@@ -661,7 +688,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                 child: Text(
                   'Login',
                   style: AppTextStyles.normal600(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: _tabController.index == 0
                         ? Colors.white
                         : AppColors.text7Light,
@@ -688,7 +715,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                 child: Text(
                   'Sign Up',
                   style: AppTextStyles.normal600(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: _tabController.index == 1
                         ? Colors.white
                         : AppColors.text7Light,
@@ -735,7 +762,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                   Text(
                     'Continue with Google',
                     style: AppTextStyles.normal600(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: AppColors.text4Light,
                     ),
                   ),
@@ -753,7 +780,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
         Text(
           text,
           style: AppTextStyles.normal400(
-            fontSize: 12,
+            fontSize: 14,
             color: AppColors.text7Light,
           ),
         ),
@@ -804,7 +831,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
             child: Text(
               'Forgot password?',
               style: AppTextStyles.normal600(
-                fontSize: 13,
+                fontSize: 14,
                 color: AppColors.eLearningBtnColor1,
               ),
             ),
@@ -915,6 +942,10 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedGender,
+                    style: AppTextStyles.normal500(
+                      fontSize: 16,
+                      color: AppColors.text4Light,
+                    ),
                     items: const [
                       DropdownMenuItem(value: 'male', child: Text('Male')),
                       DropdownMenuItem(value: 'female', child: Text('Female')),
@@ -926,7 +957,9 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
                         borderSide:
@@ -982,7 +1015,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
     return Text(
       label,
       style: AppTextStyles.normal600(
-        fontSize: 13,
+        fontSize: 15,
         color: AppColors.text4Light,
       ),
     );
@@ -1001,16 +1034,22 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
       keyboardType: keyboardType,
       obscureText: obscureText,
       readOnly: readOnly,
+      style: AppTextStyles.normal500(
+        fontSize: 16,
+        color: AppColors.text4Light,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: AppTextStyles.normal400(
-          fontSize: 14,
+          fontSize: 16,
           color: AppColors.text8Light,
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.grey.shade300, width: 1.4),
@@ -1073,7 +1112,7 @@ class _CbtAuthDialogState extends State<CbtAuthDialog>
             child: Text(
               message,
               style: AppTextStyles.normal500(
-                fontSize: 12,
+                fontSize: 14,
                 color: const Color(0xFFE02424),
               ),
             ),

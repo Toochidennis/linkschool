@@ -121,6 +121,18 @@ class _CBTDashboardState extends State<CBTDashboard>
       if (userId == null) return false;
 
       try {
+        await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+        if (!mounted) return false;
+
+        if (cbtUserProvider.hasPaid) {
+          return true;
+        }
+
+        if (cbtUserProvider.isOnFreeTrial) {
+          if (allowAdsOverride) return true;
+          return await _showPlansAndReturn();
+        }
+
         // Cache-first license check
         final cachedStatus =
             await _licenseService.getCachedLicenseStatus(userId);
@@ -158,6 +170,18 @@ class _CBTDashboardState extends State<CBTDashboard>
       final userId = cbtUserProvider.currentUser?.id;
       if (userId == null) return false;
 
+      await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+      if (!mounted) return false;
+
+      if (cbtUserProvider.hasPaid) {
+        return true;
+      }
+
+      if (cbtUserProvider.isOnFreeTrial) {
+        if (allowAdsOverride) return true;
+        return await _showPlansAndReturn();
+      }
+
       // Check license after fresh signup
       final cachedStatus = await _licenseService.getCachedLicenseStatus(userId);
       if (cachedStatus == true) return true;
@@ -185,11 +209,6 @@ class _CBTDashboardState extends State<CBTDashboard>
 
     final hasPaidLocally = await _subscriptionService.hasPaid();
     if (hasPaidLocally) {
-      return true;
-    }
-
-    final canTakeTestLocally = await _subscriptionService.canTakeTest();
-    if (canTakeTestLocally) {
       return true;
     }
 
@@ -427,7 +446,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     if (cbtUserProvider.currentUser?.id != null) {
       await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
     }
-    if (cbtUserProvider.hasPaid || cbtUserProvider.isOnFreeTrial) {
+    if (cbtUserProvider.hasPaid) {
       return true;
     }
 

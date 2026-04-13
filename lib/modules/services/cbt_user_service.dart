@@ -7,6 +7,33 @@ class CbtUserService {
   final String baseUrl = 'https://linkskool.net/api/v3/public/cbt/users';
   final apiKey = EnvConfig.apiKey;
 
+  String? _extractResponseMessage(String responseBody) {
+    final trimmed = responseBody.trim();
+    if (trimmed.isEmpty) return null;
+
+    try {
+      final decoded = json.decode(trimmed);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message']?.toString().trim();
+        if (message != null && message.isNotEmpty) {
+          return message;
+        }
+
+        final data = decoded['data'];
+        if (data is Map<String, dynamic>) {
+          final dataMessage = data['message']?.toString().trim();
+          if (dataMessage != null && dataMessage.isNotEmpty) {
+            return dataMessage;
+          }
+        }
+      }
+    } catch (_) {
+      return null;
+    }
+
+    return null;
+  }
+
   Future<CbtUserModel?> fetchUserByEmail(String userEmail) async {
     try {
       if (apiKey.isEmpty) {
@@ -71,7 +98,10 @@ class CbtUserService {
               "Failed to create user: ${decoded['message'] ?? 'Unknown error'}");
         }
       } else {
-        throw Exception("Failed to create user: ${response.statusCode}");
+        throw Exception(
+          "Failed to create user: "
+          "${_extractResponseMessage(response.body) ?? response.statusCode}",
+        );
       }
     } catch (e) {
       throw Exception("Error creating user: $e");
@@ -122,7 +152,10 @@ class CbtUserService {
             "Failed to sign up: ${decoded['message'] ?? 'Unknown error'}");
       }
 
-      throw Exception("Failed to sign up: ${response.statusCode}");
+      throw Exception(
+        "Failed to sign up: "
+        "${_extractResponseMessage(response.body) ?? response.statusCode}",
+      );
     } catch (e) {
       throw Exception("Error signing up: $e");
     }
@@ -162,7 +195,10 @@ class CbtUserService {
             "Failed to login: ${decoded['message'] ?? 'Unknown error'}");
       }
 
-      throw Exception("Failed to login: ${response.statusCode}");
+      throw Exception(
+        "Failed to login: "
+        "${_extractResponseMessage(response.body) ?? response.statusCode}",
+      );
     } catch (e) {
       throw Exception("Error logging in: $e");
     }
@@ -205,7 +241,9 @@ class CbtUserService {
       }
 
       throw Exception(
-        decoded?['message'] ?? 'Failed to send password reset email.',
+        decoded?['message'] ??
+            _extractResponseMessage(response.body) ??
+            'Failed to send password reset email.',
       );
     } catch (e) {
       throw Exception("Error sending password reset email: $e");
