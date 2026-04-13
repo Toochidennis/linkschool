@@ -660,8 +660,8 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppTextStyles.normal600(
-              fontSize: 14,
+            style: AppTextStyles.normal700(
+              fontSize: isExpired ? 18 : 16,
               color: Colors.white,
             ),
           ),
@@ -746,7 +746,7 @@ class _PlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

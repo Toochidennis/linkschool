@@ -99,8 +99,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     return true;
   }
 
-  Future<bool> _ensureAuthenticated({bool allowAds = false}) async {
-    var allowAdsOverride = allowAds;
+  Future<bool> _ensureAuthenticated() async {
     // ✅ Portal login takes priority — skips license check entirely
     final portalLoggedIn = await _handlePortalLogin();
     if (portalLoggedIn) return true;
@@ -129,7 +128,11 @@ class _CBTDashboardState extends State<CBTDashboard>
         }
 
         if (cbtUserProvider.isOnFreeTrial) {
-          if (allowAdsOverride) return true;
+          return await _showPlansAndReturn();
+        }
+
+        final licenseReason = cbtUserProvider.licenseReason;
+        if (licenseReason == 'trial_expired' || licenseReason == 'expired') {
           return await _showPlansAndReturn();
         }
 
@@ -138,7 +141,6 @@ class _CBTDashboardState extends State<CBTDashboard>
             await _licenseService.getCachedLicenseStatus(userId);
         if (cachedStatus == true) return true;
         if (cachedStatus == false) {
-          if (allowAdsOverride) return true;
           return await _showPlansAndReturn();
         }
 
@@ -146,15 +148,12 @@ class _CBTDashboardState extends State<CBTDashboard>
         final isActive = await _licenseService.isLicenseActive(userId: userId);
         if (!mounted) return false;
         if (!isActive) {
-          if (allowAdsOverride) return true;
           return await _showPlansAndReturn();
         }
         return true;
       } catch (e) {
         if (!mounted) return false;
-        return await _resolveEntitlementFallback(
-          allowAds: allowAdsOverride,
-        );
+        return await _resolveEntitlementFallback();
       }
     }
 
@@ -178,7 +177,11 @@ class _CBTDashboardState extends State<CBTDashboard>
       }
 
       if (cbtUserProvider.isOnFreeTrial) {
-        if (allowAdsOverride) return true;
+        return await _showPlansAndReturn();
+      }
+
+      final licenseReason = cbtUserProvider.licenseReason;
+      if (licenseReason == 'trial_expired' || licenseReason == 'expired') {
         return await _showPlansAndReturn();
       }
 
@@ -186,14 +189,12 @@ class _CBTDashboardState extends State<CBTDashboard>
       final cachedStatus = await _licenseService.getCachedLicenseStatus(userId);
       if (cachedStatus == true) return true;
       if (cachedStatus == false) {
-        if (allowAdsOverride) return true;
         return await _showPlansAndReturn();
       }
 
       final isActive = await _licenseService.isLicenseActive(userId: userId);
       if (!mounted) return false;
       if (!isActive) {
-        if (allowAdsOverride) return true;
         return await _showPlansAndReturn();
       }
       return true;
@@ -202,11 +203,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     return false;
   }
 
-  Future<bool> _resolveEntitlementFallback({required bool allowAds}) async {
-    if (allowAds) {
-      return true;
-    }
-
+  Future<bool> _resolveEntitlementFallback() async {
     final hasPaidLocally = await _subscriptionService.hasPaid();
     if (hasPaidLocally) {
       return true;
@@ -431,8 +428,7 @@ class _CBTDashboardState extends State<CBTDashboard>
     setState(() => _isCheckingSubscription = true);
 
     try {
-      final allowAds = await _subscriptionService.shouldContinueWithAds();
-      final authenticated = await _ensureAuthenticated(allowAds: allowAds);
+      final authenticated = await _ensureAuthenticated();
       if (!authenticated || !mounted) return false;
       return true;
     } catch (e) {

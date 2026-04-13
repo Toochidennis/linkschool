@@ -46,24 +46,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (widget.isActive) {
-      _loadAppOpenAd();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant ExploreDashboard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.isActive && !oldWidget.isActive) {
-      _loadAppOpenAd();
-      return;
-    }
-
-    if (!widget.isActive && oldWidget.isActive) {
-      _shouldShowAdOnResume = false;
-      _pendingAppOpenAfterResume = false;
-    }
+    _loadAppOpenAd();
   }
 
   @override
@@ -79,9 +62,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
   }
 
   void _loadAppOpenAd() {
-    if (!widget.isActive ||
-        !_hasExploreAppOpenAdUnitId ||
-        _isAppOpenAdLoading) {
+    if (!_hasExploreAppOpenAdUnitId || _isAppOpenAdLoading) {
       return;
     }
     _isAppOpenAdLoading = true;
@@ -98,9 +79,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
           setState(() {
             _isAppOpenAdLoaded = true;
           });
-          if (widget.isActive &&
-              _pendingAppOpenAfterResume &&
-              !_isAppOpenAdShowing) {
+          if (_pendingAppOpenAfterResume && !_isAppOpenAdShowing) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               _showAppOpenAd();
@@ -121,7 +100,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
 
   void _showAppOpenAd() {
     final ad = _appOpenAd;
-    if (!widget.isActive || _isAppOpenAdShowing) return;
+    if (_isAppOpenAdShowing) return;
     if (!_isAppOpenAdLoaded || ad == null) {
       _pendingAppOpenAfterResume = true;
       _loadAppOpenAd();
@@ -172,12 +151,6 @@ class _ExploreDashboardState extends State<ExploreDashboard>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-
-    if (!widget.isActive) {
-      _shouldShowAdOnResume = false;
-      _pendingAppOpenAfterResume = false;
-      return;
-    }
 
     if (state == AppLifecycleState.paused) {
       _shouldShowAdOnResume = true;
