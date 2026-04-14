@@ -9,6 +9,8 @@ import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/cbt/discussion_ad_manager.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:provider/provider.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/explore/cbt/cbt_updates_service.dart';
 
 const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
@@ -823,6 +825,42 @@ class CbtDiscussionUpdateItem {
   });
 }
 
+class _CbtDiscussionComment {
+  final int id;
+  final int updateId;
+  final int userId;
+  final String username;
+  final String body;
+  final String createdAt;
+
+  const _CbtDiscussionComment({
+    required this.id,
+    required this.updateId,
+    required this.userId,
+    required this.username,
+    required this.body,
+    required this.createdAt,
+  });
+
+  factory _CbtDiscussionComment.fromJson(Map<String, dynamic> json) {
+    return _CbtDiscussionComment(
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id']}') ?? 0,
+      updateId: json['update_id'] is int
+          ? json['update_id'] as int
+          : int.tryParse('${json['update_id']}') ?? 0,
+      userId: json['user_id'] is int
+          ? json['user_id'] as int
+          : int.tryParse('${json['user_id']}') ?? 0,
+      username: json['username'] is String ? json['username'] as String : '',
+      body: json['body'] is String ? json['body'] as String : '',
+      createdAt:
+          json['created_at'] is String ? json['created_at'] as String : '',
+    );
+  }
+}
+
 class CbtDiscussionDetailScreen extends StatefulWidget {
   final int updateId;
 
@@ -839,10 +877,22 @@ class CbtDiscussionDetailScreen extends StatefulWidget {
 class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
     with WidgetsBindingObserver {
   final CbtUpdatesService _updatesService = CbtUpdatesService();
+  final ScrollController _scrollController = ScrollController();
   bool _shouldShowAdOnResume = false;
   bool _isNavigatingAway = false;
   bool _isHandlingBackNavigation = false;
   bool _isLoadingDetail = false;
+
+  // Comments state
+  final List<_CbtDiscussionComment> _comments = [];
+  int _commentsPage = 1;
+  int _commentsLastPage = 1;
+  bool _hasNextCommentPage = false;
+  bool _isLoadingComments = false;
+  int _totalComments = 0;
+
+  int get _displayCommentCount =>
+      _totalComments > 0 ? _totalComments : _activeUpdate.commentsCount;
   bool _allowRoutePop = false;
   late CbtDiscussionUpdateItem _activeUpdate;
 
@@ -851,9 +901,11 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
     super.initState();
     _activeUpdate = _fallbackUpdateForId(widget.updateId);
     WidgetsBinding.instance.addObserver(this);
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       DiscussionAdManager.instance.preloadAll(context);
       _fetchDiscussionUpdateDetail();
+      _fetchComments(reset: true);
     });
   }
 
@@ -955,7 +1007,189 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   }
 
   Future<void> _refreshDiscussionDetail() {
-    return _fetchDiscussionUpdateDetail();
+    return Future.wait([
+      _fetchDiscussionUpdateDetail(),
+      _fetchComments(reset: true),
+    ]);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300 && _hasNextCommentPage) {
+      _fetchComments();
+    }
+  }
+
+  Future<void> _fetchComments({bool reset = false}) async {
+    if (_isLoadingComments) return;
+    final nextPage = reset ? 1 : _commentsPage + 1;
+    if (!reset && nextPage > _commentsLastPage) return;
+
+    setState(() => _isLoadingComments = true);
+
+    final response = await _updatesService.fetchComments(
+      widget.updateId,
+      page: nextPage,
+      limit: 20,
+    );
+
+    if (!mounted) return;
+
+    if (!response.success) {
+      setState(() => _isLoadingComments = false);
+      return;
+    }
+
+    final root = _asMap(response.data ?? response.rawData ?? {});
+    final dataObj = _asMap(root['data']);
+    final items = _asList(dataObj['data']);
+    final pagination = _asMap(dataObj['pagination']);
+
+    final parsed = items
+        .whereType<Map>()
+        .map((e) => _CbtDiscussionComment.fromJson(_asMap(e)))
+        .toList();
+
+    setState(() {
+      if (reset) {
+        _comments
+          ..clear()
+          ..addAll(parsed);
+      } else {
+        _comments.addAll(parsed);
+      }
+      _commentsPage = _asInt(pagination['current_page']) ?? nextPage;
+      _commentsLastPage = _asInt(pagination['last_page']) ?? _commentsPage;
+      _totalComments = _asInt(pagination['total']) ?? _comments.length;
+      _hasNextCommentPage =
+          pagination['has_next'] == true || _commentsPage < _commentsLastPage;
+      _isLoadingComments = false;
+    });
+  }
+
+  void _showComposeCommentSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _CbtCommentComposeSheet(
+        onSend: _postComment,
+      ),
+    );
+  }
+
+  Future<String?> _postComment(String text) async {
+    final trimmedText = text.trim();
+    if (trimmedText.isEmpty) {
+      return 'Please enter a comment before posting.';
+    }
+
+    final cbtUser =
+        Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+    final userId = cbtUser?.id?.toString() ?? '';
+    final username = cbtUser?.displayName ?? 'user';
+
+    final response = await _updatesService.postComment(
+      _activeUpdate.id,
+      body: trimmedText,
+      userId: userId,
+      username: username,
+    );
+
+    if (!mounted) {
+      return response.success ? null : response.message;
+    }
+
+    if (!response.success) {
+      return response.message;
+    }
+
+    await _fetchComments(reset: true);
+    await _fetchDiscussionUpdateDetail();
+
+    if (!mounted) return null;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Comment posted successfully.')),
+    );
+    return null;
+  }
+
+  Widget _buildCommentTile(_CbtDiscussionComment comment, int index) {
+    final initials = comment.username.trim().isNotEmpty
+        ? comment.username.trim()[0].toUpperCase()
+        : '?';
+    final dateLabel = _formatDiscussionDate(comment.createdAt);
+    return Column(
+      children: [
+        if (index > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor:
+                    _activeUpdate.accentColor.withValues(alpha: 0.12),
+                child: Text(
+                  initials,
+                  style: AppTextStyles.normal700(
+                    fontSize: 14,
+                    color: _activeUpdate.accentColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            comment.username,
+                            style: AppTextStyles.normal600(
+                              fontSize: 13,
+                              color: AppColors.text4Light,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (dateLabel.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            dateLabel,
+                            style: AppTextStyles.normal400(
+                              fontSize: 11,
+                              color: AppColors.text7Light,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      comment.body,
+                      style: AppTextStyles.normal500(
+                        fontSize: 14,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   CbtDiscussionUpdateItem? _fromServer(
@@ -1091,6 +1325,9 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
   }
 
@@ -1148,9 +1385,36 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
       },
       child: Scaffold(
         backgroundColor: Colors.white,
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _openPracticeSubjectSelection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.eLearningBtnColor1,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  'Start Practice',
+                  style: AppTextStyles.normal700(
+                    fontSize: 15,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
         body: RefreshIndicator(
           onRefresh: _refreshDiscussionDetail,
           child: CustomScrollView(
+            controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             slivers: [
               SliverAppBar(
@@ -1244,10 +1508,11 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
                   ),
                 ),
               ),
+
+              // ── Body + comment-count header ──────────────────────────────
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-                sliver: SliverFillRemaining(
-                  hasScrollBody: false,
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1284,9 +1549,7 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
                       else if (_isLoadingDetail)
                         const Padding(
                           padding: EdgeInsets.only(top: 12),
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
+                          child: Center(child: CircularProgressIndicator()),
                         )
                       else
                         Text(
@@ -1296,38 +1559,299 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
                             color: AppColors.text7Light,
                           ),
                         ),
-                      const Spacer(),
-                      SafeArea(
-                        top: false,
-                        minimum: const EdgeInsets.only(top: 18),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _openPracticeSubjectSelection,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.eLearningBtnColor1,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                      const SizedBox(height: 24),
+
+                      // Comment count row + compose button
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 18,
+                            color: AppColors.text7Light,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$_displayCommentCount '
+                            '${_displayCommentCount == 1 ? 'comment' : 'comments'}',
+                            style: AppTextStyles.normal600(
+                              fontSize: 14,
+                              color: AppColors.text4Light,
                             ),
-                            child: Text(
-                              'Start Practice',
-                              style: AppTextStyles.normal700(
-                                fontSize: 15,
-                                color: Colors.white,
+                          ),
+                          const Spacer(),
+                          InkWell(
+                            onTap: _showComposeCommentSheet,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.mode_comment_outlined,
+                                    size: 18,
+                                    color: update.accentColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Comment',
+                                    style: AppTextStyles.normal600(
+                                      fontSize: 13,
+                                      color: update.accentColor,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1),
                     ],
                   ),
                 ),
               ),
+
+              // ── Comments list ────────────────────────────────────────────
+              if (_isLoadingComments && _comments.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                )
+              else if (!_isLoadingComments && _comments.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 32,
+                    ),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 40,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'No comments yet.\nBe the first to comment!',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.normal500(
+                              fontSize: 14,
+                              color: AppColors.text7Light,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index == _comments.length) {
+                        if (_hasNextCommentPage) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }
+                      return _buildCommentTile(_comments[index], index);
+                    },
+                    childCount: _comments.length + 1,
+                  ),
+                ),
+
+              const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Compose comment bottom sheet ─────────────────────────────────────────────
+
+class _CbtCommentComposeSheet extends StatefulWidget {
+  final Future<String?> Function(String text) onSend;
+
+  const _CbtCommentComposeSheet({required this.onSend});
+
+  @override
+  State<_CbtCommentComposeSheet> createState() =>
+      _CbtCommentComposeSheetState();
+}
+
+class _CbtCommentComposeSheetState extends State<_CbtCommentComposeSheet> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  bool _isSubmitting = false;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Add a comment',
+              style: AppTextStyles.normal700(
+                fontSize: 16,
+                color: AppColors.text4Light,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              minLines: 3,
+              maxLines: 6,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                hintText: 'Write your comment…',
+                hintStyle: AppTextStyles.normal500(
+                  fontSize: 14,
+                  color: AppColors.text7Light,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF2563EB),
+                    width: 1.5,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _controller,
+                builder: (context, value, _) {
+                  final canSend =
+                      value.text.trim().isNotEmpty && !_isSubmitting;
+                  return ElevatedButton(
+                    onPressed: canSend
+                        ? () async {
+                            final navigator = Navigator.of(context);
+                            FocusScope.of(context).unfocus();
+                            setState(() {
+                              _isSubmitting = true;
+                              _errorText = null;
+                            });
+                            try {
+                              final errorMessage =
+                                  await widget.onSend(_controller.text.trim());
+                              if (!mounted) return;
+
+                              if (errorMessage == null) {
+                                navigator.pop();
+                                return;
+                              }
+
+                              setState(() => _errorText = errorMessage);
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isSubmitting = false);
+                              }
+                            }
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.eLearningBtnColor1,
+                      disabledBackgroundColor:
+                          AppColors.eLearningBtnColor1.withValues(alpha: 0.4),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            'Post Comment',
+                            style: AppTextStyles.normal600(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                  );
+                },
+              ),
+            ),
+            if (_errorText != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _errorText!,
+                style: AppTextStyles.normal500(
+                  fontSize: 13,
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
