@@ -118,7 +118,7 @@ class _GameInstructionsScreenState extends State<GameInstructionsScreen>
   }
 
   Future<void> _loadLeaderboardPreview() async {
-    final entries = await _leaderboardService.getEntries();
+    final entries = await _leaderboardService.getEntries(examTypeId: widget.examTypeId);
     if (!mounted) return;
     setState(() {
       _leaderboardEntries = entries.take(3).toList(growable: false);

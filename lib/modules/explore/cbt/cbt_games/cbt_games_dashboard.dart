@@ -103,7 +103,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
   Future<void> _loadDashboardData() async {
     final playerName = _resolvePlayerName();
-    final entries = await _leaderboardService.getEntries();
+    final entries = await _leaderboardService.getEntries(examTypeId: widget.examTypeId);
 
     if (!mounted) return;
 
@@ -220,7 +220,11 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const LeaderboardScreen(fromGameDashboard: true),
+        builder: (context) => LeaderboardScreen(
+          examTypeId: widget.examTypeId,
+          subjects: widget.subjects,
+          fromGameDashboard: true,
+        ),
       ),
     );
 

@@ -15,6 +15,7 @@ import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_session_controller.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:linkschool/modules/services/explore/gamify_leaderboard_service.dart';
 import 'package:provider/provider.dart';
@@ -288,19 +289,13 @@ class _GameTestScreenState extends State<GameTestScreen>
   Future<void> _saveScoreIfNeeded() async {
     if (_hasSavedScore) return;
     _hasSavedScore = true;
-    await _leaderboardService.saveEntry(
-      GamifyLeaderboardEntry(
-        playerName: _playerName(),
-        subject: widget.subject,
-        score: _score,
-        subjectScores: {
-          widget.subject: _score,
-        },
-        levelReached: _currentLevel,
-        correctAnswers: _correctAnswers,
-        totalAnswered: _totalAnsweredProgress(),
-        playedAt: DateTime.now(),
-      ),
+
+    await _leaderboardService.submitScoreIfHigher(
+      username: _playerName(),
+      examTypeId: widget.examTypeId,
+      courseId: widget.courseId,
+      courseName: widget.subject,
+      score: _score,
     );
   }
 
@@ -1064,7 +1059,13 @@ class _GameTestScreenState extends State<GameTestScreen>
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const LeaderboardScreen(fromGameDashboard: true),
+        builder: (context) => LeaderboardScreen(
+          examTypeId: widget.examTypeId,
+          subjects: <SubjectModel>[
+            SubjectModel(id: widget.courseId.toString(), name: widget.subject),
+          ],
+          fromGameDashboard: true,
+        ),
       ),
     );
   }
@@ -1091,8 +1092,14 @@ class _GameTestScreenState extends State<GameTestScreen>
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  const LeaderboardScreen(fromGameDashboard: true),
+              builder: (context) => LeaderboardScreen(
+                examTypeId: widget.examTypeId,
+                subjects: <SubjectModel>[
+                  SubjectModel(
+                      id: widget.courseId.toString(), name: widget.subject),
+                ],
+                fromGameDashboard: true,
+              ),
             ),
           );
         },
@@ -1472,6 +1479,10 @@ class _GameTestScreenState extends State<GameTestScreen>
                         isCorrect: isCorrect,
                         points: _pointsPerQuestion,
                         onClose: _closeAnswerPopup,
+                        questionText: question.questionText,
+                        selectedAnswerText: selectedAnswer != null
+                            ? question.options[selectedAnswer].text
+                            : '',
                         correctAnswerText:
                             question.options[question.correct.order].text,
                       ),
@@ -2548,12 +2559,16 @@ class _AnswerPopup extends StatefulWidget {
   final bool isCorrect;
   final int points;
   final VoidCallback onClose;
+  final String questionText;
+  final String selectedAnswerText;
   final String correctAnswerText;
 
   const _AnswerPopup({
     required this.isCorrect,
     required this.points,
     required this.onClose,
+    required this.questionText,
+    required this.selectedAnswerText,
     required this.correctAnswerText,
   });
 
@@ -2691,49 +2706,95 @@ class _AnswerPopupState extends State<_AnswerPopup>
                   ],
                 ),
 
-                // Correct answer box — only shown on wrong answers
-                if (!widget.isCorrect) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF86EFAC)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.lightbulb_rounded,
-                            color: Color(0xFF16A34A), size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontFamily: 'Urbanist',
-                                fontSize: 13,
-                                color: Color(0xFF166534),
-                              ),
-                              children: [
-                                const TextSpan(
-                                  text: 'Correct answer: ',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                TextSpan(
-                                  text: widget.correctAnswerText,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w700),
-                                ),
-                              ],
-                            ),
+                const SizedBox(height: 14),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Question',
+                        style: TextStyle(
+                          fontFamily: 'Urbanist',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Html(
+                        data: widget.questionText,
+                        style: {
+                          "body": Style(
+                            margin: Margins.zero,
+                            padding: HtmlPaddings.zero,
+                            fontSize: FontSize(13),
+                            color: const Color(0xFF1F2937),
+                            lineHeight: LineHeight(1.4),
+                          ),
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        widget.isCorrect ? 'Selected answer' : 'Your answer',
+                        style: const TextStyle(
+                          fontFamily: 'Urbanist',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Html(
+                        data: widget.selectedAnswerText,
+                        style: {
+                          "body": Style(
+                            margin: Margins.zero,
+                            padding: HtmlPaddings.zero,
+                            fontSize: FontSize(13),
+                            color: widget.isCorrect
+                                ? const Color(0xFF166534)
+                                : const Color(0xFF991B1B),
+                            lineHeight: LineHeight(1.4),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        },
+                      ),
+                      if (!widget.isCorrect) ...[
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Correct answer',
+                          style: TextStyle(
+                            fontFamily: 'Urbanist',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: Color(0xFF166534),
                           ),
                         ),
+                        const SizedBox(height: 6),
+                        Html(
+                          data: widget.correctAnswerText,
+                          style: {
+                            "body": Style(
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                              fontSize: FontSize(13),
+                              color: const Color(0xFF166534),
+                              lineHeight: LineHeight(1.4),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          },
+                        ),
                       ],
-                    ),
+                    ],
                   ),
-                ],
+                ),
 
                 const SizedBox(height: 16),
 
