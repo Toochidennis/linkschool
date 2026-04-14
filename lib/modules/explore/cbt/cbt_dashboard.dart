@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -68,6 +69,17 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool _isHandlingBoardTap = false;
   bool _shouldShowAdOnResume = false;
 
+  void _refreshLicenseInBackground(int userId) {
+    final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    unawaited(() async {
+      await _licenseService.refreshLicenseStatusInBackground(userId: userId);
+      if (!mounted) return;
+      await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+      if (!mounted) return;
+      setState(() {});
+    }());
+  }
+
   Future<bool> _handlePortalLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (!authProvider.isLoggedIn) return false;
@@ -120,37 +132,22 @@ class _CBTDashboardState extends State<CBTDashboard>
       if (userId == null) return false;
 
       try {
-        await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
+        final cachedStatus = await _licenseService.getCachedLicenseStatusForUse(userId);
+        if (cachedStatus != null) {
+          _refreshLicenseInBackground(userId);
+          if (cachedStatus.active) {
+            return true;
+          }
+          return await _showPlansAndReturn();
+        }
+
+        await cbtUserProvider.syncLicenseStatus(forceRefresh: true);
         if (!mounted) return false;
 
-        if (cbtUserProvider.hasPaid) {
+        if (cbtUserProvider.hasPaid || cbtUserProvider.isOnFreeTrial) {
           return true;
         }
-
-        if (cbtUserProvider.isOnFreeTrial) {
-          return await _showPlansAndReturn();
-        }
-
-        final licenseReason = cbtUserProvider.licenseReason;
-        if (licenseReason == 'trial_expired' || licenseReason == 'expired') {
-          return await _showPlansAndReturn();
-        }
-
-        // Cache-first license check
-        final cachedStatus =
-            await _licenseService.getCachedLicenseStatus(userId);
-        if (cachedStatus == true) return true;
-        if (cachedStatus == false) {
-          return await _showPlansAndReturn();
-        }
-
-        // Fresh license check
-        final isActive = await _licenseService.isLicenseActive(userId: userId);
-        if (!mounted) return false;
-        if (!isActive) {
-          return await _showPlansAndReturn();
-        }
-        return true;
+        return await _showPlansAndReturn();
       } catch (e) {
         if (!mounted) return false;
         return await _resolveEntitlementFallback();
@@ -424,8 +421,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   /// ⚡ OPTIMIZED: Non-blocking subscription check with cache and user data
   Future<bool> _checkSubscriptionBeforeTest() async {
     if (_isCheckingSubscription) return false;
-
-    setState(() => _isCheckingSubscription = true);
+    _isCheckingSubscription = true;
 
     try {
       final authenticated = await _ensureAuthenticated();
@@ -435,19 +431,14 @@ class _CBTDashboardState extends State<CBTDashboard>
       if (!mounted) return false;
       return await _showPlansAndReturn();
     } finally {
-      if (mounted) {
-        setState(() => _isCheckingSubscription = false);
-      }
+      _isCheckingSubscription = false;
     }
   }
 
   Future<bool> _showPlansAndReturn() async {
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
-    if (cbtUserProvider.currentUser?.id != null) {
-      await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
-    }
-    if (cbtUserProvider.hasPaid) {
+    if (cbtUserProvider.hasPaid || cbtUserProvider.isOnFreeTrial) {
       return true;
     }
 
@@ -555,18 +546,6 @@ class _CBTDashboardState extends State<CBTDashboard>
                   ),
                 ),
               ),
-              if (_isCheckingSubscription)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    ignoring: true,
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.18),
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                  ),
-                ),
             ],
           );
         },
@@ -944,11 +923,6 @@ class _CBTDashboardState extends State<CBTDashboard>
           },
           onChallenge: () async {
             Navigator.pop(context);
-
-            // Challenge now uses the same CBT subscription/plans flow as the
-            // rest of the dashboard instead of the custom challenge dialog.
-            final canProceed = await _checkSubscriptionBeforeTest();
-            if (!canProceed || !mounted) return;
 
             final cbtuserProvider =
                 Provider.of<CbtUserProvider>(context, listen: false);
