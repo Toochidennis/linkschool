@@ -49,10 +49,18 @@ class _AllnewsScreenState extends State<AllnewsScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused) {
-      _shouldShowAdOnResume = true;
+      if (isCurrentRoute) {
+        _shouldShowAdOnResume = true;
+      }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
+        if (!isCurrentRoute) {
+          _shouldShowAdOnResume = false;
+          return;
+        }
         _pendingAppOpenAfterResume = true;
         _showAppOpenAd();
         _shouldShowAdOnResume = false;

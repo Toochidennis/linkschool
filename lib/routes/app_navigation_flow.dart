@@ -75,7 +75,6 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       _isLoggedIn = newIsLoggedIn;
     });
 
-
     // Only auto-flip for manual logins, not restored sessions.
     if (!wasLoggedIn &&
         newIsLoggedIn &&
@@ -95,8 +94,6 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   }
 
   Future<void> _initializeApp() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     // AuthProvider.checkLoginStatus() is already called in AppInitializer (main.dart)
     // Just sync the current state from AuthProvider
     _syncAuthState();
@@ -142,6 +139,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       _flipController.toggleCard();
     }
   }
+
   /// ✅ This is now updated to receive a school code
   void _navigateToLogin(String selectedSchoolCode) {
     setState(() {
@@ -178,7 +176,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       onSwitch: _handleSwitchFromExplore,
       selectedIndex: _selectedIndex,
       onTabSelected: _updateSelectedIndex,
-     // isActive: _isExploreActive,
+      isActive: _isExploreActive,
     );
   }
 

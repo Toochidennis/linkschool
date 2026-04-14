@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/ads/app_open_display_guard.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/courses/explore_courses.dart';
 import 'package:linkschool/modules/explore/e_library/E_library_dashbord.dart';
@@ -62,7 +63,9 @@ class _ExploreDashboardState extends State<ExploreDashboard>
   }
 
   void _loadAppOpenAd() {
-    if (!_hasExploreAppOpenAdUnitId || _isAppOpenAdLoading) return;
+    if (!_hasExploreAppOpenAdUnitId || _isAppOpenAdLoading) {
+      return;
+    }
     _isAppOpenAdLoading = true;
 
     AppOpenAd.load(
@@ -105,6 +108,11 @@ class _ExploreDashboardState extends State<ExploreDashboard>
       return;
     }
 
+    if (!AppOpenDisplayGuard.tryAcquire()) {
+      _pendingAppOpenAfterResume = false;
+      return;
+    }
+
     _isAppOpenAdShowing = true;
     _pendingAppOpenAfterResume = false;
 
@@ -114,6 +122,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
         _isAppOpenAdShowing = false;
+        AppOpenDisplayGuard.markClosed();
         _loadAppOpenAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
@@ -121,6 +130,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
         _appOpenAd = null;
         _isAppOpenAdLoaded = false;
         _isAppOpenAdShowing = false;
+        AppOpenDisplayGuard.markClosed();
         _loadAppOpenAd();
       },
     );
@@ -135,6 +145,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
       _appOpenAd = null;
       _isAppOpenAdLoaded = false;
       _isAppOpenAdShowing = false;
+      AppOpenDisplayGuard.markClosed();
       _loadAppOpenAd();
     } catch (error) {
       debugPrint('Explore dashboard app-open ad threw while showing: $error');
@@ -142,6 +153,7 @@ class _ExploreDashboardState extends State<ExploreDashboard>
       _appOpenAd = null;
       _isAppOpenAdLoaded = false;
       _isAppOpenAdShowing = false;
+      AppOpenDisplayGuard.markClosed();
       _loadAppOpenAd();
     }
   }
@@ -158,6 +170,11 @@ class _ExploreDashboardState extends State<ExploreDashboard>
     if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
       _pendingAppOpenAfterResume = true;
       _shouldShowAdOnResume = false;
+      final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+      if (!isCurrentRoute) {
+        _pendingAppOpenAfterResume = false;
+        return;
+      }
       _showAppOpenAd();
     }
   }

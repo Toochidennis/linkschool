@@ -56,6 +56,7 @@ class CbtLicenseService {
   static const String _licenseSourceKey = 'cbt_license_source';
   static const String _licenseReasonKey = 'cbt_license_reason';
   static const int _statusCacheMinutes = 30;
+  static const int _statusMaxStaleHours = 24;
 
   void _log(String message) {
     debugPrint('[CbtLicenseService] $message');
@@ -192,6 +193,13 @@ class CbtLicenseService {
 
       throw Exception('Failed to load license status: ${response.statusCode}');
     } catch (e) {
+      final stale = await getCachedLicenseStatusForUse(userId);
+      if (stale != null) {
+        _log(
+          'License refresh failed for userId=$userId; using stale cache. Error: $e',
+        );
+        return stale;
+      }
       throw Exception('License status check failed: $e');
     }
   }
@@ -232,6 +240,18 @@ class CbtLicenseService {
   }
 
   Future<CbtLicenseStatus?> _getCachedLicenseStatusDetails(int userId) async {
+    final snapshot = await _readCachedLicenseSnapshot(userId);
+    if (snapshot == null) return null;
+
+    final maxAgeMs = _statusCacheMinutes * 60 * 1000;
+    if (snapshot.ageMs > maxAgeMs) {
+      return null;
+    }
+
+    return snapshot.status;
+  }
+
+  Future<_CachedLicenseSnapshot?> _readCachedLicenseSnapshot(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final ts = prefs.getInt(_licenseStatusTsKey);
     final cached = prefs.getBool(_licenseStatusKey);
@@ -243,44 +263,88 @@ class CbtLicenseService {
     if (cachedUserId == null || cachedUserId != userId) return null;
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    final maxAgeMs = _statusCacheMinutes * 60 * 1000;
-    if (now - ts > maxAgeMs) {
-      return null;
-    }
+    final ageMs = now - ts;
 
+    CbtLicenseStatus status;
     if (cached == true && expiresAtRaw != null && expiresAtRaw.isNotEmpty) {
       final expiresAt = _parseDateTime(expiresAtRaw);
       if (expiresAt != null) {
         if (DateTime.now().isBefore(expiresAt)) {
-          return CbtLicenseStatus(
+          status = CbtLicenseStatus(
             active: true,
             source: source,
             expiresAt: expiresAtRaw,
           );
+        } else {
+          status = CbtLicenseStatus(
+            active: false,
+            source: source,
+            reason: source == 'trial' ? 'trial_expired' : 'expired',
+            expiresAt: expiresAtRaw,
+          );
         }
-        return CbtLicenseStatus(
-          active: false,
+      } else {
+        status = CbtLicenseStatus(
+          active: cached,
           source: source,
-          reason: source == 'trial' ? 'trial_expired' : 'expired',
+          reason: reason,
           expiresAt: expiresAtRaw,
         );
       }
-    }
-
-    if (cached == false) {
-      return CbtLicenseStatus(
+    } else if (cached == false) {
+      status = CbtLicenseStatus(
         active: false,
         source: source,
         reason: reason,
         expiresAt: expiresAtRaw,
       );
+    } else {
+      status = CbtLicenseStatus(
+        active: cached,
+        source: source,
+        reason: reason,
+        expiresAt: expiresAtRaw,
+      );
     }
-    return CbtLicenseStatus(
-      active: cached,
-      source: source,
-      reason: reason,
-      expiresAt: expiresAtRaw,
+
+    return _CachedLicenseSnapshot(
+      status: status,
+      ageMs: ageMs,
     );
+  }
+
+  Future<CbtLicenseStatus?> getCachedLicenseStatusForUse(int userId) async {
+    final snapshot = await _readCachedLicenseSnapshot(userId);
+    if (snapshot == null) return null;
+
+    final maxStaleMs = _statusMaxStaleHours * 60 * 60 * 1000;
+    if (snapshot.ageMs > maxStaleMs) {
+      return null;
+    }
+
+    return snapshot.status;
+  }
+
+  Future<bool> shouldRefreshLicenseInBackground(int userId) async {
+    final snapshot = await _readCachedLicenseSnapshot(userId);
+    if (snapshot == null) return true;
+    final softTtlMs = _statusCacheMinutes * 60 * 1000;
+    return snapshot.ageMs > softTtlMs;
+  }
+
+  Future<void> refreshLicenseStatusInBackground({
+    required int userId,
+  }) async {
+    final shouldRefresh = await shouldRefreshLicenseInBackground(userId);
+    if (!shouldRefresh) return;
+
+    try {
+      await getLicenseStatus(userId: userId, forceRefresh: true);
+    } catch (e) {
+      _log(
+        'Background license refresh failed for userId=$userId. Keeping cache. Error: $e',
+      );
+    }
   }
 
   Future<bool?> _getCachedLicenseStatus(int userId) async {
@@ -399,4 +463,14 @@ class CbtLicenseService {
       throw Exception('Failed to start trial: $e');
     }
   }
+}
+
+class _CachedLicenseSnapshot {
+  const _CachedLicenseSnapshot({
+    required this.status,
+    required this.ageMs,
+  });
+
+  final CbtLicenseStatus status;
+  final int ageMs;
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/common/ads/app_open_display_guard.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/cbt_license_service.dart';
@@ -449,6 +450,11 @@ class AdManager {
       return false;
     }
 
+    if (!AppOpenDisplayGuard.tryAcquire()) {
+      _log('Skipping app-open ad: blocked by global app-open guard');
+      return false;
+    }
+
     _isAppOpenShowing = true;
     _log('Showing app-open ad');
     final completer = Completer<bool>();
@@ -459,6 +465,7 @@ class AdManager {
         _appOpenAd = null;
         _isAppOpenLoaded = false;
         _isAppOpenShowing = false;
+        AppOpenDisplayGuard.markClosed();
         preloadAppOpen();
         _log('App-open ad dismissed');
         if (!completer.isCompleted) {
@@ -470,6 +477,7 @@ class AdManager {
         _appOpenAd = null;
         _isAppOpenLoaded = false;
         _isAppOpenShowing = false;
+        AppOpenDisplayGuard.markClosed();
         preloadAppOpen();
         _log(
           'App-open ad failed to show: code=${error.code}, message=${error.message}',
@@ -489,6 +497,7 @@ class AdManager {
       }
       _isAppOpenLoaded = false;
       _isAppOpenShowing = false;
+      AppOpenDisplayGuard.markClosed();
       preloadAppOpen();
       _log(
         'App-open ad show threw PlatformException: code=${error.code}, message=${error.message}',
@@ -503,6 +512,7 @@ class AdManager {
       }
       _isAppOpenLoaded = false;
       _isAppOpenShowing = false;
+      AppOpenDisplayGuard.markClosed();
       preloadAppOpen();
       _log('App-open ad show threw unexpected error: $error');
       if (!completer.isCompleted) {

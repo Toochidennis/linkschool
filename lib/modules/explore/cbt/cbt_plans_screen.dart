@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/cbt_plan_model.dart';
@@ -11,6 +14,7 @@ import 'package:provider/provider.dart';
 
 enum _TrialActionState {
   startTrial,
+  continueFreeTrial,
   continueWithAds,
   hidden,
 }
@@ -35,7 +39,11 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   bool _isLoadingTrial = true;
   bool _isStartingTrial = false;
   bool _isOpeningPaymentDialog = false;
+  bool _didScheduleAutoClose = false;
+  bool _isRefreshingExpiredTrial = false;
   _TrialActionState _trialActionState = _TrialActionState.startTrial;
+  Duration? _remainingTrialDuration;
+  Timer? _trialCountdownTimer;
 
   @override
   void didChangeDependencies() {
@@ -58,12 +66,21 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
 
   @override
   void dispose() {
+    _trialCountdownTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final cbtUserProvider = context.watch<CbtUserProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final shouldHidePlansScreen =
+        cbtUserProvider.hasPaid || _isPortalSignedIn(authProvider);
+    if (shouldHidePlansScreen) {
+      _scheduleAutoClose();
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF6F45D8),
       body: SafeArea(
@@ -94,6 +111,14 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                     ],
                   ),
                 ),
+                if (!shouldHidePlansScreen) ...[
+                  if (_buildTrialStatusBanner(cbtUserProvider)
+                      case final statusBanner?)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                      child: statusBanner,
+                    ),
+                ],
                 Expanded(
                   child: Stack(
                     children: [
@@ -147,8 +172,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                                     },
                                     child: _PlanCard(
                                       plan: plan,
-                                      accent: _accentForIndex(index),
-                                      icon: _iconForIndex(index),
+                                      showTrialOffer: !_hasUsedTrial,
                                     ),
                                   );
                                 },
@@ -326,8 +350,10 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       setState(() {
         _isLoadingTrial = false;
         _trialActionState = initialState;
+        _remainingTrialDuration = _remainingDurationFor(userProvider);
       });
     }
+    _syncTrialCountdown(userProvider);
 
     try {
       final user = userProvider.currentUser;
@@ -343,8 +369,10 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
         if (mounted) {
           setState(() {
             _trialActionState = refreshedState;
+            _remainingTrialDuration = _remainingDurationFor(userProvider);
           });
         }
+        _syncTrialCountdown(userProvider);
       }
     } catch (_) {
       // Keep the last known local state instead of blocking the plans screen.
@@ -362,7 +390,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     }
 
     if (hasValidLicense && licenseSource == 'trial') {
-      return _TrialActionState.continueWithAds;
+      return _TrialActionState.continueFreeTrial;
     }
 
     if (licenseReason == 'trial_expired' || licenseReason == 'expired') {
@@ -373,6 +401,10 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
   }
 
   String _trialLabel() {
+    if (_trialActionState == _TrialActionState.continueFreeTrial) {
+      return 'Continue with Free Trial';
+    }
+
     if (_trialActionState == _TrialActionState.continueWithAds) {
       return 'Continue with Ads';
     }
@@ -398,13 +430,18 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
       return;
     }
 
-    final isContinueWithAds =
-        _trialActionState == _TrialActionState.continueWithAds;
-
     setState(() => _isStartingTrial = true);
     try {
       final userProvider = context.read<CbtUserProvider>();
-      if (isContinueWithAds) {
+      if (_trialActionState == _TrialActionState.continueFreeTrial) {
+        await CbtSubscriptionService().setAdMode('free_trial');
+        if (mounted) {
+          Navigator.of(context).pop('continue_free_trial');
+        }
+        return;
+      }
+
+      if (_trialActionState == _TrialActionState.continueWithAds) {
         await CbtSubscriptionService().setAdMode('continue_with_ads');
         if (mounted) {
           Navigator.of(context).pop('continue_ads');
@@ -441,6 +478,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
 
       await userProvider.syncLicenseStatus(forceRefresh: true);
       await userProvider.syncSubscriptionService();
+      _syncTrialCountdown(userProvider);
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -465,23 +503,250 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
     }
     return trimmed;
   }
+
+  bool _isPortalSignedIn(AuthProvider authProvider) {
+    return authProvider.isLoggedIn && !authProvider.isDemoLogin;
+  }
+
+  bool get _hasUsedTrial {
+    return _trialActionState == _TrialActionState.continueFreeTrial ||
+        _trialActionState == _TrialActionState.continueWithAds;
+  }
+
+  void _scheduleAutoClose() {
+    if (_didScheduleAutoClose) return;
+    _didScheduleAutoClose = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !Navigator.of(context).canPop()) return;
+      Navigator.of(context).pop(true);
+    });
+  }
+
+  bool _isTrialExpired(CbtUserProvider userProvider) {
+    return userProvider.licenseReason == 'trial_expired' ||
+        userProvider.licenseReason == 'expired';
+  }
+
+  Widget? _buildTrialStatusBanner(CbtUserProvider userProvider) {
+    if (userProvider.isOnFreeTrial) {
+      final remaining =
+          _remainingTrialDuration ?? _remainingDurationFor(userProvider);
+      if (remaining != null) {
+        return _buildStatusBanner(
+          isExpired: false,
+          title: 'Your free trial ends in',
+          countdownDuration:
+              remaining <= Duration.zero ? Duration.zero : remaining,
+        );
+      }
+      return _buildStatusBanner(
+        isExpired: false,
+        title: 'Your free trial ends in',
+      );
+    }
+
+    if (_isTrialExpired(userProvider)) {
+      final expiresAt = _parseLicenseDate(userProvider.licenseExpiresAt);
+      if (expiresAt != null) {
+        return _buildStatusBanner(
+          isExpired: true,
+          title: 'Free trial expired on ${_formatDate(expiresAt)}',
+        );
+      }
+      return _buildStatusBanner(
+        isExpired: true,
+        title: 'Free trial expired',
+      );
+    }
+
+    return null;
+  }
+
+  void _syncTrialCountdown(CbtUserProvider userProvider) {
+    _trialCountdownTimer?.cancel();
+    _trialCountdownTimer = null;
+
+    if (!userProvider.isOnFreeTrial || userProvider.licenseExpiresAt == null) {
+      return;
+    }
+
+    _trialCountdownTimer =
+        Timer.periodic(const Duration(seconds: 1), (_) async {
+      if (!mounted) return;
+
+      final nextRemainingDuration = _remainingDurationFor(userProvider);
+      if (nextRemainingDuration != _remainingTrialDuration) {
+        setState(() {
+          _remainingTrialDuration = nextRemainingDuration;
+        });
+      }
+
+      if ((nextRemainingDuration == null ||
+              nextRemainingDuration <= Duration.zero) &&
+          !_isRefreshingExpiredTrial) {
+        _isRefreshingExpiredTrial = true;
+        await userProvider.syncLicenseStatus(forceRefresh: true);
+        if (!mounted) return;
+        setState(() {
+          _trialActionState = _resolveTrialActionState(
+            hasValidLicense: userProvider.hasValidLicense,
+            hasPaid: userProvider.hasPaid,
+            licenseSource: userProvider.licenseSource,
+            licenseReason: userProvider.licenseReason,
+          );
+          _remainingTrialDuration = _remainingDurationFor(userProvider);
+        });
+        _isRefreshingExpiredTrial = false;
+        _syncTrialCountdown(userProvider);
+      }
+    });
+  }
+
+  Duration? _remainingDurationFor(CbtUserProvider userProvider) {
+    final expiry = _parseLicenseDate(userProvider.licenseExpiresAt);
+    if (expiry == null) return null;
+    final difference = expiry.difference(DateTime.now());
+    if (difference.isNegative) return Duration.zero;
+    return difference;
+  }
+
+  DateTime? _parseLicenseDate(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final normalized =
+        value.contains(' ') ? value.replaceFirst(' ', 'T') : value;
+    return DateTime.tryParse(normalized);
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Widget _buildStatusBanner({
+    required bool isExpired,
+    required String title,
+    Duration? countdownDuration,
+  }) {
+    final backgroundColor =
+        isExpired ? const Color(0x33FFB4B4) : const Color(0x1FFFFFFF);
+    final borderColor = isExpired
+        ? const Color(0x66FFB4B4)
+        : Colors.white.withValues(alpha: 0.18);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.normal700(
+              fontSize: isExpired ? 18 : 16,
+              color: Colors.white,
+            ),
+          ),
+          if (countdownDuration != null) ...[
+            const SizedBox(height: 10),
+            _buildCountdownBlocks(countdownDuration),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountdownBlocks(Duration duration) {
+    final totalSeconds = duration.inSeconds;
+    final days = totalSeconds ~/ Duration.secondsPerDay;
+    final hours =
+        (totalSeconds % Duration.secondsPerDay) ~/ Duration.secondsPerHour;
+    final minutes =
+        (totalSeconds % Duration.secondsPerHour) ~/ Duration.secondsPerMinute;
+    final seconds = totalSeconds % Duration.secondsPerMinute;
+
+    final items = <(String value, String label)>[
+      (days.toString().padLeft(2, '0'), 'Days'),
+      (hours.toString().padLeft(2, '0'), 'Hours'),
+      (minutes.toString().padLeft(2, '0'), 'Minutes'),
+      (seconds.toString().padLeft(2, '0'), 'Seconds'),
+    ];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: items.map((item) {
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  width: 1.4,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.$1,
+                    style: AppTextStyles.normal700(
+                      fontSize: 22,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    item.$2,
+                    style: AppTextStyles.normal600(
+                      fontSize: 11,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
 }
 
 class _PlanCard extends StatelessWidget {
   final CbtPlanModel plan;
-  final Color accent;
-  final IconData icon;
+  final bool showTrialOffer;
 
   const _PlanCard({
     required this.plan,
-    required this.accent,
-    required this.icon,
+    required this.showTrialOffer,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -497,16 +762,6 @@ class _PlanCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 40, color: accent),
-            ),
-            const SizedBox(height: 20),
             Text(
               _formatPrice(plan),
               style: AppTextStyles.normal700(
@@ -522,11 +777,11 @@ class _PlanCard extends StatelessWidget {
                 color: AppColors.text4Light,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                _planSubtitle(plan),
+                _planSubtitle(plan, showTrialOffer),
                 textAlign: TextAlign.center,
                 style: AppTextStyles.normal400(
                   fontSize: 18,
@@ -534,7 +789,7 @@ class _PlanCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _buildFeaturesList(plan.features),
@@ -552,8 +807,8 @@ class _PlanCard extends StatelessWidget {
     return '$prefix$price';
   }
 
-  String _planSubtitle(CbtPlanModel plan) {
-    if (plan.freeTrialDays > 0) {
+  String _planSubtitle(CbtPlanModel plan, bool showTrialOffer) {
+    if (showTrialOffer && plan.freeTrialDays > 0) {
       return 'Includes ${plan.freeTrialDays}  days free trial.';
     }
     if (plan.discountPercent > 0.0) {
@@ -618,26 +873,6 @@ class _PlanCard extends StatelessWidget {
 }
 
 extension on _CbtPlansScreenState {
-  Color _accentForIndex(int index) {
-    const accents = [
-      Color(0xFF7C4DFF),
-      Color(0xFF4C6FFF),
-      Color(0xFF00BFA6),
-      Color(0xFFEC4899),
-    ];
-    return accents[index % accents.length];
-  }
-
-  IconData _iconForIndex(int index) {
-    const icons = [
-      Icons.local_fire_department,
-      Icons.workspace_premium,
-      Icons.auto_awesome,
-      Icons.stars,
-    ];
-    return icons[index % icons.length];
-  }
-
   Widget _buildErrorState(String message) {
     return Center(
       child: Padding(

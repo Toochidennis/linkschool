@@ -328,12 +328,19 @@ class _LinkSkoolAIChatPageState extends State<LinkSkoolAIChatPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused) {
-      if (!_isNavigatingAway) {
+      if (!_isNavigatingAway && isCurrentRoute) {
         _shouldShowAdOnResume = true;
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
+        if (!isCurrentRoute) {
+          _shouldShowAdOnResume = false;
+          _isNavigatingAway = false;
+          return;
+        }
         _showAppOpenAd();
         _shouldShowAdOnResume = false;
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 // import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
@@ -233,26 +234,18 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
     if (!mounted) return;
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await cbtUserProvider.syncLicenseStatus(forceRefresh: false);
     if (!mounted) return;
 
-    if (cbtUserProvider.isOnFreeTrial) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Your free trial is active. Plans will be available after it expires.',
-          ),
-        ),
-      );
+    if (cbtUserProvider.hasPaid ||
+        (authProvider.isLoggedIn && !authProvider.isDemoLogin)) {
       return;
     }
 
     final didProceed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => const CbtPlansScreen(
-          showTrialButton: false,
-          preferTrialLabel: false,
-        ),
+        builder: (_) => const CbtPlansScreen(),
       ),
     );
     if (didProceed == true && mounted) {
@@ -581,8 +574,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
             ),
           ],
 
-          // Payment Button (only show when the user has no active CBT access)
-          if (subscriptionStatus['hasValidLicense'] != true) ...[
+          // Show subscribe action when trial is active or access is no longer valid.
+          if (!hasValidLicense || isFreeTrial) ...[
             const SizedBox(height: 16),
             Container(
               width: double.infinity,
@@ -675,11 +668,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen>
               text,
               style: emphasize
                   ? AppTextStyles.normal700(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: color,
                     )
-                  : AppTextStyles.normal500(
-                      fontSize: 13,
+                  : AppTextStyles.normal700(
+                      fontSize: 14,
                       color: color,
                     ),
             ),
