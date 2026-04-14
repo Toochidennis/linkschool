@@ -150,6 +150,7 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
       id: id,
       title: title,
       body: _asString(json['content']),
+      commentsCount: _asInt(json['comments_count']) ?? 0,
       icon: Icons.notifications_none_rounded,
       accentColor: const Color(0xFF2563EB),
       badge: _asString(json['tag']).isEmpty ? 'Update' : _asString(json['tag']),
@@ -218,12 +219,19 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused) {
-      if (!_isNavigatingAway) {
+      if (!_isNavigatingAway && isCurrentRoute) {
         _shouldShowAdOnResume = true;
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
+        if (!isCurrentRoute) {
+          _shouldShowAdOnResume = false;
+          _isNavigatingAway = false;
+          return;
+        }
         DiscussionAdManager.instance.showAppOpenIfEligible(context: context);
         _shouldShowAdOnResume = false;
       }
@@ -340,6 +348,14 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
                     ),
                   ],
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  item.timeLabel,
+                  style: AppTextStyles.normal500(
+                    fontSize: 11,
+                    color: AppColors.text8Light,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   item.previewText,
@@ -354,10 +370,10 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
                 Row(
                   children: [
                     Text(
-                      item.timeLabel,
+                      '${item.commentsCount} ${item.commentsCount == 1 ? 'comment' : 'comments'}',
                       style: AppTextStyles.normal500(
-                        fontSize: 11,
-                        color: AppColors.text8Light,
+                        fontSize: 12,
+                        color: AppColors.text7Light,
                       ),
                     ),
                     const Spacer(),
@@ -772,6 +788,7 @@ class CbtDiscussionUpdateItem {
   final int id;
   final String title;
   final String body;
+  final int commentsCount;
   final IconData icon;
   final Color accentColor;
   final String badge;
@@ -786,10 +803,19 @@ class CbtDiscussionUpdateItem {
     return text;
   }
 
+  String get plainTitle {
+    return title
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   const CbtDiscussionUpdateItem({
     required this.id,
     required this.title,
     required this.body,
+    required this.commentsCount,
     required this.icon,
     required this.accentColor,
     required this.badge,
@@ -836,6 +862,7 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
       id: id,
       title: '',
       body: '',
+      commentsCount: 0,
       icon: Icons.notifications_none_rounded,
       accentColor: const Color(0xFF2563EB),
       badge: '',
@@ -953,6 +980,8 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
           json['content'],
         ],
       ),
+      commentsCount:
+          _asInt(json['comments_count']) ?? fallback?.commentsCount ?? 0,
       icon: Icons.notifications_none_rounded,
       accentColor: const Color(0xFF2563EB),
       badge: _firstNonEmptyString(
@@ -1038,11 +1067,25 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   }
 
   void _openPracticeSubjectSelection() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const CBTDashboard(),
-      ),
-    );
+    // Pop back to the existing CBTDashboard if it's in the stack (normal flow),
+    // otherwise push a fresh one (deep-link / notification flow).
+    bool foundDashboard = false;
+    Navigator.of(context).popUntil((route) {
+      if (route.settings.name == CBTDashboard.routeName) {
+        foundDashboard = true;
+        return true; // stop here, keep the dashboard
+      }
+      return route.isFirst; // also stop at root to avoid over-popping
+    });
+
+    if (!foundDashboard && mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          settings: const RouteSettings(name: CBTDashboard.routeName),
+          builder: (_) => const CBTDashboard(),
+        ),
+      );
+    }
   }
 
   @override
@@ -1071,12 +1114,19 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused) {
-      if (!_isNavigatingAway) {
+      if (!_isNavigatingAway && isCurrentRoute) {
         _shouldShowAdOnResume = true;
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
+        if (!isCurrentRoute) {
+          _shouldShowAdOnResume = false;
+          _isNavigatingAway = false;
+          return;
+        }
         DiscussionAdManager.instance.showAppOpenIfEligible(context: context);
         _shouldShowAdOnResume = false;
       }
@@ -1159,34 +1209,16 @@ class _CbtDiscussionDetailScreenState extends State<CbtDiscussionDetailScreen>
                             ),
                           ),
                           const SizedBox(height: 14),
-                          Flexible(
-                            child: Html(
-                              data: update.title.isEmpty && _isLoadingDetail
-                                  ? '&nbsp;'
-                                  : update.title,
-                              style: {
-                                'html': Style(
-                                  margin: Margins.zero,
-                                  padding: HtmlPaddings.zero,
-                                ),
-                                'body': Style(
-                                  margin: Margins.zero,
-                                  padding: HtmlPaddings.zero,
-                                  fontSize: FontSize(24),
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  lineHeight: LineHeight.number(1.25),
-                                ),
-                                'p': Style(
-                                  margin: Margins.zero,
-                                  padding: HtmlPaddings.zero,
-                                  fontSize: FontSize(24),
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  lineHeight: LineHeight.number(1.25),
-                                ),
-                              },
-                            ),
+                          Text(
+                            update.plainTitle.isEmpty && _isLoadingDetail
+                                ? ''
+                                : update.plainTitle,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.normal700(
+                              fontSize: 22,
+                              color: Colors.white,
+                            ).copyWith(height: 1.25),
                           ),
                           const SizedBox(height: 10),
                           Row(

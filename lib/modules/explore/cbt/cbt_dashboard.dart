@@ -30,6 +30,8 @@ import 'package:linkschool/modules/common/cbt_settings_helper.dart';
 import 'package:linkschool/main.dart';
 
 class CBTDashboard extends StatefulWidget {
+  static const routeName = '/cbt_dashboard';
+
   final bool showAppBar;
   final bool fromELibrary;
 
@@ -70,7 +72,8 @@ class _CBTDashboardState extends State<CBTDashboard>
   bool _shouldShowAdOnResume = false;
 
   void _refreshLicenseInBackground(int userId) {
-    final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+    final cbtUserProvider =
+        Provider.of<CbtUserProvider>(context, listen: false);
     unawaited(() async {
       await _licenseService.refreshLicenseStatusInBackground(userId: userId);
       if (!mounted) return;
@@ -132,7 +135,8 @@ class _CBTDashboardState extends State<CBTDashboard>
       if (userId == null) return false;
 
       try {
-        final cachedStatus = await _licenseService.getCachedLicenseStatusForUse(userId);
+        final cachedStatus =
+            await _licenseService.getCachedLicenseStatusForUse(userId);
         if (cachedStatus != null) {
           _refreshLicenseInBackground(userId);
           if (cachedStatus.active) {
@@ -359,7 +363,10 @@ class _CBTDashboardState extends State<CBTDashboard>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused &&
+        isCurrentRoute &&
         !AdManager.instance.isPresentingFullscreenAd) {
       _shouldShowAdOnResume = true;
       return;
@@ -367,6 +374,7 @@ class _CBTDashboardState extends State<CBTDashboard>
 
     if (state == AppLifecycleState.resumed && _shouldShowAdOnResume) {
       _shouldShowAdOnResume = false;
+      if (!isCurrentRoute) return;
       AdManager.instance.showAppOpenIfEligible(context: context);
     }
   }

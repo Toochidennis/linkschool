@@ -531,15 +531,22 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused) {
       // Only mark for ad if not navigating away
-      if (!_isNavigatingAway) {
+      if (!_isNavigatingAway && isCurrentRoute) {
         _lastPauseTime = DateTime.now();
         _shouldShowAdOnResume = true;
       } else {}
     } else if (state == AppLifecycleState.resumed) {
       // Only show ad if it was a real background event
       if (_shouldShowAdOnResume) {
+        if (!isCurrentRoute) {
+          _shouldShowAdOnResume = false;
+          _isNavigatingAway = false;
+          return;
+        }
         _showAppOpenAd();
         _shouldShowAdOnResume = false;
       } else {}

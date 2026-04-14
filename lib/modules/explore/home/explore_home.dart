@@ -709,10 +709,20 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                         label: item.label,
                         iconPath: item.iconPath,
                         subtitle: item.subtitle,
-                        destination: item.destination,
+                        destination:
+                            item.label == 'CBT' ? null : item.destination,
                         onTap: item.label == 'Videos'
                             ? _showLevelSubjectSelector
-                            : null,
+                            : item.label == 'CBT'
+                                ? () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        settings: const RouteSettings(
+                                            name: CBTDashboard.routeName),
+                                        builder: (_) => const CBTDashboard(),
+                                      ),
+                                    )
+                                : null,
                         index: index,
                       ),
                     );

@@ -90,13 +90,16 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused) {
-      if (!_isNavigatingAway) {
+      if (!_isNavigatingAway && isCurrentRoute) {
         _shouldShowAdOnResume = true;
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
         _shouldShowAdOnResume = false;
+        if (!isCurrentRoute) return;
         StudyAdManager.instance.showAppOpenIfEligible(context: context);
       }
     }

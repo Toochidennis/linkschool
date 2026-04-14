@@ -75,7 +75,13 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
       iconPath: 'assets/icons/cbt.svg',
       backgroundColor: const Color(0xFF6C5CE7),
       borderColor: const Color(0xFF5B4ED1),
-      destination: const CBTDashboard(),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: CBTDashboard.routeName),
+          builder: (_) => const CBTDashboard(),
+        ),
+      ),
     ),
     QuickActionItem(
       label: 'Videos',
@@ -248,51 +254,51 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
     );
   }
 
-   Widget _buildAnimatedCard({
-  required Widget child,
-  required int index,
-}) {
-  // Calculate interval with proper bounds
-  final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
-  final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
-  
-  return AnimatedBuilder(
-    animation: _fadeAnimation,
-    builder: (context, child) {
-      return FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: _slideController,
-            curve: Interval(
-              intervalStart,
-              intervalEnd,
-              curve: Curves.elasticOut,
-            ),
-          )),
-          // Add ScaleTransition to provide a visible bounce using elastic curve
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-              CurvedAnimation(
-                parent: _bounceController,
-                curve: Interval(
-                  intervalStart,
-                  intervalEnd,
-                  curve: Curves.elasticOut,
+  Widget _buildAnimatedCard({
+    required Widget child,
+    required int index,
+  }) {
+    // Calculate interval with proper bounds
+    final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
+    final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
+
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _slideController,
+              curve: Interval(
+                intervalStart,
+                intervalEnd,
+                curve: Curves.elasticOut,
+              ),
+            )),
+            // Add ScaleTransition to provide a visible bounce using elastic curve
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: _bounceController,
+                  curve: Interval(
+                    intervalStart,
+                    intervalEnd,
+                    curve: Curves.elasticOut,
+                  ),
                 ),
               ),
+              child: child,
             ),
-            child: child,
           ),
-        ),
-      );
-    },
-    child: child,
-  );
-} 
+        );
+      },
+      child: child,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -384,15 +390,14 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  
-  SvgPicture.asset(
-    'assets/images/Empty-pana.svg',
-    width: 400,
-    height: 300,
-    fit: BoxFit.cover,
-    // color: Colors.grey.shade300,
-    // colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-  ),
+                                  SvgPicture.asset(
+                                    'assets/images/Empty-pana.svg',
+                                    width: 400,
+                                    height: 300,
+                                    fit: BoxFit.cover,
+                                    // color: Colors.grey.shade300,
+                                    // colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+                                  ),
                                   const SizedBox(height: 14),
                                   Text(
                                     'No lessons to continue',
@@ -415,8 +420,9 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                                   ),
                                 ],
                               ),
+                            ),
                           ),
-                        ),),
+                        ),
                         const SizedBox(height: 24),
                       ],
 
@@ -608,7 +614,13 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
           title: 'CBT Practice',
           subtitle: 'Prepare for exams',
           imagePath: 'assets/images/millionaire.png',
-          onTap: () => _navigateTo(const CBTDashboard()),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              settings: const RouteSettings(name: CBTDashboard.routeName),
+              builder: (_) => const CBTDashboard(),
+            ),
+          ),
           gradient: [AppColors.exploreButton1Light, AppColors.gamesColor5],
         ),
       ],
@@ -972,7 +984,8 @@ class _ElibraryDashboardState extends State<ElibraryDashboard>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.text2Light.withValues(alpha: 0.1),
+                                  color: AppColors.text2Light
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(

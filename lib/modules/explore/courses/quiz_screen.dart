@@ -240,13 +240,20 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
     if (state == AppLifecycleState.paused) {
-      if (!_isNavigatingAway) {
+      if (!_isNavigatingAway && isCurrentRoute) {
         _lastPauseTime = DateTime.now();
         _shouldShowAdOnResume = true;
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_shouldShowAdOnResume) {
+        if (!isCurrentRoute) {
+          _shouldShowAdOnResume = false;
+          _isNavigatingAway = false;
+          return;
+        }
         _showAppOpenAd();
         _shouldShowAdOnResume = false;
       }
