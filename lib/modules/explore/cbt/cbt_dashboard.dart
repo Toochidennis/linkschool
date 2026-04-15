@@ -140,6 +140,9 @@ class _CBTDashboardState extends State<CBTDashboard>
         if (cachedStatus != null) {
           _refreshLicenseInBackground(userId);
           if (cachedStatus.active) {
+            if (cbtUserProvider.isOnFreeTrial) {
+              return await _showPlansAndReturn();
+            }
             return true;
           }
           return await _showPlansAndReturn();
@@ -148,7 +151,7 @@ class _CBTDashboardState extends State<CBTDashboard>
         await cbtUserProvider.syncLicenseStatus(forceRefresh: true);
         if (!mounted) return false;
 
-        if (cbtUserProvider.hasPaid || cbtUserProvider.isOnFreeTrial) {
+        if (cbtUserProvider.hasPaid) {
           return true;
         }
         return await _showPlansAndReturn();
@@ -446,7 +449,7 @@ class _CBTDashboardState extends State<CBTDashboard>
   Future<bool> _showPlansAndReturn() async {
     final cbtUserProvider =
         Provider.of<CbtUserProvider>(context, listen: false);
-    if (cbtUserProvider.hasPaid || cbtUserProvider.isOnFreeTrial) {
+    if (cbtUserProvider.hasPaid) {
       return true;
     }
 

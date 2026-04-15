@@ -648,7 +648,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
@@ -661,7 +661,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
             title,
             textAlign: TextAlign.center,
             style: AppTextStyles.normal700(
-              fontSize: isExpired ? 18 : 16,
+              fontSize: isExpired ? 20 : 18,
               color: Colors.white,
             ),
           ),
@@ -697,7 +697,7 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 7),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -712,14 +712,14 @@ class _CbtPlansScreenState extends State<CbtPlansScreen> {
                   Text(
                     item.$1,
                     style: AppTextStyles.normal700(
-                      fontSize: 22,
+                      fontSize: 26,
                       color: AppColors.text4Light,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
                     item.$2,
-                    style: AppTextStyles.normal600(
+                    style: AppTextStyles.normal700(
                       fontSize: 11,
                       color: AppColors.text7Light,
                     ),

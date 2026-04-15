@@ -8,7 +8,6 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
@@ -42,7 +41,6 @@ class _ExploreHomeState extends State<ExploreHome>
   late AnimationController _slideController;
   late AnimationController _bounceController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
   late Animation<double> _bounceAnimation;
 
   late ScrollController _controller;
@@ -74,25 +72,6 @@ class _ExploreHomeState extends State<ExploreHome>
   bool _imagesPrecached = false;
   String? _lastNetworkMessage;
 
-  void _shareNews(String title, String content, String time, String imageUrl) {
-    // Format the complete news content for sharing
-    String shareText = '''
-📰 $title
-
-📅 Published: $time
-
-📝 Content:
-$content
-
-${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
-
-#LinkSchool #News
-''';
-
-    Share.share(shareText);
-  }
-
-  @override
   @override
   void initState() {
     super.initState();
@@ -112,13 +91,6 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
     );
 
     _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
@@ -236,88 +208,6 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
         );
       },
       child: child,
-    );
-  }
-
-  Widget _buildQuickActionButton({
-    required String label,
-    required String title,
-    required IconData icon,
-    required Color backgroundColor,
-    required Color borderColor,
-    required VoidCallback onTap,
-    required int index,
-  }) {
-    return AnimatedBuilder(
-      animation: _bounceAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _bounceAnimation.value,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(16.0),
-              border: Border.all(color: borderColor, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: backgroundColor.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0, end: 1),
-                  duration: Duration(milliseconds: 800 + (index * 200)),
-                  curve: Curves.elasticOut,
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: value,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            label,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Urbanist',
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          Icon(
-                            icon,
-                            size: 24,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Urbanist',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
