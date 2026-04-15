@@ -106,6 +106,11 @@ class EnvConfig {
         defaultValue: _unsetValue,
       );
 
+  static String get gamifyBannerAdKey => const String.fromEnvironment(
+        'GAMIFY_BANNER_AD_KEY',
+        defaultValue: _unsetValue,
+      );
+
   static String get studyAdOpenKey => const String.fromEnvironment(
         'STUDY_AD_OPEN_KEY',
         defaultValue: _unsetValue,
@@ -133,6 +138,11 @@ class EnvConfig {
 
   static String get challengeRewardKey => const String.fromEnvironment(
         'CHALLENGE_REWARD_KEY',
+        defaultValue: _unsetValue,
+      );
+
+  static String get challengeBannerAdKey => const String.fromEnvironment(
+        'CHALLENGE_BANNER_AD_KEY',
         defaultValue: _unsetValue,
       );
 

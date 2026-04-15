@@ -290,7 +290,11 @@ class _GameTestScreenState extends State<GameTestScreen>
     if (_hasSavedScore) return;
     _hasSavedScore = true;
 
+    final user =
+        Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+
     await _leaderboardService.submitScoreIfHigher(
+      userId: user?.id ?? 0,
       username: _playerName(),
       examTypeId: widget.examTypeId,
       courseId: widget.courseId,
@@ -1064,7 +1068,7 @@ class _GameTestScreenState extends State<GameTestScreen>
           subjects: <SubjectModel>[
             SubjectModel(id: widget.courseId.toString(), name: widget.subject),
           ],
-          fromGameDashboard: true,
+          fromPostGameFlow: true,
         ),
       ),
     );
@@ -1098,7 +1102,7 @@ class _GameTestScreenState extends State<GameTestScreen>
                   SubjectModel(
                       id: widget.courseId.toString(), name: widget.subject),
                 ],
-                fromGameDashboard: true,
+                fromPostGameFlow: true,
               ),
             ),
           );

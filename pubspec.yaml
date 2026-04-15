@@ -2,7 +2,7 @@ name: linkschool
 description: "Learning Management System"
 publish_to: 'none' 
 
-version: 1.7.8+71
+version: 1.8.0+73
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

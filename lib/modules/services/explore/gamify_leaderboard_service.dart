@@ -67,28 +67,47 @@ class GamifyLeaderboardEntry {
   }
 
   factory GamifyLeaderboardEntry.fromApiJson(Map<String, dynamic> json) {
-    final parsedScore =
-        (json['score'] as num?)?.round() ?? int.tryParse('${json['score']}') ?? 0;
+    int parseInt(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
+
+    final parsedScore = json['score'] is num
+        ? (json['score'] as num).round()
+        : double.tryParse('${json['score']}')?.round() ??
+            int.tryParse('${json['score']}') ??
+            0;
     final parsedCourseName = '${json['course_name'] ?? ''}'.trim();
 
     return GamifyLeaderboardEntry(
-      userId: (json['user_id'] as num?)?.toInt() ??
-          int.tryParse('${json['user_id']}') ??
-          0,
+      userId: parseInt(json['user_id']),
       playerName: '${json['username'] ?? 'Player'}',
-      courseId: (json['course_id'] as num?)?.toInt() ??
-          int.tryParse('${json['course_id']}') ??
-          0,
+      courseId: parseInt(json['course_id']),
       courseName: parsedCourseName,
-      examTypeId: (json['exam_type_id'] as num?)?.toInt() ??
-          int.tryParse('${json['exam_type_id']}') ??
-          0,
+      examTypeId: parseInt(json['exam_type_id']),
       score: parsedScore,
-      rank: (json['rank'] as num?)?.toInt() ?? int.tryParse('${json['rank']}') ?? 0,
+      rank: parseInt(json['rank']),
       subject: parsedCourseName,
       subjectScores: parsedCourseName.isEmpty
           ? const <String, int>{}
           : <String, int>{parsedCourseName: parsedScore},
+    );
+  }
+
+  factory GamifyLeaderboardEntry.fromSummaryTopThreeJson(
+    Map<String, dynamic> json,
+  ) {
+    int parseInt(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
+
+    final parsedScore = json['total_score'] is num
+        ? (json['total_score'] as num).round()
+        : double.tryParse('${json['total_score']}')?.round() ??
+            int.tryParse('${json['total_score']}') ??
+            0;
+
+    return GamifyLeaderboardEntry(
+      userId: parseInt(json['user_id']),
+      playerName: '${json['username'] ?? 'Player'}',
+      score: parsedScore,
+      rank: parseInt(json['rank']),
+      subjectScores: const <String, int>{},
     );
   }
 
@@ -107,9 +126,11 @@ class GamifyLeaderboardEntry {
       }
     }
 
-    final fallbackSubject = '${json['subject'] ?? json['course_name'] ?? 'General'}';
-    final fallbackScore =
-        (json['score'] as num?)?.round() ?? int.tryParse('${json['score']}') ?? 0;
+    final fallbackSubject =
+        '${json['subject'] ?? json['course_name'] ?? 'General'}';
+    final fallbackScore = (json['score'] as num?)?.round() ??
+        int.tryParse('${json['score']}') ??
+        0;
 
     if (parsedSubjectScores.isEmpty && fallbackSubject.trim().isNotEmpty) {
       parsedSubjectScores[fallbackSubject.trim()] = fallbackScore;
@@ -123,7 +144,8 @@ class GamifyLeaderboardEntry {
       courseId: (json['courseId'] as num?)?.toInt() ??
           (json['course_id'] as num?)?.toInt() ??
           0,
-      courseName: '${json['courseName'] ?? json['course_name'] ?? fallbackSubject}',
+      courseName:
+          '${json['courseName'] ?? json['course_name'] ?? fallbackSubject}',
       examTypeId: (json['examTypeId'] as num?)?.toInt() ??
           (json['exam_type_id'] as num?)?.toInt() ??
           0,
@@ -134,7 +156,8 @@ class GamifyLeaderboardEntry {
       levelReached: (json['levelReached'] as num?)?.toInt() ?? 1,
       correctAnswers: (json['correctAnswers'] as num?)?.toInt() ?? 0,
       totalAnswered: (json['totalAnswered'] as num?)?.toInt() ?? 0,
-      playedAt: DateTime.tryParse('${json['playedAt'] ?? ''}') ?? DateTime.now(),
+      playedAt:
+          DateTime.tryParse('${json['playedAt'] ?? ''}') ?? DateTime.now(),
       subjectScores: parsedSubjectScores,
     );
   }
@@ -193,12 +216,199 @@ class GamifyLeaderboardFetchResult {
   final GamifyLeaderboardPagination pagination;
 }
 
+class GamifyLeaderboardSummaryMedal {
+  const GamifyLeaderboardSummaryMedal({
+    required this.rank,
+    required this.score,
+  });
+
+  final int rank;
+  final double score;
+
+  bool get hasData => rank > 0 || score > 0;
+
+  factory GamifyLeaderboardSummaryMedal.fromJson(Map<String, dynamic> json) {
+    return GamifyLeaderboardSummaryMedal(
+      rank: (json['rank'] as num?)?.toInt() ??
+          int.tryParse('${json['rank']}') ??
+          0,
+      score: (json['score'] as num?)?.toDouble() ??
+          double.tryParse('${json['score']}') ??
+          0,
+    );
+  }
+}
+
+class GamifyLeaderboardSummaryUserStats {
+  const GamifyLeaderboardSummaryUserStats({
+    required this.userId,
+    required this.overallScore,
+    required this.overallRank,
+  });
+
+  final int userId;
+  final double overallScore;
+  final int overallRank;
+
+  bool get hasData => overallScore > 0 || overallRank > 0;
+
+  factory GamifyLeaderboardSummaryUserStats.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return GamifyLeaderboardSummaryUserStats(
+      userId: (json['user_id'] as num?)?.toInt() ??
+          int.tryParse('${json['user_id']}') ??
+          0,
+      overallScore: (json['overall_score'] as num?)?.toDouble() ??
+          double.tryParse('${json['overall_score']}') ??
+          0,
+      overallRank: (json['overall_rank'] as num?)?.toInt() ??
+          int.tryParse('${json['overall_rank']}') ??
+          0,
+    );
+  }
+}
+
+class GamifyLeaderboardSubjectSummary {
+  const GamifyLeaderboardSubjectSummary({
+    required this.courseId,
+    required this.courseName,
+    required this.examTypeId,
+    required this.totalParticipants,
+    required this.champion,
+    required this.runnerUp,
+    required this.thirdPlace,
+  });
+
+  final int courseId;
+  final String courseName;
+  final int examTypeId;
+  final int totalParticipants;
+  final GamifyLeaderboardSummaryMedal? champion;
+  final GamifyLeaderboardSummaryMedal? runnerUp;
+  final GamifyLeaderboardSummaryMedal? thirdPlace;
+
+  bool get hasData {
+    return courseName.trim().isNotEmpty ||
+        totalParticipants > 0 ||
+        (champion?.hasData ?? false) ||
+        (runnerUp?.hasData ?? false) ||
+        (thirdPlace?.hasData ?? false);
+  }
+
+  factory GamifyLeaderboardSubjectSummary.fromJson(Map<String, dynamic> json) {
+    final championMap = GamifyLeaderboardService.staticAsMap(json['champion']);
+    final runnerUpMap = GamifyLeaderboardService.staticAsMap(json['runner_up']);
+    final thirdPlaceMap =
+        GamifyLeaderboardService.staticAsMap(json['third_place']);
+
+    return GamifyLeaderboardSubjectSummary(
+      courseId: (json['course_id'] as num?)?.toInt() ??
+          int.tryParse('${json['course_id']}') ??
+          0,
+      courseName: '${json['course_name'] ?? ''}'.trim(),
+      examTypeId: (json['exam_type_id'] as num?)?.toInt() ??
+          int.tryParse('${json['exam_type_id']}') ??
+          0,
+      totalParticipants: (json['total_participants'] as num?)?.toInt() ??
+          int.tryParse('${json['total_participants']}') ??
+          0,
+      champion: championMap.isEmpty
+          ? null
+          : GamifyLeaderboardSummaryMedal.fromJson(championMap),
+      runnerUp: runnerUpMap.isEmpty
+          ? null
+          : GamifyLeaderboardSummaryMedal.fromJson(runnerUpMap),
+      thirdPlace: thirdPlaceMap.isEmpty
+          ? null
+          : GamifyLeaderboardSummaryMedal.fromJson(thirdPlaceMap),
+    );
+  }
+}
+
+class GamifyLeaderboardSummary {
+  const GamifyLeaderboardSummary({
+    required this.userStats,
+    required this.subjects,
+    required this.topThreeOverall,
+  });
+
+  final GamifyLeaderboardSummaryUserStats? userStats;
+  final List<GamifyLeaderboardSubjectSummary> subjects;
+  final List<GamifyLeaderboardEntry> topThreeOverall;
+
+  bool get isEmpty {
+    return !(userStats?.hasData ?? false) &&
+        subjects.isEmpty &&
+        topThreeOverall.isEmpty;
+  }
+
+  factory GamifyLeaderboardSummary.fromJson(Map<String, dynamic> json) {
+    final userStatsMap =
+        GamifyLeaderboardService.staticAsMap(json['user_stats']);
+
+    return GamifyLeaderboardSummary(
+      userStats: userStatsMap.isEmpty
+          ? null
+          : GamifyLeaderboardSummaryUserStats.fromJson(userStatsMap),
+      subjects: GamifyLeaderboardService.staticAsList(json['subjects'])
+          .map(
+            (item) => GamifyLeaderboardSubjectSummary.fromJson(
+              GamifyLeaderboardService.staticAsMap(item),
+            ),
+          )
+          .where((item) => item.hasData)
+          .toList(growable: false),
+      topThreeOverall:
+          GamifyLeaderboardService.staticAsList(json['top_three_overall'])
+              .map(
+                (item) => GamifyLeaderboardEntry.fromSummaryTopThreeJson(
+                  GamifyLeaderboardService.staticAsMap(item),
+                ),
+              )
+              .toList(growable: false),
+    );
+  }
+}
+
 class GamifyLeaderboardService {
   GamifyLeaderboardService({ApiService? apiService})
       : _apiService = apiService ?? locator<ApiService>();
 
-  static const String _bestScorePrefix = 'gamify_best_score_v1';
+  static const String _bestScorePrefix = 'gamify_best_score_v2_debug';
   final ApiService _apiService;
+
+  Future<GamifyLeaderboardSummary?> fetchLeaderboardSummary({
+    required int examTypeId,
+    required int userId,
+  }) async {
+    if (examTypeId <= 0 || userId <= 0) {
+      return null;
+    }
+
+    final response = await _apiService.get<Map<String, dynamic>>(
+      endpoint: 'public/cbt/gamify/leaderboard/summary',
+      queryParams: <String, dynamic>{
+        'user_id': userId,
+        'exam_type_id': examTypeId,
+      },
+      addDatabaseParam: false,
+      fromJson: (json) => json,
+    );
+
+    if (!response.success) {
+      debugPrint(
+          'Gamify leaderboard summary fetch failed: ${response.message}');
+      return null;
+    }
+
+    final root = response.data ?? response.rawData ?? <String, dynamic>{};
+    final dataObj = _asMap(root['data']);
+    if (dataObj.isEmpty) return null;
+
+    final summary = GamifyLeaderboardSummary.fromJson(dataObj);
+    return summary.isEmpty ? null : summary;
+  }
 
   Future<GamifyLeaderboardFetchResult> fetchLeaderboard({
     required int examTypeId,
@@ -230,6 +440,11 @@ class GamifyLeaderboardService {
       fromJson: (json) => json,
     );
 
+    debugPrint(
+        '[fetchLeaderboard] success=${response.success} message=${response.message}');
+    debugPrint('[fetchLeaderboard] rawData=${response.rawData}');
+    debugPrint('[fetchLeaderboard] data=${response.data}');
+
     if (!response.success) {
       debugPrint('Gamify leaderboard fetch failed: ${response.message}');
       return const GamifyLeaderboardFetchResult(
@@ -239,13 +454,18 @@ class GamifyLeaderboardService {
     }
 
     final root = response.data ?? response.rawData ?? <String, dynamic>{};
+    debugPrint('[fetchLeaderboard] root=$root');
     final dataObj = _asMap(root['data']);
     final rows = _asList(dataObj['data']);
+    debugPrint('[fetchLeaderboard] rows count=${rows.length}');
+    if (rows.isNotEmpty)
+      debugPrint('[fetchLeaderboard] first row=${rows.first}');
     final paginationObj = _asMap(dataObj['pagination']);
 
-    final entries = rows
-        .map((item) => GamifyLeaderboardEntry.fromApiJson(_asMap(item)))
-        .toList(growable: false);
+    final entries = rows.map((item) {
+      debugPrint('[fetchLeaderboard] parsing row=$item');
+      return GamifyLeaderboardEntry.fromApiJson(_asMap(item));
+    }).toList(growable: false);
 
     final pagination = GamifyLeaderboardPagination(
       total: _asInt(paginationObj['total']) ?? entries.length,
@@ -256,7 +476,8 @@ class GamifyLeaderboardService {
       hasPrev: _asBool(paginationObj['has_prev']) ?? (page > 1),
     );
 
-    return GamifyLeaderboardFetchResult(entries: entries, pagination: pagination);
+    return GamifyLeaderboardFetchResult(
+        entries: entries, pagination: pagination);
   }
 
   Future<List<GamifyLeaderboardEntry>> getEntries({
@@ -275,6 +496,7 @@ class GamifyLeaderboardService {
   }
 
   Future<bool> submitScoreIfHigher({
+    required int userId,
     required String username,
     required int examTypeId,
     required int courseId,
@@ -285,11 +507,17 @@ class GamifyLeaderboardService {
     final trimmedCourse = courseName.trim();
     final normalizedScore = score.round();
 
-    if (trimmedUsername.isEmpty ||
+    if (userId <= 0 ||
+        trimmedUsername.isEmpty ||
         examTypeId <= 0 ||
         courseId <= 0 ||
         trimmedCourse.isEmpty ||
         normalizedScore <= 0) {
+      debugPrint(
+        'Gamify score skipped: invalid payload '
+        'userId=$userId username=$trimmedUsername examTypeId=$examTypeId '
+        'courseId=$courseId courseName=$trimmedCourse score=$normalizedScore',
+      );
       return false;
     }
 
@@ -299,11 +527,20 @@ class GamifyLeaderboardService {
       courseId: courseId,
     );
 
+    debugPrint(
+      'Gamify score check: key=${_bestScoreKey(username: trimmedUsername, examTypeId: examTypeId, courseId: courseId)} '
+      'previousBest=$previousBest incomingScore=$normalizedScore',
+    );
+
     if (normalizedScore <= previousBest) {
+      debugPrint(
+        'Gamify score skipped: incoming score is not higher than stored best',
+      );
       return false;
     }
 
     final payload = <String, dynamic>{
+      'user_id': userId,
       'username': trimmedUsername,
       'exam_type_id': examTypeId,
       'course_id': courseId,
@@ -311,11 +548,20 @@ class GamifyLeaderboardService {
       'score': normalizedScore,
     };
 
+    debugPrint(
+      'Gamify score post request: endpoint=public/cbt/gamify/leaderboard payload=$payload',
+    );
+
     final response = await _apiService.post<Map<String, dynamic>>(
       endpoint: 'public/cbt/gamify/leaderboard',
       body: payload,
       addDatabaseParam: false,
       fromJson: (json) => json,
+    );
+
+    debugPrint(
+      'Gamify score post response: success=${response.success} '
+      'message=${response.message} data=${response.data} rawData=${response.rawData}',
     );
 
     if (!response.success) {
@@ -329,15 +575,22 @@ class GamifyLeaderboardService {
       courseId: courseId,
       score: normalizedScore,
     );
+    debugPrint(
+      'Gamify score stored locally: '
+      'key=${_bestScoreKey(username: trimmedUsername, examTypeId: examTypeId, courseId: courseId)} '
+      'score=$normalizedScore',
+    );
     return true;
   }
 
   Future<void> saveEntry(GamifyLeaderboardEntry entry) async {
     await submitScoreIfHigher(
+      userId: entry.userId,
       username: entry.playerName,
       examTypeId: entry.examTypeId,
       courseId: entry.courseId,
-      courseName: entry.courseName.isNotEmpty ? entry.courseName : entry.subject,
+      courseName:
+          entry.courseName.isNotEmpty ? entry.courseName : entry.subject,
       score: entry.score,
     );
   }
@@ -405,5 +658,16 @@ class GamifyLeaderboardService {
     if (text == 'true' || text == '1' || text == 'yes') return true;
     if (text == 'false' || text == '0' || text == 'no') return false;
     return null;
+  }
+
+  static Map<String, dynamic> staticAsMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return value.map((k, v) => MapEntry('$k', v));
+    return <String, dynamic>{};
+  }
+
+  static List<dynamic> staticAsList(dynamic value) {
+    if (value is List) return value;
+    return const <dynamic>[];
   }
 }
