@@ -41,7 +41,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
   bool _isHandlingBackNavigation = false;
 
   String _playerName = 'Player';
-  int _playerScore = 0;
+  num _playerScore = 0;
   int _gamesPlayed = 0;
   int _playerRank = 0;
   List<GamifyLeaderboardEntry> _leaderboardEntries = const [];
@@ -103,7 +103,20 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
 
   Future<void> _loadDashboardData() async {
     final playerName = _resolvePlayerName();
-    final entries = await _leaderboardService.getEntries(examTypeId: widget.examTypeId);
+    final user =
+        Provider.of<CbtUserProvider>(context, listen: false).currentUser;
+    final userId = user?.id ?? 0;
+
+    final summaryFuture = _leaderboardService.fetchLeaderboardSummary(
+      examTypeId: widget.examTypeId,
+      userId: userId,
+    );
+    final entriesFuture = _leaderboardService.getEntries(
+      examTypeId: widget.examTypeId,
+    );
+
+    final summary = await summaryFuture;
+    final entries = await entriesFuture;
 
     if (!mounted) return;
 
@@ -111,14 +124,29 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
       (entry) => _normalized(entry.playerName) == _normalized(playerName),
     );
     final playerEntry = playerIndex >= 0 ? entries[playerIndex] : null;
+    final hasSummary = summary != null;
+    final resolvedEntries = hasSummary && summary.topThreeOverall.isNotEmpty
+        ? summary.topThreeOverall
+        : entries;
+    final resolvedPlayerScore =
+        hasSummary && (summary.userStats?.hasData ?? false)
+            ? summary.userStats!.overallScore
+            : (playerEntry?.score ?? 0);
+    final resolvedPlayerRank =
+        hasSummary && (summary.userStats?.overallRank ?? 0) > 0
+            ? summary.userStats!.overallRank
+            : (playerIndex >= 0 ? playerIndex + 1 : 0);
+    final resolvedSubjectCards = hasSummary && summary.subjects.isNotEmpty
+        ? _buildSubjectCardsFromSummary(summary.subjects)
+        : _buildSubjectCards(entries);
 
     setState(() {
       _playerName = playerName;
-      _leaderboardEntries = entries;
-      _playerScore = playerEntry?.score ?? 0;
+      _leaderboardEntries = resolvedEntries;
+      _playerScore = resolvedPlayerScore;
       _gamesPlayed = playerEntry?.gamesPlayed ?? 0;
-      _playerRank = playerIndex >= 0 ? playerIndex + 1 : 0;
-      _subjectCards = _buildSubjectCards(entries);
+      _playerRank = resolvedPlayerRank;
+      _subjectCards = resolvedSubjectCards;
       _loading = false;
     });
   }
@@ -171,6 +199,35 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
         ),
         championScore: scores.isEmpty ? 0 : scores.first,
         contenders: scores.length,
+      );
+    }).toList(growable: false)
+      ..sort((a, b) {
+        if (a.hasLeaderboardData != b.hasLeaderboardData) {
+          return a.hasLeaderboardData ? -1 : 1;
+        }
+        return a.subject.toLowerCase().compareTo(b.subject.toLowerCase());
+      });
+
+    return cards;
+  }
+
+  List<_SubjectArenaCardData> _buildSubjectCardsFromSummary(
+    List<GamifyLeaderboardSubjectSummary> subjects,
+  ) {
+    final cards = subjects.map((subject) {
+      final theme = _subjectTheme(subject.courseName);
+
+      return _SubjectArenaCardData(
+        subject: subject.courseName.isEmpty ? 'General' : subject.courseName,
+        color: theme.color,
+        icon: theme.icon,
+        topScores: <num?>[
+          subject.champion?.score,
+          subject.runnerUp?.score,
+          subject.thirdPlace?.score,
+        ],
+        championScore: subject.champion?.score ?? 0,
+        contenders: subject.totalParticipants,
       );
     }).toList(growable: false)
       ..sort((a, b) {
@@ -478,7 +535,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                             child: _buildPrimaryStatCard(
                               icon: Icons.stars_rounded,
                               label: 'Score',
-                              value: '$_playerScore',
+                              value: _formatScore(_playerScore),
                               accent: const Color(0xFFFBBF24),
                               helper: _gamesPlayed == 0
                                   ? 'Finish a run to bank points'
@@ -716,7 +773,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  hasEntry ? '${entry.score}' : '--',
+                  hasEntry ? _formatScore(entry.score) : '--',
                   style: TextStyle(
                     color: trophyColor,
                     fontSize:
@@ -885,7 +942,7 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                       child: _buildArenaMetaCard(
                         label: 'Champion',
                         value: card.hasLeaderboardData
-                            ? '${card.championScore}'
+                            ? _formatScore(card.championScore)
                             : '--',
                         compact: compact,
                       ),
@@ -935,7 +992,9 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
                             ),
                             SizedBox(height: compact ? 4 : 6),
                             Text(
-                              card.topScores[index]?.toString() ?? '--',
+                              card.topScores[index] == null
+                                  ? '--'
+                                  : _formatScore(card.topScores[index]!),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
@@ -1350,6 +1409,13 @@ class _GameDashboardScreenState extends State<GameDashboardScreen>
     if (trimmed.isEmpty) return 'Player';
     return trimmed.split(RegExp(r'\s+')).first;
   }
+
+  String _formatScore(num value) {
+    if (value % 1 == 0) {
+      return value.toInt().toString();
+    }
+    return value.toStringAsFixed(2);
+  }
 }
 
 class _SubjectTheme {
@@ -1363,8 +1429,8 @@ class _SubjectArenaCardData {
   final String subject;
   final Color color;
   final IconData icon;
-  final List<int?> topScores;
-  final int championScore;
+  final List<num?> topScores;
+  final num championScore;
   final int contenders;
 
   const _SubjectArenaCardData({

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/gamify_ad_manager.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
@@ -7,6 +9,7 @@ import 'package:linkschool/modules/services/explore/gamify_leaderboard_service.d
 class LeaderboardScreen extends StatefulWidget {
   final bool? fromChallenge;
   final bool? fromGameDashboard;
+  final bool? fromPostGameFlow;
   final int? challengeId;
   final int examTypeId;
   final List<SubjectModel> subjects;
@@ -17,6 +20,7 @@ class LeaderboardScreen extends StatefulWidget {
     this.subjects = const <SubjectModel>[],
     this.fromChallenge,
     this.fromGameDashboard,
+    this.fromPostGameFlow,
     this.challengeId,
   });
 
@@ -43,16 +47,69 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   List<GamifyLeaderboardEntry> _entries = const <GamifyLeaderboardEntry>[];
   late final List<SubjectModel> _tabs;
 
+  // Banner ad — loaded once and kept alive across tab switches
+  BannerAd? _bannerAd;
+  bool _bannerAdLoaded = false;
+  int _bannerAdUnitIndex = 0;
+  int _bannerAdRetry = 0;
+
+  static const List<String> _unsetEnvValue = ['__SET_VIA_DART_DEFINE__'];
+
+  List<String> get _bannerAdUnitIds {
+    return [
+      EnvConfig.gamifyBannerAdKey,
+    ].where((id) => id.isNotEmpty && !_unsetEnvValue.contains(id)).toList();
+  }
+
   @override
   void initState() {
     super.initState();
     _tabs = _buildTabs(widget.subjects);
     WidgetsBinding.instance.addObserver(this);
+    _loadBannerAd();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await GamifyAdManager.instance.preloadAll(context);
       await _loadLeaderboard(reset: true);
     });
+  }
+
+  void _loadBannerAd() {
+    final ids = _bannerAdUnitIds;
+    if (ids.isEmpty) return;
+    _bannerAd?.dispose();
+    _bannerAd = BannerAd(
+      adUnitId: ids[_bannerAdUnitIndex],
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (!mounted) return;
+          setState(() {
+            _bannerAd = ad as BannerAd;
+            _bannerAdLoaded = true;
+            _bannerAdRetry = 0;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (!mounted) return;
+          final ids = _bannerAdUnitIds;
+          if (_bannerAdUnitIndex < ids.length - 1) {
+            _bannerAdUnitIndex++;
+            _loadBannerAd();
+            return;
+          }
+          final delay = Duration(seconds: (_bannerAdRetry + 1) * 8);
+          _bannerAdRetry++;
+          Future<void>.delayed(delay, () {
+            if (!mounted) return;
+            _bannerAdUnitIndex = 0;
+            _loadBannerAd();
+          });
+        },
+      ),
+    )..load();
   }
 
   List<SubjectModel> _buildTabs(List<SubjectModel> source) {
@@ -154,6 +211,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -201,6 +259,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     _buildFilterTabs(),
                     const SizedBox(height: 14),
                     _buildTopThree(topThree),
+                    const SizedBox(height: 12),
+                    _buildBannerAdCard(),
                     const SizedBox(height: 18),
                     if (_entries.isEmpty)
                       _buildEmptyState()
@@ -234,6 +294,50 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildBannerAdCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.06),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: SizedBox(
+            width: double.infinity,
+            height: 60,
+            child: _bannerAdLoaded && _bannerAd != null
+                ? Center(
+                    child: SizedBox(
+                      width: _bannerAd!.size.width.toDouble(),
+                      height: _bannerAd!.size.height.toDouble(),
+                      child: AdWidget(ad: _bannerAd!),
+                    ),
+                  )
+                : const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }
@@ -277,7 +381,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             color: selected ? const Color(0xFF1F2937) : Colors.white,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB),
+              color:
+                  selected ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB),
             ),
           ),
           child: Text(

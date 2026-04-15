@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/explore/cbt/back_navigation_interstitial_helper.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/challenge_ad_manager.dart';
 import 'package:linkschool/modules/providers/explore/challenge/challenge_leader_provider.dart';
@@ -29,10 +31,66 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
   bool _allowRoutePop = false;
   bool _isHandlingBackNavigation = false;
 
+  // Banner ad — loaded once, persisted for the lifetime of the screen
+  BannerAd? _bannerAd;
+  bool _bannerAdLoaded = false;
+  int _bannerAdUnitIndex = 0;
+  int _bannerAdRetry = 0;
+
+  static const String _unsetEnvValue = '__SET_VIA_DART_DEFINE__';
+
+  List<String> get _bannerAdUnitIds {
+    return [
+      EnvConfig.challengeBannerAdKey,
+      EnvConfig.discussionBannerAdKey,
+      EnvConfig.homeBannerAdKey,
+      EnvConfig.googleBannerAdsApiKey,
+    ].where((id) => id.isNotEmpty && id != _unsetEnvValue).toList();
+  }
+
+  void _loadBannerAd() {
+    final ids = _bannerAdUnitIds;
+    if (ids.isEmpty) return;
+    _bannerAd?.dispose();
+    _bannerAd = BannerAd(
+      adUnitId: ids[_bannerAdUnitIndex],
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (!mounted) return;
+          setState(() {
+            _bannerAd = ad as BannerAd;
+            _bannerAdLoaded = true;
+            _bannerAdRetry = 0;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (!mounted) return;
+          final ids = _bannerAdUnitIds;
+          if (_bannerAdUnitIndex < ids.length - 1) {
+            _bannerAdUnitIndex++;
+            _loadBannerAd();
+            return;
+          }
+          final delay = Duration(seconds: (_bannerAdRetry + 1) * 8);
+          _bannerAdRetry++;
+          Future<void>.delayed(delay, () {
+            if (!mounted) return;
+            _bannerAdUnitIndex = 0;
+            _loadBannerAd();
+          });
+        },
+      ),
+    )..load();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _loadBannerAd();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
@@ -101,6 +159,7 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -196,59 +255,55 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
             final top3 = leaderboard.take(3).toList();
             final rest = leaderboard.skip(3).toList();
 
+            final topThree = List.generate(
+              3,
+              (i) => i < top3.length ? top3[i] : null,
+            );
+
             return SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 child: Column(
                   children: [
-                    // Top 3 Winners
-                    if (top3.length >= 3)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildTopWinner(
+                    // Top 3 podium
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: _buildPodiumCard(
                             rank: 2,
-                            name: top3[1].username,
-                            points: '${top3[1].score} points',
-                            image: '',
-                            borderColor: Colors.grey[300]!,
+                            height: 164,
+                            name: topThree[1]?.username,
+                            score: topThree[1]?.score,
+                            trophyColor: const Color(0xFFD1D5DB),
                           ),
-                          _buildTopWinner(
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildPodiumCard(
                             rank: 1,
-                            name: top3[0].username,
-                            points: '${top3[0].score} points',
-                            image: '',
-                            borderColor: const Color(0xFF8B5CF6),
+                            height: 190,
+                            name: topThree[0]?.username,
+                            score: topThree[0]?.score,
+                            trophyColor: const Color(0xFFFBBF24),
                           ),
-                          _buildTopWinner(
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildPodiumCard(
                             rank: 3,
-                            name: top3[2].username,
-                            points: '${top3[2].score} points',
-                            image: '',
-                            borderColor: Colors.orange,
+                            height: 148,
+                            name: topThree[2]?.username,
+                            score: topThree[2]?.score,
+                            trophyColor: const Color(0xFFFB923C),
                           ),
-                        ],
-                      )
-                    else if (top3.isNotEmpty)
-                      // Show available top winners
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: top3
-                            .map((entry) => _buildTopWinner(
-                                  rank: entry.position,
-                                  name: entry.username,
-                                  points: '${entry.score} points',
-                                  image: '',
-                                  borderColor: entry.position == 1
-                                      ? const Color(0xFF8B5CF6)
-                                      : entry.position == 2
-                                          ? Colors.grey[300]!
-                                          : Colors.orange,
-                                ))
-                            .toList(),
-                      ),
+                        ),
+                      ],
+                    ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
+                    _buildBannerAdCard(),
+                    const SizedBox(height: 20),
 
                     // Header
                     const Padding(
@@ -256,17 +311,24 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
                       child: Row(
                         children: [
                           SizedBox(
-                              width: 40,
-                              child: Text('Rank',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 12))),
-                          Expanded(
-                              child: Text('Player',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 12))),
-                          Text('Points',
+                            width: 40,
+                            child: Text(
+                              'Rank',
                               style:
-                                  TextStyle(color: Colors.grey, fontSize: 12)),
+                                  TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              'Player',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ),
+                          Text(
+                            'Points',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
                         ],
                       ),
                     ),
@@ -291,124 +353,107 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
     );
   }
 
-  Widget _buildTopWinner({
+  Widget _buildPodiumCard({
     required int rank,
-    required String name,
-    required String points,
-    required String image,
-    required Color borderColor,
+    required double height,
+    required String? name,
+    required int? score,
+    required Color trophyColor,
   }) {
-    return Column(
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: borderColor, width: 3),
-              ),
-              child: CircleAvatar(
-                backgroundColor: Colors.grey[300],
-                child: Text(
-                  name.split(' ').map((e) => e[0]).join(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            if (rank == 1)
-              Positioned(
-                top: -10,
-                right: 25,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.amber,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.star,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                ),
-              ),
+    final hasEntry = name != null && score != null;
+
+    return Container(
+      height: height,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            trophyColor.withValues(alpha: 0.16),
+            Colors.white,
           ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          name,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+        border: Border.all(
+          color: trophyColor.withValues(alpha: 0.30),
+          width: 1.4,
         ),
-        const SizedBox(height: 2),
-        Text(
-          points,
-          style: TextStyle(
-            fontSize: 11,
-            color: rank == 1 ? const Color(0xFF8B5CF6) : Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String value,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F8),
-        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: iconColor, size: 16),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+          Icon(Icons.emoji_events_rounded, color: trophyColor),
+          const SizedBox(height: 6),
           Text(
-            value,
+            '#$rank',
             style: const TextStyle(
+              color: Color(0xFF1F2937),
+              fontWeight: FontWeight.w900,
               fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            hasEntry ? '$score' : '--',
+            style: TextStyle(
+              color: trophyColor,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            hasEntry ? name : 'open slot',
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBannerAdCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.06),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: SizedBox(
+          width: double.infinity,
+          height: 60,
+          child: _bannerAdLoaded && _bannerAd != null
+              ? Center(
+                  child: SizedBox(
+                    width: _bannerAd!.size.width.toDouble(),
+                    height: _bannerAd!.size.height.toDouble(),
+                    child: AdWidget(ad: _bannerAd!),
+                  ),
+                )
+              : const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+        ),
       ),
     );
   }

@@ -208,13 +208,7 @@ class _CbtDiscussionScreenState extends State<CbtDiscussionScreen>
     if (mounted) {
       setState(() => _allowRoutePop = true);
     }
-    await popThenShowInterstitial(
-      popNavigation: () => Navigator.of(context).pop(),
-      showInterstitial: (targetContext) =>
-          DiscussionAdManager.instance.showInterstitialIfEligible(
-        context: targetContext,
-      ),
-    );
+    Navigator.of(context).pop();
   }
 
   @override
