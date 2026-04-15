@@ -1,10 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-/// Singleton service that manages a cached banner ad with controlled refresh timing.
-/// Ensures compliance with Google AdMob policy (minimum 120 seconds between refreshes).
+/// Singleton service that manages a cached banner ad instance.
+/// Keeps one loaded banner alive across widget rebuilds and only reloads
+/// on ad unit changes, load failures, or explicit disposal.
 class HomeCarouselBannerAdCache {
   HomeCarouselBannerAdCache._();
 
@@ -16,7 +15,6 @@ class HomeCarouselBannerAdCache {
   BannerAd? _cachedAd;
   bool _isLoaded = false;
   bool _isLoading = false;
-  Timer? _refreshTimer;
   String? _currentAdUnitId;
 
   final ValueNotifier<BannerAd?> adNotifier = ValueNotifier<BannerAd?>(null);
@@ -25,7 +23,7 @@ class HomeCarouselBannerAdCache {
   BannerAd? get cachedAd => _cachedAd;
   bool get isLoaded => _isLoaded;
 
-  /// Load the ad for the first time or after refresh timeout.
+  /// Load the ad once and reuse it while the ad unit stays the same.
   Future<void> loadAd({required String adUnitId}) async {
     if (_isLoading) return;
     if (_isLoaded && _cachedAd != null && _currentAdUnitId == adUnitId) return;
@@ -50,7 +48,6 @@ class HomeCarouselBannerAdCache {
           _isLoading = false;
           loadedNotifier.value = true;
           adNotifier.value = ad as BannerAd;
-          _startRefreshTimer(adUnitId);
         },
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
@@ -64,19 +61,8 @@ class HomeCarouselBannerAdCache {
     )..load();
   }
 
-  /// Start a 120-second timer before allowing refresh.
-  void _startRefreshTimer(String adUnitId) {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer(const Duration(seconds: 120), () {
-      // After 120 seconds, the ad can be refreshed on next request
-      _isLoaded = false;
-      loadedNotifier.value = false;
-    });
-  }
-
   /// Clean up resources.
   void dispose() {
-    _refreshTimer?.cancel();
     _cachedAd?.dispose();
     _cachedAd = null;
     _isLoaded = false;
