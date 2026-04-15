@@ -58,6 +58,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   List<String> get _bannerAdUnitIds {
     return [
       EnvConfig.gamifyBannerAdKey,
+      EnvConfig.discussionBannerAdKey,
+      EnvConfig.homeBannerAdKey,
+      EnvConfig.googleBannerAdsApiKey,
     ].where((id) => id.isNotEmpty && !_unsetEnvValue.contains(id)).toList();
   }
 
@@ -299,44 +302,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildBannerAdCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Colors.black.withValues(alpha: 0.06),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: _bannerAdLoaded && _bannerAd != null
-                ? Center(
-                    child: SizedBox(
-                      width: _bannerAd!.size.width.toDouble(),
-                      height: _bannerAd!.size.height.toDouble(),
-                      child: AdWidget(ad: _bannerAd!),
-                    ),
-                  )
-                : const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-          ),
+    if (!_bannerAdLoaded || _bannerAd == null) return const SizedBox.shrink();
+    return SizedBox(
+      width: double.infinity,
+      height: _bannerAd!.size.height.toDouble(),
+      child: Center(
+        child: SizedBox(
+          width: _bannerAd!.size.width.toDouble(),
+          height: _bannerAd!.size.height.toDouble(),
+          child: AdWidget(ad: _bannerAd!),
         ),
       ),
     );

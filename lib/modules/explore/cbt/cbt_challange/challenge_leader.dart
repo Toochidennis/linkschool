@@ -418,41 +418,15 @@ class _ChallengeLeaderState extends State<ChallengeLeader>
   }
 
   Widget _buildBannerAdCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.06),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+    if (!_bannerAdLoaded || _bannerAd == null) return const SizedBox.shrink();
+    return SizedBox(
+      width: double.infinity,
+      height: _bannerAd!.size.height.toDouble(),
+      child: Center(
         child: SizedBox(
-          width: double.infinity,
-          height: 60,
-          child: _bannerAdLoaded && _bannerAd != null
-              ? Center(
-                  child: SizedBox(
-                    width: _bannerAd!.size.width.toDouble(),
-                    height: _bannerAd!.size.height.toDouble(),
-                    child: AdWidget(ad: _bannerAd!),
-                  ),
-                )
-              : const Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
+          width: _bannerAd!.size.width.toDouble(),
+          height: _bannerAd!.size.height.toDouble(),
+          child: AdWidget(ad: _bannerAd!),
         ),
       ),
     );

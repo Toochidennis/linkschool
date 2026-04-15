@@ -71,7 +71,9 @@ class GamifyLeaderboardEntry {
 
     final parsedScore = json['score'] is num
         ? (json['score'] as num).round()
-        : double.tryParse('${json['score']}')?.round() ?? int.tryParse('${json['score']}') ?? 0;
+        : double.tryParse('${json['score']}')?.round() ??
+            int.tryParse('${json['score']}') ??
+            0;
     final parsedCourseName = '${json['course_name'] ?? ''}'.trim();
 
     return GamifyLeaderboardEntry(
@@ -96,7 +98,9 @@ class GamifyLeaderboardEntry {
 
     final parsedScore = json['total_score'] is num
         ? (json['total_score'] as num).round()
-        : double.tryParse('${json['total_score']}')?.round() ?? int.tryParse('${json['total_score']}') ?? 0;
+        : double.tryParse('${json['total_score']}')?.round() ??
+            int.tryParse('${json['total_score']}') ??
+            0;
 
     return GamifyLeaderboardEntry(
       userId: parseInt(json['user_id']),
@@ -436,7 +440,8 @@ class GamifyLeaderboardService {
       fromJson: (json) => json,
     );
 
-    debugPrint('[fetchLeaderboard] success=${response.success} message=${response.message}');
+    debugPrint(
+        '[fetchLeaderboard] success=${response.success} message=${response.message}');
     debugPrint('[fetchLeaderboard] rawData=${response.rawData}');
     debugPrint('[fetchLeaderboard] data=${response.data}');
 
@@ -453,7 +458,8 @@ class GamifyLeaderboardService {
     final dataObj = _asMap(root['data']);
     final rows = _asList(dataObj['data']);
     debugPrint('[fetchLeaderboard] rows count=${rows.length}');
-    if (rows.isNotEmpty) debugPrint('[fetchLeaderboard] first row=${rows.first}');
+    if (rows.isNotEmpty)
+      debugPrint('[fetchLeaderboard] first row=${rows.first}');
     final paginationObj = _asMap(dataObj['pagination']);
 
     final entries = rows.map((item) {
