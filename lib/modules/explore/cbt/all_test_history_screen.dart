@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/study_history_service.dart';
-import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_progress_dashboard.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';

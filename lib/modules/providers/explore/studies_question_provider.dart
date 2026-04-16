@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:linkschool/modules/services/explore/offline_game_question_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
-import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_progress_dashboard.dart';
 
 class QuestionsProvider extends ChangeNotifier {
   final QuestionsService _service;

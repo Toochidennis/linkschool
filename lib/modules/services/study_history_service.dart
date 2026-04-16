@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../explore/cbt/study_progress_dashboard.dart';
+import '../explore/cbt/cbt_study/study_progress_dashboard.dart';
 
 class StudyHistoryService {
   static const String _studyHistoryKey = 'study_history';

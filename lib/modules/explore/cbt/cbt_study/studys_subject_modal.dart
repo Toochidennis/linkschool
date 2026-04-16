@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_study_screen.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/cbt_study_screen.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/providers/explore/subject_topic_provider.dart';
 import 'package:linkschool/modules/model/explore/study/topic_model.dart';

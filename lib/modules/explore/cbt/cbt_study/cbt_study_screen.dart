@@ -4,7 +4,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
-import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_progress_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/ai_chat_screen.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
@@ -14,7 +14,7 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:linkschool/modules/common/ads/cbt_scoped_ad_manager.dart';
-import 'package:linkschool/modules/explore/cbt/study_ad_manager.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_ad_manager.dart';
 
 class CBTStudyScreen extends StatefulWidget {
   final String subject;
