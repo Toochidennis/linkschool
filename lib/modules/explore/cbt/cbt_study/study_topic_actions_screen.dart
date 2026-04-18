@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -32,6 +35,10 @@ class StudyTopicActionsScreen extends StatefulWidget {
 
 class _StudyTopicActionsScreenState extends State<StudyTopicActionsScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
+  BannerAd? _bannerAd;
+  bool _bannerAdLoaded = false;
+  int _bannerAdUnitIndex = 0;
+
   late final AnimationController _entryController;
   late final AnimationController _fxController;
 
@@ -42,11 +49,22 @@ class _StudyTopicActionsScreenState extends State<StudyTopicActionsScreen>
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
 
+  List<String> get _bannerAdUnitIds {
+    const unset = '__SET_VIA_DART_DEFINE__';
+    return [
+      EnvConfig.homeBannerAdKey,
+      EnvConfig.discussionBannerAdKey,
+      EnvConfig.gamifyBannerAdKey,
+      EnvConfig.googleBannerAdsApiKey,
+    ].where((id) => id.isNotEmpty && id != unset).toList(growable: false);
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     StudyAdManager.instance.warmUpStudyAds(context);
+    _loadBannerAd();
 
     _entryController = AnimationController(
       vsync: this,
@@ -79,9 +97,70 @@ class _StudyTopicActionsScreenState extends State<StudyTopicActionsScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _bannerAd?.dispose();
     _entryController.dispose();
     _fxController.dispose();
     super.dispose();
+  }
+
+  void _loadBannerAd() {
+    final ids = _bannerAdUnitIds;
+    if (ids.isEmpty) return;
+
+    _bannerAd?.dispose();
+    _bannerAd = BannerAd(
+      adUnitId: ids[_bannerAdUnitIndex],
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (!mounted) return;
+          setState(() {
+            _bannerAd = ad as BannerAd;
+            _bannerAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (!mounted) return;
+
+          final ids = _bannerAdUnitIds;
+          if (_bannerAdUnitIndex < ids.length - 1) {
+            setState(() {
+              _bannerAdUnitIndex++;
+              _bannerAdLoaded = false;
+              _bannerAd = null;
+            });
+            _loadBannerAd();
+            return;
+          }
+
+          setState(() {
+            _bannerAd = null;
+            _bannerAdLoaded = false;
+          });
+        },
+      ),
+    )..load();
+  }
+
+  Widget _buildInlineBannerAd() {
+    final ad = _bannerAd;
+    if (!_bannerAdLoaded || ad == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
+    );
   }
 
   @override
@@ -256,6 +335,8 @@ class _StudyTopicActionsScreenState extends State<StudyTopicActionsScreen>
                     },
                   ),
                 ),
+                const SizedBox(height: 18),
+                _buildInlineBannerAd(),
               ],
             ),
           ],
