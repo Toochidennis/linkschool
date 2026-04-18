@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/models/study_session_stats.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
 import 'package:linkschool/modules/services/explore/offline_game_question_service.dart';
 import 'package:linkschool/modules/services/explore/studies_question_service.dart';
-import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 
 class QuestionsProvider extends ChangeNotifier {
+  static const int studyQuestionLimit = 100;
+
   final QuestionsService _service;
   final OfflineGameQuestionService _offlineGameService =
       OfflineGameQuestionService();
@@ -21,6 +23,7 @@ class QuestionsProvider extends ChangeNotifier {
   int _currentTopicIndex = 0;
   int? _courseId;
   int? _examTypeId;
+  bool _isOfflineStudySession = false;
 
   // Study session tracking
   final Map<int, Map<String, dynamic>> _topicStats = {};
@@ -40,10 +43,11 @@ class QuestionsProvider extends ChangeNotifier {
     return allQuestions[currentQuestionIndex];
   }
 
-  bool get hasMoreTopics => _currentTopicIndex < _topicIds.length;
+  bool get hasMoreTopics =>
+      !_isOfflineStudySession && _currentTopicIndex < _topicIds.length;
   bool get isLastQuestion => currentQuestionIndex >= allQuestions.length - 1;
   int get totalQuestions => allQuestions.length;
-  int get currentTopicIndex => _currentTopicIndex;
+  int get currentTopicIndex => _isOfflineStudySession ? 0 : _currentTopicIndex;
   int get totalTopics => _topicIds.length;
 
   Future<void> initializeOfflineSession({
@@ -119,19 +123,26 @@ class QuestionsProvider extends ChangeNotifier {
 
   /// Initialize study session with selected topics
   Future<void> initializeStudySession({
+    required String subjectName,
     required List<int> topicIds,
     required int? courseId,
     required int? examTypeId,
     List<String>? topicNames,
   }) async {
-    _topicIds = topicIds;
+    final studyTopicId = courseId ?? 0;
+
+    _isOfflineStudySession = true;
+    _topicIds = [studyTopicId];
     _currentTopicIndex = 0;
     _courseId = courseId;
     _examTypeId = examTypeId;
-    _topicNames = topicNames ?? [];
+    _topicNames = [subjectName];
     allQuestions = [];
     currentQuestionIndex = 0;
+    loading = true;
+    loadingMore = false;
     error = null;
+    questionsData = null;
 
     // Initialize session tracking
     _sessionStartTime = DateTime.now();
@@ -141,20 +152,33 @@ class QuestionsProvider extends ChangeNotifier {
     _wrongAnswersPerTopic.clear();
     _questionsAnsweredPerTopic.clear();
 
-    // Initialize stats for all topics
-    for (int topicId in topicIds) {
-      _topicStartTimes[topicId] = DateTime.now();
-      _correctAnswersPerTopic[topicId] = 0;
-      _wrongAnswersPerTopic[topicId] = 0;
-      _questionsAnsweredPerTopic[topicId] = 0;
+    _topicStartTimes[studyTopicId] = DateTime.now();
+    _correctAnswersPerTopic[studyTopicId] = 0;
+    _wrongAnswersPerTopic[studyTopicId] = 0;
+    _questionsAnsweredPerTopic[studyTopicId] = 0;
+    notifyListeners();
+
+    try {
+      questionsData = await _offlineGameService.fetchQuestions(
+        courseId: courseId ?? 0,
+        examTypeId: examTypeId ?? 0,
+        limit: studyQuestionLimit,
+      );
+      allQuestions = questionsData?.data ?? [];
+      _currentTopicIndex = _topicIds.length;
+    } catch (e) {
+      error = e.toString();
+      allQuestions = [];
     }
 
-    // Load questions for the first topic
-    await _loadNextTopicQuestions();
+    loading = false;
+    notifyListeners();
   }
 
   /// Load questions for the current topic
   Future<void> _loadNextTopicQuestions() async {
+    _isOfflineStudySession = false;
+
     if (_currentTopicIndex >= _topicIds.length) {
       return;
     }
@@ -192,6 +216,7 @@ class QuestionsProvider extends ChangeNotifier {
       {required int topicId,
       required int? courseId,
       required int? examTypeId}) async {
+    _isOfflineStudySession = false;
     loading = true;
     error = null;
     notifyListeners();
@@ -247,8 +272,9 @@ class QuestionsProvider extends ChangeNotifier {
   }) {
     if (currentQuestion == null) return;
 
-    // Find which topic this question belongs to
-    int? topicId = _findTopicForQuestion(currentQuestionIndex);
+    final topicId = _isOfflineStudySession
+        ? (_topicIds.isNotEmpty ? _topicIds.first : null)
+        : _findTopicForQuestion(currentQuestionIndex);
     if (topicId == null) return;
 
     // Update stats for this topic
@@ -266,6 +292,10 @@ class QuestionsProvider extends ChangeNotifier {
 
   /// Find which topic a question belongs to
   int? _findTopicForQuestion(int questionIndex) {
+    if (_isOfflineStudySession) {
+      return _topicIds.isNotEmpty ? _topicIds.first : null;
+    }
+
     if (_topicIds.isEmpty ||
         questionIndex < 0 ||
         questionIndex >= allQuestions.length) {
@@ -335,6 +365,7 @@ class QuestionsProvider extends ChangeNotifier {
     _currentTopicIndex = 0;
     _courseId = null;
     _examTypeId = null;
+    _isOfflineStudySession = false;
     loading = false;
     loadingMore = false;
     error = null;

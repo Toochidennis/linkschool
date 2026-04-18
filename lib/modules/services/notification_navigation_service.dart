@@ -2,7 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/config/notification_service.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_discussion_screen.dart';
+import 'package:linkschool/modules/explore/cbt/discussion/cbt_discussion_detail_screen.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/explore/courses/forum/topic_detail_screen.dart';
 import 'package:linkschool/modules/explore/courses/course_description_screen.dart';

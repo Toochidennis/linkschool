@@ -458,8 +458,9 @@ class GamifyLeaderboardService {
     final dataObj = _asMap(root['data']);
     final rows = _asList(dataObj['data']);
     debugPrint('[fetchLeaderboard] rows count=${rows.length}');
-    if (rows.isNotEmpty)
+    if (rows.isNotEmpty) {
       debugPrint('[fetchLeaderboard] first row=${rows.first}');
+    }
     final paginationObj = _asMap(dataObj['pagination']);
 
     final entries = rows.map((item) {

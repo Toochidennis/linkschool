@@ -2,82 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/ads/cbt_scoped_ad_manager.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/cbt_study_screen.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_topic_actions_screen.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_ad_manager.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/models/study_session_stats.dart';
 import 'package:linkschool/modules/services/study_history_service.dart';
-
-/// Model to track study progress per topic
-class TopicProgress {
-  final String topicName;
-  final int topicId;
-  final int questionsAnswered;
-  final int correctAnswers;
-  final int wrongAnswers;
-  final Duration timeSpent;
-
-  TopicProgress({
-    required this.topicName,
-    required this.topicId,
-    required this.questionsAnswered,
-    required this.correctAnswers,
-    required this.wrongAnswers,
-    required this.timeSpent,
-  });
-
-  double get accuracy =>
-      questionsAnswered > 0 ? (correctAnswers / questionsAnswered) * 100 : 0.0;
-
-  String get formattedTime {
-    final minutes = timeSpent.inMinutes;
-    final seconds = timeSpent.inSeconds % 60;
-    return '${minutes}m ${seconds}s';
-  }
-}
-
-/// Model for overall study session stats
-class StudySessionStats {
-  final String subject;
-  final List<TopicProgress> topicProgressList;
-  final Duration totalTimeSpent;
-  final DateTime sessionDate;
-
-  StudySessionStats({
-    required this.subject,
-    required this.topicProgressList,
-    required this.totalTimeSpent,
-    required this.sessionDate,
-  });
-
-  int get totalQuestionsAnswered =>
-      topicProgressList.fold(0, (sum, topic) => sum + topic.questionsAnswered);
-
-  int get totalCorrectAnswers =>
-      topicProgressList.fold(0, (sum, topic) => sum + topic.correctAnswers);
-
-  int get totalWrongAnswers =>
-      topicProgressList.fold(0, (sum, topic) => sum + topic.wrongAnswers);
-
-  int get topicsStudied => topicProgressList.length;
-
-  double get overallAccuracy => totalQuestionsAnswered > 0
-      ? (totalCorrectAnswers / totalQuestionsAnswered) * 100
-      : 0.0;
-
-  String get formattedTotalTime {
-    final hours = totalTimeSpent.inHours;
-    final minutes = totalTimeSpent.inMinutes % 60;
-    final seconds = totalTimeSpent.inSeconds % 60;
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    }
-    return '${minutes}m ${seconds}s';
-  }
-}
 
 class StudyProgressDashboard extends StatefulWidget {
   final StudySessionStats sessionStats;
+  final String? subject;
+  final List<String>? topics;
+  final List<int>? topicIds;
+  final int? courseId;
+  final int? examTypeId;
 
   const StudyProgressDashboard({
     super.key,
     required this.sessionStats,
+    this.subject,
+    this.topics,
+    this.topicIds,
+    this.courseId,
+    this.examTypeId,
   });
 
   @override
@@ -85,14 +32,19 @@ class StudyProgressDashboard extends StatefulWidget {
 }
 
 class _StudyProgressDashboardState extends State<StudyProgressDashboard>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _slideAnimation;
+  bool _isNavigatingAway = false;
+  bool _shouldShowAdOnResume = false;
+  bool _isClosingToActions = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    StudyAdManager.instance.warmUpStudyAds(context);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -124,7 +76,84 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+
+    if (state == AppLifecycleState.paused) {
+      if (!_isNavigatingAway && isCurrentRoute) {
+        _shouldShowAdOnResume = true;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_shouldShowAdOnResume) {
+        _shouldShowAdOnResume = false;
+        if (!isCurrentRoute) return;
+        StudyAdManager.instance.showAppOpenIfEligible(context: context);
+      }
+    }
+  }
+
+  Future<void> _closeToStudyActions() async {
+    if (_isClosingToActions || !mounted) return;
+    _isClosingToActions = true;
+
+    try {
+      if (widget.subject == null ||
+          widget.topics == null ||
+          widget.topicIds == null ||
+          widget.courseId == null ||
+          widget.examTypeId == null) {
+        Navigator.of(context).pop();
+        return;
+      }
+
+      await StudyAdManager.instance.showIfEligible(
+        context: context,
+        trigger: CbtScopedAdTrigger.testExit,
+      );
+      if (!mounted) return;
+
+      _isNavigatingAway = true;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StudyTopicActionsScreen(
+            topicTitle: widget.topics!.isNotEmpty
+                ? widget.topics!.first
+                : widget.subject!,
+            onPracticeTap: () {
+              StudyAdManager.instance
+                  .showIfEligible(
+                context: context,
+                trigger: CbtScopedAdTrigger.topicStart,
+              )
+                  .then((_) {
+                if (!mounted) return;
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CBTStudyScreen(
+                      subject: widget.subject!,
+                      topics: widget.topics!,
+                      topicIds: widget.topicIds!,
+                      courseId: widget.courseId!,
+                      examTypeId: widget.examTypeId!,
+                    ),
+                  ),
+                );
+              });
+            },
+          ),
+        ),
+      );
+    } finally {
+      _isClosingToActions = false;
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     super.dispose();
   }
@@ -134,18 +163,18 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
     final Brightness brightness = Theme.of(context).brightness;
     final opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
-    return WillPopScope(
-      onWillPop: () async {
-        // Pop twice to go back to study selection screen
-        Navigator.of(context).pop();
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _closeToStudyActions();
       },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).pop();
+            onPressed: () async {
+              await _closeToStudyActions();
             },
           ),
           title: const Text('Study Progress'),
@@ -171,7 +200,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
           ),
         ),
         body: Container(
-          decoration: Constants.customBoxDecoration(context),
+          decoration: Constants.customStudyBoxDecoration(context),
           child: AnimatedBuilder(
             animation: _animationController,
             builder: (context, child) {
@@ -216,6 +245,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
     );
   }
 
+  // ignore: unused_element
   Widget _buildCelebrationHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -419,6 +449,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
     );
   }
 
+  // ignore: unused_element
   Widget _buildPerformanceOverview() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -724,6 +755,7 @@ class _StudyProgressDashboardState extends State<StudyProgressDashboard>
     );
   }
 
+  // ignore: unused_element
   Widget _buildActionButtons() {
     return Column(
       children: [

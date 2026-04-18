@@ -41,8 +41,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
   void initState() {
     super.initState();
     _selectedCourses = {};
-    debugPrint('CourseSelectionScreen initState: slug=${widget.slug}, returnToExploreCourses=${widget.returnToExploreCourses}');
-    
+
     if (widget.slug.trim().isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -53,10 +52,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
 
   Future<void> _fetchCourses() async {
     final slug = widget.slug.trim();
-    if (slug.isEmpty) return;
-    debugPrint('CourseSelectionScreen fetching courses for slug: $slug');
     await context.read<ProgramCoursesProvider>().fetchBySlug(slug);
-    debugPrint('CourseSelectionScreen fetch complete for slug: $slug');
   }
 
   List<CourseModel> _getDisplayCourses(List<CourseModel> courses) {
@@ -67,10 +63,9 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
       .where((c) => _selectedCourses[c.id] ?? false)
       .fold(0, (sum, c) => sum + c.discountedPrice);
 
-  int get _selectedCount =>
-      _getDisplayCourses(_getCourses())
-          .where((c) => _selectedCourses[c.id] ?? false)
-          .length;
+  int get _selectedCount => _getDisplayCourses(_getCourses())
+      .where((c) => _selectedCourses[c.id] ?? false)
+      .length;
 
   int get _paidCount => _getDisplayCourses(_getCourses())
       .where((c) => (_selectedCourses[c.id] ?? false) && c.discountedPrice > 0)
@@ -230,7 +225,6 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
         });
       }
     }
-
   }
 
   Future<void> _handlePayNow(List<CourseModel> courses) async {
@@ -337,7 +331,8 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
 
       if (!mounted) return;
 
-      final webViewResult = await Navigator.of(context, rootNavigator: true).push<bool>(
+      final webViewResult =
+          await Navigator.of(context, rootNavigator: true).push<bool>(
         MaterialPageRoute<bool>(
           builder: (_) => CourseCheckoutWebViewScreen(
             paymentUrl: init.paymentUrl,
@@ -464,12 +459,20 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     if (widget.returnToExploreCourses) {
       if (widget.onReturnToExploreCourses != null) {
         await widget.onReturnToExploreCourses!();
-        return;
       }
+
+      await _popCurrentRoute(success);
       return;
     }
 
-    Navigator.of(context).pop(success);
+    await _popCurrentRoute(success);
+  }
+
+  Future<void> _popCurrentRoute([bool result = false]) async {
+    if (!mounted) return;
+    final poppedLocal = await Navigator.of(context).maybePop(result);
+    if (poppedLocal || !mounted) return;
+    await Navigator.of(context, rootNavigator: true).maybePop(result);
   }
 
   Future<CourseCheckoutVerifyResult> _pollCheckoutStatus({
@@ -510,8 +513,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     required bool success,
     required String message,
   }) async {
-    final title =
-        success ? '$titlePrefix Successful!' : '$titlePrefix Failed';
+    final title = success ? '$titlePrefix Successful!' : '$titlePrefix Failed';
     final backgroundColor =
         success ? const Color(0xFFE6F4EA) : const Color(0xFFFFF2F2);
     final iconColor =
@@ -520,83 +522,82 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
         success ? const Color(0xFF2E7D32) : const Color(0xFFE02424);
 
     final result = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => Dialog(
-            backgroundColor: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: backgroundColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      success ? Icons.check_circle : Icons.error_outline,
-                      color: iconColor,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    success
-                        ? (message.isNotEmpty
-                            ? message
-                            : 'Your payment has been confirmed.')
-                        : (message.isNotEmpty
-                            ? message
-                            : 'Payment could not be confirmed. Please try again.'),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF6B7280),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(success),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: buttonColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: const Text(
-                        'OK',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  success ? Icons.check_circle : Icons.error_outline,
+                  color: iconColor,
+                  size: 36,
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111827),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                success
+                    ? (message.isNotEmpty
+                        ? message
+                        : 'Your payment has been confirmed.')
+                    : (message.isNotEmpty
+                        ? message
+                        : 'Payment could not be confirmed. Please try again.'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF6B7280),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(success),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        );
+        ),
+      ),
+    );
 
     return result ?? false;
   }
@@ -677,7 +678,8 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     final direct = _textFromProfile(profile, ['first_name', 'firstName']);
     if (direct.isNotEmpty) return direct;
 
-    final userDirect = _textFromMap(user?.toJson() ?? const <String, dynamic>{}, [
+    final userDirect =
+        _textFromMap(user?.toJson() ?? const <String, dynamic>{}, [
       'first_name',
       'firstName',
     ]);
@@ -704,7 +706,8 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     final direct = _textFromProfile(profile, ['last_name', 'lastName']);
     if (direct.isNotEmpty) return direct;
 
-    final userDirect = _textFromMap(user?.toJson() ?? const <String, dynamic>{}, [
+    final userDirect =
+        _textFromMap(user?.toJson() ?? const <String, dynamic>{}, [
       'last_name',
       'lastName',
     ]);
@@ -724,8 +727,11 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
       return parts.sublist(1).join(' ');
     }
 
-    final fallbackParts =
-        fallbackName.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final fallbackParts = fallbackName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (fallbackParts.length < 2) return '';
     return fallbackParts.sublist(1).join(' ');
   }
@@ -744,7 +750,8 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
 
   String _resolveEmail(CbtUserModel? user) {
     if (user == null) return '';
-    return _textFromMap(user.toJson(), ['email', 'email_address', 'emailAddress']);
+    return _textFromMap(
+        user.toJson(), ['email', 'email_address', 'emailAddress']);
   }
 
   String _textFromProfile(CbtUserProfile? profile, List<String> keys) {
@@ -893,7 +900,6 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Color(0xFF3B2FA0),
-        
       ),
       child: SafeArea(
         bottom: false,
@@ -906,7 +912,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
                 children: [
                   GestureDetector(
                     onTap: () async {
-                      await _finishAndReturn(false);
+                      await _popCurrentRoute(false);
                     },
                     child: Container(
                       width: 34,
@@ -922,20 +928,28 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
                       ),
                     ),
                   ),
-                  
                 ],
               ),
               const SizedBox(height: 18),
               Text(
-                'Enroll in $programTitle',
+                'Choose Your Courses',
                 style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                   height: 1.3,
                 ),
               ),
-              
+              const SizedBox(height: 6),
+              Text(
+                programTitle,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFFD7D4FF),
+                  height: 1.3,
+                ),
+              ),
               if (courses.isNotEmpty) ...[
                 const SizedBox(height: 18),
                 SingleChildScrollView(
@@ -1025,9 +1039,9 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
         border: Border(top: BorderSide(color: Color(0xFFE5E5E5))),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
           if (_checkoutErrorMessage != null) ...[
             Container(
               width: double.infinity,
@@ -1210,7 +1224,7 @@ class _PillButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 5,horizontal: 14),
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: filled ? const Color(0xFF4F46E5) : Colors.white,
@@ -1295,10 +1309,9 @@ class _CourseCard extends StatelessWidget {
     return '\u20A6$formatted';
   }
 
-  Color get _priceColor =>
-      course.discountedPrice == 0
-          ? const Color(0xFF16A34A)
-          : const Color(0xFF111827);
+  Color get _priceColor => course.discountedPrice == 0
+      ? const Color(0xFF16A34A)
+      : const Color(0xFF111827);
 
   bool get _hasDiscount =>
       course.discount > 0 && course.discountedPrice < course.cost;
@@ -1311,19 +1324,22 @@ class _CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final learningType = (course.learningType ?? '').trim();
+    final learningLabel =
+        learningType.isNotEmpty ? learningType : 'Instructor-led';
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF7F7FF) : Colors.white,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF7C73F6)
-                : const Color(0xFFECECF3),
+            color:
+                isSelected ? const Color(0xFF7C73F6) : const Color(0xFFECECF3),
             width: isSelected ? 1.25 : 1,
           ),
           boxShadow: [
@@ -1350,7 +1366,7 @@ class _CourseCard extends StatelessWidget {
                         imageUrl: course.imageUrl,
                         fallbackLabel: _initialsForCourse(course.courseName),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1363,8 +1379,10 @@ class _CourseCard extends StatelessWidget {
                                 color: Color(0xFF111827),
                                 height: 1.3,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
                                 if (_hasDiscount) ...[
@@ -1389,16 +1407,16 @@ class _CourseCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 7),
                             Wrap(
-                              spacing: 10,
-                              runSpacing: 8,
+                              spacing: 8,
+                              runSpacing: 6,
                               children: [
                                 if (_hasDiscount)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
+                                      horizontal: 8,
+                                      vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFEAF7EF),
@@ -1407,7 +1425,7 @@ class _CourseCard extends StatelessWidget {
                                     child: Text(
                                       _discountLabel,
                                       style: const TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w600,
                                         color: Color(0xFF16A34A),
                                       ),
@@ -1415,17 +1433,17 @@ class _CourseCard extends StatelessWidget {
                                   ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
+                                    horizontal: 8,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFEDE9FE),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Text(
-                                    'Instructor-led',
-                                    style: TextStyle(
-                                      fontSize: 11,
+                                  child: Text(
+                                    learningLabel,
+                                    style: const TextStyle(
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w500,
                                       color: Color(0xFF5B21B6),
                                     ),
@@ -1520,8 +1538,8 @@ class _CourseImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 76,
-        height: 66,
+        width: 64,
+        height: 56,
         color: const Color(0xFFF3F4F6),
         child: resolvedUrl == null
             ? Center(
@@ -1577,7 +1595,9 @@ String _initialsForCourse(String courseName) {
   final parts = courseName.trim().split(RegExp(r'\s+'));
   if (parts.isEmpty) return 'C';
   if (parts.length == 1) {
-    return parts.first.isEmpty ? 'C' : parts.first.substring(0, 1).toUpperCase();
+    return parts.first.isEmpty
+        ? 'C'
+        : parts.first.substring(0, 1).toUpperCase();
   }
   final first = parts.first.isEmpty ? 'C' : parts.first[0].toUpperCase();
   final last = parts.last.isEmpty ? '' : parts.last[0].toUpperCase();

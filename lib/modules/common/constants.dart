@@ -27,6 +27,17 @@ class Constants {
     );
   }
 
+  static BoxDecoration customStudyBoxDecoration(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    final backgroundColor = brightness == Brightness.light
+        ? const Color(0xFFF6F8FC)
+        : AppColors.backgroundDark;
+
+    return BoxDecoration(
+      color: backgroundColor,
+    );
+  }
+
   static AppBar customAppBar({
     required BuildContext context,
     String? iconPath,
@@ -34,9 +45,10 @@ class Constants {
     String? title,
     bool showBackButton = true,
     double? iconSize,
+    bool showBackgroundIllustration = true,
   }) {
     final Brightness brightness = Theme.of(context).brightness;
-    var opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    final opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
     return AppBar(
       backgroundColor: Colors.white,
@@ -50,21 +62,23 @@ class Constants {
         ),
       ),
       centerTitle: centerTitle,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          children: [
-            Positioned.fill(
-              child: Opacity(
-                opacity: opacity,
-                child: Image.asset(
-                  'assets/images/background.png',
-                  fit: BoxFit.cover,
-                ),
+      flexibleSpace: showBackgroundIllustration
+          ? FlexibleSpaceBar(
+              background: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Image.asset(
+                        'assets/images/background.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
+            )
+          : null,
       leading: showBackButton
           ? IconButton(
               onPressed: () {

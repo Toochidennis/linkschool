@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_progress_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/models/study_session_stats.dart';
 import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
 import 'package:linkschool/modules/services/study_history_service.dart';
-import 'package:linkschool/modules/explore/cbt/study_progress_dashboard.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -84,10 +85,9 @@ class _AllTestHistoryScreenState extends State<AllTestHistoryScreen>
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                 // color: AppColors.eLearningBtnColor1,
+                  // color: AppColors.eLearningBtnColor1,
                   borderRadius: BorderRadius.circular(12),
                 ),
-
                 labelColor: AppColors.eLearningBtnColor1,
                 unselectedLabelColor: AppColors.text7Light,
                 labelStyle: AppTextStyles.normal600(fontSize: 14),

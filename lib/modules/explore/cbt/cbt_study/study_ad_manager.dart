@@ -12,6 +12,7 @@ class StudyAdManager {
     appOpenAdUnitId: EnvConfig.studyAdOpenKey,
     interstitialAdUnitId: EnvConfig.studyInterstitialKey,
     rewardedAdUnitId: EnvConfig.studyRewardKey,
+    allowAppOpenForPaid: true,
   );
 
   bool get isPresentingFullscreenAd => _delegate.isPresentingFullscreenAd;

@@ -30,6 +30,7 @@ class CbtScopedAdManager {
     required this.appOpenAdUnitId,
     required this.interstitialAdUnitId,
     required this.rewardedAdUnitId,
+    this.allowAppOpenForPaid = false,
   });
 
   static const String _unsetValue = '__SET_VIA_DART_DEFINE__';
@@ -38,6 +39,7 @@ class CbtScopedAdManager {
   final String appOpenAdUnitId;
   final String interstitialAdUnitId;
   final String rewardedAdUnitId;
+  final bool allowAppOpenForPaid;
 
   AppOpenAd? _appOpenAd;
   InterstitialAd? _interstitialAd;
@@ -258,6 +260,9 @@ class CbtScopedAdManager {
   }
 
   Future<bool> shouldShowAppOpenAds(BuildContext context) async {
+    if (allowAppOpenForPaid) {
+      return true;
+    }
     return _isAdEligible(context);
   }
 

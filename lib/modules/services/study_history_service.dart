@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../explore/cbt/study_progress_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/models/study_session_stats.dart';
 
 class StudyHistoryService {
   static const String _studyHistoryKey = 'study_history';
@@ -20,7 +20,6 @@ class StudyHistoryService {
       final jsonList =
           historyList.map((session) => _sessionToJson(session)).toList();
       await prefs.setString(_studyHistoryKey, jsonEncode(jsonList));
-
     } catch (e) {
       // Intentionally ignored.
     }
@@ -43,6 +42,26 @@ class StudyHistoryService {
     } catch (e) {
       return [];
     }
+  }
+
+  Future<StudyDashboardStats> getDashboardStats(
+      {Set<String>? subjectNames}) async {
+    final history = await getStudyHistory();
+    final normalizedNames = subjectNames
+        ?.map(normalizeStudySubject)
+        .where((name) => name.isNotEmpty)
+        .toSet();
+
+    final sessions = history.where((session) {
+      if (normalizedNames == null || normalizedNames.isEmpty) {
+        return true;
+      }
+
+      return normalizedNames.contains(normalizeStudySubject(session.subject));
+    }).toList()
+      ..sort((a, b) => b.sessionDate.compareTo(a.sessionDate));
+
+    return StudyDashboardStats(sessions: sessions);
   }
 
   // Clear all study history
@@ -96,4 +115,3 @@ class StudyHistoryService {
     );
   }
 }
-
