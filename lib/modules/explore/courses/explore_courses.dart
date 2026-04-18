@@ -19,8 +19,8 @@ import 'package:linkschool/modules/widgets/user_profile_update_modal.dart';
 import 'package:linkschool/modules/widgets/network_dialog.dart';
 import 'course_description_screen.dart';
 import 'course_content_screen.dart';
-import 'course_selection_screen.dart';
 import 'explore_courses_see_all_screen.dart';
+import 'explore_enrolled_courses_see_all_screen.dart';
 import 'create_user_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -52,7 +52,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
   int? _lastUserId;
   CourseModel? _pendingCourse;
   CategoryModel? _pendingCategory;
-  bool _isShowingAccountSwitcher = false; 
+  bool _isShowingAccountSwitcher = false;
   String? _lastNetworkMessage;
   bool _imagesPrecached = false;
   String? _lastPrecacheKey;
@@ -67,8 +67,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
       maxNrOfCacheObjects: 200,
     ),
   );
-
-
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -185,9 +183,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
       for (final course in category.courses) {
         final raw = course.imageUrl.trim();
         if (raw.isEmpty) continue;
-        final url = raw.startsWith('https')
-            ? raw
-            : "https://linkskool.net/$raw";
+        final url =
+            raw.startsWith('https') ? raw : "https://linkskool.net/$raw";
         urls.add(url);
       }
     }
@@ -203,150 +200,151 @@ class _ExploreCoursesState extends State<ExploreCourses>
       }
     }
   }
-  
+
   Future<void> _bootstrapScreen() async {
-  if (!mounted || _isBootstrapping) return;
-  _isBootstrapping = true;
-  try {
-    final cbtUserProvider = context.read<CbtUserProvider>();
-
-    // 1) Refresh current user
-    await cbtUserProvider.refreshCurrentUser();
-    if (!mounted) return;
-
-    final user = cbtUserProvider.currentUser;
-
-    // If not signed in: load public courses and exit
-    if (user == null) {
-      await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
-      if (!mounted) return;
-      setState(() {
-        _loadedActiveProfile = true;
-        _activeProfile = null;
-      });
-      return;
-    }
-
-    // 2) Fetch profiles immediately
+    if (!mounted || _isBootstrapping) return;
+    _isBootstrapping = true;
     try {
-      final profileProvider = context.read<CreateUserProfileProvider>();
-      final profiles =
-          await profileProvider.fetchUserProfiles(user.id.toString());
-      if (profiles.isNotEmpty) {
-        await cbtUserProvider.replaceProfiles(profiles);
-      }
-    } catch (e) {
-      // Intentionally ignored.
-    }
+      final cbtUserProvider = context.read<CbtUserProvider>();
 
-    if (!mounted) return;
-
-    // 3) Resolve active profile
-    final savedId = await _loadActiveProfileId();
-    final savedDob = await _loadActiveProfileDob();
-
-    final updatedProfiles =
-        cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
-
-    CbtUserProfile? selected;
-    if (savedId != null) {
-      try {
-        selected = updatedProfiles.firstWhere((p) => p.id == savedId);
-      } catch (_) {
-        selected = null;
-      }
-    }
-    selected ??= updatedProfiles.isNotEmpty ? updatedProfiles.first : null;
-
-    if (!mounted) return;
-
-    setState(() {
-      _activeProfile = selected;
-      _loadedActiveProfile = true;
-    });
-
-    // 4) Persist selection if needed
-    if (selected?.id != null) {
-      await _saveActiveProfileId(selected!.id, birthDate: selected.birthDate);
-    }
-
-    // 5) Phone modal: show ONCE per screen session, not repeatedly
-    if (widget.allowProfilePrompt &&
-        cbtUserProvider.isPhoneMissing &&
-        !_didCheckProfileModal) {
-      _didCheckProfileModal = true;
-
-      await UserProfileUpdateModal.show(
-        context,
-        user: cbtUserProvider.currentUser,
-        onSave: ({
-          required String phone,
-          required String gender,
-          required String birthDate,
-        }) async {
-          final profileService = UserProfileUpdateService();
-          final currentUser = cbtUserProvider.currentUser;
-          if (currentUser == null) return;
-
-          try {
-            await profileService.updateUserPhone(
-              userId: currentUser.id!,
-              firstName: currentUser.name!.split(' ').first,
-              lastName: currentUser.name!.split(' ').last,
-              phone: phone,
-              attempt: currentUser.attempt.toString(),
-              email: currentUser.email,
-              gender: gender,
-              birthDate: birthDate,
-            );
-
-            await cbtUserProvider.refreshCurrentUser();
-            if (!mounted) return;
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile updated successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } catch (e) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error updating profile: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-      );
-
-      // After modal: if still missing, warn and stop (optional)
+      // 1) Refresh current user
       await cbtUserProvider.refreshCurrentUser();
       if (!mounted) return;
 
-      if (cbtUserProvider.isPhoneMissing) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Phone number is required to access courses'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
-          ),
-        );
-        // You can return here if you want to block course access entirely:
-        // return;
-      }
-    }
+      final user = cbtUserProvider.currentUser;
 
-    // 6) Load courses (always runs)
-    await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-          profileId: selected?.id ?? savedId,
-          dateOfBirth: selected?.birthDate ?? savedDob,
+      // If not signed in: load public courses and exit
+      if (user == null) {
+        await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses();
+        if (!mounted) return;
+        setState(() {
+          _loadedActiveProfile = true;
+          _activeProfile = null;
+        });
+        return;
+      }
+
+      // 2) Fetch profiles immediately
+      try {
+        final profileProvider = context.read<CreateUserProfileProvider>();
+        final profiles =
+            await profileProvider.fetchUserProfiles(user.id.toString());
+        if (profiles.isNotEmpty) {
+          await cbtUserProvider.replaceProfiles(profiles);
+        }
+      } catch (e) {
+        // Intentionally ignored.
+      }
+
+      if (!mounted) return;
+
+      // 3) Resolve active profile
+      final savedId = await _loadActiveProfileId();
+      final savedDob = await _loadActiveProfileDob();
+
+      final updatedProfiles =
+          cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
+
+      CbtUserProfile? selected;
+      if (savedId != null) {
+        try {
+          selected = updatedProfiles.firstWhere((p) => p.id == savedId);
+        } catch (_) {
+          selected = null;
+        }
+      }
+      selected ??= updatedProfiles.isNotEmpty ? updatedProfiles.first : null;
+
+      if (!mounted) return;
+
+      setState(() {
+        _activeProfile = selected;
+        _loadedActiveProfile = true;
+      });
+
+      // 4) Persist selection if needed
+      if (selected?.id != null) {
+        await _saveActiveProfileId(selected!.id, birthDate: selected.birthDate);
+      }
+
+      // 5) Phone modal: show ONCE per screen session, not repeatedly
+      if (widget.allowProfilePrompt &&
+          cbtUserProvider.isPhoneMissing &&
+          !_didCheckProfileModal) {
+        _didCheckProfileModal = true;
+
+        await UserProfileUpdateModal.show(
+          context,
+          user: cbtUserProvider.currentUser,
+          onSave: ({
+            required String phone,
+            required String gender,
+            required String birthDate,
+          }) async {
+            final profileService = UserProfileUpdateService();
+            final currentUser = cbtUserProvider.currentUser;
+            if (currentUser == null) return;
+
+            try {
+              await profileService.updateUserPhone(
+                userId: currentUser.id!,
+                firstName: currentUser.name!.split(' ').first,
+                lastName: currentUser.name!.split(' ').last,
+                phone: phone,
+                attempt: currentUser.attempt.toString(),
+                email: currentUser.email,
+                gender: gender,
+                birthDate: birthDate,
+              );
+
+              await cbtUserProvider.refreshCurrentUser();
+              if (!mounted) return;
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Profile updated successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } catch (e) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error updating profile: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
         );
-  } finally {
-    _isBootstrapping = false;
+
+        // After modal: if still missing, warn and stop (optional)
+        await cbtUserProvider.refreshCurrentUser();
+        if (!mounted) return;
+
+        if (cbtUserProvider.isPhoneMissing) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Phone number is required to access courses'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          // You can return here if you want to block course access entirely:
+          // return;
+        }
+      }
+
+      // 6) Load courses (always runs)
+      await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
+            profileId: selected?.id ?? savedId,
+            dateOfBirth: selected?.birthDate ?? savedDob,
+          );
+    } finally {
+      _isBootstrapping = false;
+    }
   }
-}
+
   void _handleUserChange() {
     final userId = _cbtUserProvider.currentUser?.id;
     if (userId != _lastUserId) {
@@ -707,8 +705,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
           await _bootstrapScreen();
           if (!mounted) return;
 
-          final profiles = cbtUserProvider.currentUser?.profiles ??
-              <CbtUserProfile>[];
+          final profiles =
+              cbtUserProvider.currentUser?.profiles ?? <CbtUserProfile>[];
           final savedId = await _loadActiveProfileId();
           CbtUserProfile? activeProfile;
 
@@ -725,7 +723,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
             _activeProfile = activeProfile;
           });
 
-
           if (_pendingCourse != null && _pendingCategory != null) {
             final profileId = _activeProfile?.id;
 
@@ -736,12 +733,10 @@ class _ExploreCoursesState extends State<ExploreCourses>
                   profileId: profileId,
                 );
               } catch (e) {
-      // Intentionally ignored.
-    }
-            } else {
-            }
-          } else {
-          }
+                // Intentionally ignored.
+              }
+            } else {}
+          } else {}
 
           await _resumePendingCourseSelection();
         }
@@ -764,386 +759,359 @@ class _ExploreCoursesState extends State<ExploreCourses>
     }
   }
 
- Future<void> _showAccountSwitcherDialog(BuildContext context, dynamic user) async {
-  // Prevent multiple dialogs from opening
-  if (_isShowingAccountSwitcher) {
-    return;
-  }
-  
- _isShowingAccountSwitcher = true;
+  Future<void> _showAccountSwitcherDialog(
+      BuildContext context, dynamic user) async {
+    // Prevent multiple dialogs from opening
+    if (_isShowingAccountSwitcher) {
+      return;
+    }
 
-  final userId = user?.id;
-  if (userId == null) {
-    _isShowingAccountSwitcher = false;
-    return;
-  }
+    _isShowingAccountSwitcher = true;
 
-  try {
-    final canUseNetwork = await NetworkDialog.ensureOnline(
-      context,
-      message:
-          'This action requires an internet connection. Please connect and try again.',
-    );
-    if (!canUseNetwork || !mounted) {
+    final userId = user?.id;
+    if (userId == null) {
       _isShowingAccountSwitcher = false;
       return;
     }
-    final profileProvider =
-        Provider.of<CreateUserProfileProvider>(context, listen: false);
+
+    try {
+      final canUseNetwork = await NetworkDialog.ensureOnline(
+        context,
+        message:
+            'This action requires an internet connection. Please connect and try again.',
+      );
+      if (!canUseNetwork || !mounted) {
+        _isShowingAccountSwitcher = false;
+        return;
+      }
+      final profileProvider =
+          Provider.of<CreateUserProfileProvider>(context, listen: false);
+      final profiles =
+          await profileProvider.fetchUserProfiles(userId.toString());
+      if (profiles.isNotEmpty) {
+        await Provider.of<CbtUserProvider>(context, listen: false)
+            .replaceProfiles(profiles);
+      }
+    } catch (e) {
+      _isShowingAccountSwitcher = false;
+      return;
+    }
+
+    if (!mounted) {
+      _isShowingAccountSwitcher = false;
+      return;
+    }
+
+    final dialogUser =
+        Provider.of<CbtUserProvider>(context, listen: false).currentUser ??
+            user;
     final profiles =
-        await profileProvider.fetchUserProfiles(userId.toString());
-    if (profiles.isNotEmpty) {
-      await Provider.of<CbtUserProvider>(context, listen: false)
-          .replaceProfiles(profiles);
-    }
-  } catch (e) {
-    _isShowingAccountSwitcher = false;
-    return;
-  }
+        (dialogUser?.profiles as List<CbtUserProfile>?) ?? <CbtUserProfile>[];
+    final activeProfileId = _activeProfile?.id;
 
-  if (!mounted) {
-    _isShowingAccountSwitcher = false;
-    return;
-  }
-
-  final dialogUser =
-      Provider.of<CbtUserProvider>(context, listen: false).currentUser ?? user;
-  final profiles = (dialogUser?.profiles as List<CbtUserProfile>?) ??
-      <CbtUserProfile>[];
-  final activeProfileId = _activeProfile?.id;
-  
-  try {
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          backgroundColor: Colors.white,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Switch Profile',
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+    try {
+      await showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) {
+          return Dialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: Colors.white,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Switch Profile',
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                if (profiles.isNotEmpty)
-                  Column(
-                    children: profiles.map((profile) {
-                      final name = _profileName(profile);
-                      final subtitle = dialogUser?.email?.toString() ?? "";
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: _buildAccountItem(
-                          profile: profile,
-                          name: name,
-                          email: subtitle,
-                          imageUrl: profile.avatar,
-                          isActive: activeProfileId == profile.id,
-                          onTap: () {
-                            Navigator.pop(context);
-                            setState(() {
-                              _activeProfile = profile;
-                            });
-                            _saveActiveProfileId(profile.id,
-                                birthDate: profile.birthDate);
-                            if (profile.id != null) {
-                              context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-                                profileId: profile.id,
-                                dateOfBirth: profile.birthDate,
-                              );
-                            }
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final result = await Navigator.push<CbtUserProfile>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CreateUserProfileScreen(
-                            userId: userId.toString(),
+                  const SizedBox(height: 20),
+                  if (profiles.isNotEmpty)
+                    Column(
+                      children: profiles.map((profile) {
+                        final name = _profileName(profile);
+                        final subtitle = dialogUser?.email?.toString() ?? "";
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: _buildAccountItem(
+                            profile: profile,
+                            name: name,
+                            email: subtitle,
+                            imageUrl: profile.avatar,
+                            isActive: activeProfileId == profile.id,
+                            onTap: () {
+                              Navigator.pop(context);
+                              setState(() {
+                                _activeProfile = profile;
+                              });
+                              _saveActiveProfileId(profile.id,
+                                  birthDate: profile.birthDate);
+                              if (profile.id != null) {
+                                context
+                                    .read<ExploreCourseProvider>()
+                                    .fetchCategoriesAndCourses(
+                                      profileId: profile.id,
+                                      dateOfBirth: profile.birthDate,
+                                    );
+                              }
+                            },
                           ),
-                        ),
-                      );
-                      if (mounted && result != null) {
-                        setState(() => _activeProfile = result);
-                        await _saveActiveProfileId(result.id, birthDate: result.birthDate);
-                        await context.read<ExploreCourseProvider>().fetchCategoriesAndCourses(
-                          profileId: result.id,
-                          dateOfBirth: result.birthDate,
                         );
-                      }
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                      }
-                    },
-                    icon: const Icon(Icons.add, size: 20),
-                    label: const Text('Add New Profile'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      foregroundColor: Colors.black87,
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                      }).toList(),
+                    ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.push<CbtUserProfile>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateUserProfileScreen(
+                              userId: userId.toString(),
+                            ),
+                          ),
+                        );
+                        if (mounted && result != null) {
+                          setState(() => _activeProfile = result);
+                          await _saveActiveProfileId(result.id,
+                              birthDate: result.birthDate);
+                          await context
+                              .read<ExploreCourseProvider>()
+                              .fetchCategoriesAndCourses(
+                                profileId: result.id,
+                                dateOfBirth: result.birthDate,
+                              );
+                        }
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text('Add New Profile'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundColor: Colors.black87,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  } finally {
-    
-    // Add a small delay to ensure the dialog animation completes
-    await Future.delayed(const Duration(milliseconds: 300));
-    
-    _isShowingAccountSwitcher = false;
-  }
-}
-  
-  void _setPendingCourseSelection(
-      CourseModel course,
-      CategoryModel category,
-    ) {
-      _pendingCourse = course;
-      _pendingCategory = category;
-    }
-
-  void _clearPendingCourseSelection() {
-      _pendingCourse = null;
-      _pendingCategory = null;
-    }
-
-  Future<void> _resumePendingCourseSelection() async {
-      final pendingCourse = _pendingCourse;
-      final pendingCategory = _pendingCategory;
-      if (pendingCourse == null || pendingCategory == null) return;
-
-      _clearPendingCourseSelection();
-      await _handleCourseTap(pendingCourse, pendingCategory);
-    }
-
-  Future<void> _handleCourseTap(CourseModel course, CategoryModel category) async {
-      if (_navigating) return;
-      _navigating = true;
-      _setLoadingCourseId(course.id);
-      try {
-        final canUseNetwork = await NetworkDialog.ensureOnline(context);
-        if (!canUseNetwork || !mounted) return;
-        final cbtUserProvider =
-            Provider.of<CbtUserProvider>(context, listen: false);
-        final isSignedIn = cbtUserProvider.currentUser != null;
-
-        if (!isSignedIn) {
-          _setPendingCourseSelection(course, category);
-          await _handleSignIn();
-          return;
-        }
-        if (cbtUserProvider.isPhoneMissing) {
-          await UserProfileUpdateModal.show(
-            context,
-            user: cbtUserProvider.currentUser,
-            onSave: (
-                {required String phone,
-                required String gender,
-                required String birthDate}) async {
-              final profileService = UserProfileUpdateService();
-              final user = cbtUserProvider.currentUser;
-              if (user == null) return;
-              await profileService.updateUserPhone(
-                userId: user.id!,
-                firstName: _userFirstName(user),
-                lastName: _userLastName(user),
-                phone: phone,
-                attempt: user.attempt.toString(),
-                email: user.email,
-                gender: gender,
-                birthDate: birthDate,
-              );
-              await cbtUserProvider.refreshCurrentUser();
-            },
-          );
-
-          if (cbtUserProvider.isPhoneMissing) {
-            return;
-          }
-        }
-
-        if (!course.hasActiveCohort) {
-          showDialog(
-            context: context,
-            builder: (context) => Center(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                margin: const EdgeInsets.symmetric(horizontal: 32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.info_outline,
-                        color: Colors.orange, size: 48),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'No Active Cohort',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'There is no active cohort for this course.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFA500),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('OK'),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           );
+        },
+      );
+    } finally {
+      // Add a small delay to ensure the dialog animation completes
+      await Future.delayed(const Duration(milliseconds: 300));
 
+      _isShowingAccountSwitcher = false;
+    }
+  }
+
+  void _setPendingCourseSelection(
+    CourseModel course,
+    CategoryModel category,
+  ) {
+    _pendingCourse = course;
+    _pendingCategory = category;
+  }
+
+  void _clearPendingCourseSelection() {
+    _pendingCourse = null;
+    _pendingCategory = null;
+  }
+
+  Future<void> _resumePendingCourseSelection() async {
+    final pendingCourse = _pendingCourse;
+    final pendingCategory = _pendingCategory;
+    if (pendingCourse == null || pendingCategory == null) return;
+
+    _clearPendingCourseSelection();
+    await _handleCourseTap(pendingCourse, pendingCategory);
+  }
+
+  Future<void> _handleCourseTap(
+      CourseModel course, CategoryModel category) async {
+    if (_navigating) return;
+    _navigating = true;
+    _setLoadingCourseId(course.id);
+    try {
+      final canUseNetwork = await NetworkDialog.ensureOnline(context);
+      if (!canUseNetwork || !mounted) return;
+      final cbtUserProvider =
+          Provider.of<CbtUserProvider>(context, listen: false);
+      final isSignedIn = cbtUserProvider.currentUser != null;
+
+      if (!isSignedIn) {
+        _setPendingCourseSelection(course, category);
+        await _handleSignIn();
+        return;
+      }
+      if (cbtUserProvider.isPhoneMissing) {
+        await UserProfileUpdateModal.show(
+          context,
+          user: cbtUserProvider.currentUser,
+          onSave: (
+              {required String phone,
+              required String gender,
+              required String birthDate}) async {
+            final profileService = UserProfileUpdateService();
+            final user = cbtUserProvider.currentUser;
+            if (user == null) return;
+            await profileService.updateUserPhone(
+              userId: user.id!,
+              firstName: _userFirstName(user),
+              lastName: _userLastName(user),
+              phone: phone,
+              attempt: user.attempt.toString(),
+              email: user.email,
+              gender: gender,
+              birthDate: birthDate,
+            );
+            await cbtUserProvider.refreshCurrentUser();
+          },
+        );
+
+        if (cbtUserProvider.isPhoneMissing) {
           return;
         }
+      }
 
-        final profileId = _activeProfile?.id;
-        bool isEnrolled = false;
-
-        if (profileId != null && course.cohortId != null) {
-          try {
-            isEnrolled = await CourseService().checkIsEnrolled(
-              cohortId: course.cohortId!,
-              profileId: profileId,
-            );
-          } catch (e) {
-            // If verification fails, fall back to showing the course description.
-          }
-        }
-
-        if (isEnrolled) {
-          bool isPaid = true;
-          if (!course.isFree) {
-            if (profileId == null || course.cohortId == null) {
-              isPaid = false;
-            } else {
-              try {
-                isPaid = await context
-                    .read<EnrollmentProvider>()
-                    .checkPaymentStatus(
-                      cohortId: course.cohortId!.toString(),
-                      profileId: profileId,
-                    );
-              } catch (e) {
-                final status = (course.paymentStatus ?? '').toLowerCase();
-                isPaid = status == 'paid' ||
-                    status == 'true' ||
-                    status == '1';
-              }
-            }
-          }
-
-          final imageUrl = course.imageUrl.startsWith('https')
-              ? course.imageUrl
-              : "https://linkskool.net/${course.imageUrl}";
-
-
-                 final cohortStart = course.cohortStartDate != null
-          ? DateTime.tryParse(course.cohortStartDate!)
-          : null;
-      if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CourseWaitingScreen(
-              slug: course.slug ?? '',
-              providerSubtitle: 'Powered By Digital Dreams',
-              category: category.name.toUpperCase(),
-              categoryColor: _getCategoryColor(category.name),
-              categoryId: course.programId ?? category.id,
-              isFree: course.isFree,
-              trialExpiryDate: course.trialExpiryDate,
-              profileId: _activeProfile?.id,
-              trialType: course.trialType,
-              trialValue: course.trialValue,
-              lessonsTaken: course.lessonsTaken,
-              cohortCost: course.cost.toInt(),
+      if (!course.hasActiveCohort) {
+        showDialog(
+          context: context,
+          builder: (context) => Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.info_outline,
+                      color: Colors.orange, size: 48),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No Active Cohort',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'There is no active cohort for this course.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFA500),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('OK'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
+
         return;
       }
 
+      final profileId = _activeProfile?.id;
+      bool isEnrolled = false;
 
+      if (profileId != null && course.cohortId != null) {
+        try {
+          isEnrolled = await CourseService().checkIsEnrolled(
+            cohortId: course.cohortId!,
+            profileId: profileId,
+          );
+        } catch (e) {
+          // If verification fails, fall back to showing the course description.
+        }
+      }
 
+      if (isEnrolled) {
+        bool isPaid = true;
+        if (!course.isFree) {
+          if (profileId == null || course.cohortId == null) {
+            isPaid = false;
+          } else {
+            try {
+              isPaid =
+                  await context.read<EnrollmentProvider>().checkPaymentStatus(
+                        cohortId: course.cohortId!.toString(),
+                        profileId: profileId,
+                      );
+            } catch (e) {
+              final status = (course.paymentStatus ?? '').toLowerCase();
+              isPaid = status == 'paid' || status == 'true' || status == '1';
+            }
+          }
+        }
+
+        final imageUrl = course.imageUrl.startsWith('https')
+            ? course.imageUrl
+            : "https://linkskool.net/${course.imageUrl}";
+
+        final cohortStart = course.cohortStartDate != null
+            ? DateTime.tryParse(course.cohortStartDate!)
+            : null;
+        if (cohortStart != null && DateTime.now().isBefore(cohortStart)) {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CourseContentScreen(
-                lessonImage: imageUrl,
-                cohortId: course.cohortId.toString(),
-                isFree: course.isFree,
-                trialExpiryDate: course.trialExpiryDate,
-                courseTitle: course.courseName,
-                courseDescription: course.description,
-                provider: category.name,
-                courseId: course.id,
-                courseName: course.courseName,
-                categoryId: course.programId ?? category.id,
+              builder: (context) => CourseWaitingScreen(
+                slug: course.slug ?? '',
                 providerSubtitle: 'Powered By Digital Dreams',
                 category: category.name.toUpperCase(),
                 categoryColor: _getCategoryColor(category.name),
+                categoryId: course.programId ?? category.id,
+                isFree: course.isFree,
+                trialExpiryDate: course.trialExpiryDate,
                 profileId: _activeProfile?.id,
                 trialType: course.trialType,
                 trialValue: course.trialValue,
@@ -1158,54 +1126,82 @@ class _ExploreCoursesState extends State<ExploreCourses>
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CourseDescriptionScreen(
-              profileId: _activeProfile?.id,
-              firstName: _activeProfile?.firstName,
-              lastName: _activeProfile?.lastName,
-              course: course,
-              categoryName: category.name,
-              categoryId: course.programId ?? category.id,
-              provider: category.name,
+            builder: (context) => CourseContentScreen(
+              lessonImage: imageUrl,
               cohortId: course.cohortId.toString(),
               isFree: course.isFree,
               trialExpiryDate: course.trialExpiryDate,
+              courseTitle: course.courseName,
+              courseDescription: course.description,
+              provider: category.name,
+              courseId: course.id,
+              courseName: course.courseName,
+              categoryId: course.programId ?? category.id,
               providerSubtitle: 'Powered By Digital Dreams',
+              category: category.name.toUpperCase(),
               categoryColor: _getCategoryColor(category.name),
-              hasEnrolled: isEnrolled,
+              profileId: _activeProfile?.id,
+              trialType: course.trialType,
+              trialValue: course.trialValue,
+              lessonsTaken: course.lessonsTaken,
+              cohortCost: course.cost.toInt(),
             ),
           ),
         );
-      } finally {
-        _navigating = false;
-        _clearPressedCourseId();
-        _setLoadingCourseId(null);
+        return;
       }
-    }
 
-    Widget _profileSwitcherBadge() {
-  return Container(
-    width: 20,
-    height: 20,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      shape: BoxShape.circle,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.15),
-          blurRadius: 4,
-          offset: const Offset(0, 2),
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseDescriptionScreen(
+            profileId: _activeProfile?.id,
+            firstName: _activeProfile?.firstName,
+            lastName: _activeProfile?.lastName,
+            course: course,
+            categoryName: category.name,
+            categoryId: course.programId ?? category.id,
+            provider: category.name,
+            cohortId: course.cohortId.toString(),
+            isFree: course.isFree,
+            trialExpiryDate: course.trialExpiryDate,
+            providerSubtitle: 'Powered By Digital Dreams',
+            categoryColor: _getCategoryColor(category.name),
+            hasEnrolled: isEnrolled,
+          ),
         ),
-      ],
-    ),
-    child: const Icon(
-      Icons.keyboard_arrow_down,
-      size: 18,
-      color: Colors.black87,
-    ),
-  );
-}
+      );
+    } finally {
+      _navigating = false;
+      _clearPressedCourseId();
+      _setLoadingCourseId(null);
+    }
+  }
 
-    Widget _buildAccountItem({
+  Widget _profileSwitcherBadge() {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.keyboard_arrow_down,
+        size: 18,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  Widget _buildAccountItem({
     required CbtUserProfile profile,
     required String name,
     required String email,
@@ -1275,28 +1271,30 @@ class _ExploreCoursesState extends State<ExploreCourses>
                   // If edit was successful, refresh profiles and close the modal
                   if (result == true && mounted) {
                     try {
-                      final profileProvider = Provider.of<CreateUserProfileProvider>(
-                          context,
-                          listen: false);
+                      final profileProvider =
+                          Provider.of<CreateUserProfileProvider>(context,
+                              listen: false);
                       final cbtUserProvider =
                           Provider.of<CbtUserProvider>(context, listen: false);
-                      
+
                       // Fetch updated profiles
                       final userId = cbtUserProvider.currentUser?.id.toString();
                       if (userId != null) {
                         final updatedProfiles =
                             await profileProvider.fetchUserProfiles(userId);
                         if (updatedProfiles.isNotEmpty) {
-                          await cbtUserProvider.replaceProfiles(updatedProfiles);
+                          await cbtUserProvider
+                              .replaceProfiles(updatedProfiles);
                         }
                       }
-                      
+
                       // Close the dialog to reflect changes
                       Navigator.of(context).pop();
                     } catch (e) {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error refreshing profiles: $e')),
+                          SnackBar(
+                              content: Text('Error refreshing profiles: $e')),
                         );
                       }
                     }
@@ -1379,25 +1377,26 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Future<void> _saveActiveProfileId(int? id, {String? birthDate}) async {
-      final prefs = await SharedPreferences.getInstance();
-      if (id != null) {
-        await prefs.setInt('active_profile_id', id);
-        final currentProfile = _activeProfile;
-        if (currentProfile != null && currentProfile.id == id) {
-          await prefs.setString('active_profile_name', _profileName(currentProfile));
-        }
-        if (birthDate != null) {
-          await prefs.setString('active_profile_dob', birthDate);
-        } else {
-          await prefs.remove('active_profile_dob');
-        }
+    final prefs = await SharedPreferences.getInstance();
+    if (id != null) {
+      await prefs.setInt('active_profile_id', id);
+      final currentProfile = _activeProfile;
+      if (currentProfile != null && currentProfile.id == id) {
+        await prefs.setString(
+            'active_profile_name', _profileName(currentProfile));
+      }
+      if (birthDate != null) {
+        await prefs.setString('active_profile_dob', birthDate);
       } else {
-        await prefs.remove('active_profile_id');
-        await prefs.remove('active_profile_name');
         await prefs.remove('active_profile_dob');
-        // Also clear provider persisted values
-        if (mounted) {
-          Provider.of<ExploreCourseProvider>(context, listen: false)
+      }
+    } else {
+      await prefs.remove('active_profile_id');
+      await prefs.remove('active_profile_name');
+      await prefs.remove('active_profile_dob');
+      // Also clear provider persisted values
+      if (mounted) {
+        Provider.of<ExploreCourseProvider>(context, listen: false)
             .clearPersistedProfile();
       }
     }
@@ -1413,7 +1412,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
     return prefs.getString('active_profile_dob');
   }
 
-
   Widget _avatarWidget(
       {String? imageUrl, required String name, double radius = 20}) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -1426,7 +1424,7 @@ class _ExploreCoursesState extends State<ExploreCourses>
         Colors.indigo,
       ];
       final randomColor = colors[name.hashCode % colors.length];
-      
+
       return CircleAvatar(
         radius: radius,
         backgroundColor: randomColor,
@@ -1434,18 +1432,15 @@ class _ExploreCoursesState extends State<ExploreCourses>
       );
     }
 
- final colors = [
-        Colors.blue.shade300,
-        Colors.purple.shade300,
-        Colors.pink,
-        Colors.orange,
-        Colors.teal,
-        Colors.indigo,
-      ];
-      final randomColor = colors[name.hashCode % colors.length];
-      
-    
-
+    final colors = [
+      Colors.blue.shade300,
+      Colors.purple.shade300,
+      Colors.pink,
+      Colors.orange,
+      Colors.teal,
+      Colors.indigo,
+    ];
+    final randomColor = colors[name.hashCode % colors.length];
 
     final initials = _profileInitials(name);
     return CircleAvatar(
@@ -1601,7 +1596,6 @@ class _ExploreCoursesState extends State<ExploreCourses>
     activeProfile ??= firstProfile;
     if (!_loadedActiveProfile && profiles.isNotEmpty) {
       _loadedActiveProfile = true;
-  
     }
     // if (_activeProfile == null && activeProfile != null) {
     //   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1839,11 +1833,11 @@ class _ExploreCoursesState extends State<ExploreCourses>
             }
 
             return RefreshIndicator(
-                  onRefresh: () async {
-    await context.read<ExploreCourseProvider>().refresh(
-      profileId: activeProfile?.id,
-      dateOfBirth: activeProfile?.birthDate,
-    );
+                onRefresh: () async {
+                  await context.read<ExploreCourseProvider>().refresh(
+                        profileId: activeProfile?.id,
+                        dateOfBirth: activeProfile?.birthDate,
+                      );
 
                   if (courseProvider.errorMessage.isNotEmpty) {
                     if (!mounted) return;
@@ -1870,31 +1864,31 @@ class _ExploreCoursesState extends State<ExploreCourses>
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0, vertical: 8.0),
-                              child: GestureDetector(
-                                onTap: () async {
-    if (_isShowingAccountSwitcher) {
-      return;
-    }
-    await _showAccountSwitcherDialog(context, user);
-  },
-                                child: Row(
-                                  children: [
-                                    Stack(
-  clipBehavior: Clip.none,
-  children: [
-    _avatarWidget(
-      imageUrl: activeProfile?.avatar,
-      name: displayName,
-      radius: 24,
-    ),
-    Positioned(
-      bottom: -2,
-      right: -2,
-      child: _profileSwitcherBadge(),
-    ),
-  ],
-),
-                                    const SizedBox(width: 12),
+                            child: GestureDetector(
+                              onTap: () async {
+                                if (_isShowingAccountSwitcher) {
+                                  return;
+                                }
+                                await _showAccountSwitcherDialog(context, user);
+                              },
+                              child: Row(
+                                children: [
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      _avatarWidget(
+                                        imageUrl: activeProfile?.avatar,
+                                        name: displayName,
+                                        radius: 24,
+                                      ),
+                                      Positioned(
+                                        bottom: -2,
+                                        right: -2,
+                                        child: _profileSwitcherBadge(),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -2018,7 +2012,8 @@ class _ExploreCoursesState extends State<ExploreCourses>
   }
 
   Widget _buildCategoryHeaderCard(CategoryModel category) {
-    final isEnrolledBucket = category.id == -1 || category.name == 'Enrolled Courses';
+    final isEnrolledBucket =
+        category.id == -1 || category.name == 'Enrolled Courses';
     final seeAllColor = isEnrolledBucket
         ? const Color(0xFF0F766E)
         : _getCategoryColor(category.name);
@@ -2049,7 +2044,20 @@ class _ExploreCoursesState extends State<ExploreCourses>
           children: [
             OutlinedButton(
               onPressed: () {
-                final isEnrolledBucket = category.id == -1;
+                if (isEnrolledBucket) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ExploreEnrolledCoursesSeeAllScreen(
+                        categoryName: category.name,
+                        categoryColor: seeAllColor,
+                        profileId: _activeProfile?.id,
+                        courses: category.courses,
+                      ),
+                    ),
+                  );
+                  return;
+                }
 
                 Navigator.push(
                   context,
@@ -2057,11 +2065,9 @@ class _ExploreCoursesState extends State<ExploreCourses>
                     builder: (context) => ExploreCoursesSeeAllScreen(
                       categoryName: category.name,
                       categoryColor: seeAllColor,
-                      categorySlug: isEnrolledBucket ? null : category.slug,
+                      categorySlug: category.slug,
                       categoryId: category.id,
                       profileId: _activeProfile?.id,
-                      initialCourses:
-                          isEnrolledBucket ? category.courses : null,
                     ),
                   ),
                 );
@@ -2069,45 +2075,14 @@ class _ExploreCoursesState extends State<ExploreCourses>
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFFFFA500),
                 side: const BorderSide(color: Color(0xFFFFA500), width: 1.2),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 minimumSize: const Size(0, 32),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),
               child: const Text(
                 'See all',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton(
-              onPressed: () async {
-                final result = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CourseSelectionScreen(
-                      slug: category.slug ?? "",
-                    ),
-                  ),
-                );
-
-                if (result == true && mounted) {
-                  await _bootstrapScreen();
-                }
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF4F46E5),
-                side: const BorderSide(color: Color(0xFF4F46E5), width: 1.2),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                minimumSize: const Size(0, 32),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-              child: const Text(
-                'Test enroll',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -2149,213 +2124,214 @@ class _ExploreCoursesState extends State<ExploreCourses>
               child: Stack(
                 children: [
                   Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Course Image
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Stack(
-                      children: [
-                        CachedNetworkImage(
-                          cacheManager: _coursesCacheManager,
-                          imageUrl: course.imageUrl.startsWith('https')
-                              ? course.imageUrl
-                              : "https://linkskool.net/${course.imageUrl}",
-                          height: 120,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) {
-                            return Container(
-                              height: 120,
-                              color: Colors.grey.shade100,
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFFFFA500),
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            );
-                          },
-                          errorWidget: (context, url, error) {
-                            return Container(
-                              height: 120,
-                              color: Colors.grey.shade200,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  size: 32,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            );
-                          },
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Course Image
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
                         ),
-                        // Price & Trial badges
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              // Price badge (Free / Paid)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: (course.isFree == true)
-                                      ? Colors.green.shade600
-                                      : Colors.red.shade600,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  (course.isFree == true)
-                                      ? 'Free'
-                                      : course.priceLabel,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Course Content
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Course Title
-                          Text(
-                            course.courseName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-
-                          // Description
-                          Expanded(
-                            child: Text(
-                              course.description,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade600,
-                                height: 1.3,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Provider
-                          Row(
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFFFFA500),
-                                      Color(0xFFFF6B00)
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'B',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
+                        child: Stack(
+                          children: [
+                            CachedNetworkImage(
+                              cacheManager: _coursesCacheManager,
+                              imageUrl: course.imageUrl.startsWith('https')
+                                  ? course.imageUrl
+                                  : "https://linkskool.net/${course.imageUrl}",
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) {
+                                return Container(
+                                  height: 120,
+                                  color: Colors.grey.shade100,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFFFFA500),
+                                      strokeWidth: 2,
                                     ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      category.name,
+                                );
+                              },
+                              errorWidget: (context, url, error) {
+                                return Container(
+                                  height: 120,
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      size: 32,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            // Price & Trial badges
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  // Price badge (Free / Paid)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: (course.isFree == true)
+                                          ? Colors.green.shade600
+                                          : Colors.red.shade600,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      (course.isFree == true)
+                                          ? 'Free'
+                                          : course.priceLabel,
                                       style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                        letterSpacing: 0.3,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    Text(
-                                      'Powered By Digital Dreams',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Course Content
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Course Title
+                              Text(
+                                course.courseName,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+
+                              // Description
+                              Expanded(
+                                child: Text(
+                                  course.description,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade600,
+                                    height: 1.3,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              const SizedBox(height: 8),
+
+                              // Provider
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFFFFA500),
+                                          Color(0xFFFF6B00)
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        'B',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          category.name,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black87,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          'Powered By Digital Dreams',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Take Course Button
+                              // SizedBox(
+                              //   width: double.infinity,
+                              //   height: 32,
+                              //   child: OutlinedButton(
+                              //     onPressed: () {
+                              //       ScaffoldMessenger.of(context).showSnackBar(
+                              //         SnackBar(
+                              //           content: Text('Starting ${course['title']} course...'),
+                              //           duration: const Duration(seconds: 2),
+                              //         ),
+                              //       );
+                              //     },
+                              //     style: OutlinedButton.styleFrom(
+                              //       side: const BorderSide(color: Color(0xFFFFA500), width: 1.5),
+                              //       padding: EdgeInsets.zero,
+                              //       shape: RoundedRectangleBorder(
+                              //         borderRadius: BorderRadius.circular(8),
+                              //       ),
+                              //     ),
+                              //     child: const Text(
+                              //       'Take Course',
+                              //       style: TextStyle(
+                              //         fontSize: 12,
+                              //         fontWeight: FontWeight.w700,
+                              //         color: Color(0xFFFFA500),
+                              //       ),
+                              //     ),
+                              //   ),
+                              // ),
                             ],
                           ),
-                          const SizedBox(height: 10),
-
-                          // Take Course Button
-                          // SizedBox(
-                          //   width: double.infinity,
-                          //   height: 32,
-                          //   child: OutlinedButton(
-                          //     onPressed: () {
-                          //       ScaffoldMessenger.of(context).showSnackBar(
-                          //         SnackBar(
-                          //           content: Text('Starting ${course['title']} course...'),
-                          //           duration: const Duration(seconds: 2),
-                          //         ),
-                          //       );
-                          //     },
-                          //     style: OutlinedButton.styleFrom(
-                          //       side: const BorderSide(color: Color(0xFFFFA500), width: 1.5),
-                          //       padding: EdgeInsets.zero,
-                          //       shape: RoundedRectangleBorder(
-                          //         borderRadius: BorderRadius.circular(8),
-                          //       ),
-                          //     ),
-                          //     child: const Text(
-                          //       'Take Course',
-                          //       style: TextStyle(
-                          //         fontSize: 12,
-                          //         fontWeight: FontWeight.w700,
-                          //         color: Color(0xFFFFA500),
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
                   if (isLoading)
                     Positioned.fill(
                       child: IgnorePointer(
@@ -2389,7 +2365,3 @@ class _ExploreCoursesState extends State<ExploreCourses>
     );
   }
 }
-
-
-
-
