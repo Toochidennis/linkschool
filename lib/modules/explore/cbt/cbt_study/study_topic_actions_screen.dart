@@ -35,6 +35,9 @@ class StudyTopicActionsScreen extends StatefulWidget {
 
 class _StudyTopicActionsScreenState extends State<StudyTopicActionsScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
+  final bool _showVideoCard = false;
+  final bool _showStudyTextCard = false;
+
   BannerAd? _bannerAd;
   bool _bannerAdLoaded = false;
   int _bannerAdUnitIndex = 0;
@@ -281,45 +284,49 @@ class _StudyTopicActionsScreenState extends State<StudyTopicActionsScreen>
                 _StaggeredReveal(
                   animation: _videoIn,
                   offsetY: 28,
-                  child: _TopicActionCard(
-                    title: 'Video',
-                    description: 'Watch quick concept videos',
-                    icon: Icons.ondemand_video_rounded,
-                    colorA: const Color(0xFF005EEA),
-                    colorB: const Color(0xFF49A3FF),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('Video lessons will be available soon.'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  ),
+                  child: _showVideoCard
+                      ? _TopicActionCard(
+                          title: 'Video',
+                          description: 'Watch quick concept videos',
+                          icon: Icons.ondemand_video_rounded,
+                          colorA: const Color(0xFF005EEA),
+                          colorB: const Color(0xFF49A3FF),
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Video lessons will be available soon.'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        )
+                      : const SizedBox.shrink(),
                 ),
-                const SizedBox(height: 14),
+                if (_showVideoCard) const SizedBox(height: 14),
                 _StaggeredReveal(
                   animation: _textIn,
                   offsetY: 32,
-                  child: _TopicActionCard(
-                    title: 'Study Text',
-                    description: 'Read focused topic notes',
-                    icon: Icons.menu_book_rounded,
-                    colorA: const Color(0xFF067A66),
-                    colorB: const Color(0xFF20C7A6),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('Study text for this topic is coming soon.'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  ),
+                  child: _showStudyTextCard
+                      ? _TopicActionCard(
+                          title: 'Study Text',
+                          description: 'Read focused topic notes',
+                          icon: Icons.menu_book_rounded,
+                          colorA: const Color(0xFF067A66),
+                          colorB: const Color(0xFF20C7A6),
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Study text for this topic is coming soon.'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        )
+                      : const SizedBox.shrink(),
                 ),
-                const SizedBox(height: 14),
+                if (_showStudyTextCard) const SizedBox(height: 14),
                 _StaggeredReveal(
                   animation: _practiceIn,
                   offsetY: 36,

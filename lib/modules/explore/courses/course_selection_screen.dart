@@ -459,12 +459,20 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
     if (widget.returnToExploreCourses) {
       if (widget.onReturnToExploreCourses != null) {
         await widget.onReturnToExploreCourses!();
-        return;
       }
+
+      await _popCurrentRoute(success);
       return;
     }
 
-    Navigator.of(context).pop(success);
+    await _popCurrentRoute(success);
+  }
+
+  Future<void> _popCurrentRoute([bool result = false]) async {
+    if (!mounted) return;
+    final poppedLocal = await Navigator.of(context).maybePop(result);
+    if (poppedLocal || !mounted) return;
+    await Navigator.of(context, rootNavigator: true).maybePop(result);
   }
 
   Future<CourseCheckoutVerifyResult> _pollCheckoutStatus({
@@ -904,7 +912,7 @@ class _CourseSelectionScreenState extends State<CourseSelectionScreen> {
                 children: [
                   GestureDetector(
                     onTap: () async {
-                      await _finishAndReturn(false);
+                      await _popCurrentRoute(false);
                     },
                     child: Container(
                       width: 34,
