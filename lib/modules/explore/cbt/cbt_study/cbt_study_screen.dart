@@ -4,11 +4,10 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
 import 'package:linkschool/modules/providers/explore/studies_question_provider.dart';
 import 'package:linkschool/modules/model/explore/study/studies_questions_model.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/models/study_session_stats.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_study/study_progress_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/ai_chat_screen.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
-import 'package:linkschool/modules/explore/cbt/widgets/cbt_continue_ads_dialog.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
@@ -42,10 +41,14 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   final Map<int, String> _explanationCache = {};
   final _subscriptionService = CbtSubscriptionService();
   final Set<int> _answeredQuestionIds = {};
+  // ignore: unused_field
   bool _isStudyComplete = false;
+  // ignore: unused_field
   bool _isInitialCountdownComplete = false;
+  // ignore: unused_field
   bool _isContinueWithAds = false;
   bool _isShowingAdsGate = false;
+  bool _isShowingExitDialog = false;
   bool _isNavigatingAway = false;
   bool _shouldShowAdOnResume = false;
 
@@ -136,6 +139,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
   Future<void> _initializeStudySession() async {
     final provider = Provider.of<QuestionsProvider>(context, listen: false);
     await provider.initializeStudySession(
+      subjectName: widget.subject,
       topicIds: widget.topicIds,
       courseId: widget.courseId,
       examTypeId: widget.examTypeId,
@@ -219,8 +223,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     final hasPaid = await _subscriptionService.hasPaid();
     if (hasPaid) return false;
     final mode = await _subscriptionService.getAdMode();
-    if (mode == 'continue_with_ads') return true;
-    return await _subscriptionService.shouldContinueWithAds();
+    return mode == 'continue_with_ads';
   }
 
   Future<void> _loadAdMode() async {
@@ -242,89 +245,76 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     try {
       if (!mounted) return false;
 
-      final result = await showDialog<String>(
+      final result = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => WillPopScope(
-          onWillPop: () async => false,
-          child: CbtContinueAdsDialog(
-            onWatchAds: () async {
-              await _subscriptionService.setAdMode('continue_with_ads');
-              if (!mounted) return false;
-              final rewarded =
-                  await StudyAdManager.instance.showRewardedForPaywall(
-                context: context,
-              );
-              if (!rewarded) return false;
-              if (!mounted) return false;
-              setState(() {
-                _isContinueWithAds = true;
-              });
-              return true;
-            },
-            onSubscribe: () async {
-              final planResult = await Navigator.of(context).push<Object?>(
-                MaterialPageRoute(
-                  builder: (_) => const CbtPlansScreen(
-                    showTrialButton: false,
-                    preferTrialLabel: false,
-                  ),
-                ),
-              );
-
-              if (!mounted) return false;
-
-              if (planResult == 'continue_ads') {
-                await _subscriptionService.setAdMode('continue_with_ads');
-                if (!mounted) return false;
-                final rewarded =
-                    await StudyAdManager.instance.showRewardedForPaywall(
-                  context: context,
-                );
-                if (!rewarded) return false;
-                if (!mounted) return false;
-                setState(() {
-                  _isContinueWithAds = true;
-                });
-                return true;
-              }
-
-              if (planResult == true) {
-                if (!mounted) return false;
-                setState(() {
-                  _isContinueWithAds = false;
-                });
-                return true;
-              }
-              return false;
-            },
-            onSubmitTest: () async {
-              Navigator.of(dialogContext).pop();
-              final provider =
-                  Provider.of<QuestionsProvider>(context, listen: false);
-              final sessionStats =
-                  provider.generateSessionStats(widget.subject);
-              await StudyAdManager.instance.showIfEligible(
-                context: context,
-                trigger: CbtScopedAdTrigger.resultNavigation,
-              );
-              if (!mounted) return;
-              _isNavigatingAway = true;
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      StudyProgressDashboard(sessionStats: sessionStats),
-                ),
-              );
-            },
+        builder: (dialogContext) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Continue Practice',
+            style: AppTextStyles.normal700(
+              fontSize: 20,
+              color: AppColors.text4Light,
+            ),
           ),
+          content: Text(
+            'You need to watch a rewarded ad to continue practicing. You can also end now and view your summary.',
+            style: AppTextStyles.normal400(
+              fontSize: 14,
+              color: AppColors.text7Light,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(
+                'End Study',
+                style: AppTextStyles.normal600(
+                  fontSize: 14,
+                  color: Colors.redAccent,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.eLearningBtnColor1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'Watch Reward Ad',
+                style: AppTextStyles.normal600(
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ),
       );
 
       if (!mounted) return false;
+      if (result != true) {
+        final provider = Provider.of<QuestionsProvider>(context, listen: false);
+        final sessionStats = provider.generateSessionStats(widget.subject);
+        await _navigateToSummary(sessionStats);
+        return false;
+      }
 
-      return result == 'ads' || result == 'subscribe';
+      await _subscriptionService.setAdMode('continue_with_ads');
+      final rewarded = await StudyAdManager.instance.showRewardedForPaywall(
+        context: context,
+      );
+      if (!rewarded) return false;
+      if (!mounted) return false;
+
+      setState(() {
+        _isContinueWithAds = true;
+      });
+      return true;
     } finally {
       _isShowingAdsGate = false;
     }
@@ -422,7 +412,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           ],
         ),
         content: Text(
-          'Great job! You have completed all questions for the selected topics.',
+          'Great job! You have completed the available study questions for this subject.',
           style: AppTextStyles.normal400(
             fontSize: 16,
             color: AppColors.text7Light,
@@ -432,23 +422,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context); // Close dialog
-
-              await StudyAdManager.instance.showIfEligible(
-                context: context,
-                trigger: CbtScopedAdTrigger.resultNavigation,
-              );
-              if (!context.mounted) return;
-
-              _isNavigatingAway = true;
-              // Navigate to progress dashboard
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StudyProgressDashboard(
-                    sessionStats: sessionStats,
-                  ),
-                ),
-              );
+              await _navigateToSummary(sessionStats);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.eLearningBtnColor1,
@@ -469,7 +443,97 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
     );
   }
 
+  Future<void> _navigateToSummary(StudySessionStats sessionStats) async {
+    await StudyAdManager.instance.showIfEligible(
+      context: context,
+      trigger: CbtScopedAdTrigger.resultNavigation,
+    );
+    if (!context.mounted) return;
+
+    _isNavigatingAway = true;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudyProgressDashboard(
+          sessionStats: sessionStats,
+          subject: widget.subject,
+          topics: widget.topics,
+          topicIds: widget.topicIds,
+          courseId: widget.courseId,
+          examTypeId: widget.examTypeId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleExitRequest() async {
+    if (_isShowingExitDialog || !mounted) return;
+    _isShowingExitDialog = true;
+
+    try {
+      final shouldEnd = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'End Study?',
+              style: AppTextStyles.normal700(
+                fontSize: 20,
+                color: AppColors.text4Light,
+              ),
+            ),
+            content: Text(
+              'Do you really want to end this study session?',
+              style: AppTextStyles.normal400(
+                fontSize: 15,
+                color: AppColors.text7Light,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  'Continue Studying',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: AppColors.eLearningBtnColor1,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'End',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldEnd != true || !mounted) return;
+      final provider = Provider.of<QuestionsProvider>(context, listen: false);
+      final sessionStats = provider.generateSessionStats(widget.subject);
+      await _navigateToSummary(sessionStats);
+    } finally {
+      _isShowingExitDialog = false;
+    }
+  }
+
   /// Convert HTML/span text to TextSpan list for RichText
+  // ignore: unused_element
   List<TextSpan> _parseHtmlToTextSpans(String text) {
     if (!text.contains('<span') &&
         !text.contains('<b') &&
@@ -903,53 +967,114 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<QuestionsProvider>(
-      builder: (context, provider, child) {
-        // Loading state
-        if (provider.loading) {
-          return Scaffold(
-            appBar: _buildAppBar(),
-            body: Container(
-              color: AppColors.backgroundLight,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      color: AppColors.eLearningBtnColor1,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading questions...',
-                      style: AppTextStyles.normal500(
-                        fontSize: 16,
-                        color: AppColors.text7Light,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-
-        // Error state
-        if (provider.error != null) {
-          return Scaffold(
-            appBar: _buildAppBar(),
-            body: Container(
-              color: AppColors.backgroundLight,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _handleExitRequest();
+      },
+      child: Consumer<QuestionsProvider>(
+        builder: (context, provider, child) {
+          // Loading state
+          if (provider.loading) {
+            return Scaffold(
+              appBar: _buildAppBar(),
+              body: Container(
+                color: AppColors.backgroundLight,
+                child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline,
-                          size: 64, color: Colors.red.shade400),
+                      CircularProgressIndicator(
+                        color: AppColors.eLearningBtnColor1,
+                      ),
                       const SizedBox(height: 16),
                       Text(
-                        'Failed to load questions',
+                        'Loading questions...',
+                        style: AppTextStyles.normal500(
+                          fontSize: 16,
+                          color: AppColors.text7Light,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Error state
+          if (provider.error != null) {
+            return Scaffold(
+              appBar: _buildAppBar(),
+              body: Container(
+                color: AppColors.backgroundLight,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline,
+                            size: 64, color: Colors.red.shade400),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Failed to load questions',
+                          style: AppTextStyles.normal600(
+                            fontSize: 18,
+                            color: AppColors.text4Light,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          provider.error ?? '',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.normal400(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _initializeStudySession,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.eLearningBtnColor1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Retry',
+                            style: AppTextStyles.normal600(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // No questions available
+          final question = provider.currentQuestion;
+          if (question == null) {
+            return Scaffold(
+              appBar: _buildAppBar(),
+              body: Container(
+                color: AppColors.backgroundLight,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.quiz_outlined,
+                          size: 64, color: Colors.grey.shade400),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No questions available',
                         style: AppTextStyles.normal600(
                           fontSize: 18,
                           color: AppColors.text4Light,
@@ -957,356 +1082,306 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        provider.error ?? '',
-                        textAlign: TextAlign.center,
+                        'No downloaded study questions were found for this subject.',
                         style: AppTextStyles.normal400(
                           fontSize: 14,
                           color: Colors.grey,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _initializeStudySession,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.eLearningBtnColor1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Retry',
-                          style: AppTextStyles.normal600(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
               ),
-            ),
-          );
-        }
+            );
+          }
 
-        // No questions available
-        final question = provider.currentQuestion;
-        if (question == null) {
+          // Main question screen
           return Scaffold(
             appBar: _buildAppBar(),
-            body: Container(
-              color: AppColors.backgroundLight,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.quiz_outlined,
-                        size: 64, color: Colors.grey.shade400),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No questions available',
-                      style: AppTextStyles.normal600(
-                        fontSize: 18,
-                        color: AppColors.text4Light,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Please try selecting different topics',
-                      style: AppTextStyles.normal400(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-
-        // Main question screen
-        return Scaffold(
-          appBar: _buildAppBar(),
-          body: Stack(
-            children: [
-              Container(
-                color: AppColors.backgroundLight,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Progress bar
-                      Row(
-                        children: [
-                          Expanded(
-                            child: LinearProgressIndicator(
-                              value: (provider.currentQuestionIndex + 1) /
-                                  (provider.totalQuestions > 0
-                                      ? provider.totalQuestions
-                                      : 1),
-                              minHeight: 6,
-                              backgroundColor: Colors.grey.shade200,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.eLearningBtnColor1,
-                              ),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            '${provider.currentQuestionIndex + 1}/${provider.totalQuestions}',
-                            style: AppTextStyles.normal600(
-                              fontSize: 14,
-                              color: AppColors.text7Light,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Topic indicator
-                      if (question.topic.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.eLearningBtnColor1
-                                .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            question.topic,
-                            style: AppTextStyles.normal500(
-                              fontSize: 12,
-                              color: AppColors.eLearningBtnColor1,
-                            ),
-                          ),
-                        ),
-                      if (question.topic.isNotEmpty) const SizedBox(height: 16),
-
-                      // Instruction/Passage Preview Card
-                      if (question.instruction.isNotEmpty ||
-                          question.passage.isNotEmpty)
-                        _buildInstructionPassagePreviewCard(question),
-
-                      // Question
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+            body: Stack(
+              children: [
+                Container(
+                  color: AppColors.backgroundLight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Progress bar
+                        Row(
                           children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: AppColors.eLearningBtnColor1,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '${provider.currentQuestionIndex + 1}',
-                                  style: AppTextStyles.normal600(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                  ),
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                value: (provider.currentQuestionIndex + 1) /
+                                    (provider.totalQuestions > 0
+                                        ? provider.totalQuestions
+                                        : 1),
+                                minHeight: 6,
+                                backgroundColor: Colors.grey.shade200,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.eLearningBtnColor1,
                                 ),
+                                borderRadius: BorderRadius.circular(3),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Html(
-                                data: question.questionText,
-                                style: {
-                                  "body": Style(
-                                    margin: Margins.zero,
-                                    padding: HtmlPaddings.zero,
-                                    fontSize: FontSize(16),
-                                    color: AppColors.text4Light,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  "img": Style(
-                                    width: Width.auto(),
-                                    padding:
-                                        HtmlPaddings.only(left: 4, right: 4),
-                                  ),
-                                },
-                                extensions: [
-                                  TagExtension(
-                                    tagsToExtend: {"img"},
-                                    builder: (extensionContext) {
-                                      final attributes =
-                                          extensionContext.attributes;
-                                      final src = attributes['src'] ?? '';
-
-                                      if (src.isEmpty) {
-                                        return const SizedBox.shrink();
-                                      }
-
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 4, vertical: 2),
-                                        child: _getImageWidget(src, height: 30),
-                                      );
-                                    },
-                                  ),
-                                ],
+                            const SizedBox(width: 12),
+                            Text(
+                              '${provider.currentQuestionIndex + 1}/${provider.totalQuestions}',
+                              style: AppTextStyles.normal600(
+                                fontSize: 14,
+                                color: AppColors.text7Light,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      // Options
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: question.options.length,
-                          itemBuilder: (context, i) {
-                            final option = question.options[i];
-                            return GestureDetector(
-                              onTap: () => _onAnswer(i, question),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 18,
-                                ),
+                        // Topic indicator
+                        if (question.topic.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.eLearningBtnColor1
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              question.topic,
+                              style: AppTextStyles.normal500(
+                                fontSize: 12,
+                                color: AppColors.eLearningBtnColor1,
+                              ),
+                            ),
+                          ),
+                        if (question.topic.isNotEmpty)
+                          const SizedBox(height: 16),
+
+                        // Instruction/Passage Preview Card
+                        if (question.instruction.isNotEmpty ||
+                            question.passage.isNotEmpty)
+                          _buildInstructionPassagePreviewCard(question),
+
+                        // Question
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(
-                                    color: Colors.grey.shade300,
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: AppColors.eLearningBtnColor1,
+                                  shape: BoxShape.circle,
                                 ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.eLearningBtnColor1
-                                            .withValues(alpha: 0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          String.fromCharCode(65 +
-                                              i), // A, B, C, D... (use index instead of order)
-                                          style: AppTextStyles.normal600(
-                                            fontSize: 14,
-                                            color: AppColors.eLearningBtnColor1,
-                                          ),
-                                        ),
-                                      ),
+                                child: Center(
+                                  child: Text(
+                                    '${provider.currentQuestionIndex + 1}',
+                                    style: AppTextStyles.normal600(
+                                      fontSize: 16,
+                                      color: Colors.white,
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Html(
-                                        data: option.text,
-                                        style: {
-                                          "body": Style(
-                                            margin: Margins.zero,
-                                            padding: HtmlPaddings.zero,
-                                            fontSize: FontSize(15),
-                                            color: AppColors.text4Light,
-                                          ),
-                                          "img": Style(
-                                            width: Width.auto(),
-                                            padding: HtmlPaddings.only(
-                                                left: 4, right: 4),
-                                          ),
-                                        },
-                                        extensions: [
-                                          TagExtension(
-                                            tagsToExtend: {"img"},
-                                            builder: (extensionContext) {
-                                              final attributes =
-                                                  extensionContext.attributes;
-                                              final src =
-                                                  attributes['src'] ?? '';
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Html(
+                                  data: question.questionText,
+                                  style: {
+                                    "body": Style(
+                                      margin: Margins.zero,
+                                      padding: HtmlPaddings.zero,
+                                      fontSize: FontSize(16),
+                                      color: AppColors.text4Light,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    "img": Style(
+                                      width: Width.auto(),
+                                      padding:
+                                          HtmlPaddings.only(left: 4, right: 4),
+                                    ),
+                                  },
+                                  extensions: [
+                                    TagExtension(
+                                      tagsToExtend: {"img"},
+                                      builder: (extensionContext) {
+                                        final attributes =
+                                            extensionContext.attributes;
+                                        final src = attributes['src'] ?? '';
 
-                                              if (src.isEmpty) {
-                                                return const SizedBox.shrink();
-                                              }
+                                        if (src.isEmpty) {
+                                          return const SizedBox.shrink();
+                                        }
 
-                                              return GestureDetector(
-                                                onTap: () =>
-                                                    _showFullScreenImage(src),
-                                                child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 4,
-                                                      vertical: 2),
-                                                  child: _getImageWidget(src,
-                                                      height: 30),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 2),
+                                          child:
+                                              _getImageWidget(src, height: 30),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Loading more indicator
-              if (provider.loadingMore)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.white.withValues(alpha: 0.9),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.eLearningBtnColor1,
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Loading more questions...',
-                          style: AppTextStyles.normal500(
-                            fontSize: 14,
-                            color: AppColors.text7Light,
+                        const SizedBox(height: 24),
+
+                        // Options
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: question.options.length,
+                            itemBuilder: (context, i) {
+                              final option = question.options[i];
+                              return GestureDetector(
+                                onTap: () => _onAnswer(i, question),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 18,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                      width: 1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.eLearningBtnColor1
+                                              .withValues(alpha: 0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            String.fromCharCode(65 +
+                                                i), // A, B, C, D... (use index instead of order)
+                                            style: AppTextStyles.normal600(
+                                              fontSize: 14,
+                                              color:
+                                                  AppColors.eLearningBtnColor1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Html(
+                                          data: option.text,
+                                          style: {
+                                            "body": Style(
+                                              margin: Margins.zero,
+                                              padding: HtmlPaddings.zero,
+                                              fontSize: FontSize(15),
+                                              color: AppColors.text4Light,
+                                            ),
+                                            "img": Style(
+                                              width: Width.auto(),
+                                              padding: HtmlPaddings.only(
+                                                  left: 4, right: 4),
+                                            ),
+                                          },
+                                          extensions: [
+                                            TagExtension(
+                                              tagsToExtend: {"img"},
+                                              builder: (extensionContext) {
+                                                final attributes =
+                                                    extensionContext.attributes;
+                                                final src =
+                                                    attributes['src'] ?? '';
+
+                                                if (src.isEmpty) {
+                                                  return const SizedBox
+                                                      .shrink();
+                                                }
+
+                                                return GestureDetector(
+                                                  onTap: () =>
+                                                      _showFullScreenImage(src),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 4,
+                                                        vertical: 2),
+                                                    child: _getImageWidget(src,
+                                                        height: 30),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-            ],
-          ),
-        );
-      },
+                // Loading more indicator
+                if (provider.loadingMore)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.white.withValues(alpha: 0.9),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.eLearningBtnColor1,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Loading more questions...',
+                            style: AppTextStyles.normal500(
+                              fontSize: 14,
+                              color: AppColors.text7Light,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -1316,10 +1391,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black),
-        onPressed: () {
-          // Reset provider when leaving
-          Provider.of<QuestionsProvider>(context, listen: false).reset();
-          Navigator.pop(context);
+        onPressed: () async {
+          await _handleExitRequest();
         },
       ),
       title: Column(
@@ -1333,7 +1406,7 @@ class _CBTStudyScreenState extends State<CBTStudyScreen>
             ),
           ),
           Text(
-            widget.topics.join(', '),
+            'Up to ${QuestionsProvider.studyQuestionLimit} random downloaded questions',
             style: AppTextStyles.normal400(
               fontSize: 12,
               color: AppColors.text7Light,
@@ -1378,6 +1451,7 @@ class _ExplanationModalState extends State<ExplanationModal> {
   String? _explanation;
   bool _isLoading = false;
   String? _error;
+  // ignore: unused_field
   bool _isApiExplanation = false;
 
   /// Helper function to get image widget from URL or base64
@@ -1477,6 +1551,7 @@ class _ExplanationModalState extends State<ExplanationModal> {
   }
 
   /// Convert HTML/span text to TextSpan list for explanations
+  // ignore: unused_element
   List<TextSpan> _parseExplanationHtml(String text) {
     if (!text.contains('<span') &&
         !text.contains('<b') &&

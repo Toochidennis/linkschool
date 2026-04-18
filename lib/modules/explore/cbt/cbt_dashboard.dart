@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_study/studys_subject_modal.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_study/study_dashboard_screen.dart';
 import 'package:linkschool/modules/explore/cbt/discussion/cbt_discussion_screen.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_plans_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
@@ -894,16 +894,10 @@ class _CBTDashboardState extends State<CBTDashboard>
           },
           onStudy: () {
             Navigator.pop(context);
-            // Show study subject selection modal using current board subjects
-            final examTypeId =
-                int.tryParse(provider.selectedBoard?.id ?? '0') ?? 0;
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => StudySubjectSelectionModal(
-                subjects: provider.currentBoardSubjects,
-                examTypeId: examTypeId,
+            Navigator.push(
+              this.context,
+              MaterialPageRoute(
+                builder: (context) => const StudyDashboardScreen(),
               ),
             );
           },

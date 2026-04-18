@@ -11,11 +11,13 @@ import 'package:provider/provider.dart';
 class StudySubjectSelectionModal extends StatefulWidget {
   final List<SubjectModel> subjects;
   final int examTypeId;
+  final String? initialSubjectId;
 
   const StudySubjectSelectionModal({
     super.key,
     required this.subjects,
     required this.examTypeId,
+    this.initialSubjectId,
   });
 
   @override
@@ -29,13 +31,29 @@ class _StudySubjectSelectionModalState
   List<int> _selectedTopicIds = [];
   List<String> _selectedTopicNames = [];
   bool _showTopics = false;
-  bool _isTransitioning = false;
-  final Set<int> _expandedSyllabusIds = {};
 
   // Search state
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialSubjectId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        final matchingSubjects = widget.subjects
+            .where((subject) => subject.id == widget.initialSubjectId)
+            .toList(growable: false);
+
+        if (matchingSubjects.isNotEmpty) {
+          _onSubjectSelected(matchingSubjects.first.id);
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -83,7 +101,6 @@ class _StudySubjectSelectionModalState
 
     setState(() {
       _selectedSubject = subjectId;
-      _isTransitioning = true;
       // Clear search when subject is selected
       _isSearching = false;
       _searchQuery = '';
@@ -109,7 +126,6 @@ class _StudySubjectSelectionModalState
       if (mounted) {
         setState(() {
           _showTopics = true;
-          _isTransitioning = false;
         });
       }
     });
@@ -136,44 +152,22 @@ class _StudySubjectSelectionModalState
     });
   }
 
-  void _toggleSyllabus(int syllabusId) {
+  bool _isSyllabusSelected(Syllabus syllabus) {
+    if (syllabus.topics.isEmpty) return false;
+    return syllabus.topics
+        .every((topic) => _selectedTopicIds.contains(topic.topicId));
+  }
+
+  void _toggleSyllabusSelection(Syllabus syllabus) {
     setState(() {
-      if (_expandedSyllabusIds.contains(syllabusId)) {
-        _expandedSyllabusIds.remove(syllabusId);
-      } else {
-        _expandedSyllabusIds.add(syllabusId);
-      }
-    });
-  }
-
-  // Check if all topics in a syllabus are selected
-  bool _areAllTopicsSelected(List<Topic> topics) {
-    if (topics.isEmpty) return false;
-    return topics.every((topic) => _selectedTopicIds.contains(topic.topicId));
-  }
-
-  // Check if some (but not all) topics in a syllabus are selected
-  bool _areSomeTopicsSelected(List<Topic> topics) {
-    if (topics.isEmpty) return false;
-    final selectedCount = topics
-        .where((topic) => _selectedTopicIds.contains(topic.topicId))
-        .length;
-    return selectedCount > 0 && selectedCount < topics.length;
-  }
-
-  // Toggle all topics in a syllabus
-  void _toggleAllTopicsInSyllabus(List<Topic> topics) {
-    setState(() {
-      final allSelected = _areAllTopicsSelected(topics);
-      if (allSelected) {
-        // Deselect all topics in this syllabus
-        for (final topic in topics) {
+      final isSelected = _isSyllabusSelected(syllabus);
+      if (isSelected) {
+        for (final topic in syllabus.topics) {
           _selectedTopicIds.remove(topic.topicId);
           _selectedTopicNames.remove(topic.topicName);
         }
       } else {
-        // Select all topics in this syllabus
-        for (final topic in topics) {
+        for (final topic in syllabus.topics) {
           if (!_selectedTopicIds.contains(topic.topicId)) {
             _selectedTopicIds.add(topic.topicId);
             _selectedTopicNames.add(topic.topicName);
@@ -219,7 +213,6 @@ class _StudySubjectSelectionModalState
     }
     if (_showTopics) {
       setState(() {
-        _isTransitioning = true;
         _searchQuery = '';
         _searchController.clear();
       });
@@ -231,8 +224,6 @@ class _StudySubjectSelectionModalState
             _selectedSubject = null;
             _selectedTopicIds = [];
             _selectedTopicNames = [];
-            _expandedSyllabusIds.clear();
-            _isTransitioning = false;
           });
         }
       });
@@ -589,7 +580,7 @@ class _StudySubjectSelectionModalState
           );
         }
 
-        // Success - Display hierarchical syllabus/topics
+        // Success - Display syllabus-only topic rows
         return Container(
           color: subjectColor.withValues(alpha: 0.05),
           child: Column(
@@ -600,8 +591,7 @@ class _StudySubjectSelectionModalState
                   itemCount: syllabuses.length,
                   itemBuilder: (context, index) {
                     final syllabus = syllabuses[index];
-                    final isExpanded =
-                        _expandedSyllabusIds.contains(syllabus.syllabusId);
+                    final isSelected = _isSyllabusSelected(syllabus);
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -616,174 +606,62 @@ class _StudySubjectSelectionModalState
                           ),
                         ],
                       ),
-                      child: Column(
-                        children: [
-                          // Syllabus header
-                          InkWell(
-                            onTap: () => _toggleSyllabus(syllabus.syllabusId),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 16),
-                              child: Row(
-                                children: [
-                                  // Select all checkbox for syllabus
-                                  if (isExpanded)
-                                    GestureDetector(
-                                      onTap: () => _toggleAllTopicsInSyllabus(
-                                          syllabus.topics),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: _areAllTopicsSelected(
-                                                  syllabus.topics)
-                                              ? subjectColor
-                                              : subjectColor.withValues(
-                                                  alpha: 0.15),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          _areAllTopicsSelected(syllabus.topics)
-                                              ? Icons.check_box
-                                              : _areSomeTopicsSelected(
-                                                      syllabus.topics)
-                                                  ? Icons
-                                                      .indeterminate_check_box
-                                                  : Icons
-                                                      .check_box_outline_blank,
-                                          color: _areAllTopicsSelected(
-                                                  syllabus.topics)
-                                              ? Colors.white
-                                              : subjectColor,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: subjectColor.withValues(
-                                            alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.library_books,
-                                        color: subjectColor,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          syllabus.syllabusName,
-                                          style: AppTextStyles.normal600(
-                                            fontSize: 16,
-                                            color: AppColors.text4Light,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              '${syllabus.topics.length} topics',
-                                              style: AppTextStyles.normal400(
-                                                fontSize: 12,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                            if (isExpanded) ...[
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                _areAllTopicsSelected(
-                                                        syllabus.topics)
-                                                    ? 'Tap to deselect all'
-                                                    : 'Tap to select all',
-                                                style: AppTextStyles.normal400(
-                                                  fontSize: 11,
-                                                  color: subjectColor,
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    isExpanded
-                                        ? Icons.expand_less
-                                        : Icons.expand_more,
-                                    color: subjectColor,
-                                    size: 24,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Topics list (expandable)
-                          if (isExpanded)
-                            Container(
-                              decoration: BoxDecoration(
-                                color: subjectColor.withValues(alpha: 0.03),
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(12),
-                                  bottomRight: Radius.circular(12),
+                      child: InkWell(
+                        onTap: () => _toggleSyllabusSelection(syllabus),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? subjectColor
+                                      : subjectColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  isSelected
+                                      ? Icons.check_circle
+                                      : Icons.radio_button_unchecked,
+                                  color:
+                                      isSelected ? Colors.white : subjectColor,
+                                  size: 20,
                                 ),
                               ),
-                              child: Column(
-                                children: syllabus.topics.map((topic) {
-                                  final isSelected =
-                                      _selectedTopicIds.contains(topic.topicId);
-                                  return InkWell(
-                                    onTap: () => _onTopicSelected(topic),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 20, vertical: 14),
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(
-                                            color: Colors.grey.shade200,
-                                            width: 1,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            isSelected
-                                                ? Icons.check_circle
-                                                : Icons.radio_button_unchecked,
-                                            color: isSelected
-                                                ? subjectColor
-                                                : Colors.grey.shade400,
-                                            size: 22,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              topic.topicName,
-                                              style: AppTextStyles.normal500(
-                                                fontSize: 14,
-                                                color: isSelected
-                                                    ? subjectColor
-                                                    : AppColors.text4Light,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      syllabus.syllabusName,
+                                      style: AppTextStyles.normal600(
+                                        fontSize: 16,
+                                        color: AppColors.text4Light,
                                       ),
                                     ),
-                                  );
-                                }).toList(),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${syllabus.topics.length} topics',
+                                      style: AppTextStyles.normal400(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                        ],
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: subjectColor.withValues(alpha: 0.75),
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },

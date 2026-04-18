@@ -19,13 +19,13 @@ class CbtDiscussionComment {
     return CbtDiscussionComment(
       id: json['id'] is int
           ? json['id'] as int
-          : int.tryParse('${json['id']}') ?? 0,
+          : int.tryParse('${json['id']}')!,
       updateId: json['update_id'] is int
           ? json['update_id'] as int
-          : int.tryParse('${json['update_id']}') ?? 0,
+          : int.tryParse('${json['update_id']}')!,
       userId: json['user_id'] is int
           ? json['user_id'] as int
-          : int.tryParse('${json['user_id']}') ?? 0,
+          : int.tryParse('${json['user_id']}')!,
       username: json['username'] is String ? json['username'] as String : '',
       body: json['body'] is String ? json['body'] as String : '',
       createdAt:
